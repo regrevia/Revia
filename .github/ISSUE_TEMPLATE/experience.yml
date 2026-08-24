@@ -1,0 +1,37 @@
+name: Preview experience
+description: Share a concise trial result before preparing a full feedback PR.
+title: "[Experience]: "
+labels: [feedback, preview]
+body:
+  - type: input
+    id: environment
+    attributes:
+      label: Environment and Agent/tool
+    validations:
+      required: true
+  - type: textarea
+    id: worked
+    attributes:
+      label: What worked
+    validations:
+      required: true
+  - type: textarea
+    id: failed
+    attributes:
+      label: What failed or caused friction
+    validations:
+      required: true
+  - type: dropdown
+    id: continue
+    attributes:
+      label: Would you continue using Revia?
+      options: [Yes, Maybe, No]
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Public data check
+      options:
+        - label: I removed credentials, personal data, private paths, and proprietary project source.
+          required: true

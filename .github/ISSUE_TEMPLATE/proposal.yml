@@ -1,0 +1,30 @@
+name: Language or workflow proposal
+description: Propose one observable rule with a minimal example.
+title: "[Proposal]: "
+labels: [proposal, preview]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: User or Agent need
+    validations:
+      required: true
+  - type: textarea
+    id: example
+    attributes:
+      label: Minimal `.re` example
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: rule
+    attributes:
+      label: Proposed observable rule
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Executable acceptance criteria
+    validations:
+      required: true

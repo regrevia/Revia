@@ -1,0 +1,29 @@
+name: Smoke test release asset
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  macos-arm64:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Check and run hello
+        run: |
+          ./bin/revia check examples/hello.re
+          ./bin/revia run examples/hello.re | grep -Fx 'Hello, World!'
+      - name: Verify structured diagnostic
+        run: |
+          set +e
+          ./bin/revia check --format json examples/diagnostic-error.re > diagnostic.json
+          status=$?
+          set -e
+          test "$status" -eq 65
+          grep -Fq 'unexpected-argument' diagnostic.json
+      - name: Inspect manifest
+        run: ./bin/revia manifest examples/hello.re | grep -Fq 'graph_revision'

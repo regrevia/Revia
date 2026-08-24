@@ -1,0 +1,47 @@
+name: Installation or execution problem
+description: Report a reproducible preview failure without sensitive data.
+title: "[Bug]: "
+labels: [bug, preview]
+body:
+  - type: markdown
+    attributes:
+      value: Revia is an early technical preview. Remove credentials and private paths from all logs.
+  - type: input
+    id: version
+    attributes:
+      label: Revia version and commit
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: OS, version, architecture, and shell
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Exact command and exit status
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: input
+    attributes:
+      label: Minimal `.re` input
+      description: Include only non-sensitive source required to reproduce the problem.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed output
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
