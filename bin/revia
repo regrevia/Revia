@@ -1,0 +1,72 @@
+#!/bin/sh
+set -eu
+
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+VERSION=$(sed -n '1p' "$ROOT/VERSION")
+REPOSITORY=${REVIA_REPOSITORY:-tangshuang631/Revia}
+CACHE_ROOT=${XDG_CACHE_HOME:-"$HOME/.cache"}/revia
+RELEASE_BASE_URL=${REVIA_RELEASE_BASE_URL:-"https://github.com/$REPOSITORY/releases/download/v$VERSION"}
+
+case "$(uname -s):$(uname -m)" in
+  Darwin:arm64)
+    PLATFORM=darwin-arm64
+    ;;
+  *)
+    printf '%s\n' "Revia $VERSION has no binary for $(uname -s) $(uname -m)." >&2
+    printf '%s\n' "See $ROOT/docs/compatibility.md for the current support matrix." >&2
+    exit 69
+    ;;
+esac
+
+ASSET="revia-${VERSION}-${PLATFORM}.tar.gz"
+EXPECTED=$(awk -v asset="$ASSET" '$2 == asset { print $1 }' "$ROOT/runtime/checksums.txt")
+EXPECTED_BINARY=$(awk -v asset="${ASSET%.tar.gz}" '$2 == asset { print $1 }' "$ROOT/runtime/checksums.txt")
+if [ -z "$EXPECTED" ] || [ -z "$EXPECTED_BINARY" ]; then
+  printf '%s\n' "Missing checksum for $ASSET." >&2
+  exit 70
+fi
+
+sha256_file() {
+  if command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$1" | awk '{ print $1 }'
+  elif command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" | awk '{ print $1 }'
+  else
+    printf '%s\n' 'Revia requires shasum or sha256sum to verify release files.' >&2
+    exit 70
+  fi
+}
+
+INSTALL_DIR="$CACHE_ROOT/$VERSION/$PLATFORM"
+EXECUTABLE="$INSTALL_DIR/revia"
+if [ ! -x "$EXECUTABLE" ]; then
+  TEMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/revia.XXXXXX")
+  trap 'rm -rf "$TEMP_DIR"' EXIT HUP INT TERM
+  URL="$RELEASE_BASE_URL/$ASSET"
+  printf '%s\n' "Downloading Revia $VERSION for $PLATFORM..." >&2
+  curl --fail --location --silent --show-error "$URL" --output "$TEMP_DIR/$ASSET"
+
+  ACTUAL=$(sha256_file "$TEMP_DIR/$ASSET")
+  if [ "$ACTUAL" != "$EXPECTED" ]; then
+    printf '%s\n' "Checksum mismatch for $ASSET." >&2
+    exit 70
+  fi
+
+  mkdir -p "$INSTALL_DIR"
+  tar -xzf "$TEMP_DIR/$ASSET" -C "$TEMP_DIR"
+  chmod 755 "$TEMP_DIR/revia"
+  if [ "$(sha256_file "$TEMP_DIR/revia")" != "$EXPECTED_BINARY" ]; then
+    printf '%s\n' "Executable checksum mismatch for ${ASSET%.tar.gz}." >&2
+    exit 70
+  fi
+  mv "$TEMP_DIR/revia" "$EXECUTABLE"
+  trap - EXIT HUP INT TERM
+  rm -rf "$TEMP_DIR"
+fi
+
+if [ "$(sha256_file "$EXECUTABLE")" != "$EXPECTED_BINARY" ]; then
+  printf '%s\n' "Cached executable checksum mismatch for ${ASSET%.tar.gz}." >&2
+  exit 70
+fi
+
+exec "$EXECUTABLE" "$@"

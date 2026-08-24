@@ -1,0 +1,5 @@
+.DS_Store
+*.log
+*.tmp
+*.tar.gz
+diagnostic.json

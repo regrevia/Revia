@@ -1,0 +1,13 @@
+{
+  "asset": "revia-0.1-preview-darwin-arm64.tar.gz",
+  "architecture": "arm64",
+  "bundled_runtime": "Node.js 22.23.2",
+  "minimum_os": "macOS 13.5",
+  "node_license_source_commit": "85c454ab2915b4768c830d40e7809a7a098e1057",
+  "notarized": false,
+  "packager": "@yao-pkg/pkg 6.22.0",
+  "platform": "darwin",
+  "release": "Revia 0.1-preview",
+  "schema": "revia.public-build-metadata@0.1.0",
+  "source_maps_included": false
+}

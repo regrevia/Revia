@@ -1,0 +1,2 @@
+79cd7f27c2bd87c3a634e8b3ef1bcadeadbd5dc76a23ec5de768900ac0cb5bc7  revia-0.1-preview-darwin-arm64.tar.gz
+fdf5290fd5930b21f9fa98fc47d590ea07f3f077d32a5f76c7e1c764acc71564  revia-0.1-preview-darwin-arm64
