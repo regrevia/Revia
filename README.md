@@ -1,4 +1,4 @@
-# Revia 0.1-preview
+# Revia 0.1-preview.1
 
 Revia is an Agent-first technical preview for representing executable programs
 as typed semantic graphs with deterministic `.re` text. This repository is the
@@ -12,14 +12,22 @@ Revia is not Stable V1.0, an open-source release, or a production backend.
 
 ## Run In 60 Seconds
 
-The first binary release supports Apple silicon Macs running macOS 13.5 or
-newer.
+The current release includes closed binaries for macOS, Linux, and Windows on
+`arm64` and `x86_64`. Each binary was built and smoke-tested on a matching
+GitHub-hosted runner.
 
 ```bash
 git clone https://github.com/tangshuang631/Revia.git
 cd Revia
 ./bin/revia check examples/hello.re
 ./bin/revia run examples/hello.re
+```
+
+On Windows PowerShell, use:
+
+```powershell
+./bin/revia.ps1 check examples/hello.re
+./bin/revia.ps1 run examples/hello.re
 ```
 
 Expected output:
@@ -29,8 +37,8 @@ OK examples/hello.re
 Hello, World!
 ```
 
-`bin/revia` downloads the version-pinned release asset once, verifies its
-SHA-256 digest, and caches it under `${XDG_CACHE_HOME:-$HOME/.cache}/revia`.
+The launcher downloads the version-pinned release asset once, verifies both
+the archive and executable SHA-256 digests, and caches the executable per user.
 It does not install Node.js or copy compiler/runtime source code.
 
 See [QUICKSTART.md](QUICKSTART.md) for diagnostic and manifest examples.

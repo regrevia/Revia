@@ -1,12 +1,12 @@
 # Notice
 
-Revia 0.1-preview is distributed by Tang Shuang as proprietary technical
+Revia 0.1-preview.1 is distributed by Tang Shuang as proprietary technical
 preview software.
 
 Revia is an early technical preview. The project name is provisional and
 trademark registration is pending. No registered-trademark claim is made.
 
-The executable release asset contains a Node.js 22.23.2-based runtime packaged
+The executable release assets contain a Node.js 22-series runtime packaged
 with `@yao-pkg/pkg` 6.22.0. Node.js is licensed under the MIT license and
 includes third-party software under their respective licenses. The Node.js,
 `@yao-pkg/pkg`, and `@yao-pkg/pkg-fetch` license texts are preserved at

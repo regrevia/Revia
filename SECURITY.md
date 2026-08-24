@@ -1,6 +1,6 @@
 # Security Policy
 
-Revia 0.1-preview is not intended for production or safety-critical use.
+Revia 0.1-preview.1 is not intended for production or safety-critical use.
 
 Do not open a public Issue for a suspected vulnerability that could expose
 private data, bypass capability checks, execute unintended host operations, or
