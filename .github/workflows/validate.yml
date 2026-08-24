@@ -16,3 +16,16 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Validate repository boundary and feedback schema
         run: ./scripts/validate-public-tree.sh
+  windows-launcher:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Parse PowerShell launcher and preserve Re source bytes
+        shell: pwsh
+        run: |
+          $launcher = Get-Content -LiteralPath bin/revia.ps1 -Raw
+          $null = [ScriptBlock]::Create($launcher)
+          Get-ChildItem examples -Filter *.re | ForEach-Object {
+            $bytes = [IO.File]::ReadAllBytes($_.FullName)
+            if ($bytes -contains 13) { throw "CR byte found in $($_.Name)" }
+          }

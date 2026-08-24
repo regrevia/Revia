@@ -11,6 +11,15 @@ case "$(uname -s):$(uname -m)" in
   Darwin:arm64)
     PLATFORM=darwin-arm64
     ;;
+  Darwin:x86_64)
+    PLATFORM=darwin-x64
+    ;;
+  Linux:aarch64|Linux:arm64)
+    PLATFORM=linux-arm64
+    ;;
+  Linux:x86_64)
+    PLATFORM=linux-x64
+    ;;
   *)
     printf '%s\n' "Revia $VERSION has no binary for $(uname -s) $(uname -m)." >&2
     printf '%s\n' "See $ROOT/docs/compatibility.md for the current support matrix." >&2

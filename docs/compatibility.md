@@ -2,21 +2,26 @@
 
 ## Release Asset Matrix
 
-| Version | Platform | Architecture | Minimum OS | Status |
-|---|---|---|---|---|
-| `0.1-preview` | macOS | Apple silicon (`arm64`) | macOS 13.5 | Verified preview asset |
-| `0.1-preview` | macOS | Intel (`x86_64`) | - | Not published |
-| `0.1-preview` | Linux | `x86_64` / `arm64` | - | Not published |
-| `0.1-preview` | Windows | `x86_64` / `arm64` | - | Not published |
+| Version | Target | Verified environment | Status |
+|---|---|---|---|
+| `0.1-preview.1` | macOS `arm64` | macOS 15 | Verified preview asset |
+| `0.1-preview.1` | macOS `x86_64` | macOS 15 Intel | Verified preview asset |
+| `0.1-preview.1` | Linux `arm64` | Ubuntu 24.04 | Verified preview asset |
+| `0.1-preview.1` | Linux `x86_64` | Ubuntu 24.04 | Verified preview asset |
+| `0.1-preview.1` | Windows `arm64` | Windows 11 | Verified preview asset |
+| `0.1-preview.1` | Windows `x86_64` | Windows Server 2025 | Verified preview asset |
 
 The verified row means the documented hello, diagnostic, and manifest paths
-were exercised on the build platform. It is not a production support SLA.
+were exercised on the named environment. It is not a minimum-version claim or
+production support SLA.
 
 ## Installation Properties
 
-- The binary bundles its runtime; Node.js is not required on the target Mac.
+- Each binary bundles its runtime; Node.js is not required on the target host.
 - The release archive is verified with a repository-pinned SHA-256 digest.
-- The executable is ad-hoc signed and not Apple-notarized.
+- The extracted executable is verified with a second SHA-256 digest.
+- macOS executables are ad-hoc signed and not Apple-notarized. Linux and
+  Windows executables are unsigned.
 - The launcher uses a per-user cache and does not request administrator access.
 - The initial download requires access to GitHub Releases.
 

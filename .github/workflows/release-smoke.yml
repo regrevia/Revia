@@ -9,21 +9,55 @@ permissions:
   contents: read
 
 jobs:
-  macos-arm64:
-    runs-on: macos-15
+  smoke:
+    name: Smoke ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            target: darwin-arm64
+          - runner: macos-15-intel
+            target: darwin-x64
+          - runner: ubuntu-24.04-arm
+            target: linux-arm64
+          - runner: ubuntu-24.04
+            target: linux-x64
+          - runner: windows-11-arm
+            target: windows-arm64
+          - runner: windows-2025
+            target: windows-x64
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - name: Check and run hello
+        with:
+          ref: ${{ github.event.release.tag_name || github.sha }}
+      - name: Smoke release asset on POSIX
+        if: runner.os != 'Windows'
+        shell: bash
         run: |
+          set -euo pipefail
           ./bin/revia check examples/hello.re
-          ./bin/revia run examples/hello.re | grep -Fx 'Hello, World!'
-      - name: Verify structured diagnostic
-        run: |
+          test "$(./bin/revia run examples/hello.re)" = 'Hello, World!'
+          ./bin/revia manifest examples/hello.re | grep -Fq 'graph_revision'
           set +e
           ./bin/revia check --format json examples/diagnostic-error.re > diagnostic.json
           status=$?
           set -e
           test "$status" -eq 65
           grep -Fq 'unexpected-argument' diagnostic.json
-      - name: Inspect manifest
-        run: ./bin/revia manifest examples/hello.re | grep -Fq 'graph_revision'
+      - name: Smoke release asset on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          ./bin/revia.ps1 check examples/hello.re
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $hello = (./bin/revia.ps1 run examples/hello.re | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0 -or $hello -ne 'Hello, World!') { throw 'hello smoke failed' }
+          $manifest = (./bin/revia.ps1 manifest examples/hello.re | Out-String)
+          if ($LASTEXITCODE -ne 0 -or $manifest -notmatch 'graph_revision') { throw 'manifest smoke failed' }
+          ./bin/revia.ps1 check --format json examples/diagnostic-error.re *> diagnostic.json
+          if ($LASTEXITCODE -ne 65) { throw "expected diagnostic exit 65, got $LASTEXITCODE" }
+          if ((Get-Content -Raw diagnostic.json) -notmatch 'unexpected-argument') { throw 'diagnostic smoke failed' }
+          exit 0

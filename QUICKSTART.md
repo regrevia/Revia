@@ -1,12 +1,12 @@
-# Revia 0.1-preview Quickstart
+# Revia 0.1-preview.1 Quickstart
 
 > Revia is an early technical preview. The project name is provisional and trademark registration is pending.
 
 ## Requirements
 
-- Apple silicon (`arm64`)
-- macOS 13.5 or newer
-- `curl`, `tar`, and either `shasum` or `sha256sum`
+- macOS or Linux on `arm64` or `x86_64`, with `curl`, `tar`, and either
+  `shasum` or `sha256sum`; or
+- Windows on `arm64` or `x86_64` with PowerShell 7
 - Network access for the first launch
 
 No Node.js installation is required.
@@ -19,6 +19,9 @@ From the repository root:
 ./bin/revia check examples/hello.re
 ./bin/revia run examples/hello.re
 ```
+
+On Windows PowerShell, replace `./bin/revia` with `./bin/revia.ps1` in each
+command.
 
 Expected output:
 
@@ -75,8 +78,10 @@ whether you would continue using Revia. Submit the report as a pull request.
 The launcher caches the verified executable at:
 
 ```text
-${XDG_CACHE_HOME:-$HOME/.cache}/revia/0.1-preview/darwin-arm64/revia
+${XDG_CACHE_HOME:-$HOME/.cache}/revia/0.1-preview.1/<platform>/revia
 ```
+
+Windows uses `%LOCALAPPDATA%\Revia\0.1-preview.1\<platform>\revia.exe`.
 
 After the first successful launch, the same version can run offline. Delete
 that version directory to force a fresh verified download.
