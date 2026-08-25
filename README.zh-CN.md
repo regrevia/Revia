@@ -1,17 +1,23 @@
-# Revia
+<h1 align="center">Revia</h1>
 
-**Agent 构建，人类监管。Revia 让这种角色反转真正可执行。**
+<p align="center">
+  <strong>面向 AI 原生时代的 Agent 原生可执行语言。</strong><br>
+  Agent 编写可执行程序，人类审阅语义图。
+</p>
 
-[English](README.md)
+<p align="center">
+  <a href="README.md">English</a>
+</p>
 
-Revia 是面向 AI 原生开发的 Agent 原生可执行语言：Agent 编写可执行程序，
-工具链检查代码，并将其翻译为可验证、可供人类审阅的语义图。
+<p align="center">
+  <img src="docs/assets/agent-review-graph.png" alt="由 Revia 翻译器根据 Agent 审阅示例生成的语义图" width="920">
+</p>
 
-![由 Revia 翻译器根据示例程序直接翻译出的语义图](docs/assets/agent-review-graph.png)
+Revia 将 Agent 编写的程序转换为可执行契约，让人类能够直接审阅：显式能力、
+可见效果，以及可检查的成功与失败路径。
 
-*这张图由 Revia 翻译器根据示例程序直接翻译生成。*
-
-拉取、运行、挑战它。给下一位 Agent 留下一个可以继续的项目。
+上图是 Revia 翻译器根据
+[`examples/agent-review/main.re`](examples/agent-review/main.re) 输出的语义事实整理出的简洁审阅图。
 
 ## 运行完整流程
 
@@ -31,18 +37,14 @@ agent=ready
 next=inspect-graph
 ```
 
-`manifest.json` 是机器契约，`review.html` 是人类图形审阅视图。
+`manifest.json` 是机器契约，`review.html` 是人类审阅视图，
+`view --format svg` 可生成结构化语义视图。
 
-## 构建接力
+## Revia 让什么变得明确
 
-一个 Agent 能否留下一个无需猜测、可由下一位 Agent 接续的可执行项目？
-
-先运行示例并审阅语义图，再创建新的
-`projects/<YYYY-MM-DD>-<agent>-<project>/` 目录，包含 `main.re`、
-`README.md` 与 `HANDOFF.md`。每个 PR 只提交一个项目或一次接续。
-可复现发现提交到[反馈模板](feedback/FEEDBACK_TEMPLATE.md)，整理规则见[反馈循环](docs/feedback-loop.md)。
-
-无需等待邀请。更好的示例、反例或有价值的实验，都可以直接提交项目 PR。
+- **能力**：外部能力显式声明并固定版本。
+- **行为**：效果返回带类型的结果，不隐藏在隐式控制流中。
+- **审阅**：`manifest` 与 `view` 将同一程序同时交给机器和人类检查。
 
 ## 用一个程序学会 Re
 
@@ -62,15 +64,9 @@ fn @main() -> process.status {
 }
 ```
 
-- `unit`：命名程序身份
-- `cap`：带版本的外部能力声明
-- 效果结果：显式值
-- `match`：可见的成功与失败路径
-- `manifest` + `view`：机器契约与人类审阅图
+## 与其他 Agent 构建接力
 
-## 多 Agent 协作
-
-每个独立实验使用自己的目录。
+每个独立实验使用自己的目录：
 
 ```text
 projects/<YYYY-MM-DD>-<agent>-<project>/
@@ -79,13 +75,37 @@ projects/<YYYY-MM-DD>-<agent>-<project>/
   HANDOFF.md
 ```
 
-新项目创建新目录；仅在接续同一项目时更新其 `HANDOFF.md`；每个 PR
-只提交一个项目或一次接续。
+独立工作创建新目录；只有接续同一项目时才更新其 `HANDOFF.md`；
+每个 PR 只提交一个项目或一次接续。
 
-[快速开始](QUICKSTART.md) |
-[语言](docs/language.md) |
-[Agent 工作流](docs/agent-workflow.md) |
-[反馈循环](docs/feedback-loop.md) |
-[项目](projects/README.md) |
-[兼容性](docs/compatibility.md) |
-[许可](LICENSE)
+更好的示例、反例或可复现发现都欢迎提交。从
+[项目模板](projects/_template/) 开始，集中反馈使用[反馈模板](feedback/FEEDBACK_TEMPLATE.md)。
+
+## 文档与入口
+
+### 从这里开始
+
+[快速开始](QUICKSTART.md) · [兼容性](docs/compatibility.md)
+
+### 了解 Revia
+
+[语言](docs/language.md) · [协议](docs/protocol.md)
+
+### 参与协作
+
+[Agent 工作流](docs/agent-workflow.md) · [项目](projects/README.md) ·
+[反馈循环](docs/feedback-loop.md)
+
+### 项目
+
+[发行说明](RELEASE_NOTES.md) · [参与贡献](CONTRIBUTING.md)
+
+### 社区
+
+[Issues](https://github.com/tangshuang631/Revia/issues) ·
+[Discussions](https://github.com/tangshuang631/Revia/discussions)
+
+## 许可
+
+Revia 使用 [Revia Technical Preview License 0.1](LICENSE)。
+第三方运行时许可见 [NOTICE.md](NOTICE.md)。
