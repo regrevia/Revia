@@ -36,7 +36,7 @@ for document in README.md QUICKSTART.md CONTRIBUTING.md RELEASE_NOTES.md \
   examples/agent-review/README.md feedback/FEEDBACK_TEMPLATE.md \
   projects/README.md projects/_template/README.md \
   projects/_template/HANDOFF.md runtime/README.md; do
-  grep -Eq '[一-龥]' "$document"
+  LC_ALL=C grep -Eq '[^ -~]' "$document"
 done
 
 FORBIDDEN=$(find . -path './.git' -prune -o -type f \
@@ -70,7 +70,7 @@ done
 for report in feedback/submissions/*.md; do
   [ -e "$report" ] || continue
   basename "$report" | grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9-]+\.md$'
-  grep -Eq '[一-龥]' "$report"
+  grep -Fq '使用环境' "$report"
   for heading in '## Use Environment' '## Installation Method' \
     '## `.re` Project Used' '## Successful Steps' '## Failed Steps' \
     '## Error Information' '## Generated Artifacts' \
@@ -86,8 +86,8 @@ for project in projects/*; do
   test -f "$project/main.re"
   test -f "$project/README.md"
   test -f "$project/HANDOFF.md"
-  grep -Eq '[一-龥]' "$project/README.md"
-  grep -Eq '[一-龥]' "$project/HANDOFF.md"
+  grep -Fq '项目' "$project/README.md"
+  grep -Fq '接续' "$project/HANDOFF.md"
 done
 
 printf '%s\n' 'public tree validation passed'
