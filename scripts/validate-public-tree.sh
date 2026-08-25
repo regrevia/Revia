@@ -6,8 +6,8 @@ cd "$ROOT"
 
 VERSION=$(sed -n '1p' VERSION)
 test "$VERSION" = "0.1-preview.1"
-grep -Fq 'An Agent-native executable language for the Agent era.' README.md
-grep -Fq '面向 Agent 时代的原生可执行语言。' README.zh-CN.md
+grep -Fq 'Agents build. Humans govern. Revia makes the role reversal executable.' README.md
+grep -Fq 'Agent 构建，人类监管。Revia 让这种角色反转真正可执行。' README.zh-CN.md
 grep -Fq 'Run The Full Loop' README.md
 grep -Fq '运行完整流程' README.zh-CN.md
 grep -Fq 'Quickstart / 快速开始' QUICKSTART.md

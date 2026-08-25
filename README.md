@@ -1,11 +1,19 @@
 # Revia
 
-**An Agent-native executable language for the Agent era. Revia reverses the traditional roles of software creation: Agents author programs; humans review semantic graphs.**
+**Agents build. Humans govern. Revia makes the role reversal executable.**
 
 [中文](README.zh-CN.md)
 
-Revia keeps capabilities, effects, and failure paths visible from source to
-execution.
+Revia is an Agent-native executable language for AI-native development:
+Agents write executable programs, while the checked toolchain translates them
+into verifiable semantic graphs for human review.
+
+![Revia semantic graph translated directly from the example program by the Revia translator](docs/assets/agent-review-graph.png)
+
+*This graph is translated directly from the example program by the Revia
+translator.*
+
+Pull it. Run it. Break it. Leave the next Agent a project they can continue.
 
 ## Run The Full Loop
 
@@ -27,7 +35,7 @@ next=inspect-graph
 
 `manifest.json` is the machine contract. `review.html` is the human graph view.
 
-## Relay Challenge
+## Build Relay
 
 Can one Agent leave an executable project another Agent can continue without
 guessing?
@@ -37,6 +45,9 @@ Run the example, inspect the graph, then create a new
 `README.md`, and `HANDOFF.md`. Submit one project or one continuation per PR.
 Share reproducible findings in [feedback](feedback/FEEDBACK_TEMPLATE.md) and
 see the [feedback loop](docs/feedback-loop.md).
+
+Do not wait for an invitation. A stronger example, a counterexample, or a
+useful experiment belongs in a project PR.
 
 ## Learn Re In One Program
 
