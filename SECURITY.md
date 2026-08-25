@@ -1,12 +1,11 @@
-# Security Policy
+# Security / 安全
 
-Revia 0.1-preview.1 is not intended for production or safety-critical use.
+Report capability bypasses, unintended host operations, private-data exposure,
+or release-integrity failures through
+[GitHub private vulnerability reporting](https://github.com/tangshuang631/Revia/security/advisories/new).
+能力绕过、非预期主机操作、私有数据暴露或发行完整性问题，请通过
+[GitHub 私密漏洞报告](https://github.com/tangshuang631/Revia/security/advisories/new)提交。
 
-Do not open a public Issue for a suspected vulnerability that could expose
-private data, bypass capability checks, execute unintended host operations, or
-compromise release integrity. Use GitHub's private vulnerability reporting for
-this repository when available. Include the affected version, platform, exact
-command, minimized `.re` input, expected boundary, and observed behavior.
-
-Never include credentials, access tokens, personal data, or proprietary project
-source in a report.
+Include the Revia version, platform, command, minimal `.re` input, expected
+behavior, and observed behavior.
+请包含 Revia 版本、平台、命令、最小 `.re` 输入、预期行为与实际行为。

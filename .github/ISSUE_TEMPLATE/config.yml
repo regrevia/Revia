@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Language design discussion
+  - name: Discussions / 讨论
     url: https://github.com/tangshuang631/Revia/discussions
-    about: Discuss language rules, Agent workflows, and longer proposals.
-  - name: Private security report
+    about: Language rules, Agent workflows, project ideas / 语言规则、Agent 工作流、项目想法
+  - name: Private security report / 私密安全报告
     url: https://github.com/tangshuang631/Revia/security/advisories/new
-    about: Report suspected vulnerabilities without publishing sensitive details.
+    about: Security and release integrity / 安全与发行完整性

@@ -1,30 +1,30 @@
-name: Language or workflow proposal
-description: Propose one observable rule with a minimal example.
+name: Proposal / 提案
+description: Propose one executable language or workflow rule / 提议一项可执行的语言或工作流规则
 title: "[Proposal]: "
-labels: [proposal, preview]
+labels: [proposal]
 body:
   - type: textarea
     id: need
     attributes:
-      label: User or Agent need
+      label: Agent or user need / Agent 或用户需求
     validations:
       required: true
   - type: textarea
     id: example
     attributes:
-      label: Minimal `.re` example
+      label: Minimal `.re` example / 最小 `.re` 示例
       render: text
     validations:
       required: true
   - type: textarea
     id: rule
     attributes:
-      label: Proposed observable rule
+      label: Observable rule / 可观察规则
     validations:
       required: true
   - type: textarea
     id: acceptance
     attributes:
-      label: Executable acceptance criteria
+      label: Executable acceptance criteria / 可执行验收条件
     validations:
       required: true

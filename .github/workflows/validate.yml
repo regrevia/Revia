@@ -16,6 +16,15 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Validate repository boundary and feedback schema
         run: ./scripts/validate-public-tree.sh
+      - name: Run Agent review loop
+        run: |
+          ./bin/revia check examples/agent-review/main.re
+          test "$(./bin/revia run examples/agent-review/main.re)" = "agent=ready
+          next=inspect-graph"
+          ./bin/revia manifest examples/agent-review/main.re > manifest.json
+          grep -Fq '"module":"@agent_review"' manifest.json
+          ./bin/revia view --locale en-US --format html examples/agent-review/main.re > review.html
+          grep -Fq 'capability:@stdout' review.html
   windows-launcher:
     runs-on: windows-2025
     steps:
@@ -25,7 +34,15 @@ jobs:
         run: |
           $launcher = Get-Content -LiteralPath bin/revia.ps1 -Raw
           $null = [ScriptBlock]::Create($launcher)
-          Get-ChildItem examples -Filter *.re | ForEach-Object {
+          Get-ChildItem examples -Filter *.re -Recurse | ForEach-Object {
             $bytes = [IO.File]::ReadAllBytes($_.FullName)
             if ($bytes -contains 13) { throw "CR byte found in $($_.Name)" }
           }
+      - name: Run Agent review example
+        shell: pwsh
+        run: |
+          & ./bin/revia.ps1 check examples/agent-review/main.re
+          if ($LASTEXITCODE -ne 0) { throw "check failed: $LASTEXITCODE" }
+          $output = & ./bin/revia.ps1 run examples/agent-review/main.re
+          if ($LASTEXITCODE -ne 0) { throw "run failed: $LASTEXITCODE" }
+          if (($output -join "`n") -ne "agent=ready`nnext=inspect-graph") { throw "unexpected output" }

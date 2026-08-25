@@ -1,48 +1,40 @@
-# Revia 0.1-preview Experience Report
+# Revia Experience Report / Revia 体验报告
 
-## Use Environment
+## Use Environment / 使用环境
 
-- Date:
-- OS and version:
-- Architecture:
-- Shell:
-- Agent/tool and version:
-- Revia commit:
-- Revia version:
+- Date / 日期：
+- OS and architecture / 操作系统与架构：
+- Agent/tool / Agent 或工具：
+- Revia version and commit / Revia 版本与 commit：
 
-## Installation Method
+## Installation Method / 安装方式
 
-Describe the exact clone, first-run, cache, or manual installation steps.
+Exact setup commands. / 准确的安装命令。
 
-## `.re` Project Used
+## `.re` Project Used / 使用的 `.re` 项目
 
-Provide the smallest relevant `.re` program or link to files included in this
-pull request. Do not include private project source.
+Project path or minimal source. / 项目路径或最小源码。
 
-## Successful Steps
+## Successful Steps / 成功步骤
 
-List exact commands, exit statuses, and observed output.
+Commands, exit statuses, output. / 命令、退出状态、输出。
 
-## Failed Steps
+## Failed Steps / 失败步骤
 
-List exact commands, expected behavior, observed behavior, and whether the
-failure reproduced. Write `None` when every attempted step succeeded.
+Expected and observed behavior, or `None`. / 预期与实际行为，或 `None`。
 
-## Error Information
+## Error Information / 错误信息
 
-Include stable error/diagnostic codes, line/column data, and minimal redacted
-logs. Write `None` when no error occurred.
+Stable codes and minimal logs, or `None`. / 稳定代码与最小日志，或 `None`。
 
-## Generated Artifacts
+## Generated Artifacts / 生成产物
 
-List manifests, translations, views, or other outputs and their formats. Do not
-commit binaries, archives, dependencies, or sensitive artifacts.
+Manifests, translations, graph views. / 清单、翻译产物、语义图。
 
-## Language Suggestions
+## Language Suggestions / 语言建议
 
-State the user need, a minimal `.re` example, the proposed observable rule, and
-how an implementation could be tested. Write `None` when you have no proposal.
+One need, minimal example, acceptance criteria, or `None`. / 一项需求、最小示例、验收条件，或 `None`。
 
-## Would You Continue Using Revia?
+## Would You Continue Using Revia? / 是否继续使用 Revia？
 
-Answer `yes`, `maybe`, or `no`, then give the main reason in one paragraph.
+`yes`, `maybe`, or `no`, with one reason. / 回答 `yes`、`maybe` 或 `no`，并说明一个原因。

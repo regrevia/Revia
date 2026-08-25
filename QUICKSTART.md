@@ -1,87 +1,36 @@
-# Revia 0.1-preview.1 Quickstart
+# Quickstart / 快速开始
 
-> Revia is an early technical preview. The project name is provisional and trademark registration is pending.
+Revia runs on macOS, Linux, and Windows across `arm64` and `x86_64`. The first
+command downloads and verifies the matching executable. Node.js is not needed.
+Revia 支持 macOS、Linux、Windows 的 `arm64` 与 `x86_64`。首次运行会下载并校验对应可执行文件，无需 Node.js。
 
-## Requirements
-
-- macOS or Linux on `arm64` or `x86_64`, with `curl`, `tar`, and either
-  `shasum` or `sha256sum`; or
-- Windows on `arm64` or `x86_64` with PowerShell 7
-- Network access for the first launch
-
-No Node.js installation is required.
-
-## 1. Check And Run
-
-From the repository root:
+## Check, Run, Review / 检查、运行、审阅
 
 ```bash
-./bin/revia check examples/hello.re
-./bin/revia run examples/hello.re
+git clone https://github.com/tangshuang631/Revia.git
+cd Revia
+./bin/revia check examples/agent-review/main.re
+./bin/revia run examples/agent-review/main.re
+./bin/revia manifest examples/agent-review/main.re > manifest.json
+./bin/revia view --locale en-US --format html examples/agent-review/main.re > review.html
 ```
 
-On Windows PowerShell, replace `./bin/revia` with `./bin/revia.ps1` in each
-command.
+Windows PowerShell: replace `./bin/revia` with `./bin/revia.ps1`.
+Windows PowerShell：将 `./bin/revia` 替换为 `./bin/revia.ps1`。
 
-Expected output:
+`manifest.json` records the machine contract. `review.html` renders the same
+program for human review.
+`manifest.json` 记录机器契约，`review.html` 将同一程序生成为人类图形审阅视图。
+
+## Start A Project / 创建项目
+
+Copy [`projects/_template`](projects/_template) to:
+复制 [`projects/_template`](projects/_template) 到：
 
 ```text
-OK examples/hello.re
-Hello, World!
+projects/<YYYY-MM-DD>-<agent>-<project>/
 ```
 
-## 2. Inspect The Program Contract
-
-```bash
-./bin/revia manifest examples/hello.re
-```
-
-The JSON response includes the declared capability, effect call, entry point,
-and deterministic graph revision. Treat JSON field names and schema identifiers
-as the machine interface; do not parse prose diagnostics.
-
-## 3. Inspect A Stable Diagnostic
-
-```bash
-./bin/revia check --format json examples/diagnostic-error.re
-```
-
-This command intentionally exits with status `65`. The JSON diagnostic names
-the unexpected argument and provides line and column information.
-
-## 4. Change A Program
-
-Edit the string literal in `examples/agent-business-starter.re`, then run:
-
-```bash
-./bin/revia check examples/agent-business-starter.re
-./bin/revia run examples/agent-business-starter.re
-```
-
-Keep the version header as the first physical line and keep capability use
-explicit. See [docs/language.md](docs/language.md) for the runnable surface.
-
-## 5. Return Evidence
-
-Create a report from [feedback/FEEDBACK_TEMPLATE.md](feedback/FEEDBACK_TEMPLATE.md)
-at:
-
-```text
-feedback/submissions/<YYYY-MM-DD>-<agent-or-project>-<short-name>.md
-```
-
-Include exact commands, exit statuses, error output, generated artifacts, and
-whether you would continue using Revia. Submit the report as a pull request.
-
-## Cache And Offline Use
-
-The launcher caches the verified executable at:
-
-```text
-${XDG_CACHE_HOME:-$HOME/.cache}/revia/0.1-preview.1/<platform>/revia
-```
-
-Windows uses `%LOCALAPPDATA%\Revia\0.1-preview.1\<platform>\revia.exe`.
-
-After the first successful launch, the same version can run offline. Delete
-that version directory to force a fresh verified download.
+Edit `main.re`, run the four commands, record the result in `README.md`, and
+open a pull request.
+编辑 `main.re`，运行以上四条命令，在 `README.md` 记录结果，然后提交 PR。

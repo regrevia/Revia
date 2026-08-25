@@ -1,47 +1,43 @@
-name: Installation or execution problem
-description: Report a reproducible preview failure without sensitive data.
+name: Bug / 问题
+description: Report one reproducible Revia failure / 报告一个可复现的 Revia 问题
 title: "[Bug]: "
-labels: [bug, preview]
+labels: [bug]
 body:
-  - type: markdown
-    attributes:
-      value: Revia is an early technical preview. Remove credentials and private paths from all logs.
   - type: input
     id: version
     attributes:
-      label: Revia version and commit
+      label: Revia version and commit / Revia 版本与 commit
     validations:
       required: true
   - type: input
     id: environment
     attributes:
-      label: OS, version, architecture, and shell
+      label: OS, architecture, shell / 操作系统、架构、Shell
     validations:
       required: true
   - type: textarea
     id: command
     attributes:
-      label: Exact command and exit status
+      label: Command and exit status / 命令与退出状态
       render: shell
     validations:
       required: true
   - type: textarea
     id: input
     attributes:
-      label: Minimal `.re` input
-      description: Include only non-sensitive source required to reproduce the problem.
+      label: Minimal `.re` input / 最小 `.re` 输入
       render: text
     validations:
       required: true
   - type: textarea
     id: observed
     attributes:
-      label: Observed output
+      label: Observed output / 实际输出
     validations:
       required: true
   - type: textarea
     id: expected
     attributes:
-      label: Expected behavior
+      label: Expected behavior / 预期行为
     validations:
       required: true

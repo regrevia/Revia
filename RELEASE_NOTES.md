@@ -1,61 +1,21 @@
-# Release Notes
+# Release Notes / 发行说明
 
-## Revia 0.1-preview.1
+## 0.1-preview.1
 
-Release channel: early technical preview.
+Cross-platform Revia CLI for macOS, Linux, and Windows on `arm64` and
+`x86_64`.
+面向 macOS、Linux、Windows `arm64` 与 `x86_64` 的跨平台 Revia CLI。
 
-> Revia is an early technical preview. The project name is provisional and trademark registration is pending.
+- Native `check`, `run`, `manifest`, and diagnostic verification on six targets / 六目标平台原生验证
+- POSIX and PowerShell launchers / POSIX 与 PowerShell 启动器
+- Archive and executable SHA-256 verification / 归档与可执行文件 SHA-256 校验
+- Deterministic release archives / 确定性发行归档
 
-### Included
+[Build metadata / 构建元数据](runtime/build-metadata.json) ·
+[Checksums / 校验摘要](runtime/checksums.txt)
 
-- Closed-source standalone CLI assets for macOS, Linux, and Windows on
-  `arm64` and `x86_64`.
-- Native runner smoke evidence for `check`, `run`, `manifest`, and the stable
-  diagnostic exit path on all six targets.
-- POSIX and PowerShell launchers with archive and executable SHA-256 checks.
-- Deterministic release archives containing the executable and required
-  license notices only.
-- LF-pinned `.re` examples so Windows checkouts preserve exact source bytes.
+## 0.1-preview
 
-### Boundaries
-
-- No compiler or runtime source code is included.
-- No Stable V1.0 compatibility promise or production support SLA.
-- macOS binaries are ad-hoc signed and not Apple-notarized.
-- Linux and Windows binaries are not code-signed.
-
-### Integrity
-
-Both archive and extracted-executable digests are pinned in
-[runtime/checksums.txt](runtime/checksums.txt). Public build facts and native
-smoke scope are recorded in
-[runtime/build-metadata.json](runtime/build-metadata.json).
-
-## Revia 0.1-preview
-
-Release channel: early technical preview.
-
-> Revia is an early technical preview. The project name is provisional and trademark registration is pending.
-
-### Included
-
-- Closed-source standalone CLI for macOS 13.5+ on Apple silicon.
-- Version-pinned launcher with SHA-256 verification.
-- `check`, `run`, `manifest`, `translate`, and `view` command surfaces.
-- Runnable hello, diagnostic, and Agent editing examples.
-- Concise language, protocol, Agent workflow, and compatibility documents.
-- Structured Issues, Discussions, and feedback-report pull requests.
-
-### Boundaries
-
-- No compiler or runtime source code is included.
-- No Stable V1.0 compatibility promise.
-- No production backend, optimizing native compiler, service SLA, external
-  database, production TLS/authentication, or deployment promise.
-- Linux, Windows, and Intel macOS binaries are not included in this first asset.
-- The macOS binary is ad-hoc signed and is not Apple-notarized.
-
-### Integrity
-
-Release asset digests are pinned in [runtime/checksums.txt](runtime/checksums.txt).
-The launcher rejects missing or mismatched assets before execution.
+Initial macOS Apple silicon distribution with `check`, `run`, `manifest`,
+`translate`, and `view`.
+首个 macOS Apple silicon 发行版，包含 `check`、`run`、`manifest`、`translate` 与 `view`。

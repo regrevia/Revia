@@ -3,3 +3,6 @@
 *.tmp
 *.tar.gz
 diagnostic.json
+/manifest.json
+/graph.svg
+/review.html
