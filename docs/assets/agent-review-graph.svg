@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" width="1200" height="675" viewBox="0 0 1200 675">
+  <title id="title">Revia agent review semantic graph</title>
+  <desc id="desc">The agent review program binds stdout, writes a handoff message, and exposes explicit success and error paths.</desc>
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000000" flood-opacity="0.3"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="675" fill="#0b0d10"/>
+  <rect x="42" y="38" width="1116" height="599" rx="6" fill="#12161b" stroke="#2c333d"/>
+
+  <text x="78" y="92" fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="700">15 lines become reviewable semantics.</text>
+  <text x="80" y="124" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="16">Revia / @agent_review</text>
+
+  <line x1="295" y1="253" x2="430" y2="253" stroke="#64748b" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="705" y1="253" x2="818" y2="204" stroke="#64748b" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="705" y1="253" x2="818" y2="394" stroke="#64748b" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <g filter="url(#shadow)">
+    <rect x="78" y="185" width="217" height="136" rx="6" fill="#17212b" stroke="#38bdf8" stroke-width="2"/>
+    <text x="100" y="219" fill="#38bdf8" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="14" font-weight="700">CAPABILITY</text>
+    <text x="100" y="259" fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-size="25" font-weight="700">@stdout</text>
+    <text x="100" y="290" fill="#cbd5e1" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="14">process.stdout@0.1.0</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="430" y="175" width="275" height="156" rx="6" fill="#202015" stroke="#facc15" stroke-width="2"/>
+    <text x="454" y="210" fill="#facc15" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="14" font-weight="700">EFFECT</text>
+    <text x="454" y="250" fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700">@stdout.write</text>
+    <text x="454" y="283" fill="#cbd5e1" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="14">"agent=ready"</text>
+    <text x="454" y="307" fill="#cbd5e1" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="14">"next=inspect-graph"</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="818" y="143" width="304" height="122" rx="6" fill="#14231c" stroke="#34d399" stroke-width="2"/>
+    <text x="842" y="178" fill="#34d399" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="14" font-weight="700">OK PATH</text>
+    <text x="842" y="218" fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700">ok(unit) -> exit 0</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="818" y="333" width="304" height="122" rx="6" fill="#27181b" stroke="#fb7185" stroke-width="2"/>
+    <text x="842" y="368" fill="#fb7185" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="14" font-weight="700">ERROR PATH</text>
+    <text x="842" y="408" fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700">io.write_error -> exit 1</text>
+  </g>
+
+  <rect x="78" y="507" width="1044" height="82" rx="6" fill="#0d1117" stroke="#2c333d"/>
+  <text x="104" y="541" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="14">SOURCE</text>
+  <text x="104" y="568" fill="#f8fafc" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="18">examples/agent-review/main.re</text>
+  <text x="1088" y="563" text-anchor="end" fill="#94a3b8" font-family="Inter, Arial, sans-serif" font-size="15">Agent writes. Human reviews.</text>
+</svg>
