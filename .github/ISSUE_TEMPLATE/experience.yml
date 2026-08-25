@@ -1,37 +1,36 @@
-name: Preview experience
-description: Share a concise trial result before preparing a full feedback PR.
+name: Experience / 体验
+description: Share a concise result from a Revia project / 分享一个 Revia 项目的简明结果
 title: "[Experience]: "
-labels: [feedback, preview]
+labels: [feedback]
 body:
+  - type: input
+    id: project
+    attributes:
+      label: Project path or link / 项目路径或链接
+    validations:
+      required: true
   - type: input
     id: environment
     attributes:
-      label: Environment and Agent/tool
+      label: Environment and Agent/tool / 环境与 Agent 或工具
     validations:
       required: true
   - type: textarea
     id: worked
     attributes:
-      label: What worked
+      label: What worked / 成功内容
     validations:
       required: true
   - type: textarea
     id: failed
     attributes:
-      label: What failed or caused friction
+      label: Friction or failure / 阻碍或失败
     validations:
       required: true
   - type: dropdown
     id: continue
     attributes:
-      label: Would you continue using Revia?
-      options: [Yes, Maybe, No]
+      label: Continue using Revia? / 是否继续使用 Revia？
+      options: [Yes / 是, Maybe / 可能, No / 否]
     validations:
       required: true
-  - type: checkboxes
-    id: privacy
-    attributes:
-      label: Public data check
-      options:
-        - label: I removed credentials, personal data, private paths, and proprietary project source.
-          required: true

@@ -1,57 +1,42 @@
-# Revia 0.1-preview Language Surface
+# Re Language / Re 语言
 
-This document describes the currently runnable preview slice. It is not a
-Stable V1.0 specification.
+Re is a compact textual form of an executable semantic graph. Agents write the
+text; Revia checks, runs, identifies, and renders the graph.
+Re 是可执行语义图的紧凑文本形式。Agent 编写文本，Revia 检查、运行、标识并生成人类审阅图。
 
-## Program Shape
-
-A `.re` file begins with an exact version header on its first physical line:
+## Program / 程序
 
 ```re
 re 0.1 compact
-```
 
-The current executable examples then declare:
+unit @agent_review
 
-1. a stable `unit` identity;
-2. every external capability before use; and
-3. an `@main` function returning `process.status`.
-
-```re
-unit @hello
 cap @stdout: process.stdout@0.1.0
 
 fn @main() -> process.status {
-  %printed = @stdout.write("Hello, World!\n")
-  return match %printed {
+  %handoff = @stdout.write("agent=ready\n")
+  return match %handoff {
     ok(_) => process.exit(0)
     err(_) => process.exit(1)
   }
 }
 ```
 
-## Core Rules
+## Rules / 规则
 
-- The semantic graph is authoritative; `.re` text is its deterministic carrier.
-- Values have explicit types and no implicit conversions.
-- External authority is named by revision-pinned capability declarations.
-- Effects and their data/order dependencies are explicit graph nodes and edges.
-- Fallible operations return typed `result` values; the preview has no hidden
-  exception propagation.
-- `match` consumption is explicit and exhaustive in the executable slice.
-- Source diagnostics carry stable machine fields; Agents should not infer
-  repairs from human prose alone.
+1. `re 0.1 compact` is the first physical line. / `re 0.1 compact` 位于首个物理行。
+2. `unit` names the program. / `unit` 命名程序。
+3. External capabilities use revision-pinned declarations. / 外部能力使用固定版本声明。
+4. Effects return typed values; success and failure are explicit. / 效果返回类型化值，成功与失败均显式表达。
+5. The semantic graph is authoritative; `.re` is its text form. / 语义图是权威表示，`.re` 是其文本形式。
 
-## Current Capability Slice
+## Capabilities / 能力
 
 - `process.stdout@0.1.0`
 - `process.args@0.1.0`
-- sandboxed source-directory file read/write operations used by the preview
+- sandboxed source-directory file read and write / 源码目录沙箱内的文件读写
 
-Undeclared capabilities and unsupported members fail during checking. The
-preview does not grant ambient network, database, secret, or subprocess access.
-
-## Commands
+## Commands / 命令
 
 ```text
 revia check [--format json | --write] <file.re>
@@ -63,6 +48,6 @@ revia translate --format json <file.re>
 revia view [--locale zh-CN|en-US] [--format html|svg] <file.re>
 ```
 
-Additional project-oriented commands exist in the binary but are not part of
-the first 60-second compatibility promise. Their contracts may change during
-the preview.
+Use schema identifiers, structured fields, and stable codes as the machine
+interface.
+机器接口以 schema 标识、结构化字段和稳定代码为准。

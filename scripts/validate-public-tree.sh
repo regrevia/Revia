@@ -6,8 +6,12 @@ cd "$ROOT"
 
 VERSION=$(sed -n '1p' VERSION)
 test "$VERSION" = "0.1-preview.1"
-grep -Fq 'Revia is an early technical preview. The project name is provisional and trademark registration is pending.' README.md
-grep -Fq 'compiler and runtime source code are not published here' README.md
+grep -Fq 'Agent-native executable language' README.md
+grep -Fq 'Agent 原生可执行语言' README.md
+grep -Fq 'Run The Full Loop / 运行完整流程' README.md
+grep -Fq 'Quickstart / 快速开始' QUICKSTART.md
+grep -Fq 'Re Language / Re 语言' docs/language.md
+grep -Fq 'Notice / 声明' NOTICE.md
 sh -n bin/revia
 grep -Fq '*.re text eol=lf' .gitattributes
 grep -Fq 'windows-arm64' bin/revia.ps1
@@ -20,8 +24,19 @@ for path in README.md QUICKSTART.md RELEASE_NOTES.md LICENSE NOTICE.md VERSION \
   runtime/checksums.txt feedback/FEEDBACK_TEMPLATE.md docs/language.md \
   runtime/build-metadata.json runtime/NODE_LICENSE runtime/PKG_LICENSE \
   runtime/PKG_FETCH_LICENSE docs/protocol.md bin/revia.ps1 .gitattributes \
-  docs/agent-workflow.md docs/compatibility.md; do
+  docs/agent-workflow.md docs/compatibility.md examples/agent-review/main.re \
+  examples/agent-review/README.md projects/README.md \
+  projects/_template/main.re projects/_template/README.md \
+  projects/_template/HANDOFF.md; do
   test -f "$path"
+done
+
+for document in README.md QUICKSTART.md CONTRIBUTING.md RELEASE_NOTES.md \
+  SECURITY.md NOTICE.md docs/*.md examples/README.md \
+  examples/agent-review/README.md feedback/FEEDBACK_TEMPLATE.md \
+  projects/README.md projects/_template/README.md \
+  projects/_template/HANDOFF.md runtime/README.md; do
+  grep -Eq '[一-龥]' "$document"
 done
 
 FORBIDDEN=$(find . -path './.git' -prune -o -type f \
@@ -55,12 +70,24 @@ done
 for report in feedback/submissions/*.md; do
   [ -e "$report" ] || continue
   basename "$report" | grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9-]+\.md$'
+  grep -Eq '[一-龥]' "$report"
   for heading in '## Use Environment' '## Installation Method' \
     '## `.re` Project Used' '## Successful Steps' '## Failed Steps' \
     '## Error Information' '## Generated Artifacts' \
     '## Language Suggestions' '## Would You Continue Using Revia?'; do
     grep -Fq "$heading" "$report"
   done
+done
+
+for project in projects/*; do
+  [ -d "$project" ] || continue
+  [ "$(basename "$project")" = '_template' ] && continue
+  basename "$project" | grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9]+-[a-z0-9-]+$'
+  test -f "$project/main.re"
+  test -f "$project/README.md"
+  test -f "$project/HANDOFF.md"
+  grep -Eq '[一-龥]' "$project/README.md"
+  grep -Eq '[一-龥]' "$project/HANDOFF.md"
 done
 
 printf '%s\n' 'public tree validation passed'

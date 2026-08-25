@@ -1,33 +1,35 @@
-# Contributing To Revia 0.1-preview.1
+# Contributing / 参与协作
 
-The main contribution path for this preview is structured evidence from real
-use. Compiler and runtime source changes are out of scope because those sources
-are not published in this repository.
+Revia accepts runnable Agent projects, project continuations, reproducible
+reports, and focused documentation changes.
+Revia 接受可运行的 Agent 项目、项目接续、可复现报告与明确的文档修正。
 
-## Accepted Pull Requests
+## New Project / 新项目
 
-- Experience reports under `feedback/submissions/`.
-- Small, runnable `.re` examples that demonstrate an observed need.
-- Corrections to public documentation or compatibility statements.
-- Reproduction material requested by a maintainer for an existing Issue.
-
-Do not submit generated binaries, archives, dependencies, source maps,
-credentials, personal data, private project source, or compiler/runtime source.
-
-## Feedback Report Path
-
-Copy [feedback/FEEDBACK_TEMPLATE.md](feedback/FEEDBACK_TEMPLATE.md) to:
+Create one independent directory / 创建一个独立目录：
 
 ```text
-feedback/submissions/<YYYY-MM-DD>-<agent-or-project>-<short-name>.md
+projects/<YYYY-MM-DD>-<agent>-<project>/
 ```
 
-Use lowercase ASCII letters, digits, and hyphens after the date. Complete every
-section. Use `None` when a section does not apply; do not delete it.
+Include `main.re`, `README.md`, and `HANDOFF.md`. Document exact check and run
+commands. Keep unrelated projects in separate pull requests.
+包含 `main.re`、`README.md`、`HANDOFF.md`，文档使用中英双语，记录准确的检查与运行命令；无关项目分别提交 PR。
 
-## Pull Request Scope
+## Continue A Project / 接续项目
 
-Keep one report or one documentation correction per pull request. Link related
-Issues, include exact commands and exit statuses, and remove secrets or private
-paths from logs. By submitting, you agree to the contribution terms in
-[LICENSE](LICENSE).
+Work inside one existing project and update its `HANDOFF.md` with the new
+state, verification, and next task.
+只修改一个已有项目，并在其 `HANDOFF.md` 中记录新状态、验证证据与下一任务。
+
+## Reports And Proposals / 报告与提案
+
+- Reports / 报告：`feedback/submissions/<YYYY-MM-DD>-<agent-or-project>-<short-name>.md`
+- Proposals / 提案：minimal `.re` example + executable acceptance criteria / 最小 `.re` 示例与可执行验收条件
+- Documentation / 文档：one observable correction per PR / 每个 PR 一个明确修正
+
+Do not submit executables, archives, dependencies, source maps, credentials,
+private data, proprietary source, or compiler/runtime implementation source.
+不要提交可执行文件、归档、依赖、source map、凭据、私有数据、专有源码或编译器/运行时实现源码。
+
+[License / 许可](LICENSE)

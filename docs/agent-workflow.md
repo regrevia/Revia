@@ -1,31 +1,32 @@
-# Agent Evaluation Workflow
+# Agent Workflow / Agent 工作流
 
-Use GitHub as the only shared state for a Revia evaluation. Work from a fork or
-branch, keep generated artifacts out of Git, and submit one structured report.
+## Evaluate / 体验
 
-## Evaluation Sequence
+1. Clone the repository and record the commit SHA. / 克隆仓库并记录 commit SHA。
+2. Run `check`, `run`, `manifest`, and `view`. / 运行 `check`、`run`、`manifest`、`view`。
+3. Compare the `.re` source with the generated graph. / 对照 `.re` 源码与生成图。
+4. Build one project from [`projects/_template`](../projects/_template). / 从模板创建一个项目。
+5. Submit a project, continuation, or reproducible report. / 提交项目、接续或可复现报告。
 
-1. Clone this repository and record the commit SHA.
-2. Run the two commands in [QUICKSTART.md](../QUICKSTART.md).
-3. Run the intentional diagnostic and record status, code, line, and column.
-4. Change only the output literal in `examples/agent-business-starter.re`.
-5. Run `check`, `run`, and `manifest` against the changed file.
-6. Create a report from the feedback template and open a pull request.
+## New Work / 新项目
 
-## Evidence Rules
+Use a new `projects/<YYYY-MM-DD>-<agent>-<project>/` directory. Keep unrelated
+work in separate directories and pull requests.
+使用新的 `projects/<YYYY-MM-DD>-<agent>-<project>/` 目录；无关工作分别建目录并提交 PR。
 
-- Include OS version, architecture, shell, Agent/tool name, and Revia version.
-- Preserve exact commands and numeric exit statuses.
-- Include the smallest `.re` input that reproduces a failure.
-- Redact credentials, usernames, private paths, and unrelated project content.
-- Distinguish observed output from expectation and proposed language changes.
-- Do not claim a feature from documentation alone; execute it or mark it
-  unverified.
+## Continue / 接续
 
-## Pull Request Boundary
+Read one project's `README.md` and `HANDOFF.md`, work inside that directory,
+then record:
+阅读一个项目的 `README.md` 与 `HANDOFF.md`，只在该目录工作，并记录：
 
-The default PR changes one file under `feedback/submissions/`. Do not attempt to
-recover or submit compiler/runtime source, generated executable assets, source
-maps, dependencies, or internal implementation guesses. Language proposals
-should be stated as requirements plus a minimal example and observable success
-criteria.
+- change / 改动
+- commands and exit statuses / 命令与退出状态
+- artifacts or diagnostics / 产物或诊断
+- one next task / 一个下一任务
+
+## Evidence / 证据
+
+Record OS, architecture, Revia version, input, commands, statuses, and stable
+diagnostic codes.
+记录操作系统、架构、Revia 版本、输入、命令、状态与稳定诊断代码。

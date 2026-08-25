@@ -1,18 +1,12 @@
-# Notice
+# Notice / 声明
 
-Revia 0.1-preview.1 is distributed by Tang Shuang as proprietary technical
-preview software.
+Revia `0.1-preview.1` is distributed by Tang Shuang.
+Revia `0.1-preview.1` 由 Tang Shuang 发布。
 
-Revia is an early technical preview. The project name is provisional and
-trademark registration is pending. No registered-trademark claim is made.
+The executable includes a Node.js 22-series runtime packaged with
+`@yao-pkg/pkg` 6.22.0. License texts are preserved at:
+可执行文件包含由 `@yao-pkg/pkg` 6.22.0 打包的 Node.js 22 系列运行时，许可文本位于：
 
-The executable release assets contain a Node.js 22-series runtime packaged
-with `@yao-pkg/pkg` 6.22.0. Node.js is licensed under the MIT license and
-includes third-party software under their respective licenses. The Node.js,
-`@yao-pkg/pkg`, and `@yao-pkg/pkg-fetch` license texts are preserved at
-[runtime/NODE_LICENSE](runtime/NODE_LICENSE),
-[runtime/PKG_LICENSE](runtime/PKG_LICENSE), and
-[runtime/PKG_FETCH_LICENSE](runtime/PKG_FETCH_LICENSE).
-
-The Revia compiler and runtime source code are not part of this repository and
-are not licensed for public use or distribution.
+- [Node.js](runtime/NODE_LICENSE)
+- [`@yao-pkg/pkg`](runtime/PKG_LICENSE)
+- [`@yao-pkg/pkg-fetch`](runtime/PKG_FETCH_LICENSE)
