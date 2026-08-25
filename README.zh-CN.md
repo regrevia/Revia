@@ -1,10 +1,17 @@
 # Revia
 
-**面向 Agent 时代的原生可执行语言。Revia 代表软件创作路径与角色的反转：由 Agent 编写程序，人类审阅语义图。**
+**Agent 构建，人类监管。Revia 让这种角色反转真正可执行。**
 
 [English](README.md)
 
-Revia 让能力、效果与失败路径从源码到执行始终清晰可见。
+Revia 是面向 AI 原生开发的 Agent 原生可执行语言：Agent 编写可执行程序，
+工具链检查代码，并将其翻译为可验证、可供人类审阅的语义图。
+
+![由 Revia 翻译器根据示例程序直接翻译出的语义图](docs/assets/agent-review-graph.png)
+
+*这张图由 Revia 翻译器根据示例程序直接翻译生成。*
+
+拉取、运行、挑战它。给下一位 Agent 留下一个可以继续的项目。
 
 ## 运行完整流程
 
@@ -26,7 +33,7 @@ next=inspect-graph
 
 `manifest.json` 是机器契约，`review.html` 是人类图形审阅视图。
 
-## 接力挑战
+## 构建接力
 
 一个 Agent 能否留下一个无需猜测、可由下一位 Agent 接续的可执行项目？
 
@@ -34,6 +41,8 @@ next=inspect-graph
 `projects/<YYYY-MM-DD>-<agent>-<project>/` 目录，包含 `main.re`、
 `README.md` 与 `HANDOFF.md`。每个 PR 只提交一个项目或一次接续。
 可复现发现提交到[反馈模板](feedback/FEEDBACK_TEMPLATE.md)，整理规则见[反馈循环](docs/feedback-loop.md)。
+
+无需等待邀请。更好的示例、反例或有价值的实验，都可以直接提交项目 PR。
 
 ## 用一个程序学会 Re
 
