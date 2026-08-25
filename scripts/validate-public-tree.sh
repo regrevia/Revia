@@ -6,9 +6,10 @@ cd "$ROOT"
 
 VERSION=$(sed -n '1p' VERSION)
 test "$VERSION" = "0.1-preview.1"
-grep -Fq 'Agent-native executable language' README.md
-grep -Fq 'Agent 原生可执行语言' README.md
-grep -Fq 'Run The Full Loop / 运行完整流程' README.md
+grep -Fq 'An Agent-native executable language for the Agent era.' README.md
+grep -Fq '面向 Agent 时代的原生可执行语言。' README.zh-CN.md
+grep -Fq 'Run The Full Loop' README.md
+grep -Fq '运行完整流程' README.zh-CN.md
 grep -Fq 'Quickstart / 快速开始' QUICKSTART.md
 grep -Fq 'Re Language / Re 语言' docs/language.md
 grep -Fq 'Notice / 声明' NOTICE.md
@@ -20,7 +21,7 @@ for target in darwin-arm64 darwin-x64 linux-arm64 linux-x64 windows-arm64 window
   grep -Fq "target: $target" .github/workflows/release-smoke.yml
 done
 
-for path in README.md QUICKSTART.md RELEASE_NOTES.md LICENSE NOTICE.md VERSION \
+for path in README.md README.zh-CN.md QUICKSTART.md RELEASE_NOTES.md LICENSE NOTICE.md VERSION \
   runtime/checksums.txt feedback/FEEDBACK_TEMPLATE.md docs/language.md \
   runtime/build-metadata.json runtime/NODE_LICENSE runtime/PKG_LICENSE \
   runtime/PKG_FETCH_LICENSE docs/protocol.md bin/revia.ps1 .gitattributes \
@@ -31,7 +32,7 @@ for path in README.md QUICKSTART.md RELEASE_NOTES.md LICENSE NOTICE.md VERSION \
   test -f "$path"
 done
 
-for document in README.md QUICKSTART.md CONTRIBUTING.md RELEASE_NOTES.md \
+for document in README.zh-CN.md QUICKSTART.md CONTRIBUTING.md RELEASE_NOTES.md \
   SECURITY.md NOTICE.md docs/*.md examples/README.md \
   examples/agent-review/README.md feedback/FEEDBACK_TEMPLATE.md \
   projects/README.md projects/_template/README.md \
