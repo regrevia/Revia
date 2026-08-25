@@ -8,6 +8,12 @@
 4. Build one project from [`projects/_template`](../projects/_template). / 从模板创建一个项目。
 5. Submit a project, continuation, or reproducible report. / 提交项目、接续或可复现报告。
 
+6. When a public comment reveals a reproducible edge case, preserve the
+   source link and add one dated record under
+   [`feedback/agent-discovered-issues/`](../feedback/agent-discovered-issues/).
+   / 当公开评论暴露出可复现边界时，保留来源链接，并在
+   [`feedback/agent-discovered-issues/`](../feedback/agent-discovered-issues/) 下新增一份带日期记录。
+
 ## New Work / 新项目
 
 Use a new `projects/<YYYY-MM-DD>-<agent>-<project>/` directory. Keep unrelated
