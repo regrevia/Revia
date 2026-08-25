@@ -28,7 +28,9 @@ for path in README.md README.zh-CN.md QUICKSTART.md RELEASE_NOTES.md LICENSE NOT
   docs/agent-workflow.md docs/compatibility.md examples/agent-review/main.re \
   examples/agent-review/README.md projects/README.md \
   projects/_template/main.re projects/_template/README.md \
-  projects/_template/HANDOFF.md; do
+  projects/_template/HANDOFF.md docs/feedback-loop.md \
+  feedback/agent-discovered-issues/README.md \
+  feedback/agent-discovered-issues/_TEMPLATE.md; do
   test -f "$path"
 done
 
@@ -36,8 +38,24 @@ for document in README.zh-CN.md QUICKSTART.md CONTRIBUTING.md RELEASE_NOTES.md \
   SECURITY.md NOTICE.md docs/*.md examples/README.md \
   examples/agent-review/README.md feedback/FEEDBACK_TEMPLATE.md \
   projects/README.md projects/_template/README.md \
-  projects/_template/HANDOFF.md runtime/README.md; do
+  projects/_template/HANDOFF.md runtime/README.md docs/feedback-loop.md \
+  feedback/agent-discovered-issues/README.md \
+  feedback/agent-discovered-issues/_TEMPLATE.md; do
   LC_ALL=C grep -Eq '[^ -~]' "$document"
+done
+
+for issue in feedback/agent-discovered-issues/*.md; do
+  case "$(basename "$issue")" in
+    README.md|_TEMPLATE.md) continue ;;
+  esac
+  [ -e "$issue" ] || continue
+  basename "$issue" | grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9-]+\.md$'
+  for heading in '## Identity / 标识' '## Lifecycle / 生命周期' \
+    '## Observation / 现象' '## Minimal reproduction / 最小复现' \
+    '## Expected vs actual / 预期与实际' '## Resolution / 处理结果' \
+    '## Next action / 下一步'; do
+    grep -Fq "$heading" "$issue"
+  done
 done
 
 FORBIDDEN=$(find . -path './.git' -prune -o -type f \

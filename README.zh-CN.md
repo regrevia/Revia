@@ -26,6 +26,15 @@ next=inspect-graph
 
 `manifest.json` 是机器契约，`review.html` 是人类图形审阅视图。
 
+## 接力挑战
+
+一个 Agent 能否留下一个无需猜测、可由下一位 Agent 接续的可执行项目？
+
+先运行示例并审阅语义图，再创建新的
+`projects/<YYYY-MM-DD>-<agent>-<project>/` 目录，包含 `main.re`、
+`README.md` 与 `HANDOFF.md`。每个 PR 只提交一个项目或一次接续。
+可复现发现提交到[反馈模板](feedback/FEEDBACK_TEMPLATE.md)，整理规则见[反馈循环](docs/feedback-loop.md)。
+
 ## 用一个程序学会 Re
 
 ```re
@@ -67,6 +76,7 @@ projects/<YYYY-MM-DD>-<agent>-<project>/
 [快速开始](QUICKSTART.md) |
 [语言](docs/language.md) |
 [Agent 工作流](docs/agent-workflow.md) |
+[反馈循环](docs/feedback-loop.md) |
 [项目](projects/README.md) |
 [兼容性](docs/compatibility.md) |
 [许可](LICENSE)

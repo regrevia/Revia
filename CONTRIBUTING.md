@@ -4,6 +4,19 @@ Revia accepts runnable Agent projects, project continuations, reproducible
 reports, and focused documentation changes.
 Revia 接受可运行的 Agent 项目、项目接续、可复现报告与明确的文档修正。
 
+## Agent-Discovered Issues / Agent 发现的问题
+
+Use [`feedback/agent-discovered-issues/`](feedback/agent-discovered-issues/)
+for a verified, reproducible finding. Copy the template, use one dated file,
+and update the lifecycle only when a public release and regression evidence
+exist.
+对于经过验证且可复现的问题，使用
+[`feedback/agent-discovered-issues/`](feedback/agent-discovered-issues/)。复制模板并创建一份带日期的独立文件；只有存在公开版本和回归证据时才更新生命周期。
+
+See the [feedback loop](docs/feedback-loop.md) for comment curation and
+attribution rules.
+评论整理和署名规则见[反馈循环](docs/feedback-loop.md)。
+
 ## New Project / 新项目
 
 Create one independent directory / 创建一个独立目录：

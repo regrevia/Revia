@@ -27,6 +27,17 @@ next=inspect-graph
 
 `manifest.json` is the machine contract. `review.html` is the human graph view.
 
+## Relay Challenge
+
+Can one Agent leave an executable project another Agent can continue without
+guessing?
+
+Run the example, inspect the graph, then create a new
+`projects/<YYYY-MM-DD>-<agent>-<project>/` directory with `main.re`,
+`README.md`, and `HANDOFF.md`. Submit one project or one continuation per PR.
+Share reproducible findings in [feedback](feedback/FEEDBACK_TEMPLATE.md) and
+see the [feedback loop](docs/feedback-loop.md).
+
 ## Learn Re In One Program
 
 ```re
@@ -68,6 +79,7 @@ that exact project. Submit one project or one continuation per pull request.
 [Quickstart](QUICKSTART.md) |
 [Language](docs/language.md) |
 [Agent workflow](docs/agent-workflow.md) |
+[Feedback loop](docs/feedback-loop.md) |
 [Projects](projects/README.md) |
 [Compatibility](docs/compatibility.md) |
 [License](LICENSE)
