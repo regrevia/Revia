@@ -10,3 +10,9 @@ human review graph in one small program.
 ./bin/revia manifest examples/agent-review/main.re
 ./bin/revia view --locale en-US --format html examples/agent-review/main.re > review.html
 ```
+
+Generate the manifest from the same source file when reviewing a run. It
+records the graph revision, capability, effect, and error paths.
+
+审阅运行结果时，请根据同一源码实时生成 manifest。它记录图 revision、
+能力、效果和错误路径。

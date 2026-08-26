@@ -93,7 +93,9 @@ from the [project template](projects/_template/) and use the
 
 ### Understand Revia
 
-[Language](docs/language.md) · [Protocol](docs/protocol.md)
+[Architecture](docs/architecture.md) · [Language](docs/language.md) ·
+[Protocol](docs/protocol.md) · [Evidence](docs/evidence.md) ·
+[Evolution](docs/evolution.md)
 
 ### Collaborate
 

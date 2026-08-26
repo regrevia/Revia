@@ -89,7 +89,9 @@ projects/<YYYY-MM-DD>-<agent>-<project>/
 
 ### 了解 Revia
 
-[语言](docs/language.md) · [协议](docs/protocol.md)
+[架构](docs/architecture.zh-CN.md) · [语言](docs/language.md) ·
+[协议](docs/protocol.md) · [验证证据](docs/evidence.md) ·
+[演进记录](docs/evolution.md)
 
 ### 参与协作
 

@@ -34,7 +34,9 @@ for path in README.md README.zh-CN.md QUICKSTART.md RELEASE_NOTES.md LICENSE NOT
   projects/_template/main.re projects/_template/README.md \
   projects/_template/HANDOFF.md docs/feedback-loop.md \
   feedback/agent-discovered-issues/README.md \
-  feedback/agent-discovered-issues/_TEMPLATE.md; do
+  feedback/agent-discovered-issues/_TEMPLATE.md \
+  docs/architecture.md docs/architecture.zh-CN.md docs/evidence.md \
+  docs/evolution.md; do
   test -f "$path"
 done
 
