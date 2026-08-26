@@ -40,6 +40,13 @@ next=inspect-graph
 `manifest.json` 是机器契约，`review.html` 是人类审阅视图，
 `view --format svg` 可生成结构化语义视图。
 
+## 当前开发进展
+
+公开发行版已经可以直接运行。已审阅的开发线也完成了语义图、字节码、VM
+以及有界 Task 运行时层，为下一执行候选建立基础。详见
+[开发进展](docs/development-status.md)，其中区分了已验证边界与尚未进入
+`0.1-preview.1` 的内容。
+
 ## Revia 让什么变得明确
 
 - **能力**：外部能力显式声明并固定版本。
@@ -91,7 +98,7 @@ projects/<YYYY-MM-DD>-<agent>-<project>/
 
 [架构](docs/architecture.zh-CN.md) · [语言](docs/language.md) ·
 [协议](docs/protocol.md) · [验证证据](docs/evidence.md) ·
-[演进记录](docs/evolution.md)
+[演进记录](docs/evolution.md) · [开发进展](docs/development-status.md)
 
 ### 参与协作
 
