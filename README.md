@@ -41,6 +41,13 @@ next=inspect-graph
 `manifest.json` is the machine contract. `review.html` is the human review
 view. `view --format svg` produces a structured semantic view.
 
+## Current Development
+
+The public release is runnable today. The reviewed development line has also
+closed the graph, bytecode, VM, and bounded task-runtime layers that shape the
+next execution candidate. See the [development status](docs/development-status.md)
+for the verified boundary and what is not yet in `0.1-preview.1`.
+
 ## What Revia Makes Explicit
 
 - **Authority** — capabilities are declared and revision-pinned.
@@ -95,7 +102,7 @@ from the [project template](projects/_template/) and use the
 
 [Architecture](docs/architecture.md) · [Language](docs/language.md) ·
 [Protocol](docs/protocol.md) · [Evidence](docs/evidence.md) ·
-[Evolution](docs/evolution.md)
+[Evolution](docs/evolution.md) · [Development status](docs/development-status.md)
 
 ### Collaborate
 
