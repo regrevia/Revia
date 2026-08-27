@@ -19,6 +19,12 @@ Revia 将 Agent 编写的程序转换为可执行契约，让人类能够直接�
 上图是 Revia 翻译器根据
 [`examples/agent-review/main.re`](examples/agent-review/main.re) 输出的语义事实整理出的简洁审阅图。
 
+## 查看执行契约
+
+[执行契约](docs/execution-contract.zh-CN.md)展示一份 `.re` 源码如何生成已检查语义图、
+机器 manifest、人类语义视图并完成有界运行。需要体验显式风险状态和 Agent 接续时，
+从[Agent 接续审阅示例](examples/agent-handoff-review/)开始。
+
 ## 运行完整流程
 
 ```bash
@@ -92,7 +98,8 @@ projects/<YYYY-MM-DD>-<agent>-<project>/
 
 ### 从这里开始
 
-[快速开始](QUICKSTART.md) · [兼容性](docs/compatibility.md)
+[快速开始](QUICKSTART.md) · [兼容性](docs/compatibility.md) ·
+[执行契约](docs/execution-contract.zh-CN.md)
 
 ### 了解 Revia
 
