@@ -20,6 +20,13 @@ and failure paths.
 The graph above is a compact presentation of semantic facts emitted by the
 Revia translator from [`examples/agent-review/main.re`](examples/agent-review/main.re).
 
+## See The Contract
+
+The [execution contract](docs/execution-contract.md) shows how one `.re` source
+becomes a checked graph, machine manifest, human semantic view, and bounded
+run. Start with the [Agent handoff review](examples/agent-handoff-review/) when
+you want a workload with an explicit risk state and a next-agent handoff.
+
 ## Run The Full Loop
 
 ```bash
@@ -96,7 +103,8 @@ from the [project template](projects/_template/) and use the
 
 ### Start Here
 
-[Quickstart](QUICKSTART.md) · [Compatibility](docs/compatibility.md)
+[Quickstart](QUICKSTART.md) · [Compatibility](docs/compatibility.md) ·
+[Execution contract](docs/execution-contract.md)
 
 ### Understand Revia
 
