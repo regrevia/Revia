@@ -93,3 +93,4 @@ jobs:
           & ./package/revia.exe check --format json examples/diagnostic-error.re *> diagnostic.json
           if ($LASTEXITCODE -ne 65) { throw "expected diagnostic exit 65, got $LASTEXITCODE" }
           if ((Get-Content -Raw diagnostic.json) -notmatch 'unexpected-argument') { throw 'diagnostic smoke failed' }
+          exit 0
