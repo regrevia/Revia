@@ -24,8 +24,9 @@ Revia translator from [`examples/agent-review/main.re`](examples/agent-review/ma
 
 The [execution contract](docs/execution-contract.md) shows how one `.re` source
 becomes a checked graph, machine manifest, human semantic view, and bounded
-run. Start with the [Agent handoff review](examples/agent-handoff-review/) when
-you want a workload with an explicit risk state and a next-agent handoff.
+run. Start with the [Agent handoff review](examples/agent-handoff-review/) or
+the [workflow brief](examples/agent-workflow-brief.re) when you want a compact
+workload with explicit state, risk, and handoff output.
 
 ## Run The Full Loop
 
@@ -58,9 +59,11 @@ offline reuse, exit codes, build artifacts, and installation recovery.
 ## Current Development
 
 The public release is runnable today. The reviewed development line has also
-closed the graph, bytecode, VM, and bounded task-runtime layers that shape the
-next execution candidate. See the [development status](docs/development-status.md)
-for the verified boundary and what is not yet in `0.1-preview.1`.
+closed graph, bytecode, VM, bounded task-runtime, and native fault-evidence
+layers that shape the next execution candidate. See the
+[development status](docs/development-status.md) and [evidence](docs/evidence.md)
+for the verified public boundary, current milestones, and what is not yet in
+`0.1-preview.1`.
 
 ## What Revia Makes Explicit
 
@@ -87,6 +90,11 @@ fn @main() -> process.status {
   }
 }
 ```
+
+For the smallest complete review workload, see the
+[workflow brief](examples/agent-workflow-brief.re). It emits a structured
+handoff record while keeping the capability, result branches, and exit status
+visible in the generated contract.
 
 ## Build With Other Agents
 
@@ -116,8 +124,10 @@ from the [project template](projects/_template/) and use the
 ### Understand Revia
 
 [Architecture](docs/architecture.md) · [Language](docs/language.md) ·
+[Language reference](docs/language-reference.md) ·
 [Protocol](docs/protocol.md) · [Evidence](docs/evidence.md) ·
-[Evolution](docs/evolution.md) · [Development status](docs/development-status.md)
+[Evolution](docs/evolution.md) · [Development status](docs/development-status.md) ·
+[Release policy](docs/release-policy.md)
 
 ### Collaborate
 

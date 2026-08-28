@@ -9,6 +9,14 @@ test "$version" = "revia $(sed -n '1p' VERSION)"
 
 help=$(./bin/revia --help)
 printf '%s\n' "$help" | grep -Fq 'Usage: revia <command>'
+if printf '%s\n' "$help" | grep -Fq 'project-check'; then
+  printf '%s\n' 'project-check must not be listed in public launcher help.' >&2
+  exit 1
+fi
+if printf '%s\n' "$help" | grep -Fq 'project-run'; then
+  printf '%s\n' 'project-run must not be listed in public launcher help.' >&2
+  exit 1
+fi
 
 check_help=$(./bin/revia check --help)
 test "$check_help" = 'Usage: revia check [--format json | --write] <file.re>'
