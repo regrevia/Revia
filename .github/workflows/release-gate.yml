@@ -1,0 +1,95 @@
+name: Gate release candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Draft release tag to verify before publication
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Gate ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            target: darwin-arm64
+          - runner: macos-15-intel
+            target: darwin-x64
+          - runner: ubuntu-24.04-arm
+            target: linux-arm64
+          - runner: ubuntu-24.04
+            target: linux-x64
+          - runner: windows-11-arm
+            target: windows-arm64
+          - runner: windows-2025
+            target: windows-x64
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.tag }}
+      - name: Download and smoke POSIX draft asset
+        if: runner.os != 'Windows'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          TARGET: ${{ matrix.target }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(sed -n '1p' VERSION)
+          asset="revia-${version}-${TARGET}.tar.gz"
+          expected_archive=$(awk -v asset="$asset" '$2 == asset { print $1 }' runtime/checksums.txt)
+          expected_binary=$(awk -v asset="${asset%.tar.gz}" '$2 == asset { print $1 }' runtime/checksums.txt)
+          test -n "$expected_archive"
+          test -n "$expected_binary"
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "$asset" --dir assets
+          test "$(shasum -a 256 "assets/$asset" | awk '{ print $1 }')" = "$expected_archive"
+          mkdir package
+          tar -xzf "assets/$asset" -C package
+          test "$(shasum -a 256 package/revia | awk '{ print $1 }')" = "$expected_binary"
+          chmod 755 package/revia
+          ./package/revia check examples/hello.re
+          test "$(./package/revia run examples/hello.re)" = 'Hello, World!'
+          ./package/revia manifest examples/hello.re | grep -Fq 'graph_revision'
+          set +e
+          ./package/revia check --format json examples/diagnostic-error.re > diagnostic.json
+          status=$?
+          set -e
+          test "$status" -eq 65
+          grep -Fq 'unexpected-argument' diagnostic.json
+      - name: Download and smoke Windows draft asset
+        if: runner.os == 'Windows'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          TARGET: ${{ matrix.target }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = (Get-Content -LiteralPath VERSION -TotalCount 1).Trim()
+          $asset = "revia-$version-$env:TARGET.zip"
+          $expectedArchive = ((Get-Content runtime/checksums.txt) | Where-Object { $_ -match "  $([Regex]::Escape($asset))$" }).Split(' ')[0]
+          $binaryName = $asset.Substring(0, $asset.Length - 4)
+          $expectedBinary = ((Get-Content runtime/checksums.txt) | Where-Object { $_ -match "  $([Regex]::Escape($binaryName))$" }).Split(' ')[0]
+          if (-not $expectedArchive -or -not $expectedBinary) { throw 'missing checksum' }
+          gh release download $env:TAG --repo $env:GITHUB_REPOSITORY --pattern $asset --dir assets
+          if ((Get-FileHash "assets/$asset" -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expectedArchive) { throw 'archive checksum mismatch' }
+          Expand-Archive -LiteralPath "assets/$asset" -DestinationPath package
+          if ((Get-FileHash package/revia.exe -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expectedBinary) { throw 'executable checksum mismatch' }
+          & ./package/revia.exe check examples/hello.re
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $hello = (& ./package/revia.exe run examples/hello.re | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0 -or $hello -ne 'Hello, World!') { throw 'hello smoke failed' }
+          $manifest = (& ./package/revia.exe manifest examples/hello.re | Out-String)
+          if ($LASTEXITCODE -ne 0 -or $manifest -notmatch 'graph_revision') { throw 'manifest smoke failed' }
+          & ./package/revia.exe check --format json examples/diagnostic-error.re *> diagnostic.json
+          if ($LASTEXITCODE -ne 65) { throw "expected diagnostic exit 65, got $LASTEXITCODE" }
+          if ((Get-Content -Raw diagnostic.json) -notmatch 'unexpected-argument') { throw 'diagnostic smoke failed' }

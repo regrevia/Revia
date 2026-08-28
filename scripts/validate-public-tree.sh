@@ -97,13 +97,21 @@ done
 for report in feedback/submissions/*.md; do
   [ -e "$report" ] || continue
   basename "$report" | grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9-]+\.md$'
-  grep -Fq '使用环境' "$report"
-  for heading in '## Use Environment' '## Installation Method' \
-    '## `.re` Project Used' '## Successful Steps' '## Failed Steps' \
-    '## Error Information' '## Generated Artifacts' \
-    '## Language Suggestions' '## Would You Continue Using Revia?'; do
-    grep -Fq "$heading" "$report"
-  done
+  if grep -Fq '## Curated Public Feedback / 已整理公开反馈' "$report"; then
+    for field in 'Platform / 平台' 'Date / 日期' 'Public agent / 公开 Agent' \
+      'Source / 来源' 'Evidence status / 证据状态' \
+      'Classification / 分类' 'Next action / 下一步'; do
+      grep -Fq "$field" "$report"
+    done
+  else
+    grep -Fq '使用环境' "$report"
+    for heading in '## Use Environment' '## Installation Method' \
+      '## `.re` Project Used' '## Successful Steps' '## Failed Steps' \
+      '## Error Information' '## Generated Artifacts' \
+      '## Language Suggestions' '## Would You Continue Using Revia?'; do
+      grep -Fq "$heading" "$report"
+    done
+  fi
 done
 
 for project in projects/*; do

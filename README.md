@@ -48,6 +48,13 @@ next=inspect-graph
 `manifest.json` is the machine contract. `review.html` is the human review
 view. `view --format svg` produces a structured semantic view.
 
+## Release Runtime
+
+`0.1-preview.1` is a version-pinned closed binary runtime for the documented
+single-file command surface. The first launch downloads, verifies, and caches
+the matching executable. See [Quickstart](QUICKSTART.md) for requirements,
+offline reuse, exit codes, build artifacts, and installation recovery.
+
 ## Current Development
 
 The public release is runnable today. The reviewed development line has also

@@ -1,11 +1,119 @@
 #!/bin/sh
 set -eu
 
-ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+SOURCE=$0
+case "$SOURCE" in
+  */*) ;;
+  *)
+    SOURCE=$(command -v "$SOURCE" 2>/dev/null || true)
+    ;;
+esac
+
+if [ -z "$SOURCE" ]; then
+  printf '%s\n' 'Revia launcher path is unavailable.' >&2
+  exit 70
+fi
+
+while [ -h "$SOURCE" ]; do
+  SOURCE_DIR=$(CDPATH= cd -P -- "$(dirname -- "$SOURCE")" && pwd)
+  LINK=$(readlink "$SOURCE") || {
+    printf '%s\n' 'Revia launcher symlink cannot be resolved.' >&2
+    exit 70
+  }
+  case "$LINK" in
+    /*) SOURCE=$LINK ;;
+    *) SOURCE=$SOURCE_DIR/$LINK ;;
+  esac
+done
+
+ROOT=$(CDPATH= cd -P -- "$(dirname -- "$SOURCE")/.." && pwd)
 VERSION=$(sed -n '1p' "$ROOT/VERSION")
 REPOSITORY=${REVIA_REPOSITORY:-tangshuang631/Revia}
 CACHE_ROOT=${XDG_CACHE_HOME:-"$HOME/.cache"}/revia
 RELEASE_BASE_URL=${REVIA_RELEASE_BASE_URL:-"https://github.com/$REPOSITORY/releases/download/v$VERSION"}
+
+usage() {
+  cat <<'EOF'
+Usage: revia <command> [options] <file.re>
+
+Commands:
+  check       Validate a Re program.
+  run         Execute a checked Re program.
+  manifest    Print the machine contract.
+  view        Render a semantic review view.
+  translate   Print the checked translation.
+  build       Emit a self-contained Node demo artifact.
+  audit       Print structured audit facts.
+  profile     Print the runtime profile.
+  patch       Apply a checked patch.
+  review-index Query semantic review facts.
+  project-check Validate a package project manifest.
+  project-run Run a package project fixture.
+
+Run "revia help <command>" or "revia <command> --help" for command usage.
+EOF
+}
+
+command_usage() {
+  case "$1" in
+    check) printf '%s\n' 'Usage: revia check [--format json | --write] <file.re>' ;;
+    run) printf '%s\n' 'Usage: revia run [--format json] <file.re> [-- <args>...]' ;;
+    manifest) printf '%s\n' 'Usage: revia manifest <file.re>' ;;
+    view) printf '%s\n' 'Usage: revia view [--locale zh-CN|en-US] [--format html|svg] <file.re>' ;;
+    translate) printf '%s\n' 'Usage: revia translate --format json <file.re>' ;;
+    build) printf '%s\n' 'Usage: revia build --out <dir> <file.re>' ;;
+    audit) printf '%s\n' 'Usage: revia audit --format json <file.re>' ;;
+    profile) printf '%s\n' 'Usage: revia profile <file.re>' ;;
+    patch) printf '%s\n' 'Usage: revia patch --patch <patch.json> <file.re>' ;;
+    review-index) printf '%s\n' 'Usage: revia review-index [--changed-since <revision>] [--cursor <cursor>] [--limit <n>] [--fact-id <id> --index-revision <revision>] <file.re>' ;;
+    project-check) printf '%s\n' 'Usage: revia project-check --format json <project-dir>' ;;
+    project-run) printf '%s\n' 'Usage: revia project-run --fixture <fixture.json> <project-dir>' ;;
+    *)
+      printf '%s\n' "Unknown Revia command: $1" >&2
+      exit 64
+      ;;
+  esac
+}
+
+case "${1:-}" in
+  --version|version)
+    if [ "$#" -eq 1 ]; then
+      printf 'revia %s\n' "$VERSION"
+      exit 0
+    fi
+    ;;
+  --help)
+    if [ "$#" -eq 1 ]; then
+      usage
+      exit 0
+    fi
+    ;;
+  help)
+    if [ "$#" -eq 1 ]; then
+      usage
+    elif [ "$#" -eq 2 ]; then
+      command_usage "$2"
+    else
+      usage >&2
+      exit 64
+    fi
+    exit 0
+    ;;
+esac
+
+case "${1:-}" in
+  check|run|manifest|view|translate|build|audit|profile|patch|review-index|project-check|project-run)
+    if [ "$#" -eq 2 ] && [ "${2:-}" = "--help" ]; then
+      command_usage "$1"
+      exit 0
+    fi
+    ;;
+esac
+
+runtime_error() {
+  printf 'Revia runtime error: %s\n' "$1" >&2
+  exit 70
+}
 
 case "$(uname -s):$(uname -m)" in
   Darwin:arm64)
@@ -31,8 +139,7 @@ ASSET="revia-${VERSION}-${PLATFORM}.tar.gz"
 EXPECTED=$(awk -v asset="$ASSET" '$2 == asset { print $1 }' "$ROOT/runtime/checksums.txt")
 EXPECTED_BINARY=$(awk -v asset="${ASSET%.tar.gz}" '$2 == asset { print $1 }' "$ROOT/runtime/checksums.txt")
 if [ -z "$EXPECTED" ] || [ -z "$EXPECTED_BINARY" ]; then
-  printf '%s\n' "Missing checksum for $ASSET." >&2
-  exit 70
+  runtime_error "Missing checksum for $ASSET."
 fi
 
 sha256_file() {
@@ -41,41 +148,51 @@ sha256_file() {
   elif command -v sha256sum >/dev/null 2>&1; then
     sha256sum "$1" | awk '{ print $1 }'
   else
-    printf '%s\n' 'Revia requires shasum or sha256sum to verify release files.' >&2
-    exit 70
+    runtime_error 'Revia requires shasum or sha256sum to verify release files.'
   fi
 }
 
 INSTALL_DIR="$CACHE_ROOT/$VERSION/$PLATFORM"
 EXECUTABLE="$INSTALL_DIR/revia"
 if [ ! -x "$EXECUTABLE" ]; then
-  TEMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/revia.XXXXXX")
+  command -v curl >/dev/null 2>&1 || runtime_error 'Revia requires curl to download a release asset.'
+  command -v tar >/dev/null 2>&1 || runtime_error 'Revia requires tar to unpack a release asset.'
+  if ! TEMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/revia.XXXXXX"); then
+    runtime_error 'Revia could not create a temporary download directory.'
+  fi
   trap 'rm -rf "$TEMP_DIR"' EXIT HUP INT TERM
   URL="$RELEASE_BASE_URL/$ASSET"
   printf '%s\n' "Downloading Revia $VERSION for $PLATFORM..." >&2
-  curl --fail --location --silent --show-error "$URL" --output "$TEMP_DIR/$ASSET"
+  if ! curl --fail --location --silent --show-error "$URL" --output "$TEMP_DIR/$ASSET"; then
+    runtime_error 'Release download failed.'
+  fi
 
   ACTUAL=$(sha256_file "$TEMP_DIR/$ASSET")
   if [ "$ACTUAL" != "$EXPECTED" ]; then
-    printf '%s\n' "Checksum mismatch for $ASSET." >&2
-    exit 70
+    runtime_error "Checksum mismatch for $ASSET."
   fi
 
-  mkdir -p "$INSTALL_DIR"
-  tar -xzf "$TEMP_DIR/$ASSET" -C "$TEMP_DIR"
-  chmod 755 "$TEMP_DIR/revia"
-  if [ "$(sha256_file "$TEMP_DIR/revia")" != "$EXPECTED_BINARY" ]; then
-    printf '%s\n' "Executable checksum mismatch for ${ASSET%.tar.gz}." >&2
-    exit 70
+  if ! mkdir -p "$INSTALL_DIR"; then
+    runtime_error 'Revia could not create its cache directory.'
   fi
-  mv "$TEMP_DIR/revia" "$EXECUTABLE"
+  if ! tar -xzf "$TEMP_DIR/$ASSET" -C "$TEMP_DIR"; then
+    runtime_error "Release archive could not be unpacked: $ASSET."
+  fi
+  if [ ! -f "$TEMP_DIR/revia" ] || ! chmod 755 "$TEMP_DIR/revia"; then
+    runtime_error 'Release archive did not contain an executable Revia binary.'
+  fi
+  if [ "$(sha256_file "$TEMP_DIR/revia")" != "$EXPECTED_BINARY" ]; then
+    runtime_error "Executable checksum mismatch for ${ASSET%.tar.gz}."
+  fi
+  if ! mv "$TEMP_DIR/revia" "$EXECUTABLE"; then
+    runtime_error 'Verified Revia executable could not be installed.'
+  fi
   trap - EXIT HUP INT TERM
   rm -rf "$TEMP_DIR"
 fi
 
 if [ "$(sha256_file "$EXECUTABLE")" != "$EXPECTED_BINARY" ]; then
-  printf '%s\n' "Cached executable checksum mismatch for ${ASSET%.tar.gz}." >&2
-  exit 70
+  runtime_error "Cached executable checksum mismatch for ${ASSET%.tar.gz}."
 fi
 
 exec "$EXECUTABLE" "$@"
