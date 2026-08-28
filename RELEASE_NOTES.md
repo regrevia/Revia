@@ -14,6 +14,14 @@ Cross-platform Revia CLI for macOS, Linux, and Windows on `arm64` and
 [Build metadata / 构建元数据](runtime/build-metadata.json) ·
 [Checksums / 校验摘要](runtime/checksums.txt)
 
+## Candidate Gate / 候选门禁
+
+Future assets are uploaded to a draft release and verified on every declared
+target before publication: archive SHA-256, executable SHA-256, `check`,
+`run`, `manifest`, and diagnostic exit status.
+后续资产先上传到草稿发行版，并在每个声明目标上完成发布前验证：归档 SHA-256、
+可执行文件 SHA-256、`check`、`run`、`manifest` 与诊断退出状态。
+
 ## 0.1-preview
 
 Initial macOS Apple silicon distribution with `check`, `run`, `manifest`,

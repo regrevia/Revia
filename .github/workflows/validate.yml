@@ -16,6 +16,8 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Validate repository boundary and feedback schema
         run: ./scripts/validate-public-tree.sh
+      - name: Check POSIX launcher contract
+        run: sh ./scripts/test-launchers.sh
       - name: Run Agent review loop
         run: |
           ./bin/revia check examples/agent-review/main.re
@@ -38,6 +40,14 @@ jobs:
             $bytes = [IO.File]::ReadAllBytes($_.FullName)
             if ($bytes -contains 13) { throw "CR byte found in $($_.Name)" }
           }
+      - name: Check launcher help with Windows PowerShell
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = & ./bin/revia.ps1 --version
+          if ($LASTEXITCODE -ne 0 -or $version -ne 'revia 0.1-preview.1') { throw 'version command failed' }
+          $help = & ./bin/revia.ps1 check --help
+          if ($LASTEXITCODE -ne 0 -or $help -ne 'Usage: revia check [--format json | --write] <file.re>') { throw 'help command failed' }
       - name: Run Agent review example
         shell: pwsh
         run: |

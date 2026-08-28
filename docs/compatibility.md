@@ -16,6 +16,12 @@ tests on all six targets.
 - Bundled runtime; no Node.js installation / 内置运行时，无需安装 Node.js
 - Independent archive and executable SHA-256 verification / 归档与可执行文件独立 SHA-256 校验
 - Per-user verified executable cache / 用户级已校验可执行文件缓存
+- macOS: ad-hoc signed / macOS：临时签名
+- Linux and Windows: unsigned / Linux 与 Windows：未签名
+
+The release archive digest verifies downloaded bytes against this repository's
+published checksums. Signature and notarization status are recorded above.
+发行归档摘要用于核对下载字节与本仓库发布的校验摘要；签名与公证状态如上。
 
 [Checksums / 校验摘要](../runtime/checksums.txt) ·
 [Build metadata / 构建元数据](../runtime/build-metadata.json)

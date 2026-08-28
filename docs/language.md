@@ -48,6 +48,12 @@ revia translate --format json <file.re>
 revia view [--locale zh-CN|en-US] [--format html|svg] <file.re>
 ```
 
+`revia --help`, `revia help <command>`, and `revia <command> --help` describe
+the launcher command surface. `check --write` rewrites the source into
+canonical text.
+`revia --help`、`revia help <command>` 与 `revia <command> --help` 展示启动器命令面；
+`check --write` 会将源码重写为规范化文本。
+
 Use schema identifiers, structured fields, and stable codes as the machine
 interface.
 机器接口以 schema 标识、结构化字段和稳定代码为准。
