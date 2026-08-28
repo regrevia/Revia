@@ -29,6 +29,8 @@ for path in README.md README.zh-CN.md QUICKSTART.md RELEASE_NOTES.md LICENSE NOT
   runtime/checksums.txt feedback/FEEDBACK_TEMPLATE.md docs/language.md \
   runtime/build-metadata.json runtime/NODE_LICENSE runtime/PKG_LICENSE \
   runtime/PKG_FETCH_LICENSE docs/protocol.md bin/revia.ps1 .gitattributes \
+  scripts/test-compact-determinism.sh scripts/test-compact-determinism.ps1 \
+  scripts/test-compact-determinism-contract.sh \
   docs/agent-workflow.md docs/compatibility.md examples/agent-review/main.re \
   examples/agent-review/README.md projects/README.md \
   projects/_template/main.re projects/_template/README.md \

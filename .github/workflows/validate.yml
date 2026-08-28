@@ -18,6 +18,10 @@ jobs:
         run: ./scripts/validate-public-tree.sh
       - name: Check POSIX launcher contract
         run: sh ./scripts/test-launchers.sh
+      - name: Check compact determinism probe contract
+        run: sh ./scripts/test-compact-determinism-contract.sh
+      - name: Record compact determinism evidence
+        run: sh ./scripts/test-compact-determinism.sh --report
       - name: Run Agent review loop
         run: |
           ./bin/revia check examples/agent-review/main.re
@@ -36,6 +40,8 @@ jobs:
         run: |
           $launcher = Get-Content -LiteralPath bin/revia.ps1 -Raw
           $null = [ScriptBlock]::Create($launcher)
+          $probe = Get-Content -LiteralPath scripts/test-compact-determinism.ps1 -Raw
+          $null = [ScriptBlock]::Create($probe)
           Get-ChildItem examples -Filter *.re -Recurse | ForEach-Object {
             $bytes = [IO.File]::ReadAllBytes($_.FullName)
             if ($bytes -contains 13) { throw "CR byte found in $($_.Name)" }
@@ -50,6 +56,9 @@ jobs:
           if ($LASTEXITCODE -ne 0 -or $usage -match 'project-check|project-run') { throw 'public usage exposed package commands' }
           $help = & ./bin/revia.ps1 check --help
           if ($LASTEXITCODE -ne 0 -or $help -ne 'Usage: revia check [--format json | --write] <file.re>') { throw 'help command failed' }
+      - name: Record compact determinism evidence
+        shell: powershell
+        run: ./scripts/test-compact-determinism.ps1 -Mode Report
       - name: Run Agent review example
         shell: pwsh
         run: |

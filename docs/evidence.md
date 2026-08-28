@@ -72,6 +72,19 @@ item.
 当前 compact 示例是可复现的执行入口。`0.1-preview.1` 不宣称全新进程之间生成的
 manifest 或 view 字节完全一致；这仍是发行候选的正确性事项。
 
+`scripts/test-compact-determinism.sh --report` and
+`scripts/test-compact-determinism.ps1 -Mode Report` reproduce this status in
+two fresh working directories. Current `0.1-preview.1` reports `PENDING`:
+`check` is stable, while compact `check --write`, `manifest`, `view`, and
+`build` receive newly allocated UIDs. Release candidates run the same probes
+in `Require` mode and cannot publish until every compared checksum is identical.
+
+`scripts/test-compact-determinism.sh --report` 与
+`scripts/test-compact-determinism.ps1 -Mode Report` 会在两个全新工作目录复现该状态。
+当前 `0.1-preview.1` 报告 `PENDING`：`check` 稳定，而 compact `check --write`、
+`manifest`、`view` 与 `build` 会获得新分配的 UID。发行候选以 `Require` 模式运行同一
+探针，只有所有校验摘要完全一致才可发布。
+
 The public tree contains runnable artifacts, examples, documentation, and
 licenses. The implementation remains behind the executable distribution
 boundary.

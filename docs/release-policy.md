@@ -16,10 +16,22 @@ create a new runtime release.
 
 New assets are uploaded to a draft release. The six-target candidate gate
 verifies the tag/version binding, archive SHA-256, executable SHA-256, `check`,
-`run`, `manifest`, and a structured diagnostic before publication.
+`run`, `manifest`, compact-source determinism, and a structured diagnostic
+before publication.
 
 新资产先上传到草稿发行。六目标候选门禁在发布前验证 tag/版本绑定、归档 SHA-256、
-可执行文件 SHA-256、`check`、`run`、`manifest` 与结构化诊断。
+可执行文件 SHA-256、`check`、`run`、`manifest`、compact 源确定性与结构化诊断。
+
+The gate passes each downloaded draft executable to
+`scripts/test-compact-determinism.sh --require` on POSIX and
+`scripts/test-compact-determinism.ps1 -Mode Require` on Windows. It does not
+fall back to a previously published runtime. A candidate whose compact source
+produces different checked artifacts across fresh processes cannot pass.
+
+门禁在 POSIX 将下载的草稿可执行文件传给
+`scripts/test-compact-determinism.sh --require`，在 Windows 传给
+`scripts/test-compact-determinism.ps1 -Mode Require`；不会回退到已发布运行时。
+同一 compact 源码在全新进程生成不同已检查产物的候选不能通过该门禁。
 
 The published-release smoke workflow is a separate availability check; it does
 not replace the candidate gate.

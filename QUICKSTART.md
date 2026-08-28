@@ -6,10 +6,12 @@
 - Windows `arm64`/`x86_64`: Windows PowerShell 5.1 or PowerShell 7.
 - Network access is required for the first launch. The CLI runtime itself does
   not require a Node.js installation.
+- Use follows the [Revia Technical Preview License](LICENSE).
 
 - macOS 或 Linux `arm64`/`x86_64`：`curl`、`tar`，以及 `shasum` 或 `sha256sum`。
 - Windows `arm64`/`x86_64`：Windows PowerShell 5.1 或 PowerShell 7。
 - 首次运行需要网络；CLI 运行时本身不需要安装 Node.js。
+- 使用受 [Revia Technical Preview License](LICENSE) 约束。
 
 ## Check, Run, Review / 检查、运行、审阅
 
@@ -75,6 +77,29 @@ compatible Node.js runtime; the release build records Node 22 metadata.
 `check --write` rewrites the `.re` file into canonical text. Commit or copy the
 source before using it.
 `check --write` 会将 `.re` 文件重写为规范化文本；执行前请提交或备份源码。
+
+## Verify A Download / 手工校验下载
+
+The launcher performs both checks automatically. To inspect an archive yourself,
+download the matching release asset and compare it with
+[`runtime/checksums.txt`](runtime/checksums.txt):
+启动器会自动完成两层校验。需要手工检查时，下载对应发行资产并与
+[`runtime/checksums.txt`](runtime/checksums.txt) 比对：
+
+```bash
+shasum -a 256 revia-0.1-preview.1-darwin-arm64.tar.gz
+tar -xzf revia-0.1-preview.1-darwin-arm64.tar.gz
+shasum -a 256 revia
+```
+
+Use `sha256sum` where `shasum` is unavailable. Windows PowerShell:
+在没有 `shasum` 的系统使用 `sha256sum`。Windows PowerShell：
+
+```powershell
+Get-FileHash .\revia-0.1-preview.1-windows-x64.zip -Algorithm SHA256
+Expand-Archive .\revia-0.1-preview.1-windows-x64.zip -DestinationPath .\revia
+Get-FileHash .\revia\revia.exe -Algorithm SHA256
+```
 
 ## Start A Project / 创建项目
 
