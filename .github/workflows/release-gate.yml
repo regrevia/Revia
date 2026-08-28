@@ -41,6 +41,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
           TARGET: ${{ matrix.target }}
+          REVIA_EXECUTABLE: ${{ github.workspace }}/package/revia
         shell: bash
         run: |
           set -euo pipefail
@@ -60,6 +61,7 @@ jobs:
           ./package/revia check examples/hello.re
           test "$(./package/revia run examples/hello.re)" = 'Hello, World!'
           ./package/revia manifest examples/hello.re | grep -Fq 'graph_revision'
+          sh scripts/test-compact-determinism.sh --require
           set +e
           ./package/revia check --format json examples/diagnostic-error.re > diagnostic.json
           status=$?
@@ -72,6 +74,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
           TARGET: ${{ matrix.target }}
+          REVIA_EXECUTABLE: ${{ github.workspace }}\package\revia.exe
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -92,6 +95,8 @@ jobs:
           if ($LASTEXITCODE -ne 0 -or $hello -ne 'Hello, World!') { throw 'hello smoke failed' }
           $manifest = (& ./package/revia.exe manifest examples/hello.re | Out-String)
           if ($LASTEXITCODE -ne 0 -or $manifest -notmatch 'graph_revision') { throw 'manifest smoke failed' }
+          ./scripts/test-compact-determinism.ps1 -Mode Require
+          if ($LASTEXITCODE -ne 0) { throw "compact determinism gate failed: $LASTEXITCODE" }
           & ./package/revia.exe check --format json examples/diagnostic-error.re *> diagnostic.json
           if ($LASTEXITCODE -ne 65) { throw "expected diagnostic exit 65, got $LASTEXITCODE" }
           if ((Get-Content -Raw diagnostic.json) -notmatch 'unexpected-argument') { throw 'diagnostic smoke failed' }
