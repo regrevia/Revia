@@ -57,3 +57,7 @@ canonical text.
 Use schema identifiers, structured fields, and stable codes as the machine
 interface.
 机器接口以 schema 标识、结构化字段和稳定代码为准。
+
+For the compact syntax and public result shapes, see the
+[language reference](language-reference.md).
+compact 语法和公开结果结构见[语言参考](language-reference.md)。

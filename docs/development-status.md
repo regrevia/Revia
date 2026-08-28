@@ -1,7 +1,7 @@
 # Development Status / 开发进展
 
-Updated 2026-08-26.
-更新日期：2026-08-26。
+Updated 2026-08-28.
+更新日期：2026-08-28。
 
 Revia has a runnable public release and an active implementation line. The
 public release is the executable starting point; the development line records
@@ -34,6 +34,8 @@ Revia 已有可运行的公开发行版，同时持续推进实现线。公开�
 | `WP-254` | Bytecode artifact boundary / 字节码产物边界 | Reviewed | Graph-bound translation, canonical artifact loading, and pre-effect verification |
 | `WP-255` | VM execution foundation / VM 执行基础 | Reviewed | Bounded four-instruction execution, explicit capability bridge, deterministic trace and receipt |
 | `WP-256` | Task runtime core / Task 运行时核心 | Reviewed | Request-bound task identity, retry/replay, first-reason cancellation, cleanup, and effect admission |
+| `WP-257–WP-276` | Native execution and release foundations / Native 执行与发行基础 | Reviewed | Project authority, cache and direct-runner boundaries, server/task execution, native fault handling, and release evidence |
+| `WP-277` | Native fault corpus release evidence / Native fault corpus 发行证据 | Reviewed | Five bounded fault cases, authority-bound evidence, and a release gate that verifies the evidence without changing fault semantics |
 
 上述开发沉淀均已完成对应的 focused verification 和审阅闭环。它们属于当前发行
 线之后的开发进展，不等同于 `0.1-preview.1` 下载包已经包含全部能力。
@@ -47,12 +49,21 @@ the release gates for their declared platforms.
 当前公开二进制仍为 `0.1-preview.1`。后续候选版本只有在已审阅开发层完成集成、
 重新构建，并通过声明平台的发行门禁后才会创建。
 
-Latest reviewed work package: `WP-256 native task runtime core`. It is ready
-for the next implementation handoff; no later work package is represented here
-until it has an auditable result.
+Latest reviewed work package: `WP-277 native fault corpus release evidence`.
+These entries are reviewed development evidence, not capabilities in the current
+public binary.
 
-最新已审阅工作包为 `WP-256 native task runtime core`，目前已交回下一实现接力。
-后续工作包只有形成可审计结果后才会写入此页。
+最新已审阅工作包为 `WP-277 native fault corpus release evidence`。
+这些内容是已审阅的开发证据，不表示当前公开二进制已经包含这些能力。
+
+## Candidate In Review / 候选审阅中
+
+`WP-278 native host-backed executor` is awaiting independent review. It is not
+represented as a public capability until its review, platform evidence, and
+release gates are complete.
+
+`WP-278 native host-backed executor` 正在等待独立审阅。在完成审阅、平台证据和发行门禁
+之前，不将其写入公开能力。
 
 ## Follow The Work / 跟进进展
 

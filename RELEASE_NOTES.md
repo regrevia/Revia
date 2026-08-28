@@ -22,6 +22,12 @@ target before publication: archive SHA-256, executable SHA-256, `check`,
 后续资产先上传到草稿发行版，并在每个声明目标上完成发布前验证：归档 SHA-256、
 可执行文件 SHA-256、`check`、`run`、`manifest` 与诊断退出状态。
 
+The release tag must equal `v` plus `VERSION`. Documentation and launcher
+changes on `main` do not create a new runtime release. See the
+[release policy](docs/release-policy.md).
+发行 tag 必须等于 `v` 加 `VERSION`。`main` 上的文档和启动器变更不会自动形成新的
+运行时发行。详见[发行政策](docs/release-policy.md)。
+
 ## 0.1-preview
 
 Initial macOS Apple silicon distribution with `check`, `run`, `manifest`,

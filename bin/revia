@@ -47,8 +47,6 @@ Commands:
   profile     Print the runtime profile.
   patch       Apply a checked patch.
   review-index Query semantic review facts.
-  project-check Validate a package project manifest.
-  project-run Run a package project fixture.
 
 Run "revia help <command>" or "revia <command> --help" for command usage.
 EOF

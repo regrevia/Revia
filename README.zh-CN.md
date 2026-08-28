@@ -22,8 +22,9 @@ Revia 将 Agent 编写的程序转换为可执行契约，让人类能够直接�
 ## 查看执行契约
 
 [执行契约](docs/execution-contract.zh-CN.md)展示一份 `.re` 源码如何生成已检查语义图、
-机器 manifest、人类语义视图并完成有界运行。需要体验显式风险状态和 Agent 接续时，
-从[Agent 接续审阅示例](examples/agent-handoff-review/)开始。
+机器 manifest、人类语义视图并完成有界运行。需要体验显式状态、风险与接续输出时，
+从[Agent 接续审阅示例](examples/agent-handoff-review/)或
+[工作流简报](examples/agent-workflow-brief.re)开始。
 
 ## 运行完整流程
 
@@ -54,10 +55,10 @@ next=inspect-graph
 
 ## 当前开发进展
 
-公开发行版已经可以直接运行。已审阅的开发线也完成了语义图、字节码、VM
-以及有界 Task 运行时层，为下一执行候选建立基础。详见
-[开发进展](docs/development-status.md)，其中区分了已验证边界与尚未进入
-`0.1-preview.1` 的内容。
+公开发行版已经可以直接运行。已审阅的开发线也完成了语义图、字节码、VM、
+有界 Task 运行时和 native fault evidence 层，为下一执行候选建立基础。详见
+[开发进展](docs/development-status.md)和[验证证据](docs/evidence.md)，
+其中区分了当前公开边界、开发沉淀与尚未进入 `0.1-preview.1` 的内容。
 
 ## Revia 让什么变得明确
 
@@ -82,6 +83,9 @@ fn @main() -> process.status {
   }
 }
 ```
+
+最小完整审阅工作负载见[工作流简报](examples/agent-workflow-brief.re)。
+它输出结构化接续记录，同时让能力声明、结果分支和退出状态在生成契约中保持可见。
 
 ## 与其他 Agent 构建接力
 
@@ -110,8 +114,10 @@ projects/<YYYY-MM-DD>-<agent>-<project>/
 ### 了解 Revia
 
 [架构](docs/architecture.zh-CN.md) · [语言](docs/language.md) ·
+[语言参考](docs/language-reference.md) ·
 [协议](docs/protocol.md) · [验证证据](docs/evidence.md) ·
-[演进记录](docs/evolution.md) · [开发进展](docs/development-status.md)
+[演进记录](docs/evolution.md) · [开发进展](docs/development-status.md) ·
+[发行政策](docs/release-policy.md)
 
 ### 参与协作
 

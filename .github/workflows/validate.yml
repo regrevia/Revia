@@ -46,6 +46,8 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $version = & ./bin/revia.ps1 --version
           if ($LASTEXITCODE -ne 0 -or $version -ne 'revia 0.1-preview.1') { throw 'version command failed' }
+          $usage = (& ./bin/revia.ps1 --help | Out-String)
+          if ($LASTEXITCODE -ne 0 -or $usage -match 'project-check|project-run') { throw 'public usage exposed package commands' }
           $help = & ./bin/revia.ps1 check --help
           if ($LASTEXITCODE -ne 0 -or $help -ne 'Usage: revia check [--format json | --write] <file.re>') { throw 'help command failed' }
       - name: Run Agent review example

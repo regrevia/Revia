@@ -86,12 +86,10 @@ projects/<YYYY-MM-DD>-<agent>-<project>/
 ```
 
 The public template is a single-file contribution project. It supports the
-documented `check -> run -> manifest -> view` loop. `project-check` is a
-separate package-manifest command and requires a valid `project.json`; do not
-assume a single-file contribution directory is a package project.
+documented `check -> run -> manifest -> view` loop. The package commands are
+not part of the documented public surface.
 公开模板是单文件贡献项目，支持已文档化的 `check -> run -> manifest -> view` 闭环。
-`project-check` 是独立的包 manifest 命令，需要有效的 `project.json`；单文件贡献目录
-并不等同于包项目。
+包项目命令不属于当前已文档化的公开命令面。
 
 Edit `main.re`, run the full loop, record results in `README.md`, and open one
 focused pull request. Update `HANDOFF.md` only when continuing that same
