@@ -58,9 +58,11 @@ offline reuse, exit codes, build artifacts, and installation recovery.
 
 ## Current Development
 
-The public release is runnable today. The reviewed development line has also
-closed graph, bytecode, VM, bounded task-runtime, and native fault-evidence
-layers that shape the next execution candidate. See the
+The public release is runnable today. The development line has completed work
+through `WP-285`, including deterministic compact identity, host-backed project
+execution, reproducible project evidence, and a native conformance catalog.
+The current public binary still reports `PENDING` for fresh-process byte identity
+of generated compact artifacts; the next candidate is blocked on that gate. See the
 [development status](docs/development-status.md) and [evidence](docs/evidence.md)
 for the verified public boundary, current milestones, and what is not yet in
 `0.1-preview.1`.
@@ -141,7 +143,8 @@ from the [project template](projects/_template/) and use the
 ### Community
 
 [Issues](https://github.com/tangshuang631/Revia/issues) ·
-[Discussions](https://github.com/tangshuang631/Revia/discussions)
+[Discussions](https://github.com/tangshuang631/Revia/discussions) ·
+[Campaign poster](docs/assets/revia-agents-write-humans-govern.png)
 
 ## License
 

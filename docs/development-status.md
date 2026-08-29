@@ -18,6 +18,9 @@ Revia 已有可运行的公开发行版，同时持续推进实现线。公开�
 - macOS, Linux, and Windows targets on `arm64` and `x86_64`.
 - A complete `check -> run -> manifest -> view` workflow.
 - Published archive and executable SHA-256 verification.
+- A reproducible determinism probe. The current release reports `PENDING` for
+  generated compact artifacts; the next candidate must pass the probe before
+  publication.
 
 `0.1-preview.1` 当前提供：
 
@@ -25,8 +28,10 @@ Revia 已有可运行的公开发行版，同时持续推进实现线。公开�
 - 支持 macOS、Linux、Windows 的 `arm64` 与 `x86_64` 目标。
 - 完整的 `check -> run -> manifest -> view` 流程。
 - 已发布归档与可执行文件 SHA-256 校验。
+- 可复跑的确定性探针。当前发行版的 compact 派生产物报告为 `PENDING`；下一候选
+  必须通过该探针才可发布。
 
-## Reviewed Development Milestones / 已审阅开发沉淀
+## Development Milestones / 开发沉淀
 
 | Work package | Layer / 层 | Status / 状态 | What it establishes / 形成的能力 |
 |---|---|---|---|
@@ -36,9 +41,19 @@ Revia 已有可运行的公开发行版，同时持续推进实现线。公开�
 | `WP-256` | Task runtime core / Task 运行时核心 | Reviewed | Request-bound task identity, retry/replay, first-reason cancellation, cleanup, and effect admission |
 | `WP-257–WP-276` | Native execution and release foundations / Native 执行与发行基础 | Reviewed | Project authority, cache and direct-runner boundaries, server/task execution, native fault handling, and release evidence |
 | `WP-277` | Native fault corpus release evidence / Native fault corpus 发行证据 | Reviewed | Five bounded fault cases, authority-bound evidence, and a release gate that verifies the evidence without changing fault semantics |
+| `WP-278–WP-280` | Host-backed execution / Host 支撑执行 | Completed | Real stdout and sandboxed file effects, project entry integration, path-free observations, closed host faults, and atomic file publication |
+| `WP-281` | Deterministic identity / 确定性身份 | Reviewed | Versioned compact identity allocation and fresh-process, two-directory byte comparison for canonical, manifest, views, and build trees |
+| `WP-282–WP-283` | External project workflow and release evidence / 外部项目工作流与发行证据 | Completed | Canonical project initialization and testing plus fresh, empty-`PATH` release evidence over project, fault, and reproducibility workloads |
+| `WP-284–WP-285` | Conformance catalog and CLI contract / 一致性目录与 CLI 契约 | Completed | Canonical four-domain comparison workloads and deterministic, path-free help/version discovery for the native command surface |
 
-上述开发沉淀均已完成对应的 focused verification 和审阅闭环。它们属于当前发行
-线之后的开发进展，不等同于 `0.1-preview.1` 下载包已经包含全部能力。
+`WP-281` and earlier reviewed entries have independent review evidence. Later
+completed entries have passed their internal focused and workspace gates and
+remain development-line evidence. None of these milestones imply that the
+`0.1-preview.1` download already contains the capability.
+
+`WP-281` 及更早的 reviewed 条目具有独立审阅证据；后续 completed 条目已通过各自的
+focused 与 workspace 内部门禁，仍属于开发线证据。任何条目都不表示
+`0.1-preview.1` 下载包已经包含对应能力。
 
 ## Current Boundary / 当前边界
 
@@ -49,21 +64,25 @@ the release gates for their declared platforms.
 当前公开二进制仍为 `0.1-preview.1`。后续候选版本只有在已审阅开发层完成集成、
 重新构建，并通过声明平台的发行门禁后才会创建。
 
-Latest reviewed work package: `WP-277 native fault corpus release evidence`.
-These entries are reviewed development evidence, not capabilities in the current
-public binary.
+Latest completed work package: `WP-285 native CLI usability and help/version
+contract`. `WP-281` has a dedicated independent review; later packages have
+completed their internal focused and workspace gates and remain development-line
+evidence. None of these entries are capabilities in the current public binary.
 
-最新已审阅工作包为 `WP-277 native fault corpus release evidence`。
-这些内容是已审阅的开发证据，不表示当前公开二进制已经包含这些能力。
+最新完成工作包为 `WP-285 native CLI usability and help/version contract`。
+`WP-281` 已完成专项独立审阅；后续工作包已通过各自的 focused 与 workspace 内部门禁，
+仍属于开发线证据。这些内容不表示当前公开二进制已经包含对应能力。
 
-## Candidate In Review / 候选审阅中
+## Active Work Package / 当前工作包
 
-`WP-278 native host-backed executor` is awaiting independent review. It is not
-represented as a public capability until its review, platform evidence, and
-release gates are complete.
+`WP-286 native developer gate` is active. It is intended to compose project
+authority, two independent cold builds, exact build-tree comparison, and a
+path-free conformance report behind one native command. It is not represented
+as complete or public capability.
 
-`WP-278 native host-backed executor` 正在等待独立审阅。在完成审阅、平台证据和发行门禁
-之前，不将其写入公开能力。
+`WP-286 native developer gate` 正在实现。其目标是在一个 native 命令后编排项目
+authority、两次独立 cold build、完整 build tree 精确比较和无路径一致性报告；当前不将
+它写成已完成工作或公开能力。
 
 ## Follow The Work / 跟进进展
 
