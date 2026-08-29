@@ -55,8 +55,9 @@ next=inspect-graph
 
 ## 当前开发进展
 
-公开发行版已经可以直接运行。已审阅的开发线也完成了语义图、字节码、VM、
-有界 Task 运行时和 native fault evidence 层，为下一执行候选建立基础。详见
+公开发行版已经可以直接运行。开发线已完成至 `WP-285`，包括确定性 compact identity、
+Host 支撑的项目执行、可复现项目证据和 native 一致性目录。当前公开二进制的 compact
+派生产物在全新进程间仍报告 `PENDING`；下一候选必须通过该门禁才可发布。详见
 [开发进展](docs/development-status.md)和[验证证据](docs/evidence.md)，
 其中区分了当前公开边界、开发沉淀与尚未进入 `0.1-preview.1` 的内容。
 
@@ -131,7 +132,8 @@ projects/<YYYY-MM-DD>-<agent>-<project>/
 ### 社区
 
 [Issues](https://github.com/tangshuang631/Revia/issues) ·
-[Discussions](https://github.com/tangshuang631/Revia/discussions)
+[Discussions](https://github.com/tangshuang631/Revia/discussions) ·
+[宣传海报](docs/assets/revia-agents-write-humans-govern.png)
 
 ## 许可
 
