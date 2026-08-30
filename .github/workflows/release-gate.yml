@@ -62,6 +62,10 @@ jobs:
           test "$(./package/revia run examples/hello.re)" = 'Hello, World!'
           ./package/revia manifest examples/hello.re | grep -Fq 'graph_revision'
           sh scripts/test-compact-determinism.sh --require
+          test -f projects/_template/project.json
+          test -f projects/_template/fixture.json
+          ./package/revia project-check --format json projects/_template
+          ./package/revia project-run --fixture projects/_template/fixture.json projects/_template
           set +e
           ./package/revia check --format json examples/diagnostic-error.re > diagnostic.json
           status=$?
@@ -97,6 +101,12 @@ jobs:
           if ($LASTEXITCODE -ne 0 -or $manifest -notmatch 'graph_revision') { throw 'manifest smoke failed' }
           ./scripts/test-compact-determinism.ps1 -Mode Require
           if ($LASTEXITCODE -ne 0) { throw "compact determinism gate failed: $LASTEXITCODE" }
+          if (-not (Test-Path -LiteralPath projects/_template/project.json)) { throw 'project template manifest missing' }
+          if (-not (Test-Path -LiteralPath projects/_template/fixture.json)) { throw 'project template fixture missing' }
+          & ./package/revia.exe project-check --format json projects/_template
+          if ($LASTEXITCODE -ne 0) { throw "project-check failed: $LASTEXITCODE" }
+          & ./package/revia.exe project-run --fixture projects/_template/fixture.json projects/_template
+          if ($LASTEXITCODE -ne 0) { throw "project-run failed: $LASTEXITCODE" }
           & ./package/revia.exe check --format json examples/diagnostic-error.re *> diagnostic.json
           if ($LASTEXITCODE -ne 65) { throw "expected diagnostic exit 65, got $LASTEXITCODE" }
           if ((Get-Content -Raw diagnostic.json) -notmatch 'unexpected-argument') { throw 'diagnostic smoke failed' }

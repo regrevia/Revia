@@ -9,3 +9,9 @@ or release-integrity failures through
 Include the Revia version, platform, command, minimal `.re` input, expected
 behavior, and observed behavior.
 请包含 Revia 版本、平台、命令、最小 `.re` 输入、预期行为与实际行为。
+
+Private Vulnerability Reporting is the current private channel. If GitHub
+disables it, do not place sensitive details in a public issue; wait for the
+repository owner to publish a replacement private contact.
+当前私密渠道是 GitHub Private Vulnerability Reporting。如果 GitHub 禁用该渠道，不要在
+公开 issue 中提交敏感细节，等待仓库所有者公布替代私密联系方式。

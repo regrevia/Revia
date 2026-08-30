@@ -8,6 +8,8 @@ VERSION=$(sed -n '1p' VERSION)
 test "$VERSION" = "0.1-preview.1"
 grep -Fq 'Agent-native executable language for the AI-native era.' README.md
 grep -Fq '面向 AI 原生时代的 Agent 原生可执行语言。' README.zh-CN.md
+grep -Fq 'Closed-source technical preview' README.md
+grep -Fq '闭源技术预览版' README.zh-CN.md
 grep -Fq '## Run The Full Loop' README.md
 grep -Fq '## 运行完整流程' README.zh-CN.md
 grep -Fq 'Revia translator from' README.md
@@ -15,6 +17,7 @@ grep -Fq 'Revia 翻译器根据' README.zh-CN.md
 grep -Fq '## Explore' README.md
 grep -Fq '## 文档与入口' README.zh-CN.md
 grep -Fq 'Quickstart / 快速开始' QUICKSTART.md
+grep -Fq 'Reinstall Or Uninstall / 重装或卸载' QUICKSTART.md
 grep -Fq 'Re Language / Re 语言' docs/language.md
 grep -Fq 'Notice / 声明' NOTICE.md
 sh -n bin/revia

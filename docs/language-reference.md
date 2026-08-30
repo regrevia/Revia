@@ -85,6 +85,32 @@ applicable. Agents should branch on `schema`, `ok`, and stable `code` values.
 `column`、`expected`、`actual`、`member` 和 `reference`。Agent 应按 `schema`、
 `ok` 与稳定 `code` 分支。
 
+The public result envelope is intentionally small and machine-oriented:
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["schema", "ok"],
+  "properties": {
+    "schema": { "type": "string" },
+    "ok": { "type": "boolean" },
+    "diagnostics": { "type": "array" }
+  },
+  "additionalProperties": true
+}
+```
+
+Known public result schemas include `re.check-result@0.1.0`,
+`re.audit-result@0.1.0`, `re.project-check-result@0.1.0`,
+`re.project-run-result@0.1.0`, and `re.build-result@0.1.0`.
+The exact fields for each command are versioned with its schema identifier.
+
+公开结果封装保持简洁并面向机器。已知公开结果 schema 包括
+`re.check-result@0.1.0`、`re.audit-result@0.1.0`、
+`re.project-check-result@0.1.0`、`re.project-run-result@0.1.0` 和
+`re.build-result@0.1.0`。每个命令的准确字段随 schema 标识版本化。
+
 ## One Source, Four Projections / 一份源码，四种投影
 
 ```bash
