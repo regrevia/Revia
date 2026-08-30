@@ -32,7 +32,21 @@ produces different checked artifacts across fresh processes cannot pass.
 `scripts/test-compact-determinism.sh --require`，在 Windows 传给
 `scripts/test-compact-determinism.ps1 -Mode Require`；不会回退到已发布运行时。
 同一 compact 源码在全新进程生成不同已检查产物的候选不能通过该门禁。
+同一门禁还会使用仓库中的 project manifest 和 fixture，通过 `project-check` 与
+`project-run` 验证公开项目模板。
 
 The published-release smoke workflow is a separate availability check; it does
 not replace the candidate gate.
 已发布发行的 smoke 工作流是独立的可用性检查，不替代候选门禁。
+
+Publication order is: build candidate -> upload draft assets -> run the
+six-target gate and release smoke -> review the evidence -> publish the release.
+The post-publication workflow is an additional availability check.
+
+发行顺序为：构建候选 -> 上传草稿资产 -> 运行六目标门禁和发行 smoke -> 审阅证据 ->
+发布发行版。发布后的工作流只是额外可用性检查。
+
+Signed tags/checksums, SBOM, and artifact attestation are not currently
+published for `0.1-preview.1`; they remain requirements for a future candidate.
+`0.1-preview.1` 当前未发布签名 tag/校验摘要、SBOM 或产物 attestation；它们仍是后续候选
+的发行要求。

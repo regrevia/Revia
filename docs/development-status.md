@@ -1,7 +1,7 @@
 # Development Status / 开发进展
 
-Updated 2026-08-28.
-更新日期：2026-08-28。
+Updated 2026-08-30.
+更新日期：2026-08-30。
 
 Revia has a runnable public release and an active implementation line. The
 public release is the executable starting point; the development line records
@@ -45,6 +45,7 @@ Revia 已有可运行的公开发行版，同时持续推进实现线。公开�
 | `WP-281` | Deterministic identity / 确定性身份 | Reviewed | Versioned compact identity allocation and fresh-process, two-directory byte comparison for canonical, manifest, views, and build trees |
 | `WP-282–WP-283` | External project workflow and release evidence / 外部项目工作流与发行证据 | Completed | Canonical project initialization and testing plus fresh, empty-`PATH` release evidence over project, fault, and reproducibility workloads |
 | `WP-284–WP-285` | Conformance catalog and CLI contract / 一致性目录与 CLI 契约 | Completed | Canonical four-domain comparison workloads and deterministic, path-free help/version discovery for the native command surface |
+| `WP-295` | Compact identity determinism / Compact identity 确定性 | Awaiting final review | Reuses the stable identity path across compact projections and targets fresh-process byte equality for checked artifacts |
 
 `WP-281` and earlier reviewed entries have independent review evidence. Later
 completed entries have passed their internal focused and workspace gates and
@@ -64,25 +65,24 @@ the release gates for their declared platforms.
 当前公开二进制仍为 `0.1-preview.1`。后续候选版本只有在已审阅开发层完成集成、
 重新构建，并通过声明平台的发行门禁后才会创建。
 
-Latest completed work package: `WP-285 native CLI usability and help/version
-contract`. `WP-281` has a dedicated independent review; later packages have
-completed their internal focused and workspace gates and remain development-line
-evidence. None of these entries are capabilities in the current public binary.
+Latest development package: `WP-295 compact identity determinism`. It is awaiting
+final independent review. The current public binary remains `0.1-preview.1`, so
+this result is not a capability of the release until a reviewed candidate is
+rebuilt and passes all release gates.
 
-最新完成工作包为 `WP-285 native CLI usability and help/version contract`。
-`WP-281` 已完成专项独立审阅；后续工作包已通过各自的 focused 与 workspace 内部门禁，
-仍属于开发线证据。这些内容不表示当前公开二进制已经包含对应能力。
+最新开发工作包为 `WP-295 compact identity determinism`，正在等待最终独立审阅。
+当前公开二进制仍为 `0.1-preview.1`；该结果只有在经过审阅的新候选重新构建并通过
+全部发行门禁后，才会进入公开能力。
 
 ## Active Work Package / 当前工作包
 
-`WP-286 native developer gate` is active. It is intended to compose project
-authority, two independent cold builds, exact build-tree comparison, and a
-path-free conformance report behind one native command. It is not represented
-as complete or public capability.
+The next public candidate must rebuild the runtime, rerun the two-directory
+fresh-process determinism probe, verify the project template with
+`project-check` and `project-run`, and pass the six-target release gate before
+publication.
 
-`WP-286 native developer gate` 正在实现。其目标是在一个 native 命令后编排项目
-authority、两次独立 cold build、完整 build tree 精确比较和无路径一致性报告；当前不将
-它写成已完成工作或公开能力。
+下一公开候选必须重新构建运行时，重跑两个独立目录的全新进程确定性探针，用
+`project-check` 和 `project-run` 验证项目模板，并在发布前通过六目标发行门禁。
 
 ## Follow The Work / 跟进进展
 

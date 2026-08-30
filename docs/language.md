@@ -36,6 +36,15 @@ fn @main() -> process.status {
 - `process.args@0.1.0`
 - sandboxed source-directory file read and write / 源码目录沙箱内的文件读写
 
+The public capability catalog and result shapes are defined in the
+[language reference](language-reference.md). The project commands require a
+project manifest and are pending validation against the next rebuilt candidate.
+The current `0.1-preview.1` template remains a single-file `check -> run ->
+manifest -> view` example.
+公开能力目录和结果结构见[语言参考](language-reference.md)。项目命令需要项目
+manifest，等待下一候选重新构建后验证；当前 `0.1-preview.1` 模板仍是单文件
+`check -> run -> manifest -> view` 示例。
+
 ## Commands / 命令
 
 ```text

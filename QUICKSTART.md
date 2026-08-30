@@ -3,13 +3,13 @@
 ## Requirements / 环境要求
 
 - macOS or Linux `arm64`/`x86_64`: `curl`, `tar`, and `shasum` or `sha256sum`.
-- Windows `arm64`/`x86_64`: Windows PowerShell 5.1 or PowerShell 7.
+- Windows `arm64`/`x86_64`: PowerShell 7 (`pwsh`).
 - Network access is required for the first launch. The CLI runtime itself does
   not require a Node.js installation.
 - Use follows the [Revia Technical Preview License](LICENSE).
 
 - macOS 或 Linux `arm64`/`x86_64`：`curl`、`tar`，以及 `shasum` 或 `sha256sum`。
-- Windows `arm64`/`x86_64`：Windows PowerShell 5.1 或 PowerShell 7。
+- Windows `arm64`/`x86_64`：PowerShell 7（`pwsh`）。
 - 首次运行需要网络；CLI 运行时本身不需要安装 Node.js。
 - 使用受 [Revia Technical Preview License](LICENSE) 约束。
 
@@ -61,6 +61,33 @@ Delete only the version-and-platform cache directory to force a fresh verified
 download. Do not replace the cached executable manually.
 只删除对应版本和平台的缓存目录即可触发重新下载和校验；不要手工替换缓存可执行文件。
 
+## Reinstall Or Uninstall / 重装或卸载
+
+To reinstall the cached runtime, remove only the version directory and run the
+launcher again:
+重装缓存运行时，只删除对应版本目录，再次运行启动器：
+
+```bash
+rm -rf "${XDG_CACHE_HOME:-$HOME/.cache}/revia/0.1-preview.1"
+./bin/revia --version
+```
+
+```powershell
+Remove-Item -Recurse -Force "$env:LOCALAPPDATA\Revia\0.1-preview.1"
+& .\bin\revia.ps1 --version
+```
+
+To remove all cached Revia runtimes without removing the cloned repository:
+只移除所有缓存运行时而保留仓库：
+
+```bash
+rm -rf "${XDG_CACHE_HOME:-$HOME/.cache}/revia"
+```
+
+```powershell
+Remove-Item -Recurse -Force "$env:LOCALAPPDATA\Revia"
+```
+
 ## Build An Inspectable Artifact / 构建可审阅产物
 
 ```bash
@@ -75,8 +102,10 @@ compatible Node.js runtime; the release build records Node 22 metadata.
 运行 `out/run.mjs` 需要兼容的 Node.js 运行时；发行构建记录的是 Node 22 元数据。
 
 `check --write` rewrites the `.re` file into canonical text. Commit or copy the
-source before using it.
+source before using it. The native CLI does not require Node.js; the current
+`build` demo artifact requires a compatible Node.js runtime to execute.
 `check --write` 会将 `.re` 文件重写为规范化文本；执行前请提交或备份源码。
+原生 CLI 不需要 Node.js；当前 `build` 演示产物运行时需要兼容的 Node.js。
 
 ## Verify A Download / 手工校验下载
 

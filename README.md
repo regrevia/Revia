@@ -6,6 +6,11 @@
 </p>
 
 <p align="center">
+  <strong>Closed-source technical preview · Evaluation only · Not for production</strong><br>
+  Current runtime: bounded native preview slice
+</p>
+
+<p align="center">
   <a href="README.zh-CN.md">中文</a>
 </p>
 
@@ -58,11 +63,12 @@ offline reuse, exit codes, build artifacts, and installation recovery.
 
 ## Current Development
 
-The public release is runnable today. The development line has completed work
-through `WP-285`, including deterministic compact identity, host-backed project
-execution, reproducible project evidence, and a native conformance catalog.
-The current public binary still reports `PENDING` for fresh-process byte identity
-of generated compact artifacts; the next candidate is blocked on that gate. See the
+The public release is runnable today. The development line has completed `WP-295`,
+including the compact identity determinism fix, host-backed project execution,
+reproducible project evidence, and native conformance work. `WP-295` is awaiting
+final independent review. The current public binary remains `0.1-preview.1`;
+its fresh-process compact artifact check is still `PENDING` until a reviewed
+candidate is rebuilt and passes the release gate. See the
 [development status](docs/development-status.md) and [evidence](docs/evidence.md)
 for the verified public boundary, current milestones, and what is not yet in
 `0.1-preview.1`.
