@@ -104,13 +104,15 @@ platform:
 
 - identical `check`, `check --write`, `manifest`, `view`, `build`, and checksum
   trees across two fresh processes and directories;
-- a passing public project template through `project-check` and `project-run`;
+- runtime JSON contracts for `check` and `audit`; project-template validation
+  remains pending until its public manifest and fixture are shipped;
 - native CLI smoke, archive and executable SHA-256, and the release gate before
   publication.
 
 当前发行版不包含 `WP-295` 运行时。新候选必须基于完成审阅的实现重新构建，并在每个声明
 平台证明：两个全新进程和目录的 `check`、`check --write`、`manifest`、`view`、`build`
-及 checksum 树逐字节一致；公开项目模板通过 `project-check` 和 `project-run`；
+及 checksum 树逐字节一致；`check` 与 `audit` 的运行时 JSON 契约通过验证；公开项目模板
+仍等待 manifest 和 fixture 输入文件；
 原生 CLI、归档与可执行文件 SHA-256 以及发布前发行门禁全部通过。
 
 ## Challenge The Gate / 挑战发行门禁

@@ -45,14 +45,15 @@ Revia 已有可运行的公开发行版，同时持续推进实现线。公开�
 | `WP-281` | Deterministic identity / 确定性身份 | Reviewed | Versioned compact identity allocation and fresh-process, two-directory byte comparison for canonical, manifest, views, and build trees |
 | `WP-282–WP-283` | External project workflow and release evidence / 外部项目工作流与发行证据 | Completed | Canonical project initialization and testing plus fresh, empty-`PATH` release evidence over project, fault, and reproducibility workloads |
 | `WP-284–WP-285` | Conformance catalog and CLI contract / 一致性目录与 CLI 契约 | Completed | Canonical four-domain comparison workloads and deterministic, path-free help/version discovery for the native command surface |
-| `WP-295` | Compact identity determinism / Compact identity 确定性 | Awaiting final review | Reuses the stable identity path across compact projections and targets fresh-process byte equality for checked artifacts |
+| `WP-295` | Compact identity determinism / Compact identity 确定性 | Reviewed | Reuses the stable identity path across compact projections and targets fresh-process byte equality for checked artifacts |
+| `WP-296` | Native capability release evidence / Native capability 发行证据 | Awaiting final review | Closes the release-evidence authority boundary and records the next candidate handoff |
 
-`WP-281` and earlier reviewed entries have independent review evidence. Later
+`WP-281` through `WP-295` reviewed entries have independent review evidence. Later
 completed entries have passed their internal focused and workspace gates and
 remain development-line evidence. None of these milestones imply that the
 `0.1-preview.1` download already contains the capability.
 
-`WP-281` 及更早的 reviewed 条目具有独立审阅证据；后续 completed 条目已通过各自的
+`WP-281` 至 `WP-295` 的 reviewed 条目具有独立审阅证据；后续 completed 条目已通过各自的
 focused 与 workspace 内部门禁，仍属于开发线证据。任何条目都不表示
 `0.1-preview.1` 下载包已经包含对应能力。
 
@@ -78,12 +79,13 @@ rebuilt and passes all release gates.
 ## Active Work Package / 当前工作包
 
 The next public candidate must rebuild the runtime, rerun the two-directory
-fresh-process determinism probe, verify the project template with
-`project-check` and `project-run`, and pass the six-target release gate before
-publication.
+fresh-process determinism probe, verify the runtime JSON contracts, and pass
+the six-target release gate before publication. Project-template validation is
+pending the public manifest and fixture inputs.
 
-下一公开候选必须重新构建运行时，重跑两个独立目录的全新进程确定性探针，用
-`project-check` 和 `project-run` 验证项目模板，并在发布前通过六目标发行门禁。
+下一公开候选必须重新构建运行时，重跑两个独立目录的全新进程确定性探针，验证运行时
+JSON 契约，并在发布前通过六目标发行门禁。项目模板验证等待公开 manifest 和 fixture
+输入文件到位。
 
 ## Follow The Work / 跟进进展
 
