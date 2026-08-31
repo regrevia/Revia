@@ -60,11 +60,14 @@ next=inspect-graph
 
 ## 当前开发进展
 
-公开发行版已经可以直接运行。开发线正在收尾 `WP-296`，这是对已审阅 `WP-295`
-确定性工作的发行证据补充。当前公开二进制仍为 `0.1-preview.1`；其 compact 派生产物在全新进程间仍报告 `PENDING`，
+公开发行版已经可以直接运行。开发线已完成经审阅的 `WP-299` 有界 Server 一致性切片，
+承接确定性与发行证据工作。当前公开二进制仍为 `0.1-preview.1`；其 compact 派生产物在全新进程间仍报告 `PENDING`，
 直到经过审阅的新候选重新构建并通过发行门禁。详见
 [开发进展](docs/development-status.md)和[验证证据](docs/evidence.md)，
 其中区分了当前公开边界、开发沉淀与尚未进入 `0.1-preview.1` 的内容。
+
+HTTP/JSON/SQLite 结果见[有界 Server 一致性](docs/server-conformance.md)。
+[Stable V1.0 发行门禁](docs/stable-release-gate.md)仍待发行侧证据全部完成。
 
 ## Revia 让什么变得明确
 
@@ -121,9 +124,11 @@ projects/<YYYY-MM-DD>-<agent>-<project>/
 
 [架构](docs/architecture.zh-CN.md) · [语言](docs/language.md) ·
 [语言参考](docs/language-reference.md) ·
+[Server 一致性](docs/server-conformance.md) ·
 [协议](docs/protocol.md) · [验证证据](docs/evidence.md) ·
 [演进记录](docs/evolution.md) · [开发进展](docs/development-status.md) ·
-[发行政策](docs/release-policy.md)
+[发行政策](docs/release-policy.md) ·
+[Stable V1.0 门禁](docs/stable-release-gate.md)
 
 ### 参与协作
 
