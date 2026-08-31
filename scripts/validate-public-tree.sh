@@ -29,6 +29,12 @@ grep -Fq 'windows-x64' bin/revia.ps1
 for target in darwin-arm64 darwin-x64 linux-arm64 linux-x64 windows-arm64 windows-x64; do
   grep -Fq "target: $target" .github/workflows/release-smoke.yml
 done
+grep -Fq 'permissions: {}' .github/workflows/release-gate.yml
+grep -Fq 'contents: read' .github/workflows/release-gate.yml
+grep -Fq 'contents: write' .github/workflows/release-gate.yml
+grep -Fq 'persist-credentials: false' .github/workflows/release-gate.yml
+grep -Fq 'without repository token' .github/workflows/release-gate.yml
+grep -Fq 'post-publish-smoke:' .github/workflows/release-gate.yml
 
 for path in README.md README.zh-CN.md QUICKSTART.md RELEASE_NOTES.md LICENSE NOTICE.md VERSION \
   runtime/checksums.txt feedback/FEEDBACK_TEMPLATE.md docs/language.md \
@@ -36,6 +42,7 @@ for path in README.md README.zh-CN.md QUICKSTART.md RELEASE_NOTES.md LICENSE NOT
   runtime/PKG_FETCH_LICENSE docs/protocol.md bin/revia.ps1 .gitattributes \
   scripts/test-compact-determinism.sh scripts/test-compact-determinism.ps1 \
   scripts/test-compact-determinism-contract.sh \
+  scripts/test-json-contract.sh \
   docs/agent-workflow.md docs/compatibility.md examples/agent-review/main.re \
   examples/agent-review/README.md projects/README.md \
   projects/_template/main.re projects/_template/README.md \
@@ -133,5 +140,7 @@ for project in projects/*; do
   grep -Fq '项目' "$project/README.md"
   grep -Fq '接续' "$project/HANDOFF.md"
 done
+
+sh scripts/test-json-contract.sh
 
 printf '%s\n' 'public tree validation passed'

@@ -64,7 +64,17 @@ return match %printed {
 
 ## Machine Output / 机器输出
 
-`check --format json` returns a stable result envelope:
+`check --format json` and `audit --format json` have independent, versioned
+contracts. They do not share a required envelope: `audit` deliberately has no
+`ok` field. The shipped binary contract is exercised by
+[`scripts/test-json-contract.sh`](../scripts/test-json-contract.sh).
+
+`check --format json` 返回稳定、独立的命令契约；`audit --format json` 也有自己的
+版本化契约，并不共享一个强制封装，`audit` 输出刻意不包含 `ok` 字段。仓库通过
+[`scripts/test-json-contract.sh`](../scripts/test-json-contract.sh) 直接运行发行版二进制
+来验证这两个契约。
+
+### `check` result / `check` 结果
 
 `check --format json` 返回稳定的结果封装：
 
@@ -85,34 +95,58 @@ applicable. Agents should branch on `schema`, `ok`, and stable `code` values.
 `column`、`expected`、`actual`、`member` 和 `reference`。Agent 应按 `schema`、
 `ok` 与稳定 `code` 分支。
 
-The public result envelope is intentionally small and machine-oriented. The
-following is the shared envelope currently emitted by the public binary; the
-command-specific payload is versioned by its `schema` value:
+The `check` object has these required fields: `diagnostics` (array), `file`
+(string), `ok` (boolean), and `schema` (the literal
+`re.check-result@0.1.0`). Diagnostic members are extensible; consumers should
+branch only on the documented stable members.
+
+`check` 对象要求 `diagnostics`（数组）、`file`（字符串）、`ok`（布尔值）和
+`schema`（固定为 `re.check-result@0.1.0`）字段。诊断成员允许扩展；调用方只应依赖
+文档列出的稳定成员。
+
+### `audit` result / `audit` 结果
+
+For a successful audit, the object contains the required fields
+`capabilities` (array), `effects` (array), `error_paths` (array), `schema`
+(`re.audit-result@0.1.0`), and `status_codes` (integer array):
 
 ```json
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "type": "object",
-  "required": ["schema", "ok"],
-  "properties": {
-    "schema": { "type": "string" },
-    "ok": { "type": "boolean" },
-    "diagnostics": { "type": "array", "items": { "type": "object" } }
-  },
-  "additionalProperties": true
+  "capabilities": [
+    { "binding_kind": "memory", "instance": "@args", "reference": "process.args@0.1.0" }
+  ],
+  "effects": [
+    {
+      "access": ["read process.argv"],
+      "capability_instance": "@args",
+      "member": "read",
+      "node_uid": "…",
+      "result_consumers": ["…"],
+      "returns": "result<list<text.utf8>, process.args_error>"
+    }
+  ],
+  "error_paths": [
+    {
+      "consumer_uid": "…",
+      "error_type": "process.args_error",
+      "producer_uid": "…",
+      "status_codes": [3]
+    }
+  ],
+  "schema": "re.audit-result@0.1.0",
+  "status_codes": [0, 3]
 }
 ```
 
-Known public result schemas include `re.check-result@0.1.0`,
-`re.audit-result@0.1.0`, `re.project-check-result@0.1.0`,
-`re.project-run-result@0.1.0`, and `re.build-result@0.1.0`.
-The exact fields for each command are versioned with its schema identifier.
+`node_uid`, consumer identifiers, and list ordering are data-dependent. The
+published contract intentionally does not require an `ok` member for `audit`;
+the process exit code reports command success or failure. The remaining
+project/build command schemas are not generalized here until their runtime
+output is captured and tested in the same way.
 
-公开结果封装保持简洁并面向机器。上面是当前公开二进制实际输出的共享封装；
-命令专属字段随 `schema` 值版本化。已知公开结果 schema 包括
-`re.check-result@0.1.0`、`re.audit-result@0.1.0`、
-`re.project-check-result@0.1.0`、`re.project-run-result@0.1.0` 和
-`re.build-result@0.1.0`。每个命令的准确字段随 schema 标识版本化。
+`node_uid`、consumer 标识和列表顺序取决于输入数据。已发布契约不会为 `audit` 要求
+`ok` 字段；命令成功或失败由进程退出码表示。其余 project/build 命令在完成同等的
+运行时采样与测试前，不在这里泛化描述。
 
 ## One Source, Four Projections / 一份源码，四种投影
 
