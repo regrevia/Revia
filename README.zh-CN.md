@@ -60,9 +60,8 @@ next=inspect-graph
 
 ## 当前开发进展
 
-公开发行版已经可以直接运行。开发线已完成 `WP-295`，包括 compact identity 确定性修复、
-Host 支撑的项目执行、可复现项目证据和 native 一致性工作。`WP-295` 正等待最终独立审阅。
-当前公开二进制仍为 `0.1-preview.1`；其 compact 派生产物在全新进程间仍报告 `PENDING`，
+公开发行版已经可以直接运行。开发线正在收尾 `WP-296`，这是对已审阅 `WP-295`
+确定性工作的发行证据补充。当前公开二进制仍为 `0.1-preview.1`；其 compact 派生产物在全新进程间仍报告 `PENDING`，
 直到经过审阅的新候选重新构建并通过发行门禁。详见
 [开发进展](docs/development-status.md)和[验证证据](docs/evidence.md)，
 其中区分了当前公开边界、开发沉淀与尚未进入 `0.1-preview.1` 的内容。

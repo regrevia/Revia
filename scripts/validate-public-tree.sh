@@ -19,6 +19,8 @@ grep -Fq '## 文档与入口' README.zh-CN.md
 grep -Fq 'Quickstart / 快速开始' QUICKSTART.md
 grep -Fq 'Reinstall Or Uninstall / 重装或卸载' QUICKSTART.md
 grep -Fq 'Re Language / Re 语言' docs/language.md
+grep -Fq 'result<list<text.utf8>, process.args_error>' docs/language-reference.md
+grep -Fq 'result<text.utf8, fs.read_error>' docs/language-reference.md
 grep -Fq 'Notice / 声明' NOTICE.md
 sh -n bin/revia
 grep -Fq '*.re text eol=lf' .gitattributes

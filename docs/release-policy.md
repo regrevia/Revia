@@ -14,12 +14,12 @@ create a new runtime release.
 
 ## Candidate Gate / 候选门禁
 
-New assets are uploaded to a draft release. The six-target candidate gate
+New assets are uploaded to a prerelease draft. The six-target candidate gate
 verifies the tag/version binding, archive SHA-256, executable SHA-256, `check`,
 `run`, `manifest`, compact-source determinism, and a structured diagnostic
 before publication.
 
-新资产先上传到草稿发行。六目标候选门禁在发布前验证 tag/版本绑定、归档 SHA-256、
+新资产先上传到预发行草稿。六目标候选门禁在发布前验证 tag/版本绑定、归档 SHA-256、
 可执行文件 SHA-256、`check`、`run`、`manifest`、compact 源确定性与结构化诊断。
 
 The gate passes each downloaded draft executable to
@@ -35,16 +35,19 @@ produces different checked artifacts across fresh processes cannot pass.
 同一门禁还会使用仓库中的 project manifest 和 fixture，通过 `project-check` 与
 `project-run` 验证公开项目模板。
 
-The published-release smoke workflow is a separate availability check; it does
-not replace the candidate gate.
-已发布发行的 smoke 工作流是独立的可用性检查，不替代候选门禁。
+The same gate publishes the draft only after every target passes. The
+published-release smoke workflow is a separate availability check; it does not
+replace the candidate gate.
+同一门禁只有在所有目标通过后才会发布草稿。已发布发行的 smoke 工作流是独立的可用性检查，
+不替代候选门禁。
 
-Publication order is: build candidate -> upload draft assets -> run the
-six-target gate and release smoke -> review the evidence -> publish the release.
-The post-publication workflow is an additional availability check.
+Publication order is: build candidate -> upload prerelease draft assets -> review
+the candidate metadata -> dispatch the six-target gate. The gate runs every
+target smoke and publishes the draft only after all checks pass. The
+post-publication workflow is an additional availability check.
 
-发行顺序为：构建候选 -> 上传草稿资产 -> 运行六目标门禁和发行 smoke -> 审阅证据 ->
-发布发行版。发布后的工作流只是额外可用性检查。
+发行顺序为：构建候选 -> 上传预发行草稿资产 -> 审阅候选元数据 -> 手动触发六目标门禁。
+门禁完成全部目标 smoke 后才会发布草稿。发布后的工作流只是额外可用性检查。
 
 Signed tags/checksums, SBOM, and artifact attestation are not currently
 published for `0.1-preview.1`; they remain requirements for a future candidate.

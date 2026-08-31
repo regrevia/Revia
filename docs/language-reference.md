@@ -29,8 +29,8 @@ branch     ::= "ok" "(" wildcard ")" "=>" effect-call
 | Capability | Signature | Result / 结果 |
 |---|---|---|
 | `process.stdout@0.1.0` | `write(data: text.utf8)` | `result<unit, io.write_error>` |
-| `process.args@0.1.0` | `read()` | `result<args, process.args_error>` |
-| `fs.read@0.1.0` | `read_file(path, encoding)` | `result<bytes, fs.read_error>` |
+| `process.args@0.1.0` | `read()` | `result<list<text.utf8>, process.args_error>` |
+| `fs.read@0.1.0` | `read_file(path, encoding)` | `result<text.utf8, fs.read_error>` |
 
 Capabilities must be declared before use. An undeclared capability or
 unsupported argument is rejected by `check`.
@@ -85,7 +85,9 @@ applicable. Agents should branch on `schema`, `ok`, and stable `code` values.
 `column`、`expected`、`actual`、`member` 和 `reference`。Agent 应按 `schema`、
 `ok` 与稳定 `code` 分支。
 
-The public result envelope is intentionally small and machine-oriented:
+The public result envelope is intentionally small and machine-oriented. The
+following is the shared envelope currently emitted by the public binary; the
+command-specific payload is versioned by its `schema` value:
 
 ```json
 {
@@ -95,7 +97,7 @@ The public result envelope is intentionally small and machine-oriented:
   "properties": {
     "schema": { "type": "string" },
     "ok": { "type": "boolean" },
-    "diagnostics": { "type": "array" }
+    "diagnostics": { "type": "array", "items": { "type": "object" } }
   },
   "additionalProperties": true
 }
@@ -106,7 +108,8 @@ Known public result schemas include `re.check-result@0.1.0`,
 `re.project-run-result@0.1.0`, and `re.build-result@0.1.0`.
 The exact fields for each command are versioned with its schema identifier.
 
-公开结果封装保持简洁并面向机器。已知公开结果 schema 包括
+公开结果封装保持简洁并面向机器。上面是当前公开二进制实际输出的共享封装；
+命令专属字段随 `schema` 值版本化。已知公开结果 schema 包括
 `re.check-result@0.1.0`、`re.audit-result@0.1.0`、
 `re.project-check-result@0.1.0`、`re.project-run-result@0.1.0` 和
 `re.build-result@0.1.0`。每个命令的准确字段随 schema 标识版本化。
