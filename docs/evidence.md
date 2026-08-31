@@ -18,19 +18,19 @@ the reviewed development line that informs the next release candidate.
 
 ## Development Evidence / 开发证据
 
-The private implementation line has completed work packages through `WP-295`.
+The private implementation line is closing `WP-296` after the reviewed `WP-295`.
 The evidence now covers graph and bytecode authority, bounded VM/task execution,
 host-backed project effects, deterministic compact identity, external project
 initialization/testing, fresh release evidence, a canonical comparison catalog,
-and deterministic native CLI discovery. `WP-295` reports the compact identity
-determinism fix and is awaiting final independent review. These are engineering
-evidence for release planning; the current public binary remains `0.1-preview.1`
-and does not expose the private implementation.
+and deterministic native CLI discovery. `WP-295` provides the reviewed compact
+identity work; `WP-296` is the current release-evidence closeout. These are
+engineering evidence for release planning; the current public binary remains
+`0.1-preview.1` and does not expose the private implementation.
 
-私有实现线已完成至 `WP-295`。现有证据覆盖语义图与字节码 authority、有界 VM/Task
+私有实现线正在收尾 `WP-296`，其前置 `WP-295` 已完成审阅。现有证据覆盖语义图与字节码 authority、有界 VM/Task
 执行、Host 支撑的项目 effect、确定性 compact identity、外部项目初始化与测试、fresh
-发行证据、canonical 比较目录和确定性的 native CLI 可发现性。`WP-295` 报告 compact
-identity 确定性修复，正在等待最终独立审阅。这些是发行规划的工程证据；
+发行证据、canonical 比较目录和确定性的 native CLI 可发现性。`WP-295` 提供已审阅的
+compact identity 确定性工作，`WP-296` 正在收尾发行证据。这些是发行规划的工程证据；
 当前公开二进制仍为 `0.1-preview.1`，不公开私有实现。
 
 ## Reproducible Commands / 复现命令

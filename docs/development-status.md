@@ -1,7 +1,7 @@
 # Development Status / 开发进展
 
-Updated 2026-08-30.
-更新日期：2026-08-30。
+Updated 2026-08-31.
+更新日期：2026-08-31。
 
 Revia has a runnable public release and an active implementation line. The
 public release is the executable starting point; the development line records
@@ -65,14 +65,15 @@ the release gates for their declared platforms.
 当前公开二进制仍为 `0.1-preview.1`。后续候选版本只有在已审阅开发层完成集成、
 重新构建，并通过声明平台的发行门禁后才会创建。
 
-Latest development package: `WP-295 compact identity determinism`. It is awaiting
-final independent review. The current public binary remains `0.1-preview.1`, so
-this result is not a capability of the release until a reviewed candidate is
+Latest development handoff: `WP-296 native capability release evidence closeout`,
+following the reviewed `WP-295` determinism work. It is still in development
+review. The current public binary remains `0.1-preview.1`, so these development
+results are not capabilities of the release until a reviewed candidate is
 rebuilt and passes all release gates.
 
-最新开发工作包为 `WP-295 compact identity determinism`，正在等待最终独立审阅。
-当前公开二进制仍为 `0.1-preview.1`；该结果只有在经过审阅的新候选重新构建并通过
-全部发行门禁后，才会进入公开能力。
+最新开发交接为 `WP-296 native capability release evidence closeout`，承接已审阅的
+`WP-295` 确定性工作，仍在开发审阅中。当前公开二进制仍为 `0.1-preview.1`；
+这些开发结果只有在经过审阅的新候选重新构建并通过全部发行门禁后，才会进入公开能力。
 
 ## Active Work Package / 当前工作包
 

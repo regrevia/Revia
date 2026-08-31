@@ -2,8 +2,8 @@
 
 ## Next Candidate / 下一候选
 
-The development line reports `WP-295` compact identity determinism fixed and
-awaiting final independent review. The current `0.1-preview.1` assets are
+The development line is closing `WP-296`, the release-evidence follow-up to the
+reviewed `WP-295` compact identity work. The current `0.1-preview.1` assets are
 unchanged. A new runtime candidate must rebuild from the reviewed line, pass
 the fresh-process determinism probe, validate the project template through
 `project-check` and `project-run`, and pass the six-target gate before

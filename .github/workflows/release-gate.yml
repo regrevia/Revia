@@ -9,7 +9,7 @@ on:
         type: string
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   smoke:
@@ -46,7 +46,7 @@ jobs:
         run: |
           set -euo pipefail
           version=$(sed -n '1p' VERSION)
-          test "${TAG#v}" = "$version"
+          test "$TAG" = "v$version"
           asset="revia-${version}-${TARGET}.tar.gz"
           expected_archive=$(awk -v asset="$asset" '$2 == asset { print $1 }' runtime/checksums.txt)
           expected_binary=$(awk -v asset="${asset%.tar.gz}" '$2 == asset { print $1 }' runtime/checksums.txt)
@@ -83,7 +83,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $version = (Get-Content -LiteralPath VERSION -TotalCount 1).Trim()
-          if ($env:TAG.TrimStart('v') -ne $version) { throw 'tag and VERSION mismatch' }
+          if ($env:TAG -ne "v$version") { throw 'tag and VERSION mismatch' }
           $asset = "revia-$version-$env:TARGET.zip"
           $expectedArchive = ((Get-Content runtime/checksums.txt) | Where-Object { $_ -match "  $([Regex]::Escape($asset))$" }).Split(' ')[0]
           $binaryName = $asset.Substring(0, $asset.Length - 4)
@@ -111,3 +111,20 @@ jobs:
           if ($LASTEXITCODE -ne 65) { throw "expected diagnostic exit 65, got $LASTEXITCODE" }
           if ((Get-Content -Raw diagnostic.json) -notmatch 'unexpected-argument') { throw 'diagnostic smoke failed' }
           exit 0
+
+  publish:
+    name: Publish verified draft
+    needs: smoke
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Publish only the verified prerelease draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          release=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" \
+            --json isDraft,isPrerelease)
+          test "$(printf '%s' "$release" | jq -r '.isDraft')" = "true"
+          test "$(printf '%s' "$release" | jq -r '.isPrerelease')" = "true"
+          gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false

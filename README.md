@@ -63,10 +63,9 @@ offline reuse, exit codes, build artifacts, and installation recovery.
 
 ## Current Development
 
-The public release is runnable today. The development line has completed `WP-295`,
-including the compact identity determinism fix, host-backed project execution,
-reproducible project evidence, and native conformance work. `WP-295` is awaiting
-final independent review. The current public binary remains `0.1-preview.1`;
+The public release is runnable today. The development line is closing `WP-296`,
+the release-evidence follow-up to the reviewed `WP-295` determinism work. The
+current public binary remains `0.1-preview.1`;
 its fresh-process compact artifact check is still `PENDING` until a reviewed
 candidate is rebuilt and passes the release gate. See the
 [development status](docs/development-status.md) and [evidence](docs/evidence.md)
