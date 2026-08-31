@@ -46,15 +46,15 @@ Revia 已有可运行的公开发行版，同时持续推进实现线。公开�
 | `WP-282–WP-283` | External project workflow and release evidence / 外部项目工作流与发行证据 | Completed | Canonical project initialization and testing plus fresh, empty-`PATH` release evidence over project, fault, and reproducibility workloads |
 | `WP-284–WP-285` | Conformance catalog and CLI contract / 一致性目录与 CLI 契约 | Completed | Canonical four-domain comparison workloads and deterministic, path-free help/version discovery for the native command surface |
 | `WP-295` | Compact identity determinism / Compact identity 确定性 | Reviewed | Reuses the stable identity path across compact projections and targets fresh-process byte equality for checked artifacts |
-| `WP-296` | Native capability release evidence / Native capability 发行证据 | Awaiting final review | Closes the release-evidence authority boundary and records the next candidate handoff |
+| `WP-296` | Native capability release evidence / Native capability 发行证据 | Reviewed | Closes the release-evidence authority boundary |
+| `WP-297–WP-298` | Native release hardening and multi-module authority / Native 发行加固与多模块 authority | Reviewed | Release-build and project/module/build/translation/plan authority evidence |
+| `WP-299` | Bounded Server conformance / 有界 Server 一致性 | Reviewed, PASS-WITH-P2 | Two-module HTTP/1.1, schema-driven JSON, and parameterized SQLite native slice |
 
-`WP-281` through `WP-295` reviewed entries have independent review evidence. Later
-completed entries have passed their internal focused and workspace gates and
-remain development-line evidence. None of these milestones imply that the
+`WP-281` through `WP-299` reviewed entries have independent review evidence.
+They remain development-line evidence. None of these milestones imply that the
 `0.1-preview.1` download already contains the capability.
 
-`WP-281` 至 `WP-295` 的 reviewed 条目具有独立审阅证据；后续 completed 条目已通过各自的
-focused 与 workspace 内部门禁，仍属于开发线证据。任何条目都不表示
+`WP-281` 至 `WP-299` 的 reviewed 条目具有独立审阅证据，仍属于开发线证据。任何条目都不表示
 `0.1-preview.1` 下载包已经包含对应能力。
 
 ## Current Boundary / 当前边界
@@ -66,15 +66,14 @@ the release gates for their declared platforms.
 当前公开二进制仍为 `0.1-preview.1`。后续候选版本只有在已审阅开发层完成集成、
 重新构建，并通过声明平台的发行门禁后才会创建。
 
-Latest development handoff: `WP-296 native capability release evidence closeout`,
-following the reviewed `WP-295` determinism work. It is still in development
-review. The current public binary remains `0.1-preview.1`, so these development
-results are not capabilities of the release until a reviewed candidate is
+Latest development handoff: `WP-299 bounded Server conformance`, reviewed
+PASS-WITH-P2. The current public binary remains `0.1-preview.1`, so this
+development result is not a capability of the release until a reviewed candidate is
 rebuilt and passes all release gates.
 
-最新开发交接为 `WP-296 native capability release evidence closeout`，承接已审阅的
-`WP-295` 确定性工作，仍在开发审阅中。当前公开二进制仍为 `0.1-preview.1`；
-这些开发结果只有在经过审阅的新候选重新构建并通过全部发行门禁后，才会进入公开能力。
+最新开发交接为 `WP-299 bounded Server conformance`，最终审阅结果为 PASS-WITH-P2。
+当前公开二进制仍为 `0.1-preview.1`；该开发结果只有在经过审阅的新候选重新构建并
+通过全部发行门禁后，才会进入公开能力。
 
 ## Active Work Package / 当前工作包
 
@@ -84,8 +83,8 @@ the six-target release gate before publication. Project-template validation is
 pending the public manifest and fixture inputs.
 
 下一公开候选必须重新构建运行时，重跑两个独立目录的全新进程确定性探针，验证运行时
-JSON 契约，并在发布前通过六目标发行门禁。项目模板验证等待公开 manifest 和 fixture
-输入文件到位。
+JSON 契约和有界 Server 一致性，并在发布前通过六目标发行门禁。项目模板验证等待
+公开 manifest 和 fixture 输入文件到位。
 
 ## Follow The Work / 跟进进展
 

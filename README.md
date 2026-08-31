@@ -63,14 +63,19 @@ offline reuse, exit codes, build artifacts, and installation recovery.
 
 ## Current Development
 
-The public release is runnable today. The development line is closing `WP-296`,
-the release-evidence follow-up to the reviewed `WP-295` determinism work. The
-current public binary remains `0.1-preview.1`;
+The public release is runnable today. The development line has completed the
+reviewed `WP-299` bounded Server conformance slice after the determinism and
+release-evidence work. The current public binary remains `0.1-preview.1`;
 its fresh-process compact artifact check is still `PENDING` until a reviewed
 candidate is rebuilt and passes the release gate. See the
 [development status](docs/development-status.md) and [evidence](docs/evidence.md)
 for the verified public boundary, current milestones, and what is not yet in
 `0.1-preview.1`.
+
+The HTTP/JSON/SQLite result is documented in
+[bounded Server conformance](docs/server-conformance.md). The
+[Stable V1.0 release gate](docs/stable-release-gate.md) remains open until
+release-side evidence is complete.
 
 ## What Revia Makes Explicit
 
@@ -132,9 +137,11 @@ from the [project template](projects/_template/) and use the
 
 [Architecture](docs/architecture.md) · [Language](docs/language.md) ·
 [Language reference](docs/language-reference.md) ·
+[Server conformance](docs/server-conformance.md) ·
 [Protocol](docs/protocol.md) · [Evidence](docs/evidence.md) ·
 [Evolution](docs/evolution.md) · [Development status](docs/development-status.md) ·
-[Release policy](docs/release-policy.md)
+[Release policy](docs/release-policy.md) ·
+[Stable V1.0 gate](docs/stable-release-gate.md)
 
 ### Collaborate
 

@@ -15,23 +15,36 @@ the reviewed development line that informs the next release candidate.
 | Archive integrity | Archive and executable SHA-256 in [`runtime/checksums.txt`](../runtime/checksums.txt) |
 | Public boundary | GitHub Actions [`Validate public boundary`](https://github.com/tangshuang631/Revia/actions/workflows/validate.yml) |
 | Release smoke | GitHub Actions [`Smoke test release asset`](https://github.com/tangshuang631/Revia/actions/workflows/release-smoke.yml) |
+| Development baseline | `9288c9d` (reviewed WP-257..WP-299) |
 
 ## Development Evidence / 开发证据
 
-The private implementation line is closing `WP-296` after the reviewed `WP-295`.
+The private implementation line has completed the reviewed `WP-299` bounded
+Server conformance slice after the reviewed `WP-295` and `WP-296`.
 The evidence now covers graph and bytecode authority, bounded VM/task execution,
 host-backed project effects, deterministic compact identity, external project
 initialization/testing, fresh release evidence, a canonical comparison catalog,
 and deterministic native CLI discovery. `WP-295` provides the reviewed compact
-identity work; `WP-296` is the current release-evidence closeout. These are
+identity work; `WP-296` closed the release-evidence authority boundary and
+`WP-299` added the bounded Server slice. These are
 engineering evidence for release planning; the current public binary remains
 `0.1-preview.1` and does not expose the private implementation.
 
-私有实现线正在收尾 `WP-296`，其前置 `WP-295` 已完成审阅。现有证据覆盖语义图与字节码 authority、有界 VM/Task
+私有实现线已完成经审阅的 `WP-299` 有界 Server 一致性切片，其前置 `WP-295` 与
+`WP-296` 已完成审阅。现有证据覆盖语义图与字节码 authority、有界 VM/Task
 执行、Host 支撑的项目 effect、确定性 compact identity、外部项目初始化与测试、fresh
 发行证据、canonical 比较目录和确定性的 native CLI 可发现性。`WP-295` 提供已审阅的
-compact identity 确定性工作，`WP-296` 正在收尾发行证据。这些是发行规划的工程证据；
+compact identity 确定性工作，`WP-296` 关闭发行证据 authority 边界，`WP-299` 增加
+有界 Server 切片。这些是发行规划的工程证据；
 当前公开二进制仍为 `0.1-preview.1`，不公开私有实现。
+
+The reviewed development evidence includes the bounded Server result in
+[`docs/server-conformance.md`](server-conformance.md). It is not part of the
+published preview asset until a new candidate is rebuilt and independently
+verified on every declared platform.
+
+经审阅的开发证据包含[有界 Server 一致性](server-conformance.md)结果。它在新候选重新
+构建并于所有声明平台完成独立验证前，不属于已发布预览资产。
 
 ## Reproducible Commands / 复现命令
 
@@ -98,7 +111,7 @@ boundary.
 
 ## Candidate Requirements / 候选要求
 
-The current release does not include the `WP-295` runtime. A new candidate must
+The current release does not include the reviewed `WP-299` runtime. A new candidate must
 be rebuilt from the reviewed implementation and prove, on every declared
 platform:
 
@@ -109,7 +122,7 @@ platform:
 - native CLI smoke, archive and executable SHA-256, and the release gate before
   publication.
 
-当前发行版不包含 `WP-295` 运行时。新候选必须基于完成审阅的实现重新构建，并在每个声明
+当前发行版不包含经审阅的 `WP-299` 运行时。新候选必须基于完成审阅的实现重新构建，并在每个声明
 平台证明：两个全新进程和目录的 `check`、`check --write`、`manifest`、`view`、`build`
 及 checksum 树逐字节一致；`check` 与 `audit` 的运行时 JSON 契约通过验证；公开项目模板
 仍等待 manifest 和 fixture 输入文件；

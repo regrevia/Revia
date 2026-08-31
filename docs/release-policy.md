@@ -68,3 +68,11 @@ attestation。这些是后续候选的路线图项目；在门禁真正检查之
 发行要求。除六目标 smoke 外，发布门禁当前还会检查 tag/版本绑定、
 `runtime/build-metadata.json` 的 release 字段，以及 Release 名称/正文中的版本引用。
 公开项目模板的 `project-check` 与 `project-run` 仍待所需输入文件随候选一并发布。
+
+Stable V1.0 has a separate hard-gate checklist in
+[`docs/stable-release-gate.md`](stable-release-gate.md). The public status
+cannot change while any required release, license, security, platform, or
+artifact-evidence row remains pending.
+
+Stable V1.0 另有[硬门禁清单](stable-release-gate.md)。任何发行、许可证、安全、平台或
+产物证据仍为 pending 时，公开状态不能切换。

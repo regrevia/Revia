@@ -22,6 +22,9 @@ grep -Fq 'Re Language / Re 语言' docs/language.md
 grep -Fq 'result<list<text.utf8>, process.args_error>' docs/language-reference.md
 grep -Fq 'result<text.utf8, fs.read_error>' docs/language-reference.md
 grep -Fq 'Notice / 声明' NOTICE.md
+grep -Fq 'GitHub Private Vulnerability Reporting is enabled' SECURITY.md
+grep -Fq 'WP-299' docs/server-conformance.md
+grep -Fq 'Stable V1.0' docs/stable-release-gate.md
 sh -n bin/revia
 grep -Fq '*.re text eol=lf' .gitattributes
 grep -Fq 'windows-arm64' bin/revia.ps1
@@ -50,7 +53,8 @@ for path in README.md README.zh-CN.md QUICKSTART.md RELEASE_NOTES.md LICENSE NOT
   feedback/agent-discovered-issues/README.md \
   feedback/agent-discovered-issues/_TEMPLATE.md \
   docs/architecture.md docs/architecture.zh-CN.md docs/evidence.md \
-  docs/evolution.md docs/development-status.md docs/language-reference.md docs/release-policy.md docs/execution-contract.md \
+  docs/evolution.md docs/development-status.md docs/language-reference.md docs/release-policy.md \
+  docs/server-conformance.md docs/stable-release-gate.md docs/execution-contract.md \
   docs/execution-contract.zh-CN.md \
   examples/agent-handoff-review/main.re examples/agent-handoff-review/README.md \
   examples/agent-workflow-brief.re examples/agent-args-policy.re \
