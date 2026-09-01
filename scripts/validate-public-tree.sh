@@ -29,6 +29,9 @@ grep -Fq 'Revia Release Candidate Developer Evaluation License 1.0' LICENSE-RC.m
 grep -Fq 'not legal advice' docs/rc1-license-and-limitations.md
 grep -Fq 'measured-emulated' docs/cross-platform-evidence.md
 grep -Fq 'revia.public-rc-export@1.0.0' docs/rc1-sealed-export-contract.md
+grep -Fq 'pending sealed evidence' experiments/rc1/README.md
+jq -e '.properties.environment.properties.execution_mode.enum == ["native", "virtualized-native", "emulated"]' \
+  experiments/rc1/comparison/record.schema.json >/dev/null
 sh -n bin/revia
 sh -n scripts/verify-rc1-export.sh
 grep -Fq '*.re text eol=lf' .gitattributes
@@ -67,6 +70,10 @@ for path in README.md README.zh-CN.md QUICKSTART.md RELEASE_NOTES.md LICENSE NOT
   LICENSE-RC.md NOTICE-RC.md docs/rc1-license-and-limitations.md \
   docs/cross-platform-evidence.md scripts/verify-rc1-export.sh \
   docs/rc1-sealed-export-contract.md \
+  experiments/rc1/README.md experiments/rc1/hello/README.md \
+  experiments/rc1/agent-review/README.md experiments/rc1/capabilities/README.md \
+  experiments/rc1/multi-module/README.md experiments/rc1/server-bounded/README.md \
+  experiments/rc1/comparison/README.md experiments/rc1/comparison/record.schema.json \
   .github/workflows/rc1-release-gate.yml \
   docs/execution-contract.zh-CN.md \
   examples/agent-handoff-review/main.re examples/agent-handoff-review/README.md \
