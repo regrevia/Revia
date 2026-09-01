@@ -28,6 +28,7 @@ grep -Fq 'Stable V1.0' docs/stable-release-gate.md
 grep -Fq 'Revia Release Candidate Developer Evaluation License 1.0' LICENSE-RC.md
 grep -Fq 'not legal advice' docs/rc1-license-and-limitations.md
 grep -Fq 'measured-emulated' docs/cross-platform-evidence.md
+grep -Fq 'revia.public-rc-export@1.0.0' docs/rc1-sealed-export-contract.md
 sh -n bin/revia
 sh -n scripts/verify-rc1-export.sh
 grep -Fq '*.re text eol=lf' .gitattributes
@@ -65,6 +66,7 @@ for path in README.md README.zh-CN.md QUICKSTART.md RELEASE_NOTES.md LICENSE NOT
   docs/server-conformance.md docs/stable-release-gate.md docs/execution-contract.md \
   LICENSE-RC.md NOTICE-RC.md docs/rc1-license-and-limitations.md \
   docs/cross-platform-evidence.md scripts/verify-rc1-export.sh \
+  docs/rc1-sealed-export-contract.md \
   .github/workflows/rc1-release-gate.yml \
   docs/execution-contract.zh-CN.md \
   examples/agent-handoff-review/main.re examples/agent-handoff-review/README.md \
