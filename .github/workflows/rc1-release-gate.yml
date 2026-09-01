@@ -1,0 +1,138 @@
+name: Gate Revia V1 RC1
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Exact prerelease draft tag to verify and publish
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  gate-darwin-arm64:
+    name: Gate native macOS arm64 RC
+    runs-on: macos-15
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact candidate tag
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+
+      - name: Download draft archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(sed -n '1p' VERSION)
+          test "$version" = '1.0.0-rc.1'
+          test "$TAG" = "v$version"
+          mkdir -p incoming
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" \
+            --pattern "revia-$version-darwin-arm64.tar.gz" --dir incoming
+
+      - name: Verify sealed public export
+        env:
+          TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(sed -n '1p' VERSION)
+          mkdir -p sealed
+          cp LICENSE-RC.md sealed/LICENSE-RC.md
+          cp NOTICE-RC.md sealed/NOTICE-RC.md
+          cp runtime/checksums.txt sealed/checksums.txt
+          cp runtime/rc1/*.json sealed/
+          cp "incoming/revia-$version-darwin-arm64.tar.gz" sealed/
+          ./scripts/verify-rc1-export.sh sealed
+
+      - name: Execute candidate without repository credentials
+        env:
+          GH_TOKEN: ''
+          GITHUB_TOKEN: ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          unset GH_TOKEN GITHUB_TOKEN
+          version=$(sed -n '1p' VERSION)
+          mkdir package
+          tar -xzf "incoming/revia-$version-darwin-arm64.tar.gz" -C package
+          test "$(uname -s):$(uname -m)" = 'Darwin:arm64'
+          file package/revia | grep -Fq 'arm64'
+          chmod 755 package/revia
+          test "$(package/revia --version)" = "revia native $version"
+          package/revia --help | grep -Fq 'project-check'
+          package/revia --help | grep -Fq 'project-multi-module-gate'
+          package/revia --help | grep -Fq 'project-server-gate'
+
+  publish:
+    name: Publish verified RC draft
+    needs: gate-darwin-arm64
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout exact candidate tag
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+
+      - name: Publish only the verified prerelease draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(sed -n '1p' VERSION)
+          test "$version" = '1.0.0-rc.1'
+          test "$TAG" = "v$version"
+          release=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" \
+            --json isDraft,isPrerelease,tagName,name)
+          test "$(printf '%s' "$release" | jq -r '.isDraft')" = true
+          test "$(printf '%s' "$release" | jq -r '.isPrerelease')" = true
+          test "$(printf '%s' "$release" | jq -r '.tagName')" = "$TAG"
+          test "$(printf '%s' "$release" | jq -r '.name')" = "Revia $version"
+          gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false
+
+  public-download-smoke:
+    name: Smoke public macOS arm64 download
+    needs: publish
+    runs-on: macos-15
+    timeout-minutes: 10
+    permissions: {}
+    steps:
+      - name: Download and execute without repository credentials
+        env:
+          GH_TOKEN: ''
+          GITHUB_TOKEN: ''
+          TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          unset GH_TOKEN GITHUB_TOKEN
+          version=${TAG#v}
+          test "$version" = '1.0.0-rc.1'
+          base="https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG"
+          raw="https://raw.githubusercontent.com/$GITHUB_REPOSITORY/$TAG"
+          asset="revia-$version-darwin-arm64.tar.gz"
+          curl --fail --location --retry 3 --connect-timeout 15 --max-time 120 \
+            --silent --show-error "$base/$asset" --output "$asset"
+          curl --fail --location --retry 3 --connect-timeout 15 --max-time 120 \
+            --silent --show-error "$raw/runtime/checksums.txt" --output checksums.txt
+          expected=$(awk -v name="$asset" '$2 == name { print $1 }' checksums.txt)
+          test -n "$expected"
+          test "$(shasum -a 256 "$asset" | awk '{ print $1 }')" = "$expected"
+          mkdir package
+          tar -xzf "$asset" -C package
+          chmod 755 package/revia
+          test "$(package/revia --version)" = "revia native $version"
+          package/revia --help | grep -Fq 'project-check'
