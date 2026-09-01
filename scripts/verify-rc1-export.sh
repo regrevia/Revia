@@ -10,6 +10,7 @@ EXPORT=$1
 VERSION=1.0.0-rc.1
 TARGET=darwin-arm64
 ARCHIVE="revia-$VERSION-$TARGET.tar.gz"
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 
 fail() {
   printf 'RC1 export verification failed: %s\n' "$1" >&2
@@ -122,6 +123,32 @@ for evidence in native-evidence.json capability-evidence.json \
     "$EXPORT/$evidence" >/dev/null || fail "$evidence identity mismatch"
 done
 
+jq -e '
+  .report_schema != "unversioned-source-report" and
+  (.report_schema | test("node-free|release-evidence")) and
+  (.evidence_digest | test("^sha256:[0-9a-f]{64}$")) and
+  (.stable_digest | test("^sha256:[0-9a-f]{64}$"))
+' "$EXPORT/native-evidence.json" >/dev/null || fail 'native evidence is not bound to a versioned measured report'
+
+jq -e '
+  (.report_schema | test("capability|release-evidence")) and
+  (.evidence_digest | test("^sha256:[0-9a-f]{64}$")) and
+  (.stable_digest | test("^sha256:[0-9a-f]{64}$"))
+' "$EXPORT/capability-evidence.json" >/dev/null || fail 'capability evidence digest binding is incomplete'
+
+jq -e '
+  (.report_schema | test("multi-module")) and
+  (.report_digest | test("^sha256:[0-9a-f]{64}$")) and
+  (.stable_digest | test("^sha256:[0-9a-f]{64}$"))
+' "$EXPORT/multi-module-evidence.json" >/dev/null || fail 'multi-module evidence is not bound to the measured gate'
+
+jq -e '
+  .report_schema != "unversioned-source-report" and
+  (.report_schema | test("server")) and
+  (.report_digest | test("^sha256:[0-9a-f]{64}$")) and
+  (.stable_digest | test("^sha256:[0-9a-f]{64}$"))
+' "$EXPORT/server-evidence.json" >/dev/null || fail 'server evidence is not bound to the WP-299 measured gate'
+
 ARCHIVE_HASH=$(awk -v name="$ARCHIVE" '$2 == name { print $1 }' "$EXPORT/checksums.txt")
 BINARY_NAME="revia-$VERSION-$TARGET"
 BINARY_HASH=$(awk -v name="$BINARY_NAME" '$2 == name { print $1 }' "$EXPORT/checksums.txt")
@@ -141,6 +168,9 @@ cmp -s "$EXPORT/LICENSE-RC.md" "$UNPACK/LICENSE" || fail 'archive license mismat
 cmp -s "$EXPORT/NOTICE-RC.md" "$UNPACK/NOTICE" || fail 'archive notice mismatch'
 cmp -s "$EXPORT/candidate-manifest.json" "$UNPACK/manifest.json" || fail 'archive candidate manifest mismatch'
 [ "$BINARY_HASH" = "$(sha256_file "$UNPACK/revia")" ] || fail 'binary checksum mismatch'
+
+cmp -s "$ROOT/LICENSE-RC.md" "$EXPORT/LICENSE-RC.md" || fail 'export license differs from the public RC license'
+cmp -s "$ROOT/NOTICE-RC.md" "$EXPORT/NOTICE-RC.md" || fail 'export notice differs from the public RC notice'
 
 LICENSE_HASH=$(sha256_file "$EXPORT/LICENSE-RC.md")
 [ "$LICENSE_HASH" = "$(jq -r '.license_sha256' "$MANIFEST")" ] || fail 'license digest mismatch'

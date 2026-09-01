@@ -64,6 +64,10 @@ revia
 
 `LICENSE` is byte-identical to the export `LICENSE-RC.md`; `NOTICE` is byte-identical to `NOTICE-RC.md`; `manifest.json` is byte-identical to `candidate-manifest.json`. The executable is a native macOS arm64 release binary and reports exactly:
 
+The exported `LICENSE-RC.md` and `NOTICE-RC.md` must also be byte-identical to
+the files at the public candidate commit. A self-consistent private license is
+not sufficient if it differs from the terms shown to public evaluators.
+
 ```text
 revia native 1.0.0-rc.1
 ```
@@ -73,6 +77,12 @@ revia native 1.0.0-rc.1
 ## Rejection conditions
 
 The public repository rejects the export for any missing or extra file, symlink, nested directory, hash or size mismatch, non-canonical JSON, identity drift, unmeasured target claim, archive traversal or inventory drift, license/notice/manifest mismatch, source-code extension, source map, local home path, credential-like value, or internal governance marker.
+
+The four evidence wrappers must point to distinct, versioned measured report
+identities. Native/node-free, capability, multi-module, and bounded Server
+evidence each carries the actual report/evidence digest and stable digest from
+its own run. `unversioned-source-report`, duplicated evidence presented as two
+domains, or an input hash without a result digest is rejected.
 
 Run:
 
