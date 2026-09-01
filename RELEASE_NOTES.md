@@ -4,16 +4,18 @@
 
 The current development status, including work-package review state, is kept in
 the [development status](docs/development-status.md) document. The current
-`0.1-preview.1` assets are unchanged. A new runtime candidate must rebuild from
-the reviewed line, pass the fresh-process determinism probe, validate the
-runtime JSON contracts, and pass the six-target gate before publication.
-Project-template validation will be added once the public manifest and fixture
-inputs ship.
+`0.1-preview.1` assets are unchanged. The next milestone is
+`v1.0.0-rc.1`, initially declared only for native macOS arm64. It must arrive
+through the sealed export contract, bind version/target/license and hashes,
+and pass the Darwin arm64 token-free prerelease gate. The other five targets
+remain pending until their own native evidence is added; Stable V1.0 still
+requires the complete stable gate.
 
 工作包的当前审阅状态统一记录在[开发进展](docs/development-status.md)文档中。
-当前 `0.1-preview.1` 资产不变。新的运行时候选必须基于已审阅的开发线重新构建，
-通过全新进程确定性探针和运行时 JSON 契约，并在发布前通过六目标发行门禁。
-公开 manifest 与 fixture 到位后再加入项目模板验证。
+当前 `0.1-preview.1` 资产不变。下一里程碑为初始只声明原生 macOS arm64 的
+`v1.0.0-rc.1`。它必须通过密封导出合同，绑定版本、目标、许可与摘要，并在发布前通过
+Darwin arm64 无仓库凭据预发行门禁。其余五个目标等待各自原生证据；Stable V1.0
+仍必须通过完整稳定版门禁。
 
 ## 0.1-preview.1
 
@@ -31,13 +33,13 @@ Cross-platform Revia CLI for macOS, Linux, and Windows on `arm64` and
 
 ## Candidate Gate / 候选门禁
 
-Future assets are uploaded to a draft release and verified on every declared
-target before publication: archive SHA-256, executable SHA-256, `check`,
-`run`, `manifest`, determinism, runtime JSON contracts, and diagnostic exit
-status. Project workflow validation remains pending the public template inputs.
-后续资产先上传到草稿发行版，并在每个声明目标上完成发布前验证：归档 SHA-256、
-可执行文件 SHA-256、`check`、`run`、`manifest`、确定性、运行时 JSON 契约与诊断退出状态。
-项目流程验证等待公开模板输入文件到位。
+Every published asset must be verified on its own declared native target before
+publication. RC1 begins with Darwin arm64 only. Adding a target requires its
+archive/executable SHA-256, sealed evidence, and native smoke; Stable V1.0
+retains the full six-target requirement.
+每个已发布资产都必须在其声明的原生目标上完成发布前验证。RC1 初始仅包含 Darwin
+arm64；新增目标必须提供归档/可执行文件 SHA-256、密封证据与原生 smoke。Stable V1.0
+继续保留完整六目标要求。
 
 The release tag must equal `v` plus `VERSION`. Documentation and launcher
 changes on `main` do not create a new runtime release. See the

@@ -58,6 +58,14 @@ next=inspect-graph
 首次运行会下载、校验并缓存对应可执行文件。环境要求、离线复用、退出码、构建产物与
 安装恢复见[快速开始](QUICKSTART.md)。
 
+## V1 RC1 准备状态
+
+下一里程碑是供开发者与 Agent 深度非生产试用的闭源 `v1.0.0-rc.1`。
+初始声明资产仅为原生 macOS arm64；其余五个目标保持明确 `pending`，不使用未经实测的
+二进制冒充支持。发布必须先通过[密封导出合同](docs/rc1-sealed-export-contract.md)、
+[RC 许可](LICENSE-RC.md)与 Darwin arm64 无仓库凭据执行门禁。公开侧控制面已经就绪，
+但在真实资产和证据通过前，`v1.0.0-rc.1` 仍未发布。
+
 ## 当前开发进展
 
 公开发行版已经可以直接运行。开发线已完成经审阅的 `WP-299` 有界 Server 一致性切片，
@@ -128,6 +136,8 @@ projects/<YYYY-MM-DD>-<agent>-<project>/
 [协议](docs/protocol.md) · [验证证据](docs/evidence.md) ·
 [演进记录](docs/evolution.md) · [开发进展](docs/development-status.md) ·
 [发行政策](docs/release-policy.md) ·
+[RC1 许可与限制](docs/rc1-license-and-limitations.md) ·
+[跨平台证据](docs/cross-platform-evidence.md) ·
 [Stable V1.0 门禁](docs/stable-release-gate.md)
 
 ### 参与协作
@@ -147,5 +157,6 @@ projects/<YYYY-MM-DD>-<agent>-<project>/
 
 ## 许可
 
-Revia 使用 [Revia Technical Preview License 0.1](LICENSE)。
-第三方运行时许可见 [NOTICE.md](NOTICE.md)。
+`0.1-preview.1` 使用 [Revia Technical Preview License 0.1](LICENSE)。
+计划中的 `v1.0.0-rc.1` 使用单独的[开发评估许可](LICENSE-RC.md)。
+当前预览版第三方运行时许可见 [NOTICE.md](NOTICE.md)。

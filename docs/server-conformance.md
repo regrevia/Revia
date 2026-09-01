@@ -37,8 +37,8 @@ private build artifacts.
 ## Release Boundary / 发行边界
 
 The public `0.1-preview.1` download does not contain this Server slice. It
-becomes a public capability only after a rebuilt candidate passes the release
-gate on every declared platform.
+becomes a capability of a particular release asset only after that asset is
+rebuilt, sealed, and executed by the native gate for its declared target.
 
-公开 `0.1-preview.1` 下载包不包含该 Server 切片。只有重新构建的候选版本在所有声明
-平台通过发行门禁后，它才会成为公开能力。
+公开 `0.1-preview.1` 下载包不包含该 Server 切片。只有某个发行资产完成重新构建、密封，
+并在其声明目标的原生门禁中执行通过后，它才成为该资产的公开能力。
