@@ -25,7 +25,11 @@ grep -Fq 'Notice / 声明' NOTICE.md
 grep -Fq 'GitHub Private Vulnerability Reporting is enabled' SECURITY.md
 grep -Fq 'WP-299' docs/server-conformance.md
 grep -Fq 'Stable V1.0' docs/stable-release-gate.md
+grep -Fq 'Revia Release Candidate Developer Evaluation License 1.0' LICENSE-RC.md
+grep -Fq 'not legal advice' docs/rc1-license-and-limitations.md
+grep -Fq 'measured-emulated' docs/cross-platform-evidence.md
 sh -n bin/revia
+sh -n scripts/verify-rc1-export.sh
 grep -Fq '*.re text eol=lf' .gitattributes
 grep -Fq 'windows-arm64' bin/revia.ps1
 grep -Fq 'windows-x64' bin/revia.ps1
@@ -38,6 +42,10 @@ grep -Fq 'contents: write' .github/workflows/release-gate.yml
 grep -Fq 'persist-credentials: false' .github/workflows/release-gate.yml
 grep -Fq 'without repository token' .github/workflows/release-gate.yml
 grep -Fq 'post-publish-smoke:' .github/workflows/release-gate.yml
+grep -Fq 'permissions: {}' .github/workflows/rc1-release-gate.yml
+grep -Fq 'persist-credentials: false' .github/workflows/rc1-release-gate.yml
+grep -Fq 'without repository credentials' .github/workflows/rc1-release-gate.yml
+grep -Fq 'runs-on: macos-15' .github/workflows/rc1-release-gate.yml
 
 for path in README.md README.zh-CN.md QUICKSTART.md RELEASE_NOTES.md LICENSE NOTICE.md VERSION \
   runtime/checksums.txt feedback/FEEDBACK_TEMPLATE.md docs/language.md \
@@ -55,6 +63,9 @@ for path in README.md README.zh-CN.md QUICKSTART.md RELEASE_NOTES.md LICENSE NOT
   docs/architecture.md docs/architecture.zh-CN.md docs/evidence.md \
   docs/evolution.md docs/development-status.md docs/language-reference.md docs/release-policy.md \
   docs/server-conformance.md docs/stable-release-gate.md docs/execution-contract.md \
+  LICENSE-RC.md NOTICE-RC.md docs/rc1-license-and-limitations.md \
+  docs/cross-platform-evidence.md scripts/verify-rc1-export.sh \
+  .github/workflows/rc1-release-gate.yml \
   docs/execution-contract.zh-CN.md \
   examples/agent-handoff-review/main.re examples/agent-handoff-review/README.md \
   examples/agent-workflow-brief.re examples/agent-args-policy.re \
@@ -97,7 +108,7 @@ if [ -n "$FORBIDDEN" ]; then
 fi
 
 if grep -R -I -n -E '/Users/[^/]+/|BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|github_pat_|ghp_[A-Za-z0-9]|sk-[A-Za-z0-9_-]{20,}|V1-DESIGN|RELAY_STATE|COORDINATOR_GUIDANCE' \
-  --exclude-dir=.git --exclude=validate-public-tree.sh .; then
+  --exclude-dir=.git --exclude=validate-public-tree.sh --exclude=verify-rc1-export.sh .; then
   printf '%s\n' 'Private path, credential-like value, or internal governance marker found.' >&2
   exit 1
 fi
