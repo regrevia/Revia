@@ -12,15 +12,15 @@ Documentation, examples, and launcher changes on `main` do not by themselves
 create a new runtime release.
 `main` 上的文档、示例和启动器变更本身不构成新的运行时发行。
 
-## Candidate Gate / 候选门禁
+## Preview Gate / 预览版门禁
 
-New assets are uploaded to a prerelease draft. The six-target candidate gate
+The existing preview workflow uploads assets to a prerelease draft. Its six-target gate
 verifies the tag/version binding, archive SHA-256, executable SHA-256, `check`,
 `run`, `manifest`, compact-source determinism, and a structured diagnostic
 before publication. Project workflow validation is a future gate item while
 the public preview template is still missing its manifest and fixture.
 
-新资产先上传到预发行草稿。六目标候选门禁在发布前验证 tag/版本绑定、归档 SHA-256、
+现有预览工作流先将资产上传到预发行草稿。其六目标门禁在发布前验证 tag/版本绑定、归档 SHA-256、
 可执行文件 SHA-256、`check`、`run`、`manifest`、compact 源确定性与结构化诊断。
 公开预览版模板仍缺少 manifest 和 fixture，项目流程验证列为后续候选门禁项目。
 
@@ -68,6 +68,36 @@ attestation。这些是后续候选的路线图项目；在门禁真正检查之
 发行要求。除六目标 smoke 外，发布门禁当前还会检查 tag/版本绑定、
 `runtime/build-metadata.json` 的 release 字段，以及 Release 名称/正文中的版本引用。
 公开项目模板的 `project-check` 与 `project-run` 仍待所需输入文件随候选一并发布。
+
+## V1 RC1 Gate / V1 RC1 门禁
+
+`v1.0.0-rc.1` is a separate source-closed, non-production evaluation channel.
+Its initial declared target is native Darwin arm64 only. The other five target
+records remain `pending`; the RC does not publish placeholder assets or reuse
+preview evidence as if it measured the new runtime.
+
+`v1.0.0-rc.1` 是独立的闭源、非生产评估通道，初始只声明原生 Darwin arm64。
+其余五个目标记录保持 `pending`；RC 不发布占位资产，也不会把旧预览版证据冒充为新运行时实测。
+
+Before an RC draft can publish, the development producer must provide the
+[sealed export](rc1-sealed-export-contract.md). The public verifier checks the
+exact file set, hashes, canonical JSON, version/target/license binding, archive
+contents, and source/private-data leakage. The native `macos-15` job then
+executes the binary with repository credentials removed. A separate no-token
+job downloads the public asset after publication.
+
+RC 草稿发布前，开发产出方必须提供[密封导出](rc1-sealed-export-contract.md)。公开验证器检查
+精确文件集、摘要、canonical JSON、版本/目标/许可绑定、归档内容及源码/私有数据泄漏；
+随后原生 `macos-15` job 在移除仓库凭据后执行二进制，并在发布后由独立无凭据 job
+通过公开地址重新下载验证。
+
+Adding another RC target requires a native build and smoke on that exact OS and
+architecture, a new sealed evidence record, and an updated public gate. It does
+not require owning physical hardware if an official native hosted runner is
+available. Emulation is diagnostic evidence only.
+
+新增 RC 目标必须在该操作系统与架构上完成原生构建和 smoke，生成新的密封证据记录，并更新
+公开门禁。若有官方原生托管 runner，无需持有对应实体设备；模拟结果只能作为诊断证据。
 
 Stable V1.0 has a separate hard-gate checklist in
 [`docs/stable-release-gate.md`](stable-release-gate.md). The public status

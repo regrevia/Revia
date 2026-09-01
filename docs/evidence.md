@@ -39,12 +39,12 @@ compact identity 确定性工作，`WP-296` 关闭发行证据 authority 边界�
 当前公开二进制仍为 `0.1-preview.1`，不公开私有实现。
 
 The reviewed development evidence includes the bounded Server result in
-[`docs/server-conformance.md`](server-conformance.md). It is not part of the
-published preview asset until a new candidate is rebuilt and independently
-verified on every declared platform.
+[`docs/server-conformance.md`](server-conformance.md). It is not part of a
+published asset until that asset is rebuilt, sealed, and independently verified
+on its declared native target.
 
-经审阅的开发证据包含[有界 Server 一致性](server-conformance.md)结果。它在新候选重新
-构建并于所有声明平台完成独立验证前，不属于已发布预览资产。
+经审阅的开发证据包含[有界 Server 一致性](server-conformance.md)结果。某个资产只有完成
+重新构建、密封，并在其声明的原生目标上完成独立验证后，才可包含该能力。
 
 ## Reproducible Commands / 复现命令
 
@@ -111,9 +111,9 @@ boundary.
 
 ## Candidate Requirements / 候选要求
 
-The current release does not include the reviewed `WP-299` runtime. A new candidate must
-be rebuilt from the reviewed implementation and prove, on every declared
-platform:
+The current release does not include the reviewed `WP-299` runtime. Each new
+candidate asset must be rebuilt from the reviewed implementation and prove on
+its declared native target:
 
 - identical `check`, `check --write`, `manifest`, `view`, `build`, and checksum
   trees across two fresh processes and directories;

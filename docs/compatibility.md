@@ -15,6 +15,15 @@ line through `WP-299`.
 `0.1-preview.1` 已在六个目标平台通过原生 `check`、`run`、`manifest` 与诊断测试。
 该版本尚未使用截至 `WP-299` 的已审阅开发线重新构建。
 
+The planned `v1.0.0-rc.1` uses a new native runtime and therefore starts a new
+evidence matrix. Its initial target is Darwin arm64 only after the sealed export
+and RC gate pass; every other target remains pending. The six rows above remain
+the verified matrix for `0.1-preview.1`, not evidence for RC1.
+
+计划中的 `v1.0.0-rc.1` 使用新的原生运行时，因此启用新的证据矩阵。只有密封导出与 RC
+门禁通过后，初始 Darwin arm64 才可标为实测；其余目标保持 pending。上方六行是
+`0.1-preview.1` 的已验证矩阵，不是 RC1 的证据。
+
 - Bundled runtime; no Node.js installation / 内置运行时，无需安装 Node.js
 - Independent archive and executable SHA-256 verification / 归档与可执行文件独立 SHA-256 校验
 - Per-user verified executable cache / 用户级已校验可执行文件缓存

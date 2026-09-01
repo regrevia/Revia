@@ -77,14 +77,15 @@ rebuilt and passes all release gates.
 
 ## Active Work Package / 当前工作包
 
-The next public candidate must rebuild the runtime, rerun the two-directory
-fresh-process determinism probe, verify the runtime JSON contracts, and pass
-the six-target release gate before publication. Project-template validation is
-pending the public manifest and fixture inputs.
+The next public candidate is the Darwin arm64-only `v1.0.0-rc.1`. It must be
+delivered as a sealed, version-bound export and pass the native token-free RC
+gate. The other five targets remain pending. Stable V1.0 still requires the
+complete cross-platform, signing, SBOM, attestation, immutable-release, license,
+and project-workflow gates.
 
-下一公开候选必须重新构建运行时，重跑两个独立目录的全新进程确定性探针，验证运行时
-JSON 契约和有界 Server 一致性，并在发布前通过六目标发行门禁。项目模板验证等待
-公开 manifest 和 fixture 输入文件到位。
+下一公开候选为仅声明 Darwin arm64 的 `v1.0.0-rc.1`。它必须通过密封、版本绑定的导出
+交付，并通过原生无仓库凭据 RC 门禁；其余五个目标保持 pending。Stable V1.0 仍要求
+完整跨平台、签名、SBOM、attestation、immutable release、许可与项目流程门禁。
 
 ## Follow The Work / 跟进进展
 

@@ -61,6 +61,16 @@ single-file command surface. The first launch downloads, verifies, and caches
 the matching executable. See [Quickstart](QUICKSTART.md) for requirements,
 offline reuse, exit codes, build artifacts, and installation recovery.
 
+## V1 RC1 Preparation
+
+The next milestone is a source-closed `v1.0.0-rc.1` for deep non-production
+evaluation. Its initial declared asset is native macOS arm64; the other five
+targets remain explicitly pending rather than being represented by unmeasured
+binaries. Publication is blocked on the [sealed export contract](docs/rc1-sealed-export-contract.md),
+[RC license](LICENSE-RC.md), and the Darwin arm64 token-free release gate.
+This repository has prepared those public controls, but `v1.0.0-rc.1` is not
+released until the measured asset and evidence pass them.
+
 ## Current Development
 
 The public release is runnable today. The development line has completed the
@@ -141,6 +151,8 @@ from the [project template](projects/_template/) and use the
 [Protocol](docs/protocol.md) · [Evidence](docs/evidence.md) ·
 [Evolution](docs/evolution.md) · [Development status](docs/development-status.md) ·
 [Release policy](docs/release-policy.md) ·
+[RC1 license and limits](docs/rc1-license-and-limitations.md) ·
+[Cross-platform evidence](docs/cross-platform-evidence.md) ·
 [Stable V1.0 gate](docs/stable-release-gate.md)
 
 ### Collaborate
@@ -160,5 +172,7 @@ from the [project template](projects/_template/) and use the
 
 ## License
 
-Revia uses the [Revia Technical Preview License 0.1](LICENSE). Third-party
-runtime notices are listed in [NOTICE.md](NOTICE.md).
+`0.1-preview.1` uses the [Revia Technical Preview License 0.1](LICENSE).
+The planned `v1.0.0-rc.1` uses the separate
+[Developer Evaluation License](LICENSE-RC.md). Third-party runtime notices for
+the current preview are listed in [NOTICE.md](NOTICE.md).
