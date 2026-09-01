@@ -29,11 +29,13 @@ grep -Fq 'Revia Release Candidate Developer Evaluation License 1.0' LICENSE-RC.m
 grep -Fq 'not legal advice' docs/rc1-license-and-limitations.md
 grep -Fq 'measured-emulated' docs/cross-platform-evidence.md
 grep -Fq 'revia.public-rc-export@1.0.0' docs/rc1-sealed-export-contract.md
+grep -Fq 'revia.public-trial-kit@1.0.0' docs/rc1-trial-kit-contract.md
 grep -Fq 'pending sealed evidence' experiments/rc1/README.md
 jq -e '.properties.environment.properties.execution_mode.enum == ["native", "virtualized-native", "emulated"]' \
   experiments/rc1/comparison/record.schema.json >/dev/null
 sh -n bin/revia
 sh -n scripts/verify-rc1-export.sh
+sh -n scripts/verify-rc1-trial-kit.sh
 grep -Fq '*.re text eol=lf' .gitattributes
 grep -Fq 'windows-arm64' bin/revia.ps1
 grep -Fq 'windows-x64' bin/revia.ps1
@@ -70,6 +72,7 @@ for path in README.md README.zh-CN.md QUICKSTART.md RELEASE_NOTES.md LICENSE NOT
   LICENSE-RC.md NOTICE-RC.md docs/rc1-license-and-limitations.md \
   docs/cross-platform-evidence.md scripts/verify-rc1-export.sh \
   docs/rc1-sealed-export-contract.md \
+  docs/rc1-trial-kit-contract.md scripts/verify-rc1-trial-kit.sh \
   experiments/rc1/README.md experiments/rc1/hello/README.md \
   experiments/rc1/agent-review/README.md experiments/rc1/capabilities/README.md \
   experiments/rc1/multi-module/README.md experiments/rc1/server-bounded/README.md \
@@ -117,7 +120,8 @@ if [ -n "$FORBIDDEN" ]; then
 fi
 
 if grep -R -I -n -E '/Users/[^/]+/|BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|github_pat_|ghp_[A-Za-z0-9]|sk-[A-Za-z0-9_-]{20,}|V1-DESIGN|RELAY_STATE|COORDINATOR_GUIDANCE' \
-  --exclude-dir=.git --exclude=validate-public-tree.sh --exclude=verify-rc1-export.sh .; then
+  --exclude-dir=.git --exclude=validate-public-tree.sh --exclude=verify-rc1-export.sh \
+  --exclude=verify-rc1-trial-kit.sh .; then
   printf '%s\n' 'Private path, credential-like value, or internal governance marker found.' >&2
   exit 1
 fi
