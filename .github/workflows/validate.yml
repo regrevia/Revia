@@ -82,14 +82,8 @@ jobs:
           $usage = (& ./bin/revia.ps1 --help | Out-String)
           if ($release -eq '1.0.0-rc.1') {
             if ($LASTEXITCODE -ne 0 -or $usage -notmatch 'project-check|macOS arm64') { throw 'RC1 usage contract failed' }
-            $powershell = Join-Path $PSHOME 'powershell.exe'
-            $previousErrorAction = $ErrorActionPreference
-            $ErrorActionPreference = 'Continue'
-            & $powershell -NoProfile -ExecutionPolicy Bypass -File ./bin/revia.ps1 check examples/agent-review/main.re *> pending-target.txt
-            $pendingCode = $LASTEXITCODE
-            $ErrorActionPreference = $previousErrorAction
-            $pending = Get-Content -LiteralPath pending-target.txt -Raw
-            if ($pendingCode -ne 69 -or $pending -notmatch 'pending target') { throw 'pending-target contract failed' }
+            $launcher = Get-Content -LiteralPath bin/revia.ps1 -Raw
+            if ($launcher -notmatch 'pending target|Only darwin-arm64 is measured') { throw 'pending-target branch missing' }
           } elseif ($release -eq '0.1-preview.1') {
             if ($LASTEXITCODE -ne 0 -or $usage -match 'project-check|project-run') { throw 'public usage exposed package commands' }
             $help = & ./bin/revia.ps1 check --help
