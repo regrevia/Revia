@@ -91,3 +91,7 @@ Run:
 ```
 
 Acceptance by this static verifier is necessary but not sufficient. The GitHub release gate must still execute the candidate on native macOS arm64 with repository credentials removed, and it must verify the public download after publication.
+
+Before publication, the RC gate also verifies the complete twelve-asset draft inventory. It downloads every manifest, evidence file, license/notice, runtime archive, and trial-kit archive from the draft, compares public metadata byte-for-byte with this tree, checks the runtime archive checksum, and runs the trial-kit verifier against the downloaded archive. A green runtime smoke cannot hide a missing or mismatched companion asset.
+
+发行前，RC 门禁还会核对草稿中的完整十二项资产：从草稿下载全部 manifest、证据、许可/声明、运行时归档和 trial-kit 归档，与本树公开元数据逐字节比较，复算运行时归档摘要，并对下载后的试用归档运行 verifier。因此运行时 smoke 通过并不等于可以忽略缺失或不匹配的配套资产。
