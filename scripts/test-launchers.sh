@@ -9,17 +9,24 @@ test "$version" = "revia $(sed -n '1p' VERSION)"
 
 help=$(./bin/revia --help)
 printf '%s\n' "$help" | grep -Fq 'Usage: revia <command>'
-if printf '%s\n' "$help" | grep -Fq 'project-check'; then
-  printf '%s\n' 'project-check must not be listed in public launcher help.' >&2
-  exit 1
-fi
-if printf '%s\n' "$help" | grep -Fq 'project-run'; then
-  printf '%s\n' 'project-run must not be listed in public launcher help.' >&2
-  exit 1
-fi
-
-check_help=$(./bin/revia check --help)
-test "$check_help" = 'Usage: revia check [--format json | --write] <file.re>'
+case "$(sed -n '1p' VERSION)" in
+  0.1-preview.1)
+    if printf '%s\n' "$help" | grep -Fq 'project-check'; then
+      printf '%s\n' 'project-check must not be listed in public launcher help.' >&2
+      exit 1
+    fi
+    if printf '%s\n' "$help" | grep -Fq 'project-run'; then
+      printf '%s\n' 'project-run must not be listed in public launcher help.' >&2
+      exit 1
+    fi
+    check_help=$(./bin/revia check --help)
+    test "$check_help" = 'Usage: revia check [--format json | --write] <file.re>'
+    ;;
+  1.0.0-rc.1)
+    printf '%s\n' "$help" | grep -Fq 'project-check'
+    printf '%s\n' "$help" | grep -Fq 'only on macOS arm64'
+    ;;
+esac
 
 link_dir=$(mktemp -d "${TMPDIR:-/tmp}/revia-launcher-test.XXXXXX")
 cache_dir=$(mktemp -d "${TMPDIR:-/tmp}/revia-launcher-cache.XXXXXX")
@@ -42,12 +49,20 @@ case "$(sed -n '1p' VERSION)" in
     grep -Fq 'Revia requires curl' /tmp/revia-no-curl.out
     ;;
   1.0.0-rc.1)
-    set +e
-    ./bin/revia check examples/agent-review/main.re >/tmp/revia-pending-target.out 2>&1
-    status=$?
-    set -e
-    test "$status" -eq 69
-    grep -Fqi 'pending target' /tmp/revia-pending-target.out
+    case "$(uname -s):$(uname -m)" in
+      Darwin:arm64)
+        # Native dispatch requires the unpublished release asset; its download is
+        # exercised by the macOS RC release gate, not this tree contract test.
+        ;;
+      *)
+        set +e
+        ./bin/revia check examples/agent-review/main.re >/tmp/revia-pending-target.out 2>&1
+        status=$?
+        set -e
+        test "$status" -eq 69
+        grep -Fqi 'pending target' /tmp/revia-pending-target.out
+        ;;
+    esac
     ;;
 esac
 

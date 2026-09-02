@@ -36,16 +36,14 @@ fn @main() -> process.status {
 - `process.args@0.1.0`
 - sandboxed source-directory file read and write / 源码目录沙箱内的文件读写
 
-The public capability catalog and result shapes are defined in the
-[language reference](language-reference.md). The project commands require a
-project manifest and are pending validation against the next rebuilt candidate.
-The current `0.1-preview.1` template remains a single-file `check -> run ->
-manifest -> view` example.
-公开能力目录和结果结构见[语言参考](language-reference.md)。项目命令需要项目
-manifest，等待下一候选重新构建后验证；当前 `0.1-preview.1` 模板仍是单文件
-`check -> run -> manifest -> view` 示例。
+The public capability catalog and historical result shapes are defined in the
+[language reference](language-reference.md). The RC1 trial surface adds bounded
+project and multi-module fixtures; use its pinned command arrays rather than
+inferring a general command contract from the preview examples.
+公开能力目录和历史结果结构见[语言参考](language-reference.md)。RC1 试用面加入有界项目和
+多模块 fixtures；请使用其固定命令数组，不要从预览示例推断通用命令契约。
 
-## Commands / 命令
+## Historical Preview Commands / 历史预览命令
 
 ```text
 revia check [--format json | --write] <file.re>
@@ -57,11 +55,13 @@ revia translate --format json <file.re>
 revia view [--locale zh-CN|en-US] [--format html|svg] <file.re>
 ```
 
-`revia --help`, `revia help <command>`, and `revia <command> --help` describe
-the launcher command surface. `check --write` rewrites the source into
-canonical text.
-`revia --help`、`revia help <command>` 与 `revia <command> --help` 展示启动器命令面；
-`check --write` 会将源码重写为规范化文本。
+The table above describes the historical preview surface. For `v1.0.0-rc.1`,
+run `revia --help` on macOS arm64 and use
+[`experiments/rc1/kit/trial-manifest.json`](../experiments/rc1/kit/trial-manifest.json)
+as the only deep-trial command contract.
+上表描述历史预览命令面。对于 `v1.0.0-rc.1`，请在 macOS arm64 运行 `revia --help`，并以
+[`experiments/rc1/kit/trial-manifest.json`](../experiments/rc1/kit/trial-manifest.json)
+作为唯一的深度试用命令契约。
 
 Use schema identifiers, structured fields, and stable codes as the machine
 interface.

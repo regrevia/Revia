@@ -1,56 +1,59 @@
 # Compatibility / 兼容性
 
-| Target / 目标 | Verified environment / 验证环境 |
-|---|---|
-| macOS `arm64` | macOS 15 |
-| macOS `x86_64` | macOS 15 Intel |
-| Linux `arm64` | Ubuntu 24.04 |
-| Linux `x86_64` | Ubuntu 24.04 |
-| Windows `arm64` | Windows 11 |
-| Windows `x86_64` | Windows Server 2025 |
+## V1 RC1 Distribution / V1 RC1 发行
 
-Release `0.1-preview.1` passed native `check`, `run`, `manifest`, and diagnostic
-tests on all six targets. It has not been rebuilt with the reviewed development
-line through `WP-299`.
-`0.1-preview.1` 已在六个目标平台通过原生 `check`、`run`、`manifest` 与诊断测试。
-该版本尚未使用截至 `WP-299` 的已审阅开发线重新构建。
+| Target / 目标 | RC1 state / RC1 状态 | Public behavior / 公开行为 |
+|---|---|---|
+| macOS `arm64` | `measured-native` | Verified native archive and seven bounded trials |
+| macOS `x86_64` | `pending` | No RC binary; launcher exits `69` |
+| Linux `arm64` | `pending` | No RC binary; launcher exits `69` |
+| Linux `x86_64` | `pending` | No RC binary; launcher exits `69` |
+| Windows `arm64` | `pending` | No RC binary; launcher exits `69` |
+| Windows `x86_64` | `pending` | No RC binary; launcher exits `69` |
 
-The planned `v1.0.0-rc.1` uses a new native runtime and therefore starts a new
-evidence matrix. Its initial target is Darwin arm64 only after the sealed export
-and RC gate pass; every other target remains pending. The six rows above remain
-the verified matrix for `0.1-preview.1`, not evidence for RC1.
+`v1.0.0-rc.1` is measured-native only on macOS arm64. The archive and binary
+SHA-256 are in [runtime/checksums.txt](../runtime/checksums.txt); the exact
+target matrix and evidence bindings are in [`runtime/rc1/`](../runtime/rc1/).
+`measured-native` means a sealed candidate was accepted and run on the declared
+native target. It is not a claim of Stable V1.0 or complete language-output
+byte determinism.
 
-计划中的 `v1.0.0-rc.1` 使用新的原生运行时，因此启用新的证据矩阵。只有密封导出与 RC
-门禁通过后，初始 Darwin arm64 才可标为实测；其余目标保持 pending。上方六行是
-`0.1-preview.1` 的已验证矩阵，不是 RC1 的证据。
+`v1.0.0-rc.1` 仅在 macOS arm64 为 `measured-native`。归档和二进制 SHA-256 见
+[runtime/checksums.txt](../runtime/checksums.txt)，精确目标矩阵及证据绑定见
+[`runtime/rc1/`](../runtime/rc1/)。`measured-native` 表示密封候选已在声明的原生目标上
+通过验收与执行，不表示 Stable V1.0 或完整语言产物逐字节确定性。
 
-- Bundled runtime; no Node.js installation / 内置运行时，无需安装 Node.js
-- Independent archive and executable SHA-256 verification / 归档与可执行文件独立 SHA-256 校验
-- Per-user verified executable cache / 用户级已校验可执行文件缓存
-- macOS: ad-hoc signed / macOS：临时签名
-- Linux and Windows: unsigned / Linux 与 Windows：未签名
-- PowerShell 7 is the documented Windows onboarding shell / Windows 入门流程要求 PowerShell 7
-- Full `project-check`/`project-run` template validation: pending next candidate;
-  the current template lacks the required project manifest and fixture /
-  完整 `project-check`/`project-run` 模板验证：等待下一候选；当前模板缺少所需的项目
-  manifest 和 fixture
-- CLI/native runtime is Node-free; current `build` output execution needs Node.js /
-  CLI/native runtime 不依赖 Node.js；当前 `build` 产物运行需要 Node.js
-- Launcher symlinks resolve the repository root before reading `VERSION` /
-  启动器会先解析软链接到仓库根目录，再读取 `VERSION`
-- Cache, download, unpack, checksum, and runtime setup failures use exit `70` /
-  缓存、下载、解包、校验和运行时准备失败统一返回 `70`
-- Bounded Server conformance is measured only on Darwin arm64 and does not cover
-  TLS/auth, HTTP/2/3, production databases, or a general scheduler /
-  有界 Server 一致性仅在 Darwin arm64 实测，不覆盖 TLS/auth、HTTP/2/3、生产数据库或通用调度器
-- SBOM, signed tag/checksums, and artifact attestation: pending /
-  SBOM、签名 tag/校验摘要和产物 attestation：待完成
-- Go, JVM, full Server profile, production backend, and Stable V1.0: pending /
-  Go、JVM、完整 Server profile、production backend 与 Stable V1.0：待完成
+## Trial Surface / 试用范围
 
-The release archive digest verifies downloaded bytes against this repository's
-published checksums. Signature and notarization status are recorded above.
-发行归档摘要用于核对下载字节与本仓库发布的校验摘要；签名与公证状态如上。
+- Native candidate, no Node.js runtime required / 原生候选，不需要 Node.js 运行时。
+- Explicit capability, project workflow, multi-module, and bounded
+  HTTP/JSON/SQLite trial fixtures / 显式能力、项目流程、多模块与有界
+  HTTP/JSON/SQLite 试用 fixtures。
+- Trial outputs are bound by recorded SHA-256 values / 试用输出由记录的 SHA-256 绑定。
+- SQLite and loopback HTTP are test dependencies, not a production hosting
+  profile / SQLite 与 loopback HTTP 是测试依赖，并非生产托管能力。
 
-[Checksums / 校验摘要](../runtime/checksums.txt) ·
-[Build metadata / 构建元数据](../runtime/build-metadata.json)
+## Not Claimed / 未声明能力
+
+- Native equivalence on the five pending targets.
+- TLS, authentication, HTTP/2 or HTTP/3, production database lifecycle,
+  scheduler, commercial hosting, or production SLA.
+- Signed release/checksums, SBOM, attestation, immutable Stable release, or
+  Stable V1.0 licensing.
+- General byte-for-byte identity for all language outputs across fresh processes.
+
+- 其余五个 pending 目标的原生等价性。
+- TLS、认证、HTTP/2/HTTP/3、生产数据库生命周期、调度器、商业托管或生产 SLA。
+- 签名 release/checksums、SBOM、attestation、immutable Stable release 或 Stable V1.0 许可。
+- 所有语言产物在全新进程间普遍逐字节一致。
+
+Virtual machines are useful when they are genuine native official runners. Local
+sandboxes and emulators can provide `measured-emulated` diagnostics, but never
+establish final native support or performance evidence. See the
+[cross-platform evidence procedure](cross-platform-evidence.md).
+
+只有真实原生的官方 runner 上的虚拟机可以形成最终原生证据。本地沙箱与模拟器可以提供
+`measured-emulated` 诊断，但不能建立最终原生支持或性能证据。详见[跨平台证据流程](cross-platform-evidence.md)。
+
+[Build metadata / 构建元数据](../runtime/build-metadata.json) ·
+[RC trial kit / RC 试用包](../experiments/rc1/kit/)

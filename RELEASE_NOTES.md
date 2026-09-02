@@ -1,54 +1,55 @@
 # Release Notes / 发行说明
 
-## Next Candidate / 下一候选
+## v1.0.0-rc.1 — Deep Trial / 深度试用
 
-The current development status, including work-package review state, is kept in
-the [development status](docs/development-status.md) document. The current
-`0.1-preview.1` assets are unchanged. The next milestone is
-`v1.0.0-rc.1`, initially declared only for native macOS arm64. It must arrive
-through the sealed export contract, bind version/target/license and hashes,
-and pass the Darwin arm64 token-free prerelease gate. The other five targets
-remain pending until their own native evidence is added; Stable V1.0 still
-requires the complete stable gate.
+`v1.0.0-rc.1` is a source-closed, non-production developer-evaluation release.
+It is the first V1 milestone for independent deep trials, not Stable V1.0.
 
-工作包的当前审阅状态统一记录在[开发进展](docs/development-status.md)文档中。
-当前 `0.1-preview.1` 资产不变。下一里程碑为初始只声明原生 macOS arm64 的
-`v1.0.0-rc.1`。它必须通过密封导出合同，绑定版本、目标、许可与摘要，并在发布前通过
-Darwin arm64 无仓库凭据预发行门禁。其余五个目标等待各自原生证据；Stable V1.0
-仍必须通过完整稳定版门禁。
+`v1.0.0-rc.1` 是闭源、非生产的开发者评估发行版，是用于独立深度试用的首个 V1 里程碑，
+不是 Stable V1.0。
 
-## 0.1-preview.1
+### Included / 包含内容
 
-Cross-platform Revia CLI for macOS, Linux, and Windows on `arm64` and
-`x86_64`.
-面向 macOS、Linux、Windows `arm64` 与 `x86_64` 的跨平台 Revia CLI。
+- One verified native macOS arm64 asset / 一个已验证的原生 macOS arm64 资产。
+- Archive and executable SHA-256 binding / 归档与可执行文件 SHA-256 绑定。
+- Sealed public export, candidate identity, target matrix, and native evidence /
+  密封公开导出、候选身份、目标矩阵和原生证据。
+- A public seven-trial kit covering source check, review manifest, capabilities,
+  project workflow, multi-module authority, and bounded HTTP/JSON/SQLite server
+  conformance / 七试验公开包，覆盖源码检查、审阅 manifest、能力、项目流程、多模块 authority
+  与有界 HTTP/JSON/SQLite Server 一致性。
+- RC developer-evaluation license and notice / RC 开发评估许可与声明。
 
-- Native `check`, `run`, `manifest`, and diagnostic verification on six targets / 六目标平台原生验证
-- POSIX and PowerShell launchers / POSIX 与 PowerShell 启动器
-- Archive and executable SHA-256 verification / 归档与可执行文件 SHA-256 校验
-- Deterministic release archives / 确定性发行归档
+### Explicit Limits / 明确限制
 
-[Build metadata / 构建元数据](runtime/build-metadata.json) ·
-[Checksums / 校验摘要](runtime/checksums.txt)
+- Only `darwin-arm64` is `measured-native`. Darwin x64, Linux arm64/x64, and
+  Windows arm64/x64 are `pending`; there are no RC assets for them.
+- This RC does not claim production use, commercial hosting, TLS/auth, a general
+  backend, cross-platform equivalence, full byte determinism, signed artifacts,
+  SBOM, attestation, or immutable Stable V1.0.
+- The release must be used under [LICENSE-RC.md](LICENSE-RC.md).
 
-## Candidate Gate / 候选门禁
+- 只有 `darwin-arm64` 为 `measured-native`。Darwin x64、Linux arm64/x64 与 Windows
+  arm64/x64 均为 `pending`，没有对应 RC 资产。
+- 本 RC 不声明生产使用、商业托管、TLS/auth、通用后端、跨平台等价、完整逐字节确定性、签名产物、
+  SBOM、attestation 或 immutable Stable V1.0。
+- 必须遵循 [LICENSE-RC.md](LICENSE-RC.md)。
 
-Every published asset must be verified on its own declared native target before
-publication. RC1 begins with Darwin arm64 only. Adding a target requires its
-archive/executable SHA-256, sealed evidence, and native smoke; Stable V1.0
-retains the full six-target requirement.
-每个已发布资产都必须在其声明的原生目标上完成发布前验证。RC1 初始仅包含 Darwin
-arm64；新增目标必须提供归档/可执行文件 SHA-256、密封证据与原生 smoke。Stable V1.0
-继续保留完整六目标要求。
+### Verify / 校验
 
-The release tag must equal `v` plus `VERSION`. Documentation and launcher
-changes on `main` do not create a new runtime release. See the
-[release policy](docs/release-policy.md).
-发行 tag 必须等于 `v` 加 `VERSION`。`main` 上的文档和启动器变更不会自动形成新的
-运行时发行。详见[发行政策](docs/release-policy.md)。
+Use [Quickstart](QUICKSTART.md) with the exact entries in
+[`runtime/checksums.txt`](runtime/checksums.txt). The trial commands and expected
+hashes are in [`experiments/rc1/kit/trial-manifest.json`](experiments/rc1/kit/trial-manifest.json).
+Submit counterexamples with version, platform, asset SHA-256, command, exit
+status, stdout/stderr hash, and a minimal public fixture.
 
-## 0.1-preview
+按[快速开始](QUICKSTART.md)使用 [`runtime/checksums.txt`](runtime/checksums.txt) 中精确条目校验。
+试用命令和预期摘要见 [`experiments/rc1/kit/trial-manifest.json`](experiments/rc1/kit/trial-manifest.json)。
+提交反例时请包含版本、平台、资产 SHA-256、命令、退出状态、stdout/stderr 摘要与最小公开 fixture。
 
-Initial macOS Apple silicon distribution with `check`, `run`, `manifest`,
-`translate`, and `view`.
-首个 macOS Apple silicon 发行版，包含 `check`、`run`、`manifest`、`translate` 与 `view`。
+## Historical Preview / 历史预览版
+
+`0.1-preview.1` remains a historical prerelease. Its six-platform evidence and
+its compact-output `PENDING` status do not constitute RC1 evidence.
+
+`0.1-preview.1` 保留为历史预发行版。它的六平台证据与 compact 输出 `PENDING` 状态均不构成 RC1 证据。

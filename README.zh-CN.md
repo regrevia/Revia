@@ -6,8 +6,8 @@
 </p>
 
 <p align="center">
-  <strong>闭源技术预览版 · 仅供评估 · 不用于生产</strong><br>
-  当前运行时：有界原生预览切片
+  <strong>闭源 V1 RC · 仅供评估 · 不用于生产</strong><br>
+  当前运行时：`v1.0.0-rc.1`，仅 macOS arm64 完成原生实测
 </p>
 
 <p align="center">
@@ -36,43 +36,42 @@ Revia 将 Agent 编写的程序转换为可执行契约，让人类能够直接�
 ```bash
 git clone https://github.com/tangshuang631/Revia.git
 cd Revia
-./bin/revia check examples/agent-review/main.re
-./bin/revia run examples/agent-review/main.re
-./bin/revia manifest examples/agent-review/main.re > manifest.json
-./bin/revia view --locale zh-CN --format html examples/agent-review/main.re > review.html
+./bin/revia --version
+./bin/revia --help
+cp -R experiments/rc1/kit /tmp/revia-rc1-kit
+# 将已校验的 release binary 安装到 /tmp/revia-rc1-kit/bin/revia，
+# 再在该目录按 trial-manifest.json 中固定的命令数组执行。
 ```
 
-Windows PowerShell：将 `./bin/revia` 替换为 `./bin/revia.ps1`。
+候选仅在 macOS arm64 原生执行；其余目标由启动器明确返回 `69`，不会把旧预览版兼容性
+误称为 RC 支持。试用步骤见[试用包](experiments/rc1/kit/)与[快速开始](QUICKSTART.md)。
 
 ```text
-agent=ready
-next=inspect-graph
+revia 1.0.0-rc.1
 ```
 
-`manifest.json` 是机器契约，`review.html` 是人类审阅视图，
-`view --format svg` 可生成结构化语义视图。
+试用 manifest 固定了能力、项目流程、多模块与有界 Server 工作负载的 fixtures、命令、输出摘要和限制。
 
 ## 发行运行时
 
-`0.1-preview.1` 是为已文档化的单文件命令面提供的、固定版本的闭源二进制运行时。
-首次运行会下载、校验并缓存对应可执行文件。环境要求、离线复用、退出码、构建产物与
-安装恢复见[快速开始](QUICKSTART.md)。
+`v1.0.0-rc.1` 是固定版本、闭源的开发者评估运行时。它只发布一个 Darwin arm64 归档，
+归档和可执行文件 SHA-256 见 [runtime/checksums.txt](runtime/checksums.txt)。有界试用流程与
+退出码见[快速开始](QUICKSTART.md)。
 
-## V1 RC1 准备状态
+## V1 RC1 试用边界
 
-下一里程碑是供开发者与 Agent 深度非生产试用的闭源 `v1.0.0-rc.1`。
-初始声明资产仅为原生 macOS arm64；其余五个目标保持明确 `pending`，不使用未经实测的
-二进制冒充支持。发布必须先通过[密封导出合同](docs/rc1-sealed-export-contract.md)、
-[RC 许可](LICENSE-RC.md)与 Darwin arm64 无仓库凭据执行门禁。公开侧控制面已经就绪，
-但在真实资产和证据通过前，`v1.0.0-rc.1` 仍未发布。
+`v1.0.0-rc.1` 是 V1 深度试用里程碑，而非 Stable V1.0。其密封 Darwin arm64 导出绑定了
+归档、二进制、评估许可、目标矩阵、能力证据、多模块证据和有界 Server 证据。其余五个目标
+明确为 `pending`，不会发布占位二进制。[密封导出合同](docs/rc1-sealed-export-contract.md)、
+[RC 许可](LICENSE-RC.md)与[跨平台流程](docs/cross-platform-evidence.md)定义该边界。
 
 ## 当前开发进展
 
-公开发行版已经可以直接运行。开发线已完成经审阅的 `WP-299` 有界 Server 一致性切片，
-承接确定性与发行证据工作。当前公开二进制仍为 `0.1-preview.1`；其 compact 派生产物在全新进程间仍报告 `PENDING`，
-直到经过审阅的新候选重新构建并通过发行门禁。详见
+公开 RC 可在唯一实测目标上运行。它的试用包公开能力、项目、多模块和 Server 实验，但不公开
+编译器或运行时源码；它不宣称完整语言输出逐字节确定性、跨平台等价、生产托管、签名、SBOM、
+attestation 或 immutable Stable V1.0。详见
 [开发进展](docs/development-status.md)和[验证证据](docs/evidence.md)，
-其中区分了当前公开边界、开发沉淀与尚未进入 `0.1-preview.1` 的内容。
+其中区分 RC 试用边界与 Stable V1.0 尚未满足的条件。
 
 HTTP/JSON/SQLite 结果见[有界 Server 一致性](docs/server-conformance.md)。
 [Stable V1.0 发行门禁](docs/stable-release-gate.md)仍待发行侧证据全部完成。
@@ -157,6 +156,5 @@ projects/<YYYY-MM-DD>-<agent>-<project>/
 
 ## 许可
 
-`0.1-preview.1` 使用 [Revia Technical Preview License 0.1](LICENSE)。
-计划中的 `v1.0.0-rc.1` 使用单独的[开发评估许可](LICENSE-RC.md)。
-当前预览版第三方运行时许可见 [NOTICE.md](NOTICE.md)。
+`v1.0.0-rc.1` 使用[开发评估许可](LICENSE-RC.md)：允许本地开发者与 Agent 评估、研究和
+基准实验；不允许生产使用、商业托管、再分发或逆向工程。RC 声明见 [NOTICE-RC.md](NOTICE-RC.md)。

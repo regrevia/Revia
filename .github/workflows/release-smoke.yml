@@ -38,6 +38,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          version=$(sed -n '1p' VERSION)
+          if [ "$version" = '1.0.0-rc.1' ]; then
+            if [ '${{ matrix.target }}' != 'darwin-arm64' ]; then
+              set +e
+              ./bin/revia check examples/hello.re > pending-target.txt 2>&1
+              status=$?
+              set -e
+              test "$status" -eq 69
+              grep -Fq 'pending target' pending-target.txt
+              exit 0
+            fi
+            ./bin/revia check experiments/rc1/kit/fixtures/hello-check/hello.re
+            exit 0
+          fi
           ./bin/revia check examples/hello.re
           test "$(./bin/revia run examples/hello.re)" = 'Hello, World!'
           ./bin/revia manifest examples/hello.re | grep -Fq 'graph_revision'
@@ -52,6 +66,13 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
+          $version = (Get-Content -LiteralPath VERSION -TotalCount 1).Trim()
+          if ($version -eq '1.0.0-rc.1') {
+            ./bin/revia.ps1 check examples/hello.re *> pending-target.txt
+            if ($LASTEXITCODE -ne 69) { throw "expected pending target exit 69, got $LASTEXITCODE" }
+            if ((Get-Content -Raw pending-target.txt) -notmatch 'pending target') { throw 'pending target message missing' }
+            exit 0
+          }
           ./bin/revia.ps1 check examples/hello.re
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $hello = (./bin/revia.ps1 run examples/hello.re | Out-String).Trim()

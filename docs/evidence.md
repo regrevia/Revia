@@ -1,140 +1,64 @@
 # Evidence / 验证证据
 
-This page records the public, reproducible evidence for `0.1-preview.1` and
-the reviewed development line that informs the next release candidate.
-本页记录 `0.1-preview.1` 的公开、可复现证据，以及为下一发行候选提供依据的
-已审阅开发线。
+This page records public, reproducible evidence for `v1.0.0-rc.1`. The source
+implementation remains outside this repository; only the sealed public export,
+trial fixtures, hashes, and evidence records are published.
 
-## Release Evidence / 发行证据
+本页记录 `v1.0.0-rc.1` 的公开、可复现证据。源码实现不在本仓库；公开内容仅为密封导出、
+试用 fixtures、摘要与证据记录。
+
+## RC1 Release Evidence / RC1 发行证据
 
 | Item / 项目 | Result / 结果 |
 |---|---|
-| Release | [`0.1-preview.1`](https://github.com/tangshuang631/Revia/releases/tag/v0.1-preview.1) |
-| Targets | macOS, Linux, Windows; `arm64`, `x86_64` |
-| Native checks | `check`, `run`, `manifest`, diagnostics |
-| Archive integrity | Archive and executable SHA-256 in [`runtime/checksums.txt`](../runtime/checksums.txt) |
-| Public boundary | GitHub Actions [`Validate public boundary`](https://github.com/tangshuang631/Revia/actions/workflows/validate.yml) |
-| Release smoke | GitHub Actions [`Smoke test release asset`](https://github.com/tangshuang631/Revia/actions/workflows/release-smoke.yml) |
-| Development baseline | `9288c9d` (reviewed WP-257..WP-299) |
+| Release channel / 发行通道 | `v1.0.0-rc.1` prerelease, developer evaluation only / 预发行，仅开发评估 |
+| Measured target / 实测目标 | macOS arm64 only / 仅 macOS arm64 |
+| Archive integrity / 归档完整性 | Archive and executable SHA-256 in [`runtime/checksums.txt`](../runtime/checksums.txt) |
+| Export binding / 导出绑定 | [`export-manifest.json`](../runtime/rc1/export-manifest.json) |
+| Candidate identity / 候选身份 | [`candidate-manifest.json`](../runtime/rc1/candidate-manifest.json) |
+| Native evidence / 原生证据 | [`native-evidence.json`](../runtime/rc1/native-evidence.json) |
+| Trial boundary / 试用边界 | [`trial-manifest.json`](../experiments/rc1/kit/trial-manifest.json) |
+| Public boundary / 公开边界 | GitHub Actions [`Validate public boundary`](https://github.com/tangshuang631/Revia/actions/workflows/validate.yml) |
 
-## Development Evidence / 开发证据
+The trial kit records seven measured command paths: source check, review
+manifest, argument capability, file capability, project workflow, multi-module
+gate, and bounded HTTP/JSON/SQLite server gate. Every trial records its command,
+fixture hashes, target, exit status, and expected output or result hash.
 
-The private implementation line has completed the reviewed `WP-299` bounded
-Server conformance slice after the reviewed `WP-295` and `WP-296`.
-The evidence now covers graph and bytecode authority, bounded VM/task execution,
-host-backed project effects, deterministic compact identity, external project
-initialization/testing, fresh release evidence, a canonical comparison catalog,
-and deterministic native CLI discovery. `WP-295` provides the reviewed compact
-identity work; `WP-296` closed the release-evidence authority boundary and
-`WP-299` added the bounded Server slice. These are
-engineering evidence for release planning; the current public binary remains
-`0.1-preview.1` and does not expose the private implementation.
+试用包记录七条实测命令路径：源码检查、审阅 manifest、参数能力、文件能力、项目流程、多模块门禁和
+有界 HTTP/JSON/SQLite Server 门禁。每条试验都记录命令、fixture 摘要、目标、退出状态以及预期
+输出或结果摘要。
 
-私有实现线已完成经审阅的 `WP-299` 有界 Server 一致性切片，其前置 `WP-295` 与
-`WP-296` 已完成审阅。现有证据覆盖语义图与字节码 authority、有界 VM/Task
-执行、Host 支撑的项目 effect、确定性 compact identity、外部项目初始化与测试、fresh
-发行证据、canonical 比较目录和确定性的 native CLI 可发现性。`WP-295` 提供已审阅的
-compact identity 确定性工作，`WP-296` 关闭发行证据 authority 边界，`WP-299` 增加
-有界 Server 切片。这些是发行规划的工程证据；
-当前公开二进制仍为 `0.1-preview.1`，不公开私有实现。
+## What This Does Not Prove / 本证据不证明什么
 
-The reviewed development evidence includes the bounded Server result in
-[`docs/server-conformance.md`](server-conformance.md). It is not part of a
-published asset until that asset is rebuilt, sealed, and independently verified
-on its declared native target.
+- Any native behavior on the five pending targets.
+- Full output byte determinism for every language surface.
+- TLS/authentication, production database operations, distributed execution, or
+  commercial hosting.
+- Signing, SBOM, attestation, immutable releases, or Stable V1.0.
 
-经审阅的开发证据包含[有界 Server 一致性](server-conformance.md)结果。某个资产只有完成
-重新构建、密封，并在其声明的原生目标上完成独立验证后，才可包含该能力。
+- 其余五个 pending 目标上的任何原生行为。
+- 每个语言命令面的完整产物逐字节确定性。
+- TLS/认证、生产数据库操作、分布式执行或商业托管。
+- 签名、SBOM、attestation、immutable releases 或 Stable V1.0。
 
-## Reproducible Commands / 复现命令
+## Reproduce Or Challenge / 复现或挑战
 
-```bash
-./bin/revia check examples/agent-review/main.re
-./bin/revia run examples/agent-review/main.re
-./bin/revia manifest examples/agent-review/main.re > manifest.json
-./bin/revia view --locale en-US --format html examples/agent-review/main.re > review.html
-```
+Use a writable copy of [`experiments/rc1/kit`](../experiments/rc1/kit/), install
+the verified Darwin arm64 binary at `bin/revia`, and execute the exact arrays in
+`trial-manifest.json`. A high-value report includes the candidate version,
+archive SHA-256, platform, trial id, command, exit code, stdout/stderr hashes,
+and the smallest public fixture that differs.
 
-Expected runtime output:
+使用 [`experiments/rc1/kit`](../experiments/rc1/kit/) 的可写副本，将已校验 Darwin arm64
+二进制安装到 `bin/revia`，并执行 `trial-manifest.json` 中精确记录的命令数组。高价值报告应包含
+候选版本、归档 SHA-256、平台、试验 ID、命令、退出码、stdout/stderr 摘要及最小可公开差异 fixture。
 
-```text
-agent=ready
-next=inspect-graph
-```
+## Stable Boundary / Stable 边界
 
-预期运行输出：
+The historical `0.1-preview.1` compact-determinism probe remains `PENDING` and
+is not evidence for this candidate. Stable V1.0 remains blocked until the full
+[stable release gate](stable-release-gate.md) is satisfied.
 
-```text
-agent=ready
-next=inspect-graph
-```
-
-## Evidence Categories / 证据类别
-
-- **Execution**: the example passes `check` and produces the expected output.
-  **运行**：示例通过 `check` 并产生预期输出。
-- **Contract**: `manifest` exposes capabilities, effects, error paths, and a
-  graph revision for the same source file.
-  **契约**：`manifest` 为同一源码暴露能力、效果、错误路径和图 revision。
-- **Review**: `view` renders the translated semantic facts for human review.
-  **审阅**：`view` 将翻译后的语义事实渲染为人类可审阅的图。
-- **Distribution**: release archives and executables are checked against the
-  published SHA-256 list.
-  **发行**：发行归档和可执行文件依据公开 SHA-256 清单校验。
-
-The current compact example is the reproducible execution entry point. Exact
-byte identity of generated manifest or view output across fresh processes is
-not a claim of `0.1-preview.1`; it remains a release-candidate correctness
-item.
-
-当前 compact 示例是可复现的执行入口。`0.1-preview.1` 不宣称全新进程之间生成的
-manifest 或 view 字节完全一致；这仍是发行候选的正确性事项。
-
-`scripts/test-compact-determinism.sh --report` and
-`scripts/test-compact-determinism.ps1 -Mode Report` reproduce this status in
-two fresh working directories. Current `0.1-preview.1` reports `PENDING`:
-`check` is stable, while compact `check --write`, `manifest`, `view`, and
-`build` receive newly allocated UIDs. Release candidates run the same probes
-in `Require` mode and cannot publish until every compared checksum is identical.
-
-`scripts/test-compact-determinism.sh --report` 与
-`scripts/test-compact-determinism.ps1 -Mode Report` 会在两个全新工作目录复现该状态。
-当前 `0.1-preview.1` 报告 `PENDING`：`check` 稳定，而 compact `check --write`、
-`manifest`、`view` 与 `build` 会获得新分配的 UID。发行候选以 `Require` 模式运行同一
-探针，只有所有校验摘要完全一致才可发布。
-
-The public tree contains runnable artifacts, examples, documentation, and
-licenses. The implementation remains behind the executable distribution
-boundary.
-
-公开树包含可运行产物、示例、文档和许可文件；实现位于可执行发行边界之后。
-
-## Candidate Requirements / 候选要求
-
-The current release does not include the reviewed `WP-299` runtime. Each new
-candidate asset must be rebuilt from the reviewed implementation and prove on
-its declared native target:
-
-- identical `check`, `check --write`, `manifest`, `view`, `build`, and checksum
-  trees across two fresh processes and directories;
-- runtime JSON contracts for `check` and `audit`; project-template validation
-  remains pending until its public manifest and fixture are shipped;
-- native CLI smoke, archive and executable SHA-256, and the release gate before
-  publication.
-
-当前发行版不包含经审阅的 `WP-299` 运行时。新候选必须基于完成审阅的实现重新构建，并在每个声明
-平台证明：两个全新进程和目录的 `check`、`check --write`、`manifest`、`view`、`build`
-及 checksum 树逐字节一致；`check` 与 `audit` 的运行时 JSON 契约通过验证；公开项目模板
-仍等待 manifest 和 fixture 输入文件；
-原生 CLI、归档与可执行文件 SHA-256 以及发布前发行门禁全部通过。
-
-## Challenge The Gate / 挑战发行门禁
-
-The current `PENDING` result is intentionally public. Run the report in two
-fresh directories, inspect every changed byte, and try to find a case that the
-future `--require` gate would classify incorrectly. A useful submission includes
-the source, platform, command transcript, compared files, and expected result.
-
-当前 `PENDING` 结果是有意公开的边界。请在两个全新目录运行报告，检查每一个漂移字节，
-并尝试寻找会被未来 `--require` 门禁错误分类的输入。有效提交应包含源码、平台、命令记录、
-参与比较的文件和预期结果。
+历史 `0.1-preview.1` 的 compact determinism 探针仍为 `PENDING`，不能作为本候选的证据。
+Stable V1.0 仍被完整 [stable release gate](stable-release-gate.md) 阻止。

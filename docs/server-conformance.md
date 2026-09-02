@@ -1,9 +1,10 @@
 # Bounded Server Conformance / 有界 Server 一致性
 
-WP-299 adds a measured native server slice to the development evidence. It is
-shown here as bounded conformance, not as a complete production backend.
+`v1.0.0-rc.1` includes public evidence for a measured native bounded Server
+slice. The public evidence describes the previously reviewed `WP-299` scope;
+it is shown here as bounded conformance, not as a complete production backend.
 
-WP-299 将一段已实测的 native Server 切片加入开发证据。本页将其作为有界一致性结果
+`v1.0.0-rc.1` 包含已实测 native 有界 Server 切片的公开证据。本页将其作为有界一致性结果
 展示，不将其表述为完整生产后端。
 
 ## Verified Slice / 已验证切片
@@ -19,12 +20,10 @@ WP-299 将一段已实测的 native Server 切片加入开发证据。本页将�
 | Reproducibility / 可复现性 | Two fresh processes, empty `PATH`, cleared environment, path-free receipt |
 | Failure boundary / 失败边界 | Input drift and partial publication rejected before effect / 输入漂移与部分发布在 effect 前拒绝 |
 
-The evidence was produced from reviewed development baseline `9288c9d`.
-The public repository does not include the compiler, runtime implementation, or
-private build artifacts.
+The sealed public evidence is bound to the Darwin arm64 RC candidate. The public
+repository does not include compiler or runtime implementation source.
 
-证据来自已完成审阅的开发基线 `9288c9d`。公开仓库不包含 compiler、runtime 实现或
-私有构建产物。
+密封公开证据绑定到 Darwin arm64 RC 候选。公开仓库不包含 compiler 或 runtime 实现源码。
 
 ## Not Established / 尚未证明
 
@@ -36,9 +35,7 @@ private build artifacts.
 
 ## Release Boundary / 发行边界
 
-The public `0.1-preview.1` download does not contain this Server slice. It
-becomes a capability of a particular release asset only after that asset is
-rebuilt, sealed, and executed by the native gate for its declared target.
+The public `v1.0.0-rc.1` Darwin arm64 asset contains this bounded trial surface.
+It is not evidence for any other target or for a production Server profile.
 
-公开 `0.1-preview.1` 下载包不包含该 Server 切片。只有某个发行资产完成重新构建、密封，
-并在其声明目标的原生门禁中执行通过后，它才成为该资产的公开能力。
+公开 `v1.0.0-rc.1` Darwin arm64 资产包含该有界试用面；它不构成其他目标或生产 Server profile 的证据。

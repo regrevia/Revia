@@ -1,97 +1,49 @@
 # Development Status / 开发进展
 
-Updated 2026-08-31.
-更新日期：2026-08-31。
-
-Revia has a runnable public release and an active implementation line. The
-public release is the executable starting point; the development line records
-the next verified execution layers being prepared for later distribution.
-
-Revia 已有可运行的公开发行版，同时持续推进实现线。公开发行版是当前可直接
-使用的入口；开发线记录正在为后续发行准备的、已经完成验证的执行层。
+Updated 2026-09-02. / 更新日期：2026-09-02。
 
 ## Public Release / 公开发行
 
-`0.1-preview.1` currently provides:
+The current public release channel is `v1.0.0-rc.1`, a source-closed,
+non-production developer-evaluation candidate. The sealed public export has
+been independently accepted for `darwin-arm64`; the public trial kit exposes
+seven bounded, hash-recorded experiments.
 
-- Native `check`, `run`, `manifest`, and diagnostic verification.
-- macOS, Linux, and Windows targets on `arm64` and `x86_64`.
-- A complete `check -> run -> manifest -> view` workflow.
-- Published archive and executable SHA-256 verification.
-- A reproducible determinism probe. The current release reports `PENDING` for
-  generated compact artifacts; the next candidate must pass the probe before
-  publication.
+当前公开发行通道为 `v1.0.0-rc.1`，闭源、非生产的开发者评估候选。其密封公开导出已为
+`darwin-arm64` 完成独立验收；公开试用包提供七个有界、记录摘要的实验。
 
-`0.1-preview.1` 当前提供：
+| Area / 领域 | RC1 status / RC1 状态 |
+|---|---|
+| Native distribution / 原生发行 | `darwin-arm64` measured-native |
+| Other target assets / 其他目标资产 | Five targets pending, no placeholder binaries / 五目标 pending，无占位二进制 |
+| Capability and project trials / 能力与项目试用 | Public, bounded, hash-recorded / 公开、有界、记录摘要 |
+| Multi-module and bounded Server / 多模块与有界 Server | Public fixtures and measured evidence / 公开 fixtures 与实测证据 |
+| Stable V1.0 / Stable V1.0 | Blocked by the stable hard gate / 被稳定版硬门禁阻止 |
 
-- 原生 `check`、`run`、`manifest` 与诊断校验。
-- 支持 macOS、Linux、Windows 的 `arm64` 与 `x86_64` 目标。
-- 完整的 `check -> run -> manifest -> view` 流程。
-- 已发布归档与可执行文件 SHA-256 校验。
-- 可复跑的确定性探针。当前发行版的 compact 派生产物报告为 `PENDING`；下一候选
-  必须通过该探针才可发布。
+## Public Boundary / 公开边界
 
-## Development Milestones / 开发沉淀
+The release repository publishes only the executable archive, public evidence,
+fixtures, documentation, and evaluation license. It does not publish compiler
+source, runtime source, credentials, private paths, or private build metadata.
 
-| Work package | Layer / 层 | Status / 状态 | What it establishes / 形成的能力 |
-|---|---|---|---|
-| `WP-253` | Graph and canonical boundary / 语义图与规范化边界 | Reviewed | Checked graph, identity, canonical representation, and strict drift rejection |
-| `WP-254` | Bytecode artifact boundary / 字节码产物边界 | Reviewed | Graph-bound translation, canonical artifact loading, and pre-effect verification |
-| `WP-255` | VM execution foundation / VM 执行基础 | Reviewed | Bounded four-instruction execution, explicit capability bridge, deterministic trace and receipt |
-| `WP-256` | Task runtime core / Task 运行时核心 | Reviewed | Request-bound task identity, retry/replay, first-reason cancellation, cleanup, and effect admission |
-| `WP-257–WP-276` | Native execution and release foundations / Native 执行与发行基础 | Reviewed | Project authority, cache and direct-runner boundaries, server/task execution, native fault handling, and release evidence |
-| `WP-277` | Native fault corpus release evidence / Native fault corpus 发行证据 | Reviewed | Five bounded fault cases, authority-bound evidence, and a release gate that verifies the evidence without changing fault semantics |
-| `WP-278–WP-280` | Host-backed execution / Host 支撑执行 | Completed | Real stdout and sandboxed file effects, project entry integration, path-free observations, closed host faults, and atomic file publication |
-| `WP-281` | Deterministic identity / 确定性身份 | Reviewed | Versioned compact identity allocation and fresh-process, two-directory byte comparison for canonical, manifest, views, and build trees |
-| `WP-282–WP-283` | External project workflow and release evidence / 外部项目工作流与发行证据 | Completed | Canonical project initialization and testing plus fresh, empty-`PATH` release evidence over project, fault, and reproducibility workloads |
-| `WP-284–WP-285` | Conformance catalog and CLI contract / 一致性目录与 CLI 契约 | Completed | Canonical four-domain comparison workloads and deterministic, path-free help/version discovery for the native command surface |
-| `WP-295` | Compact identity determinism / Compact identity 确定性 | Reviewed | Reuses the stable identity path across compact projections and targets fresh-process byte equality for checked artifacts |
-| `WP-296` | Native capability release evidence / Native capability 发行证据 | Reviewed | Closes the release-evidence authority boundary |
-| `WP-297–WP-298` | Native release hardening and multi-module authority / Native 发行加固与多模块 authority | Reviewed | Release-build and project/module/build/translation/plan authority evidence |
-| `WP-299` | Bounded Server conformance / 有界 Server 一致性 | Reviewed, PASS-WITH-P2 | Two-module HTTP/1.1, schema-driven JSON, and parameterized SQLite native slice |
+发行仓库只发布可执行归档、公开证据、fixtures、文档和评估许可；不发布编译器源码、运行时源码、
+凭据、私有路径或私有构建元数据。
 
-`WP-281` through `WP-299` reviewed entries have independent review evidence.
-They remain development-line evidence. None of these milestones imply that the
-`0.1-preview.1` download already contains the capability.
+## Next Release Work / 下一步发行工作
 
-`WP-281` 至 `WP-299` 的 reviewed 条目具有独立审阅证据，仍属于开发线证据。任何条目都不表示
-`0.1-preview.1` 下载包已经包含对应能力。
+1. Produce native sealed evidence and candidate assets for every pending target.
+2. Complete signing/custody, SBOM, attestation, immutable-release, stable
+   license, and project-workflow gates.
+3. Resolve every Stable V1.0 requirement in
+   [stable-release-gate.md](stable-release-gate.md) before changing the channel.
 
-## Current Boundary / 当前边界
-
-The public binary remains `0.1-preview.1`. The next candidate will be created
-only after the reviewed development layers are integrated, rebuilt, and pass
-the release gates for their declared platforms.
-
-当前公开二进制仍为 `0.1-preview.1`。后续候选版本只有在已审阅开发层完成集成、
-重新构建，并通过声明平台的发行门禁后才会创建。
-
-Latest development handoff: `WP-299 bounded Server conformance`, reviewed
-PASS-WITH-P2. The current public binary remains `0.1-preview.1`, so this
-development result is not a capability of the release until a reviewed candidate is
-rebuilt and passes all release gates.
-
-最新开发交接为 `WP-299 bounded Server conformance`，最终审阅结果为 PASS-WITH-P2。
-当前公开二进制仍为 `0.1-preview.1`；该开发结果只有在经过审阅的新候选重新构建并
-通过全部发行门禁后，才会进入公开能力。
-
-## Active Work Package / 当前工作包
-
-The next public candidate is the Darwin arm64-only `v1.0.0-rc.1`. It must be
-delivered as a sealed, version-bound export and pass the native token-free RC
-gate. The other five targets remain pending. Stable V1.0 still requires the
-complete cross-platform, signing, SBOM, attestation, immutable-release, license,
-and project-workflow gates.
-
-下一公开候选为仅声明 Darwin arm64 的 `v1.0.0-rc.1`。它必须通过密封、版本绑定的导出
-交付，并通过原生无仓库凭据 RC 门禁；其余五个目标保持 pending。Stable V1.0 仍要求
-完整跨平台、签名、SBOM、attestation、immutable release、许可与项目流程门禁。
+1. 为每个 pending 目标提供原生密封证据和候选资产。
+2. 完成签名/托管、SBOM、attestation、immutable-release、稳定许可和项目流程门禁。
+3. 只有完整满足 [stable-release-gate.md](stable-release-gate.md) 后才可切换到 Stable V1.0。
 
 ## Follow The Work / 跟进进展
 
 - [Release notes](../RELEASE_NOTES.md)
-- [Architecture](architecture.md)
 - [Evidence](evidence.md)
 - [Compatibility](compatibility.md)
-- [Agent projects](../projects/README.md)
-- [Feedback loop](feedback-loop.md)
+- [RC trial kit](../experiments/rc1/kit/)

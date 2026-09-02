@@ -11,6 +11,7 @@ Revia 的公开演进按发行版本组织，每条记录都对应已发布产�
 |---|---|---|
 | `0.1-preview` | Initial macOS Apple silicon CLI with `check`, `run`, `manifest`, `translate`, and `view` | [Release notes](../RELEASE_NOTES.md#01-preview) |
 | `0.1-preview.1` | Six-target distribution with native smoke coverage and deterministic archives | [Release notes](../RELEASE_NOTES.md#01-preview1) |
+| `1.0.0-rc.1` | Darwin arm64 deep trial with sealed evidence and seven bounded trials | [Release notes](../RELEASE_NOTES.md#v100-rc1--deep-trial-) |
 
 ## Resolved In The Public Line / 已解决的公开发行问题
 
@@ -20,8 +21,9 @@ Revia 的公开演进按发行版本组织，每条记录都对应已发布产�
   发行内容已具备完整的 `check -> run -> manifest -> view` 流程。
 - Archive and executable digests are published together.
   归档与可执行文件摘要已同步发布。
-- The six declared platform targets have release smoke coverage.
-  六个声明平台目标均有发行冒烟覆盖。
+- The six-target smoke record belongs to the historical preview; RC1 declares
+  only Darwin arm64 and keeps all other targets pending.
+  六目标冒烟记录属于历史预览版；RC1 仅声明 Darwin arm64，其余目标保持 pending。
 - Agent projects use independent dated directories; only a continuation updates
   the matching `HANDOFF.md`.
   Agent 项目使用按日期划分的独立目录；只有接续同一项目时才更新对应的

@@ -6,8 +6,8 @@
 </p>
 
 <p align="center">
-  <strong>Closed-source technical preview · Evaluation only · Not for production</strong><br>
-  Current runtime: bounded native preview slice
+  <strong>Source-closed V1 RC · Evaluation only · Not for production</strong><br>
+  Current runtime: `v1.0.0-rc.1`, measured native on macOS arm64 only
 </p>
 
 <p align="center">
@@ -38,49 +38,51 @@ workload with explicit state, risk, and handoff output.
 ```bash
 git clone https://github.com/tangshuang631/Revia.git
 cd Revia
-./bin/revia check examples/agent-review/main.re
-./bin/revia run examples/agent-review/main.re
-./bin/revia manifest examples/agent-review/main.re > manifest.json
-./bin/revia view --locale en-US --format html examples/agent-review/main.re > review.html
+./bin/revia --version
+./bin/revia --help
+cp -R experiments/rc1/kit /tmp/revia-rc1-kit
+# Install the verified release binary as /tmp/revia-rc1-kit/bin/revia,
+# then run the exact command arrays in trial-manifest.json from that directory.
 ```
 
-Windows PowerShell: replace `./bin/revia` with `./bin/revia.ps1`.
+The candidate executes natively only on macOS arm64. The launcher reports exit
+`69` for every other target rather than claiming preview compatibility. See the
+[trial kit](experiments/rc1/kit/) and [Quickstart](QUICKSTART.md).
 
 ```text
-agent=ready
-next=inspect-graph
+revia 1.0.0-rc.1
 ```
 
-`manifest.json` is the machine contract. `review.html` is the human review
-view. `view --format svg` produces a structured semantic view.
+The trial manifest pins the fixtures, commands, output hashes, and declared
+limits for capability, project workflow, multi-module, and bounded server work.
 
 ## Release Runtime
 
-`0.1-preview.1` is a version-pinned closed binary runtime for the documented
-single-file command surface. The first launch downloads, verifies, and caches
-the matching executable. See [Quickstart](QUICKSTART.md) for requirements,
-offline reuse, exit codes, build artifacts, and installation recovery.
+`v1.0.0-rc.1` is a version-pinned, source-closed developer-evaluation runtime.
+It ships one Darwin arm64 archive whose archive and executable SHA-256 are
+published in [runtime/checksums.txt](runtime/checksums.txt). See
+[Quickstart](QUICKSTART.md) for the bounded trial workflow and exit codes.
 
-## V1 RC1 Preparation
+## V1 RC1 Trial Boundary
 
-The next milestone is a source-closed `v1.0.0-rc.1` for deep non-production
-evaluation. Its initial declared asset is native macOS arm64; the other five
-targets remain explicitly pending rather than being represented by unmeasured
-binaries. Publication is blocked on the [sealed export contract](docs/rc1-sealed-export-contract.md),
-[RC license](LICENSE-RC.md), and the Darwin arm64 token-free release gate.
-This repository has prepared those public controls, but `v1.0.0-rc.1` is not
-released until the measured asset and evidence pass them.
+`v1.0.0-rc.1` is the V1 deep-trial milestone, not Stable V1.0. Its sealed
+Darwin arm64 export binds the archive, binary, evaluation license, target
+matrix, capability evidence, multi-module evidence, and bounded Server evidence.
+The other five targets are explicitly `pending`, with no placeholder binaries.
+The [sealed export contract](docs/rc1-sealed-export-contract.md),
+[RC license](LICENSE-RC.md), and [cross-platform procedure](docs/cross-platform-evidence.md)
+define the boundary.
 
 ## Current Development
 
-The public release is runnable today. The development line has completed the
-reviewed `WP-299` bounded Server conformance slice after the determinism and
-release-evidence work. The current public binary remains `0.1-preview.1`;
-its fresh-process compact artifact check is still `PENDING` until a reviewed
-candidate is rebuilt and passes the release gate. See the
+The public RC is runnable on its sole measured target. Its trial kit exposes
+the bounded capability, project, multi-module, and Server experiments without
+exposing compiler or runtime source. It does not claim full language output
+byte determinism, cross-platform equivalence, production hosting, signing,
+SBOM, attestation, or immutable Stable V1.0. See the
 [development status](docs/development-status.md) and [evidence](docs/evidence.md)
 for the verified public boundary, current milestones, and what is not yet in
-`0.1-preview.1`.
+the RC trial boundary.
 
 The HTTP/JSON/SQLite result is documented in
 [bounded Server conformance](docs/server-conformance.md). The
@@ -172,7 +174,7 @@ from the [project template](projects/_template/) and use the
 
 ## License
 
-`0.1-preview.1` uses the [Revia Technical Preview License 0.1](LICENSE).
-The planned `v1.0.0-rc.1` uses the separate
-[Developer Evaluation License](LICENSE-RC.md). Third-party runtime notices for
-the current preview are listed in [NOTICE.md](NOTICE.md).
+`v1.0.0-rc.1` uses the [Developer Evaluation License](LICENSE-RC.md). The
+candidate permits local developer and Agent evaluation, research, and benchmark
+work; it does not permit production use, commercial hosting, redistribution, or
+reverse engineering. [Notice](NOTICE-RC.md) records the RC notice.

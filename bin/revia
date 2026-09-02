@@ -33,6 +33,21 @@ CACHE_ROOT=${XDG_CACHE_HOME:-"$HOME/.cache"}/revia
 RELEASE_BASE_URL=${REVIA_RELEASE_BASE_URL:-"https://github.com/$REPOSITORY/releases/download/v$VERSION"}
 
 usage() {
+  if [ "$VERSION" = '1.0.0-rc.1' ]; then
+    cat <<'EOF'
+Usage: revia <command> [arguments]
+
+Revia 1.0.0-rc.1 is an evaluation candidate. Native execution is measured
+only on macOS arm64; all other targets are explicitly pending (exit 69).
+
+Commands include check, manifest, execute, project-init, project-check,
+project-test, project-multi-module-gate, and project-server-gate.
+
+For the bounded, reproducible trials, see experiments/rc1/kit/README.md.
+EOF
+    return
+  fi
+
   cat <<'EOF'
 Usage: revia <command> [options] <file.re>
 
@@ -99,14 +114,16 @@ case "${1:-}" in
     ;;
 esac
 
-case "${1:-}" in
-  check|run|manifest|view|translate|build|audit|profile|patch|review-index|project-check|project-run)
-    if [ "$#" -eq 2 ] && [ "${2:-}" = "--help" ]; then
-      command_usage "$1"
-      exit 0
-    fi
-    ;;
-esac
+if [ "$VERSION" != '1.0.0-rc.1' ]; then
+  case "${1:-}" in
+    check|run|manifest|view|translate|build|audit|profile|patch|review-index|project-check|project-run)
+      if [ "$#" -eq 2 ] && [ "${2:-}" = "--help" ]; then
+        command_usage "$1"
+        exit 0
+      fi
+      ;;
+  esac
+fi
 
 runtime_error() {
   printf 'Revia runtime error: %s\n' "$1" >&2
@@ -132,6 +149,12 @@ case "$(uname -s):$(uname -m)" in
     exit 69
     ;;
 esac
+
+if [ "$VERSION" = '1.0.0-rc.1' ] && [ "$PLATFORM" != 'darwin-arm64' ]; then
+  printf '%s\n' "Revia $VERSION has a pending target: $PLATFORM. Only darwin-arm64 is measured for this RC." >&2
+  printf '%s\n' "See $ROOT/docs/compatibility.md for the current support matrix." >&2
+  exit 69
+fi
 
 ASSET="revia-${VERSION}-${PLATFORM}.tar.gz"
 EXPECTED=$(awk -v asset="$ASSET" '$2 == asset { print $1 }' "$ROOT/runtime/checksums.txt")

@@ -79,17 +79,16 @@ preview evidence as if it measured the new runtime.
 `v1.0.0-rc.1` 是独立的闭源、非生产评估通道，初始只声明原生 Darwin arm64。
 其余五个目标记录保持 `pending`；RC 不发布占位资产，也不会把旧预览版证据冒充为新运行时实测。
 
-Before an RC draft can publish, the development producer must provide the
-[sealed export](rc1-sealed-export-contract.md). The public verifier checks the
-exact file set, hashes, canonical JSON, version/target/license binding, archive
-contents, and source/private-data leakage. The native `macos-15` job then
-executes the binary with repository credentials removed. A separate no-token
-job downloads the public asset after publication.
+The RC release uses the [sealed export](rc1-sealed-export-contract.md). The
+public verifier checks the exact file set, hashes, canonical JSON,
+version/target/license binding, archive contents, and source/private-data
+leakage. The native `macos-15` job executes the binary with repository
+credentials removed. A separate no-token job downloads the public asset after
+publication.
 
-RC 草稿发布前，开发产出方必须提供[密封导出](rc1-sealed-export-contract.md)。公开验证器检查
-精确文件集、摘要、canonical JSON、版本/目标/许可绑定、归档内容及源码/私有数据泄漏；
-随后原生 `macos-15` job 在移除仓库凭据后执行二进制，并在发布后由独立无凭据 job
-通过公开地址重新下载验证。
+RC 发行使用[密封导出](rc1-sealed-export-contract.md)。公开验证器检查精确文件集、摘要、
+canonical JSON、版本/目标/许可绑定、归档内容及源码/私有数据泄漏；随后原生 `macos-15` job
+在移除仓库凭据后执行二进制，并在发布后由独立无凭据 job 通过公开地址重新下载验证。
 
 Adding another RC target requires a native build and smoke on that exact OS and
 architecture, a new sealed evidence record, and an updated public gate. It does
