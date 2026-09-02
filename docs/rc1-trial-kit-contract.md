@@ -71,3 +71,12 @@ The runner checks every declared exit status, stdout and stderr digest, result
 file digest, and result fixture digest. A manifest that only has the right
 shape, or whose expected output no longer matches the candidate binary, fails
 the gate.
+
+解包候选二进制后，执行 manifest 中记录的全部命令，并核对真实输出：
+
+```bash
+REVIA_EXECUTABLE=/path/to/revia ./scripts/run-public-trials.sh /path/to/trial-kit
+```
+
+runner 会检查每项退出码、stdout 和 stderr 摘要、结果文件摘要及结果 fixture 摘要。
+只有字段结构正确、但实际输出已经漂移的 manifest 也会被门禁拒绝。
