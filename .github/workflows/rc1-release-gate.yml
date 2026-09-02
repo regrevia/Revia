@@ -59,6 +59,15 @@ jobs:
           cp "incoming/revia-$version-darwin-arm64.tar.gz" sealed/
           ./scripts/verify-rc1-export.sh sealed
 
+      - name: Verify complete draft asset inventory
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./scripts/verify-rc1-release-assets.sh "$TAG"
+
       - name: Execute candidate without repository credentials
         env:
           GH_TOKEN: ''
