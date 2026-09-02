@@ -28,16 +28,28 @@ trap 'rm -rf "$link_dir" "$cache_dir" "$tool_dir"' EXIT HUP INT TERM
 ln -s "$ROOT/bin/revia" "$link_dir/revia"
 test "$("$link_dir/revia" --version)" = "revia $(sed -n '1p' VERSION)"
 
-for tool in awk dirname mktemp rm sed shasum uname; do
-  source=$(command -v "$tool")
-  ln -s "$source" "$tool_dir/$tool"
-done
-set +e
-XDG_CACHE_HOME="$cache_dir" PATH="$tool_dir" ./bin/revia check examples/agent-review/main.re >/tmp/revia-no-curl.out 2>&1
-status=$?
-set -e
-test "$status" -eq 70
-grep -Fq 'Revia requires curl' /tmp/revia-no-curl.out
+case "$(sed -n '1p' VERSION)" in
+  0.1-preview.1)
+    for tool in awk dirname mktemp rm sed shasum uname; do
+      source=$(command -v "$tool")
+      ln -s "$source" "$tool_dir/$tool"
+    done
+    set +e
+    XDG_CACHE_HOME="$cache_dir" PATH="$tool_dir" ./bin/revia check examples/agent-review/main.re >/tmp/revia-no-curl.out 2>&1
+    status=$?
+    set -e
+    test "$status" -eq 70
+    grep -Fq 'Revia requires curl' /tmp/revia-no-curl.out
+    ;;
+  1.0.0-rc.1)
+    set +e
+    ./bin/revia check examples/agent-review/main.re >/tmp/revia-pending-target.out 2>&1
+    status=$?
+    set -e
+    test "$status" -eq 69
+    grep -Fqi 'pending target' /tmp/revia-pending-target.out
+    ;;
+esac
 
 grep -Fq 'while [ -h "$SOURCE" ]' bin/revia
 grep -Fq "command -v curl" bin/revia

@@ -22,15 +22,32 @@ jobs:
         run: sh ./scripts/test-compact-determinism-contract.sh
       - name: Record compact determinism evidence
         run: sh ./scripts/test-compact-determinism.sh --report
-      - name: Run Agent review loop
+      - name: Check release-specific public behavior
         run: |
-          ./bin/revia check examples/agent-review/main.re
-          test "$(./bin/revia run examples/agent-review/main.re)" = "agent=ready
-          next=inspect-graph"
-          ./bin/revia manifest examples/agent-review/main.re > manifest.json
-          grep -Fq '"module":"@agent_review"' manifest.json
-          ./bin/revia view --locale en-US --format html examples/agent-review/main.re > review.html
-          grep -Fq 'capability:@stdout' review.html
+          set -euo pipefail
+          case "$(sed -n '1p' VERSION)" in
+            0.1-preview.1)
+              ./bin/revia check examples/agent-review/main.re
+              test "$(./bin/revia run examples/agent-review/main.re)" = "agent=ready
+              next=inspect-graph"
+              ./bin/revia manifest examples/agent-review/main.re > manifest.json
+              grep -Fq '"module":"@agent_review"' manifest.json
+              ./bin/revia view --locale en-US --format html examples/agent-review/main.re > review.html
+              grep -Fq 'capability:@stdout' review.html
+              ;;
+            1.0.0-rc.1)
+              set +e
+              ./bin/revia check examples/agent-review/main.re > pending-target.out 2>&1
+              code=$?
+              set -e
+              test "$code" -eq 69
+              grep -Fqi 'pending target' pending-target.out
+              ;;
+            *)
+              echo "unsupported release identity" >&2
+              exit 65
+              ;;
+          esac
   windows-launcher:
     runs-on: windows-2025
     steps:
@@ -46,24 +63,37 @@ jobs:
             $bytes = [IO.File]::ReadAllBytes($_.FullName)
             if ($bytes -contains 13) { throw "CR byte found in $($_.Name)" }
           }
-      - name: Check launcher help with Windows PowerShell
+      - name: Check release-specific Windows launcher behavior
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
+          $release = (Get-Content -LiteralPath VERSION -TotalCount 1).Trim()
           $version = & ./bin/revia.ps1 --version
-          if ($LASTEXITCODE -ne 0 -or $version -ne 'revia 0.1-preview.1') { throw 'version command failed' }
+          if ($LASTEXITCODE -ne 0 -or $version -ne "revia $release") { throw 'version command failed' }
           $usage = (& ./bin/revia.ps1 --help | Out-String)
           if ($LASTEXITCODE -ne 0 -or $usage -match 'project-check|project-run') { throw 'public usage exposed package commands' }
           $help = & ./bin/revia.ps1 check --help
           if ($LASTEXITCODE -ne 0 -or $help -ne 'Usage: revia check [--format json | --write] <file.re>') { throw 'help command failed' }
+          if ($release -eq '1.0.0-rc.1') {
+            $pending = (& ./bin/revia.ps1 check examples/agent-review/main.re 2>&1 | Out-String)
+            if ($LASTEXITCODE -ne 69 -or $pending -notmatch 'pending target') { throw 'pending-target contract failed' }
+          } elseif ($release -ne '0.1-preview.1') {
+            throw "unsupported release identity: $release"
+          }
       - name: Record compact determinism evidence
         shell: powershell
         run: ./scripts/test-compact-determinism.ps1 -Mode Report
-      - name: Run Agent review example
+      - name: Run preview Agent review example
         shell: pwsh
         run: |
-          & ./bin/revia.ps1 check examples/agent-review/main.re
-          if ($LASTEXITCODE -ne 0) { throw "check failed: $LASTEXITCODE" }
-          $output = & ./bin/revia.ps1 run examples/agent-review/main.re
-          if ($LASTEXITCODE -ne 0) { throw "run failed: $LASTEXITCODE" }
-          if (($output -join "`n") -ne "agent=ready`nnext=inspect-graph") { throw "unexpected output" }
+          $ErrorActionPreference = 'Stop'
+          $release = (Get-Content -LiteralPath VERSION -TotalCount 1).Trim()
+          if ($release -eq '0.1-preview.1') {
+            & ./bin/revia.ps1 check examples/agent-review/main.re
+            if ($LASTEXITCODE -ne 0) { throw "check failed: $LASTEXITCODE" }
+            $output = & ./bin/revia.ps1 run examples/agent-review/main.re
+            if ($LASTEXITCODE -ne 0) { throw "run failed: $LASTEXITCODE" }
+            if (($output -join "`n") -ne "agent=ready`nnext=inspect-graph") { throw "unexpected output" }
+          } elseif ($release -ne '1.0.0-rc.1') {
+            throw "unsupported release identity: $release"
+          }
