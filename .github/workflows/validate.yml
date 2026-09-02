@@ -21,7 +21,12 @@ jobs:
       - name: Check compact determinism probe contract
         run: sh ./scripts/test-compact-determinism-contract.sh
       - name: Record compact determinism evidence
-        run: sh ./scripts/test-compact-determinism.sh --report
+        run: |
+          if [ "$(sed -n '1p' VERSION)" = '0.1-preview.1' ]; then
+            sh ./scripts/test-compact-determinism.sh --report
+          else
+            printf '%s\n' 'RC1 does not reuse preview compact-determinism evidence.'
+          fi
       - name: Check release-specific public behavior
         run: |
           set -euo pipefail
@@ -75,18 +80,26 @@ jobs:
           $version = & ./bin/revia.ps1 --version
           if ($LASTEXITCODE -ne 0 -or $version -ne "revia $release") { throw 'version command failed' }
           $usage = (& ./bin/revia.ps1 --help | Out-String)
-          if ($LASTEXITCODE -ne 0 -or $usage -match 'project-check|project-run') { throw 'public usage exposed package commands' }
-          $help = & ./bin/revia.ps1 check --help
-          if ($LASTEXITCODE -ne 0 -or $help -ne 'Usage: revia check [--format json | --write] <file.re>') { throw 'help command failed' }
           if ($release -eq '1.0.0-rc.1') {
+            if ($LASTEXITCODE -ne 0 -or $usage -notmatch 'project-check|macOS arm64') { throw 'RC1 usage contract failed' }
             $pending = (& ./bin/revia.ps1 check examples/agent-review/main.re 2>&1 | Out-String)
             if ($LASTEXITCODE -ne 69 -or $pending -notmatch 'pending target') { throw 'pending-target contract failed' }
-          } elseif ($release -ne '0.1-preview.1') {
+          } elseif ($release -eq '0.1-preview.1') {
+            if ($LASTEXITCODE -ne 0 -or $usage -match 'project-check|project-run') { throw 'public usage exposed package commands' }
+            $help = & ./bin/revia.ps1 check --help
+            if ($LASTEXITCODE -ne 0 -or $help -ne 'Usage: revia check [--format json | --write] <file.re>') { throw 'help command failed' }
+          } else {
             throw "unsupported release identity: $release"
           }
       - name: Record compact determinism evidence
         shell: powershell
-        run: ./scripts/test-compact-determinism.ps1 -Mode Report
+        run: |
+          $release = (Get-Content -LiteralPath VERSION -TotalCount 1).Trim()
+          if ($release -eq '0.1-preview.1') {
+            ./scripts/test-compact-determinism.ps1 -Mode Report
+          } else {
+            Write-Output 'RC1 does not reuse preview compact-determinism evidence.'
+          }
       - name: Run preview Agent review example
         shell: pwsh
         run: |
