@@ -49,7 +49,10 @@ jobs:
           cp LICENSE-RC.md sealed/LICENSE-RC.md
           cp NOTICE-RC.md sealed/NOTICE-RC.md
           cp runtime/checksums.txt sealed/checksums.txt
-          cp runtime/rc1/*.json sealed/
+          for report in export-manifest candidate-manifest target-matrix native-evidence \
+            capability-evidence multi-module-evidence server-evidence; do
+            cp "runtime/rc1/$report.json" "sealed/$report.json"
+          done
           cp "incoming/revia-$version-darwin-arm64.tar.gz" sealed/
           ./scripts/verify-rc1-export.sh sealed
 
