@@ -83,8 +83,11 @@ jobs:
           if ($release -eq '1.0.0-rc.1') {
             if ($LASTEXITCODE -ne 0 -or $usage -notmatch 'project-check|macOS arm64') { throw 'RC1 usage contract failed' }
             $powershell = Join-Path $PSHOME 'powershell.exe'
+            $previousErrorAction = $ErrorActionPreference
+            $ErrorActionPreference = 'Continue'
             & $powershell -NoProfile -ExecutionPolicy Bypass -File ./bin/revia.ps1 check examples/agent-review/main.re *> pending-target.txt
             $pendingCode = $LASTEXITCODE
+            $ErrorActionPreference = $previousErrorAction
             $pending = Get-Content -LiteralPath pending-target.txt -Raw
             if ($pendingCode -ne 69 -or $pending -notmatch 'pending target') { throw 'pending-target contract failed' }
           } elseif ($release -eq '0.1-preview.1') {

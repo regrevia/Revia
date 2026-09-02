@@ -69,8 +69,12 @@ jobs:
           $version = (Get-Content -LiteralPath VERSION -TotalCount 1).Trim()
           if ($version -eq '1.0.0-rc.1') {
             $powershell = Join-Path $PSHOME 'powershell.exe'
+            $previousErrorAction = $ErrorActionPreference
+            $ErrorActionPreference = 'Continue'
             & $powershell -NoProfile -ExecutionPolicy Bypass -File ./bin/revia.ps1 check examples/hello.re *> pending-target.txt
-            if ($LASTEXITCODE -ne 69) { throw "expected pending target exit 69, got $LASTEXITCODE" }
+            $pendingCode = $LASTEXITCODE
+            $ErrorActionPreference = $previousErrorAction
+            if ($pendingCode -ne 69) { throw "expected pending target exit 69, got $pendingCode" }
             if ((Get-Content -Raw pending-target.txt) -notmatch 'pending target') { throw 'pending target message missing' }
             exit 0
           }
