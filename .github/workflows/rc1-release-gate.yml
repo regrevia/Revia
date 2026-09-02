@@ -16,7 +16,10 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 20
     permissions:
-      contents: read
+      # GitHub only exposes a draft release to a workflow token with write
+      # release access. GH_TOKEN is scoped to the download step below and is
+      # explicitly removed before the candidate is unpacked or executed.
+      contents: write
     steps:
       - name: Checkout exact candidate tag
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
