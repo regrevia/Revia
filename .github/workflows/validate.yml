@@ -28,8 +28,13 @@ jobs:
           case "$(sed -n '1p' VERSION)" in
             0.1-preview.1)
               ./bin/revia check examples/agent-review/main.re
-              test "$(./bin/revia run examples/agent-review/main.re)" = "agent=ready
+              run_output=$(./bin/revia run examples/agent-review/main.re)
+              expected_output="agent=ready
               next=inspect-graph"
+              if [ "$run_output" != "$expected_output" ]; then
+                printf 'unexpected preview run output: <%s>\n' "$run_output" >&2
+                exit 1
+              fi
               ./bin/revia manifest examples/agent-review/main.re > manifest.json
               grep -Fq '"module":"@agent_review"' manifest.json
               ./bin/revia view --locale en-US --format html examples/agent-review/main.re > review.html
