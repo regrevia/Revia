@@ -29,8 +29,7 @@ jobs:
             0.1-preview.1)
               ./bin/revia check examples/agent-review/main.re
               run_output=$(./bin/revia run examples/agent-review/main.re)
-              expected_output="agent=ready
-              next=inspect-graph"
+              expected_output=$(printf 'agent=ready\nnext=inspect-graph')
               if [ "$run_output" != "$expected_output" ]; then
                 printf 'unexpected preview run output: <%s>\n' "$run_output" >&2
                 exit 1
