@@ -13,3 +13,4 @@ done
 grep -Fq 'pending-target' "$workflow"
 ! grep -Fq 'hashFiles' "$workflow"
 grep -Fq 'unexpected preview run output' "$workflow"
+grep -Fq "expected_output=\$(printf 'agent=ready\\nnext=inspect-graph')" "$workflow"
