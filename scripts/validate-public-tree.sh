@@ -49,6 +49,8 @@ jq -e '.properties.environment.properties.execution_mode.enum == ["native", "vir
 sh -n bin/revia
 sh -n scripts/verify-rc1-export.sh
 sh -n scripts/verify-rc1-trial-kit.sh
+sh -n scripts/run-public-trials.sh
+sh scripts/test-public-trial-runner-contract.sh
 grep -Fq '*.re text eol=lf' .gitattributes
 grep -Fq 'windows-arm64' bin/revia.ps1
 grep -Fq 'windows-x64' bin/revia.ps1
@@ -87,6 +89,7 @@ for path in README.md README.zh-CN.md QUICKSTART.md RELEASE_NOTES.md LICENSE NOT
   docs/cross-platform-evidence.md scripts/verify-rc1-export.sh \
   docs/rc1-sealed-export-contract.md \
   docs/rc1-trial-kit-contract.md scripts/verify-rc1-trial-kit.sh \
+  scripts/run-public-trials.sh scripts/test-public-trial-runner-contract.sh \
   experiments/rc1/README.md experiments/rc1/hello/README.md \
   experiments/rc1/agent-review/README.md experiments/rc1/capabilities/README.md \
   experiments/rc1/multi-module/README.md experiments/rc1/server-bounded/README.md \
