@@ -28,6 +28,9 @@ sha256_file() {
 [ -d "$KIT" ] && [ ! -L "$KIT" ] || fail 'trial-kit directory is missing or is a symlink'
 [ -f "$KIT/trial-manifest.json" ] || fail 'trial manifest is missing'
 command -v jq >/dev/null 2>&1 || fail 'jq is required'
+if find "$KIT" -type l -print | grep -q .; then
+  fail 'trial kit contains a symlink'
+fi
 
 case "$EXECUTABLE" in
   /*) ;;
@@ -59,6 +62,13 @@ while [ "$trial" -lt "$TRIALS" ]; do
   expected_result=$(jq -r --argjson index "$trial" '.trials[$index].expected.result_sha256' "$KIT/trial-manifest.json")
   result_path=$(jq -r --argjson index "$trial" '.trials[$index].expected.result_path // empty' "$KIT/trial-manifest.json")
   result_fixture=$(jq -r --argjson index "$trial" '.trials[$index].expected.result_fixture // empty' "$KIT/trial-manifest.json")
+  for path in "$result_path" "$result_fixture"; do
+    case "$path" in
+      /*|*..*|*//*)
+        [ -z "$path" ] || fail "$id contains an unsafe result path: $path"
+        ;;
+    esac
+  done
 
   (
     cd "$run_dir"
