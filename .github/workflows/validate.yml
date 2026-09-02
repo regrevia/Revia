@@ -82,8 +82,10 @@ jobs:
           $usage = (& ./bin/revia.ps1 --help | Out-String)
           if ($release -eq '1.0.0-rc.1') {
             if ($LASTEXITCODE -ne 0 -or $usage -notmatch 'project-check|macOS arm64') { throw 'RC1 usage contract failed' }
-            $pending = (& ./bin/revia.ps1 check examples/agent-review/main.re 2>&1 | Out-String)
-            if ($LASTEXITCODE -ne 69 -or $pending -notmatch 'pending target') { throw 'pending-target contract failed' }
+            & ./bin/revia.ps1 check examples/agent-review/main.re *> pending-target.txt
+            $pendingCode = $LASTEXITCODE
+            $pending = Get-Content -LiteralPath pending-target.txt -Raw
+            if ($pendingCode -ne 69 -or $pending -notmatch 'pending target') { throw 'pending-target contract failed' }
           } elseif ($release -eq '0.1-preview.1') {
             if ($LASTEXITCODE -ne 0 -or $usage -match 'project-check|project-run') { throw 'public usage exposed package commands' }
             $help = & ./bin/revia.ps1 check --help
