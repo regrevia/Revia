@@ -10,6 +10,49 @@
 
 ---
 
+### Task 0: Keep the public leak scan valid in a linked Git worktree
+
+**Files:**
+- Modify: `scripts/validate-public-tree.sh`
+- Create: `scripts/test-public-tree-worktree-contract.sh`
+
+- [ ] **Step 1: Write a failing worktree scanner contract**
+
+Create `scripts/test-public-tree-worktree-contract.sh`:
+
+```sh
+#!/bin/sh
+set -eu
+scanner=scripts/validate-public-tree.sh
+grep -Fq -- '--exclude=.git' "$scanner"
+```
+
+- [ ] **Step 2: Run it and verify it fails**
+
+Run: `sh scripts/test-public-tree-worktree-contract.sh`
+Expected: non-zero exit because the scanner excludes the `.git` directory but
+not the linked-worktree `.git` file.
+
+- [ ] **Step 3: Exclude only the Git control file from the recursive content scan**
+
+Add `--exclude=.git` to the existing `grep -R` invocation in
+`scripts/validate-public-tree.sh`; retain `--exclude-dir=.git` and every other
+leak pattern.
+
+- [ ] **Step 4: Verify the scanner from the linked worktree**
+
+Run: `sh scripts/test-public-tree-worktree-contract.sh && ./scripts/validate-public-tree.sh`
+Expected: both exit `0`; an ordinary tracked file matching an existing private
+path pattern still makes the validator fail.
+
+- [ ] **Step 5: Commit the isolated scanner correction**
+
+```bash
+git add scripts/validate-public-tree.sh scripts/test-public-tree-worktree-contract.sh \
+  docs/superpowers/plans/2026-09-02-public-rc1-alignment-and-trials.md
+git commit -m "fix: support public validation in linked worktrees"
+```
+
 ### Task 1: Add a public sample index and validated review challenge
 
 **Files:**

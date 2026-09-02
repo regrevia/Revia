@@ -120,7 +120,7 @@ if [ -n "$FORBIDDEN" ]; then
 fi
 
 if grep -R -I -n -E '/Users/[^/]+/|BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|github_pat_|ghp_[A-Za-z0-9]|sk-[A-Za-z0-9_-]{20,}|V1-DESIGN|RELAY_STATE|COORDINATOR_GUIDANCE' \
-  --exclude-dir=.git --exclude=validate-public-tree.sh --exclude=verify-rc1-export.sh \
+  --exclude=.git --exclude-dir=.git --exclude=validate-public-tree.sh --exclude=verify-rc1-export.sh \
   --exclude=verify-rc1-trial-kit.sh .; then
   printf '%s\n' 'Private path, credential-like value, or internal governance marker found.' >&2
   exit 1
