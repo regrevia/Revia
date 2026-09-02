@@ -1,4 +1,5 @@
 .DS_Store
+.worktrees/
 *.log
 *.tmp
 *.tar.gz
