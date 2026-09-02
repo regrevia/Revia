@@ -59,3 +59,15 @@ Run:
 ```
 
 The second argument binds the kit runner digest, version, target, and evidence references to the already accepted main export.
+
+After the candidate binary has been unpacked, execute the recorded commands
+and verify their actual outputs:
+
+```bash
+REVIA_EXECUTABLE=/path/to/revia ./scripts/run-public-trials.sh /path/to/trial-kit
+```
+
+The runner checks every declared exit status, stdout and stderr digest, result
+file digest, and result fixture digest. A manifest that only has the right
+shape, or whose expected output no longer matches the candidate binary, fails
+the gate.

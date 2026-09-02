@@ -78,6 +78,17 @@ jobs:
           package/revia --help | grep -Fq 'project-multi-module-gate'
           package/revia --help | grep -Fq 'project-server-gate'
 
+      - name: Execute every public trial and verify recorded outputs
+        env:
+          GH_TOKEN: ''
+          GITHUB_TOKEN: ''
+          REVIA_EXECUTABLE: ${{ github.workspace }}/package/revia
+        shell: bash
+        run: |
+          set -euo pipefail
+          unset GH_TOKEN GITHUB_TOKEN
+          ./scripts/run-public-trials.sh experiments/rc1/kit
+
   publish:
     name: Publish verified RC draft
     needs: gate-darwin-arm64
