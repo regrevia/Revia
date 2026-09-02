@@ -29,6 +29,20 @@ manifest, native evidence, and bounded trial manifest in
 Darwin arm64 声明绑定 `runtime/rc1/` 中的密封归档、二进制摘要、候选 manifest、原生证据和
 有界试用 manifest；该声明不会转移到其他目标。
 
+## Next Expansion / 下一次扩展
+
+The next public-native acceptance order is Linux x64 on `ubuntu-24.04`, Windows
+x64 on `windows-2025`, then Linux arm64 on `ubuntu-24.04-arm`. Each remains
+pending until it satisfies the separate [RC2 target expansion contract](rc2-target-expansion-contract.md).
+Android arm64 / Termux is a separate experimental track under the
+[Android experimental contract](android-termux-experimental-contract.md); it
+does not alter this six-target matrix.
+
+下一次公开原生接收顺序为 `ubuntu-24.04` 上的 Linux x64、`windows-2025` 上的 Windows x64，
+再到 `ubuntu-24.04-arm` 上的 Linux arm64。每个目标在满足独立的
+[RC2 目标扩展合同](rc2-target-expansion-contract.md)前都保持 pending。Android arm64 / Termux
+在[Android 实验合同](android-termux-experimental-contract.md)中作为独立实验轨道，不改变此六目标矩阵。
+
 ## Evidence Required For A New Target / 新目标所需证据
 
 1. Build and execute the candidate on the exact native official runner.
