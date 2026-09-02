@@ -5,11 +5,8 @@ ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$ROOT"
 
 VERSION=$(sed -n '1p' VERSION)
-test "$VERSION" = "0.1-preview.1"
 grep -Fq 'Agent-native executable language for the AI-native era.' README.md
 grep -Fq '面向 AI 原生时代的 Agent 原生可执行语言。' README.zh-CN.md
-grep -Fq 'Closed-source technical preview' README.md
-grep -Fq '闭源技术预览版' README.zh-CN.md
 grep -Fq '## Run The Full Loop' README.md
 grep -Fq '## 运行完整流程' README.zh-CN.md
 grep -Fq 'Revia translator from' README.md
@@ -30,7 +27,23 @@ grep -Fq 'not legal advice' docs/rc1-license-and-limitations.md
 grep -Fq 'measured-emulated' docs/cross-platform-evidence.md
 grep -Fq 'revia.public-rc-export@1.0.0' docs/rc1-sealed-export-contract.md
 grep -Fq 'revia.public-trial-kit@1.0.0' docs/rc1-trial-kit-contract.md
-grep -Fq 'pending sealed evidence' experiments/rc1/README.md
+case "$VERSION" in
+  0.1-preview.1)
+    grep -Fq 'Closed-source technical preview' README.md
+    grep -Fq '闭源技术预览版' README.zh-CN.md
+    grep -Fq 'pending sealed evidence' experiments/rc1/README.md
+    ;;
+  1.0.0-rc.1)
+    grep -Fq 'v1.0.0-rc.1' README.md
+    grep -Fq 'v1.0.0-rc.1' README.zh-CN.md
+    grep -Fq 'measured-native' docs/cross-platform-evidence.md
+    grep -Fq 'accepted sealed trial kit' experiments/rc1/README.md
+    ;;
+  *)
+    printf '%s\n' "unsupported public release identity: $VERSION" >&2
+    exit 65
+    ;;
+esac
 jq -e '.properties.environment.properties.execution_mode.enum == ["native", "virtualized-native", "emulated"]' \
   experiments/rc1/comparison/record.schema.json >/dev/null
 sh -n bin/revia
@@ -126,17 +139,42 @@ if grep -R -I -n -E '/Users/[^/]+/|BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|github_
   exit 1
 fi
 
-for target in darwin-arm64 darwin-x64 linux-arm64 linux-x64 windows-arm64 windows-x64; do
-  case "$target" in
-    windows-*) extension=zip ;;
-    *) extension=tar.gz ;;
-  esac
-  asset="revia-$VERSION-$target.$extension"
-  archive_checksum=$(awk -v name="$asset" '$2 == name { print $1 }' runtime/checksums.txt)
-  binary_checksum=$(awk -v name="${asset%.$extension}" '$2 == name { print $1 }' runtime/checksums.txt)
-  printf '%s' "$archive_checksum" | grep -Eq '^[0-9a-f]{64}$'
-  printf '%s' "$binary_checksum" | grep -Eq '^[0-9a-f]{64}$'
-done
+case "$VERSION" in
+  0.1-preview.1)
+    for target in darwin-arm64 darwin-x64 linux-arm64 linux-x64 windows-arm64 windows-x64; do
+      case "$target" in
+        windows-*) extension=zip ;;
+        *) extension=tar.gz ;;
+      esac
+      asset="revia-$VERSION-$target.$extension"
+      archive_checksum=$(awk -v name="$asset" '$2 == name { print $1 }' runtime/checksums.txt)
+      binary_checksum=$(awk -v name="${asset%.$extension}" '$2 == name { print $1 }' runtime/checksums.txt)
+      printf '%s' "$archive_checksum" | grep -Eq '^[0-9a-f]{64}$'
+      printf '%s' "$binary_checksum" | grep -Eq '^[0-9a-f]{64}$'
+    done
+    ;;
+  1.0.0-rc.1)
+    archive="revia-1.0.0-rc.1-darwin-arm64.tar.gz"
+    binary="revia-1.0.0-rc.1-darwin-arm64"
+    archive_checksum=$(awk -v name="$archive" '$2 == name { print $1 }' runtime/checksums.txt)
+    binary_checksum=$(awk -v name="$binary" '$2 == name { print $1 }' runtime/checksums.txt)
+    printf '%s' "$archive_checksum" | grep -Eq '^[0-9a-f]{64}$'
+    printf '%s' "$binary_checksum" | grep -Eq '^[0-9a-f]{64}$'
+    for report in export-manifest candidate-manifest target-matrix native-evidence \
+      capability-evidence multi-module-evidence server-evidence trial-manifest; do
+      test -f "runtime/rc1/$report.json"
+      jq -e --arg version "$VERSION" '.version == $version' "runtime/rc1/$report.json" >/dev/null
+    done
+    jq -e '
+      ([.targets[] | select(.target == "darwin-arm64" and .status == "measured-native")] | length == 1) and
+      ([.targets[] | select(.target == "darwin-x64" and .status == "pending")] | length == 1) and
+      ([.targets[] | select(.target == "linux-arm64" and .status == "pending")] | length == 1) and
+      ([.targets[] | select(.target == "linux-x64" and .status == "pending")] | length == 1) and
+      ([.targets[] | select(.target == "windows-arm64" and .status == "pending")] | length == 1) and
+      ([.targets[] | select(.target == "windows-x64" and .status == "pending")] | length == 1)
+    ' runtime/rc1/target-matrix.json >/dev/null
+    ;;
+esac
 
 for report in feedback/submissions/*.md; do
   [ -e "$report" ] || continue
