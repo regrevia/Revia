@@ -12,3 +12,4 @@ for target in darwin-x64 linux-arm64 linux-x64 windows-arm64 windows-x64; do
 done
 grep -Fq 'pending-target' "$workflow"
 ! grep -Fq 'hashFiles' "$workflow"
+grep -Fq 'unexpected preview run output' "$workflow"
