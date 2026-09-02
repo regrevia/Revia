@@ -1,80 +1,17 @@
 {
   "builds": [
     {
-      "architecture": "arm64",
-      "binary_bytes": 61622560,
-      "binary_sha256": "fb2ae52372fc1d3781961fb17036eabd9ee1aa8d2dd37bd9e16f07b128f34257",
-      "build_node": "22.23.1",
-      "native_smoke": true,
-      "packager_target": "node22-macos-arm64",
-      "platform": "macOS 15",
-      "signature": "ad-hoc",
+      "archive_sha256": "fcc820a80fd893eff1500a5c36210affa056623c8a566a0cdd9f8c2a664cb556",
+      "binary_bytes": 3050720,
+      "binary_sha256": "8680c8df50bec5cd0a6c0e2f421d0ea78e4fd4808cbf437f8c185906bde9eb4d",
+      "status": "measured-native",
       "target": "darwin-arm64"
-    },
-    {
-      "architecture": "x86_64",
-      "binary_bytes": 64035968,
-      "binary_sha256": "0466cfdc584035a7bb09032cc755ed4b41a7c577ccfe5a8185b37405719a42ab",
-      "build_node": "22.23.1",
-      "native_smoke": true,
-      "packager_target": "node22-macos-x64",
-      "platform": "macOS 15",
-      "signature": "ad-hoc",
-      "target": "darwin-x64"
-    },
-    {
-      "architecture": "arm64",
-      "binary_bytes": 69862935,
-      "binary_sha256": "08b72483cc5230a62ef1fcd76f73fbca40485c4bfd50b5ea5ee1dcbca233c0eb",
-      "build_node": "22.23.2",
-      "native_smoke": true,
-      "packager_target": "node22-linux-arm64",
-      "platform": "Ubuntu 24.04",
-      "signature": "none",
-      "target": "linux-arm64"
-    },
-    {
-      "architecture": "x86_64",
-      "binary_bytes": 75183985,
-      "binary_sha256": "6fe1fcafd50af1ebc57dceedd1ff1c0b4c862ba26274ea3538151758a262a0e1",
-      "build_node": "22.23.2",
-      "native_smoke": true,
-      "packager_target": "node22-linux-x64",
-      "platform": "Ubuntu 24.04",
-      "signature": "none",
-      "target": "linux-x64"
-    },
-    {
-      "architecture": "arm64",
-      "binary_bytes": 53674358,
-      "binary_sha256": "2586093b38d7e38798ab637cae54f57bc227bb318834ee89492f4d8d1c4f1544",
-      "build_node": "22.23.2",
-      "native_smoke": true,
-      "packager_target": "node22-win-arm64",
-      "platform": "Windows 11",
-      "signature": "none",
-      "target": "windows-arm64"
-    },
-    {
-      "architecture": "x86_64",
-      "binary_bytes": 58414424,
-      "binary_sha256": "c7c6db6cb8e46bc587aed13d3068afb4488c9da27cc78ed9abc80c26666e745e",
-      "build_node": "22.23.2",
-      "native_smoke": true,
-      "packager_target": "node22-win-x64",
-      "platform": "Windows Server 2025",
-      "signature": "none",
-      "target": "windows-x64"
     }
   ],
-  "native_smoke_scope": [
-    "check",
-    "run",
-    "manifest",
-    "diagnostic-exit-65"
-  ],
-  "packager": "@yao-pkg/pkg 6.22.0",
-  "release": "Revia 0.1-preview.1",
-  "schema": "revia.public-build-metadata@0.2.0",
-  "source_maps_included": false
+  "candidate_manifest": "runtime/rc1/candidate-manifest.json",
+  "evidence": "runtime/rc1/native-evidence.json",
+  "release": "Revia 1.0.0-rc.1",
+  "schema": "revia.public-build-metadata@1.0.0",
+  "source_maps_included": false,
+  "target_matrix": "runtime/rc1/target-matrix.json"
 }

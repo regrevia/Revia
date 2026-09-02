@@ -20,6 +20,23 @@ command -v jq >/dev/null 2>&1 || {
   exit 70
 }
 
+if [ "$(sed -n '1p' "$ROOT/VERSION")" = '1.0.0-rc.1' ]; then
+  jq -e '
+    .schema == "re.native-release-candidate@0.1.0" and
+    .version == "1.0.0-rc.1" and
+    .target == "darwin-arm64" and
+    (.files | length) == 4
+  ' "$ROOT/runtime/rc1/candidate-manifest.json" >/dev/null
+  jq -e '
+    .schema == "revia.public-trial-kit@1.0.0" and
+    .version == "1.0.0-rc.1" and
+    .target == "darwin-arm64" and
+    (.trials | length) == 7
+  ' "$ROOT/runtime/rc1/trial-manifest.json" >/dev/null
+  printf '%s\n' 'RC1 public JSON contracts passed'
+  exit 0
+fi
+
 "$EXECUTABLE" check --format json "$ROOT/examples/hello.re" >"$TMP/check-ok.json"
 jq -e '
   type == "object" and

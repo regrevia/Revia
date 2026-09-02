@@ -72,6 +72,7 @@ for path in README.md README.zh-CN.md QUICKSTART.md RELEASE_NOTES.md LICENSE NOT
   runtime/PKG_FETCH_LICENSE docs/protocol.md bin/revia.ps1 .gitattributes \
   scripts/test-compact-determinism.sh scripts/test-compact-determinism.ps1 \
   scripts/test-compact-determinism-contract.sh \
+  scripts/test-rc1-launcher-contract.sh \
   scripts/test-json-contract.sh \
   docs/agent-workflow.md docs/compatibility.md examples/agent-review/main.re \
   examples/agent-review/README.md projects/README.md \
@@ -90,6 +91,8 @@ for path in README.md README.zh-CN.md QUICKSTART.md RELEASE_NOTES.md LICENSE NOT
   experiments/rc1/agent-review/README.md experiments/rc1/capabilities/README.md \
   experiments/rc1/multi-module/README.md experiments/rc1/server-bounded/README.md \
   experiments/rc1/comparison/README.md experiments/rc1/comparison/record.schema.json \
+  experiments/rc1/kit/README.md experiments/rc1/kit/checksums.txt \
+  experiments/rc1/kit/trial-manifest.json \
   .github/workflows/rc1-release-gate.yml \
   docs/execution-contract.zh-CN.md \
   examples/agent-handoff-review/main.re examples/agent-handoff-review/README.md \
@@ -208,5 +211,6 @@ for project in projects/*; do
 done
 
 sh scripts/test-json-contract.sh
+sh scripts/test-rc1-launcher-contract.sh
 
 printf '%s\n' 'public tree validation passed'

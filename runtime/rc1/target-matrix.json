@@ -1,0 +1,1 @@
+{"schema":"revia.public-target-matrix@1.0.0","targets":[{"status":"measured-native","target":"darwin-arm64"},{"status":"pending","target":"darwin-x64"},{"status":"pending","target":"linux-arm64"},{"status":"pending","target":"linux-x64"},{"status":"pending","target":"windows-arm64"},{"status":"pending","target":"windows-x64"}],"version":"1.0.0-rc.1"}

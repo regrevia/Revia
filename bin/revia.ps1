@@ -6,6 +6,21 @@ if ([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT) {
 }
 
 function Show-Usage {
+  if ($script:ReviaVersion -eq '1.0.0-rc.1') {
+@'
+Usage: revia <command> [arguments]
+
+Revia 1.0.0-rc.1 is an evaluation candidate. Native execution is measured
+only on macOS arm64; all other targets are explicitly pending (exit 69).
+
+Commands include check, manifest, execute, project-init, project-check,
+project-test, project-multi-module-gate, and project-server-gate.
+
+For the bounded, reproducible trials, see experiments/rc1/kit/README.md.
+'@
+    return
+  }
+
   @'
 Usage: revia <command> [options] <file.re>
 
@@ -67,6 +82,7 @@ function Fail-Runtime([string]$Message) {
 try {
   $Root = Get-ReviaRoot
   $Version = (Get-Content -LiteralPath (Join-Path $Root 'VERSION') -TotalCount 1).Trim()
+  $script:ReviaVersion = $Version
 
   if ($args.Count -eq 1 -and ($args[0] -eq '--version' -or $args[0] -eq 'version')) {
     Write-Output "revia $Version"
@@ -83,6 +99,22 @@ try {
   if ($args.Count -eq 2 -and $args[1] -eq '--help') {
     Show-CommandUsage $args[0]
     exit 0
+  }
+
+  if ($Version -eq '1.0.0-rc.1') {
+    $RawArchitecture = if ($env:PROCESSOR_ARCHITEW6432) {
+      $env:PROCESSOR_ARCHITEW6432
+    } else {
+      $env:PROCESSOR_ARCHITECTURE
+    }
+    $PendingTarget = switch ($RawArchitecture.ToUpperInvariant()) {
+      'ARM64' { 'windows-arm64'; break }
+      'AMD64' { 'windows-x64'; break }
+      default { "windows-$($RawArchitecture.ToLowerInvariant())"; break }
+    }
+    [Console]::Error.WriteLine("Revia $Version has a pending target: $PendingTarget. Only darwin-arm64 is measured for this RC.")
+    [Console]::Error.WriteLine("See $Root/docs/compatibility.md for the current support matrix.")
+    exit 69
   }
 
   $Repository = if ($env:REVIA_REPOSITORY) { $env:REVIA_REPOSITORY } else { 'tangshuang631/Revia' }

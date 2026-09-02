@@ -1,37 +1,43 @@
 # Revia V1 RC1 Deep-Trial Kit
 
-> 中文：这是 `v1.0.0-rc.1` 的深度试用入口。公开控制面已经就绪，但在密封资产通过验证并正式发布前，实验状态保持 `pending sealed evidence`，不会展示伪造结果。
+> 中文：`v1.0.0-rc.1` 已接受密封试用包（accepted sealed trial kit），供 macOS arm64 上的
+> 非生产开发者与 Agent 深度试用。其他五个目标仍为 `pending`，不可将本目录的 fixtures 视为跨平台支持。
 
-## What this kit tests
+## Accepted Kit / 已接受试用包
 
-| Track | Question | Public input | Result before RC publication |
-|---|---|---|---|
-| Hello | Can the candidate discover and check a minimal program? | [`examples/hello.re`](../../examples/hello.re) | Pending |
-| Agent review | Are authority, success, and failure paths inspectable? | [`examples/agent-review/main.re`](../../examples/agent-review/main.re) | Pending |
-| Capabilities | Are args and file-read effects explicit and closed? | Existing capability examples | Pending |
-| Multi-module | Does an explicit project DAG bind modules, build, translation, plan, and outcome? | Sealed public fixture required | Pending |
-| Bounded Server | Does the measured HTTP/JSON/SQLite slice reproduce without claiming production scope? | Sealed public fixture required | Pending |
-| Comparison | Can another agent or language report the same task, input, outcome, and environment? | [`comparison/record.schema.json`](comparison/record.schema.json) | Ready for records; no measured result yet |
+[`kit/`](kit/) is an exact public copy of the accepted trial kit. Its
+[`trial-manifest.json`](kit/trial-manifest.json) binds seven trials to fixtures,
+command arrays, target `darwin-arm64`, the candidate binary SHA-256, and expected
+result hashes. Use a writable copy of `kit/`, not the repository copy itself.
 
-## Fifteen-minute path after publication
+[`kit/`](kit/) 是已接受试用包的精确公开副本。其
+[`trial-manifest.json`](kit/trial-manifest.json) 将七个试验绑定到 fixtures、命令数组、
+`darwin-arm64` 目标、候选二进制 SHA-256 与预期结果摘要。请使用 `kit/` 的可写副本，
+不要直接在仓库副本中运行会写入的试验。
 
-1. Confirm that the release is a GitHub prerelease and download only the official Darwin arm64 asset.
-2. Verify the archive and executable SHA-256 from `runtime/checksums.txt`.
-3. Confirm exact identity with `revia --version` and inspect `revia --help`.
-4. Run the Hello, Agent review, and capability tracks using the commands pinned in the accepted `runtime/rc1/trial-manifest.json`.
-5. Run the multi-module and bounded Server tracks only with their accepted fixtures and prerequisites.
-6. Save a comparison record with exact version, target, asset hash, commands, output hashes, and limitations.
+## What It Tests / 测试什么
 
-The command manifest does not exist before the sealed development handoff. Its absence is intentional and blocks publication rather than falling back to the old preview CLI.
+| Track | Evidence |
+|---|---|
+| Hello and review | Source check and human-review manifest |
+| Capabilities | Explicit args and file-read capability results |
+| Project workflow | Initialize, check, and test a public project fixture |
+| Multi-module | Bound two-module project gate |
+| Bounded Server | Loopback HTTP/JSON/SQLite result with a fixed response hash |
+| Comparison | [`comparison/record.schema.json`](comparison/record.schema.json) for independent reports |
 
-## Safety boundary
+## Safety Boundary / 安全边界
 
 - Non-production evaluation only; see [`LICENSE-RC.md`](../../LICENSE-RC.md).
-- Initial evidence target: native macOS arm64 only.
-- SQLite and loopback HTTP are bounded test dependencies, not a production hosting claim.
-- Do not publish private inputs, credentials, personal data, or the binary itself in a comparison record.
-- A failed experiment is valuable when it includes a minimal public input, exact asset checksum, command transcript, first failing stage, and expected behavior.
+- Install only the verified Darwin arm64 RC binary at `kit/bin/revia`.
+- SQLite and loopback HTTP are bounded test dependencies, not a hosting claim.
+- Do not publish credentials, private source, personal data, or the executable.
+- A failure is valuable when it includes the trial id, exact command, platform,
+  version, asset checksum, exit status, and output hashes.
 
-## Submit a challenge
+## Submit A Challenge / 提交挑战
 
-Use the repository issue or feedback templates. High-value challenges try to produce identity drift, an undeclared effect, a stale project/module binding, an archive/evidence mismatch, a wrong-graph result, a partial Server publication, or a false cross-platform claim.
+High-value challenges try to produce identity drift, an undeclared effect, stale
+project/module binding, archive/evidence mismatch, wrong-graph result, partial
+Server publication, or a false cross-platform claim. Use the repository issue
+or feedback templates with the smallest public fixture.
