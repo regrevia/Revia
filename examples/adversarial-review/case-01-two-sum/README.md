@@ -17,6 +17,11 @@ DIGEST="$(./bin/revia digest examples/adversarial-review/case-01-two-sum/main.re
 ./bin/revia manifest examples/adversarial-review/case-01-two-sum/main.re
 ```
 
+`translate` emits the public bytecode text format rather than JSON; `compile`,
+`execute`, and `manifest` emit machine-readable JSON or artifacts as described
+by the current CLI. / `translate` 输出公开字节码文本格式而非 JSON；`compile`、
+`execute` 与 `manifest` 按当前 CLI 输出机器可读 JSON 或产物。
+
 Compare the source with the `translate`, `compile`, and `execute` evidence.
 Your review must identify at least two independent findings. Do not infer
 correctness from `verified=true`; show the smallest calculation or transcript

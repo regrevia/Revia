@@ -15,6 +15,11 @@ DIGEST="$(./bin/revia digest examples/adversarial-review/case-02-retry-counter/m
 ./bin/revia manifest examples/adversarial-review/case-02-retry-counter/main.re
 ```
 
+`translate` emits the public bytecode text format rather than JSON; `compile`,
+`execute`, and `manifest` emit machine-readable JSON or artifacts as described
+by the current CLI. / `translate` 输出公开字节码文本格式而非 JSON；`compile`、
+`execute` 与 `manifest` 按当前 CLI 输出机器可读 JSON 或产物。
+
 Find at least two independent problems involving counters, status semantics,
 or failure handling. A good report separates what the program emitted from
 what an operator might incorrectly conclude.
