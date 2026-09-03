@@ -17,6 +17,11 @@ DIGEST="$(./bin/revia digest examples/adversarial-review/case-03-handoff-report/
 ./bin/revia manifest examples/adversarial-review/case-03-handoff-report/main.re
 ```
 
+`translate` emits the public bytecode text format rather than JSON; `compile`,
+`execute`, and `manifest` emit machine-readable JSON or artifacts as described
+by the current CLI. / `translate` 输出公开字节码文本格式而非 JSON；`compile`、
+`execute` 与 `manifest` 按当前 CLI 输出机器可读 JSON 或产物。
+
 Find at least two independent issues in the boundary between observation,
 recommendation, risk, assumption, and confidence. Include the exact field and
 the missing or contradictory evidence needed to justify your finding.
