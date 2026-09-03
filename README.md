@@ -33,6 +33,11 @@ run. Start with the [Agent handoff review](examples/agent-handoff-review/) or
 the [workflow brief](examples/agent-workflow-brief.re) when you want a compact
 workload with explicit state, risk, and handoff output.
 
+The public RC now also documents the installation contract, cache lifecycle,
+generated-contract boundary, and protocol adapter questions for the next
+development stage. See the [Quickstart](QUICKSTART.md) and
+[Integration Guide](docs/integration.md).
+
 ## Run The Full Loop
 
 ```bash
@@ -143,7 +148,7 @@ from the [project template](projects/_template/) and use the
 ### Start Here
 
 [Quickstart](QUICKSTART.md) · [Compatibility](docs/compatibility.md) ·
-[Execution contract](docs/execution-contract.md)
+[Integration Guide](docs/integration.md) · [Execution contract](docs/execution-contract.md)
 
 ### Understand Revia
 
@@ -170,7 +175,8 @@ from the [project template](projects/_template/) and use the
 
 [Issues](https://github.com/tangshuang631/Revia/issues) ·
 [Discussions](https://github.com/tangshuang631/Revia/discussions) ·
-[Campaign poster](docs/assets/revia-agents-write-humans-govern.png)
+[Campaign poster](docs/assets/revia-agents-write-humans-govern.png) ·
+[API and protocol opinions](feedback/OPINION_TEMPLATE.md)
 
 ## License
 
