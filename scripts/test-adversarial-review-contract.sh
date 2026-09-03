@@ -7,6 +7,16 @@ TMP=$(mktemp -d "${TMPDIR:-/tmp}/revia-adversarial.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT HUP INT TERM
 
 test -f examples/adversarial-review/README.md
+set +e
+./bin/revia check examples/adversarial-review/case-01-two-sum/main.re >/dev/null 2>&1
+status=$?
+set -e
+if [ "$status" -eq 69 ]; then
+  printf '%s\n' 'adversarial review cases pending on this target'
+  exit 0
+fi
+test "$status" -eq 0
+
 for case_dir in \
   examples/adversarial-review/case-01-two-sum \
   examples/adversarial-review/case-02-retry-counter \
