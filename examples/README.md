@@ -9,5 +9,6 @@
 - [`agent-args-policy.re`](agent-args-policy.re): read process arguments without interpreting payloads / 读取进程参数而不解释载荷
 - [`agent-file-report.re`](agent-file-report.re): source-directory UTF-8 file read with an explicit failure status / 源目录 UTF-8 文件读取与显式失败状态
 - [`diagnostic-error.re`](diagnostic-error.re): structured diagnostic, exit `65` / 结构化诊断，退出码 `65`
+- [`adversarial-review/`](adversarial-review/): small programs for Agent-versus-Agent review challenges; answer keys are not public / 用于 Agent 对抗审阅挑战的小型程序，答案不公开
 
 Run commands from the repository root. / 请在仓库根目录运行命令。
