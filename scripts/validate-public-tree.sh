@@ -51,7 +51,9 @@ sh -n scripts/verify-rc1-export.sh
 sh -n scripts/verify-rc1-trial-kit.sh
 sh -n scripts/run-public-trials.sh
 sh -n scripts/verify-rc1-release-assets.sh
+sh -n scripts/test-adversarial-review-contract.sh
 sh scripts/test-public-trial-runner-contract.sh
+sh scripts/test-adversarial-review-contract.sh
 grep -Fq '*.re text eol=lf' .gitattributes
 grep -Fq 'windows-arm64' bin/revia.ps1
 grep -Fq 'windows-x64' bin/revia.ps1
@@ -102,7 +104,14 @@ for path in README.md README.zh-CN.md QUICKSTART.md RELEASE_NOTES.md LICENSE NOT
   docs/execution-contract.zh-CN.md \
   examples/agent-handoff-review/main.re examples/agent-handoff-review/README.md \
   examples/agent-workflow-brief.re examples/agent-args-policy.re \
-  examples/agent-file-report.re examples/agent-file-report.txt; do
+  examples/agent-file-report.re examples/agent-file-report.txt \
+  examples/adversarial-review/README.md \
+  examples/adversarial-review/case-01-two-sum/main.re \
+  examples/adversarial-review/case-01-two-sum/README.md \
+  examples/adversarial-review/case-02-retry-counter/main.re \
+  examples/adversarial-review/case-02-retry-counter/README.md \
+  examples/adversarial-review/case-03-handoff-report/main.re \
+  examples/adversarial-review/case-03-handoff-report/README.md; do
   test -f "$path"
 done
 
