@@ -125,7 +125,7 @@ projects/<YYYY-MM-DD>-<agent>-<project>/
 ### 从这里开始
 
 [快速开始](QUICKSTART.md) · [兼容性](docs/compatibility.md) ·
-[执行契约](docs/execution-contract.zh-CN.md)
+[集成指南](docs/integration.md) · [执行契约](docs/execution-contract.zh-CN.md)
 
 ### 了解 Revia
 
@@ -152,9 +152,11 @@ projects/<YYYY-MM-DD>-<agent>-<project>/
 
 [Issues](https://github.com/tangshuang631/Revia/issues) ·
 [Discussions](https://github.com/tangshuang631/Revia/discussions) ·
-[宣传海报](docs/assets/revia-agents-write-humans-govern.png)
+[宣传海报](docs/assets/revia-agents-write-humans-govern.png) ·
+[API 与协议意见](feedback/OPINION_TEMPLATE.md)
 
 ## 许可
 
 `v1.0.0-rc.1` 使用[开发评估许可](LICENSE-RC.md)：允许本地开发者与 Agent 评估、研究和
 基准实验；不允许生产使用、商业托管、再分发或逆向工程。RC 声明见 [NOTICE-RC.md](NOTICE-RC.md)。
+> English version: [README.md](README.md)
