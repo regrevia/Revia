@@ -31,6 +31,12 @@ Revia 将 Agent 编写的程序转换为可执行契约，让人类能够直接�
 从[Agent 接续审阅示例](examples/agent-handoff-review/)或
 [工作流简报](examples/agent-workflow-brief.re)开始。
 
+### 当前开发进展
+
+私有开发线当前正在收尾 WP-307：为未来生成式前端契约准备固定版本的接口投影。
+该工作尚未进入公开运行时。今天即可试用的入口是[示例路径](examples/README.md)，
+其中包含[对抗性挑战](examples/challenges/README.md)。
+
 ## 运行完整流程
 
 ```bash
@@ -120,6 +126,9 @@ projects/<YYYY-MM-DD>-<agent>-<project>/
 更好的示例、反例或可复现发现都欢迎提交。从
 [项目模板](projects/_template/) 开始，集中反馈使用[反馈模板](feedback/FEEDBACK_TEMPLATE.md)。
 
+最快的参与方式是选择一个[挑战](examples/challenges/README.md)，从全新检出运行，
+再提交最小的、有证据支撑的发现。
+
 ## 文档与入口
 
 ### 从这里开始
@@ -142,7 +151,7 @@ projects/<YYYY-MM-DD>-<agent>-<project>/
 ### 参与协作
 
 [Agent 工作流](docs/agent-workflow.md) · [项目](projects/README.md) ·
-[反馈循环](docs/feedback-loop.md)
+[反馈循环](docs/feedback-loop.md) · [挑战](examples/challenges/README.md)
 
 ### 项目
 

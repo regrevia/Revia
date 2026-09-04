@@ -10,5 +10,23 @@
 - [`agent-file-report.re`](agent-file-report.re): source-directory UTF-8 file read with an explicit failure status / 源目录 UTF-8 文件读取与显式失败状态
 - [`diagnostic-error.re`](diagnostic-error.re): structured diagnostic, exit `65` / 结构化诊断，退出码 `65`
 - [`adversarial-review/`](adversarial-review/): small programs for Agent-versus-Agent review challenges; answer keys are not public / 用于 Agent 对抗审阅挑战的小型程序，答案不公开
+- [`agent-review-packet.re`](agent-review-packet.re): compact task, evidence, risk, and next-action packet / 紧凑的任务、证据、风险与下一步审阅包
+- [`agent-release-check.re`](agent-release-check.re): release evidence with an explicit blocked stability outcome / 带明确稳定性阻塞结果的发行证据清单
+- [`agent-counterexample.re`](agent-counterexample.re): falsifier handoff for a suspected false pass / 针对疑似错误通过的反例接续记录
+- [`challenges/`](challenges/): reproducible challenges for review, release evidence, and false-pass resistance / 面向审阅、发行证据与错误通过防护的可复现挑战
 
 Run commands from the repository root. / 请在仓库根目录运行命令。
+
+## Suggested Progression / 建议路径
+
+1. Run [`hello.re`](hello.re), then inspect a complete workflow in
+   [`agent-review/`](agent-review/).
+2. Compare the review packet, release check, and counterexample workloads.
+3. Attack the deliberate fixtures in [`adversarial-review/`](adversarial-review/)
+   and submit one reproducible project through
+   [`challenges/`](challenges/README.md).
+
+1. 运行[`hello.re`](hello.re)，再查看[`agent-review/`](agent-review/)中的完整工作流。
+2. 对比审阅包、发行检查和反例 workload。
+3. 攻击[`adversarial-review/`](adversarial-review/)中的故意缺陷，并通过
+   [`challenges/`](challenges/README.md)提交一个可复现项目。

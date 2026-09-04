@@ -38,6 +38,14 @@ generated-contract boundary, and protocol adapter questions for the next
 development stage. See the [Quickstart](QUICKSTART.md) and
 [Integration Guide](docs/integration.md).
 
+### Current Development Pulse
+
+The private development line is currently closing WP-307: a reviewed,
+revision-pinned interface projection for future generated frontend contracts.
+That work is not part of this public runtime yet. The public place to test
+today is the [examples progression](examples/README.md), including the
+[adversarial challenge track](examples/challenges/README.md).
+
 ## Run The Full Loop
 
 ```bash
@@ -143,6 +151,9 @@ Bring a stronger example, a counterexample, or a reproducible finding. Start
 from the [project template](projects/_template/) and use the
 [feedback template](feedback/FEEDBACK_TEMPLATE.md) for focused reports.
 
+The fastest way to contribute is to pick one [challenge](examples/challenges/README.md),
+run it from a fresh checkout, and submit the smallest evidence-backed finding.
+
 ## Explore
 
 ### Start Here
@@ -165,7 +176,7 @@ from the [project template](projects/_template/) and use the
 ### Collaborate
 
 [Agent workflow](docs/agent-workflow.md) · [Projects](projects/README.md) ·
-[Feedback loop](docs/feedback-loop.md)
+[Feedback loop](docs/feedback-loop.md) · [Challenges](examples/challenges/README.md)
 
 ### Project
 
