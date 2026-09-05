@@ -40,10 +40,10 @@ development stage. See the [Quickstart](QUICKSTART.md) and
 
 ### Current Development Pulse
 
-The private development line is currently closing WP-307: a reviewed,
-revision-pinned interface projection for future generated frontend contracts.
-That work is not part of this public runtime yet. The public place to test
-today is the [examples progression](examples/README.md), including the
+The private development line has reviewed WP-307: a revision-pinned interface
+projection for future generated frontend contracts. It is not included in the
+public RC runtime or release assets. The public place to test today is the
+[examples progression](examples/README.md), including the
 [adversarial challenge track](examples/challenges/README.md).
 
 ## Run The Full Loop
