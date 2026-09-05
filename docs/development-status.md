@@ -1,6 +1,6 @@
 # Development Status / 开发进展
 
-Updated 2026-09-02. / 更新日期：2026-09-02。
+Updated 2026-09-05. / 更新日期：2026-09-05。
 
 ## Public Release / 公开发行
 
@@ -40,6 +40,18 @@ source, runtime source, credentials, private paths, or private build metadata.
 1. 为每个 pending 目标提供原生密封证据和候选资产。
 2. 完成签名/托管、SBOM、attestation、immutable-release、稳定许可和项目流程门禁。
 3. 只有完整满足 [stable-release-gate.md](stable-release-gate.md) 后才可切换到 Stable V1.0。
+
+## Reviewed Development Boundary / 已审阅开发边界
+
+WP-307 has completed private review for a revision-pinned checked-interface
+projection intended for future generated frontend contracts. It has not been
+added to the public RC executable, trial kit, release evidence, or compatibility
+matrix. The public generated-contract row therefore remains a design surface,
+not an available generator.
+
+WP-307 已完成私有审阅，内容是面向未来生成式前端契约的、固定 revision 的 checked-interface
+投影。它尚未进入公开 RC 可执行文件、试用包、发行证据或兼容性矩阵。因此公开的生成契约条目
+仍是设计边界，不是可用生成器。
 
 ## Follow The Work / 跟进进展
 

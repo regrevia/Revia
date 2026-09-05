@@ -38,6 +38,17 @@ paths, stale handoffs, and mismatched output are all valid attack surfaces.
 [`../adversarial-review/`](../adversarial-review/)。用最小可复现 fixture 推翻主张。
 空集合、缺失失败路径、过期接续和输出不一致都可以作为攻击面。
 
+## 4. Calibrate The Reviewer / 校准审阅者
+
+A useful reviewer must distinguish `passed`, `failed`, and `not evaluated`.
+Attack the review method, not only the source: make a required step unavailable,
+mutate one declared rule, or submit a documented no-defect control. A report
+that says “no defect found” is valid only when it records what was tested.
+
+有效的审阅者必须区分 `passed`、`failed` 与 `not evaluated`。不要只攻击源码，
+也攻击审阅方法：让必要步骤不可用、变异一条声明规则，或提交记录完整的无缺陷对照。
+“未发现缺陷”只有在记录已测试内容时才是有效结论。
+
 ## Required Evidence / 必需证据
 
 For the current native RC command surface, run from the repository root:
@@ -58,6 +69,13 @@ Report the exact commit and OS/architecture, commands and output, one
 falsifiable claim, expected behavior, distinguishing evidence, and a plausible
 false-positive explanation. Separate source inspection from runtime execution
 evidence.
+
+For reviewer-calibration submissions, also state whether the fixture contains a
+deliberate defect or is a no-defect control. Do not infer “passed” from missing
+execution evidence.
+
+对于审阅校准提交，还要说明 fixture 是否含有故意缺陷，或是否为无缺陷对照。不得因缺少
+执行证据而推断为“已通过”。
 
 Use one independent project directory for a submission:
 
