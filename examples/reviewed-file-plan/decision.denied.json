@@ -1,0 +1,1 @@
+{"decision":"denied","expected_effects":[{"path":"reviewed.txt","sha256":"263a8ebaf4fb01f274f4b67191420a5338c79231013f7b5c514cc468eec2a1e4"}],"input_sha256":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","schema":"revia.reviewed-file-plan-decision@1.0.0","source_sha256":"b7e88dfa1134386e15d27e50d76d19ac02ddb21068f523bf60600e1a2629af4f"}

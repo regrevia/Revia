@@ -1,8 +1,8 @@
 <h1 align="center">Revia</h1>
 
 <p align="center">
-  <strong>面向 AI 原生时代的 Agent 原生可执行语言。</strong><br>
-  Agent 编写可执行程序，人类审阅语义图。
+  <strong>面向 Agent 编写任务的实验性可执行契约。</strong><br>
+  先审阅声明图谱，再检验有边界的运行时证据。
 </p>
 
 <p align="center">
@@ -18,8 +18,9 @@
   <img src="docs/assets/agent-review-graph.png" alt="由 Revia 翻译器根据 Agent 审阅示例生成的语义图" width="920">
 </p>
 
-Revia 将 Agent 编写的程序转换为可执行契约，让人类能够直接审阅：显式能力、
-可见效果，以及可检查的成功与失败路径。
+Revia 是研究阶段语言与闭源运行时。公开 RC 能把受支持程序转换为可审阅契约，展示显式
+能力、可见效果和成功/失败路径；可审阅性本身不能证明闭源编译器或运行时正确执行了全部
+安全边界。
 
 上图是 Revia 翻译器根据
 [`examples/agent-review/main.re`](examples/agent-review/main.re) 输出的语义事实整理出的简洁审阅图。
@@ -27,9 +28,10 @@ Revia 将 Agent 编写的程序转换为可执行契约，让人类能够直接�
 ## 查看执行契约
 
 [执行契约](docs/execution-contract.zh-CN.md)展示一份 `.re` 源码如何生成已检查语义图、
-机器 manifest、人类语义视图并完成有界运行。需要体验显式状态、风险与接续输出时，
-从[Agent 接续审阅示例](examples/agent-handoff-review/)或
-[工作流简报](examples/agent-workflow-brief.re)开始。
+机器 manifest、人类语义视图并完成有界运行。[Agent 接续审阅示例](examples/agent-handoff-review/)
+和[工作流简报](examples/agent-workflow-brief.re)只是固定输出的审阅 fixture，不会推断风险。
+真实的源码摘要批准、拒绝、过期批准拦截、文件 effect 与恢复见
+[人审文件计划](examples/reviewed-file-plan/)。
 
 ### 当前开发进展
 
@@ -45,8 +47,8 @@ cd Revia
 ./bin/revia --version
 ./bin/revia --help
 cp -R experiments/rc1/kit /tmp/revia-rc1-kit
-# 将已校验的 release binary 安装到 /tmp/revia-rc1-kit/bin/revia，
-# 再在该目录按 trial-manifest.json 中固定的命令数组执行。
+# 将已校验的 release binary 安装为 ./bin/revia，然后：
+REVIA_EXECUTABLE=./bin/revia ./scripts/run-public-trials.sh /tmp/revia-rc1-kit
 ```
 
 候选仅在 macOS arm64 原生执行；其余目标由启动器明确返回 `69`，不会把旧预览版兼容性
@@ -106,8 +108,8 @@ fn @main() -> process.status {
 }
 ```
 
-最小完整审阅工作负载见[工作流简报](examples/agent-workflow-brief.re)。
-它输出结构化接续记录，同时让能力声明、结果分支和退出状态在生成契约中保持可见。
+最小的可执行人审边界见[人审文件计划](examples/reviewed-file-plan/)。旧工作流简报只输出
+固定接续记录，保留为检查 fixture，不代表风险计算或状态管理能力。
 
 ## 与其他 Agent 构建接力
 

@@ -26,7 +26,7 @@ Linux、Windows、macOS x64 和生产使用不属于本次发行范围。
 
 Accept [LICENSE-RC.md](LICENSE-RC.md) before use.
 
-## Clone And Run / 克隆并运行
+## Clone And Inspect / 克隆并检查
 
 ```bash
 git clone https://github.com/tangshuang631/Revia.git
@@ -34,10 +34,17 @@ cd Revia
 ./bin/revia --version
 ./bin/revia --help
 ./bin/revia check examples/agent-review/main.re
-./bin/revia run examples/agent-review/main.re
 ./bin/revia manifest examples/agent-review/main.re
-./bin/revia view --locale en-US --format html examples/agent-review/main.re > review.html
 ```
+
+The RC1 public contract does not promise a generic `run <file.re>` workflow.
+Use the exact ordered commands and expected digests in the trial kit for native
+execution. For one complete input-review-execute-recover path, use the
+[`reviewed-file-plan`](examples/reviewed-file-plan/README.md) example.
+
+RC1 公开契约不承诺通用的 `run <file.re>` 流程。原生执行请使用 trial kit 中按顺序
+记录的命令和预期摘要。若要运行一个完整的输入、审阅、执行与恢复路径，请使用
+[`reviewed-file-plan`](examples/reviewed-file-plan/README.md) 案例。
 
 The native CLI downloads the target archive on first use, verifies both archive
 and executable SHA-256, then caches the verified executable. It does not need
@@ -125,12 +132,14 @@ cd /tmp/revia-rc1-kit
 mkdir -p bin
 # Place the verified native `revia` binary at bin/revia.
 chmod 755 bin/revia
-./bin/revia check fixtures/hello-check/hello.re
+REVIA_EXECUTABLE=./bin/revia ./scripts/run-public-trials.sh /tmp/revia-rc1-kit
 ```
 
-Use only the command arrays in `trial-manifest.json`. The kit covers source
-check, manifest, capabilities, project workflow, multi-module and bounded
-HTTP/JSON/SQLite evidence. Some trials write files or SQLite data.
+The runner executes every ordered step in `trial-manifest.json` and verifies
+each exit status, stdout/stderr digest, and declared result file. The kit covers
+source check, manifest, capabilities, the full three-step project workflow,
+multi-module and bounded HTTP/JSON/SQLite evidence. Some trials write files or
+SQLite data.
 
 ## Exit Codes / 退出码
 

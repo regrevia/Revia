@@ -51,6 +51,16 @@ that says “no defect found” is valid only when it records what was tested.
 
 ## Required Evidence / 必需证据
 
+The small review-packet and handoff examples print declared fixture text. They
+do not infer risk from input and must not be presented as workflow automation.
+Use [`../reviewed-file-plan/`](../reviewed-file-plan/) when the claim under test
+requires real input identity, a human permission denial, stale-approval
+rejection, an executed filesystem effect, and recovery.
+
+小型 review-packet 与 handoff 案例只打印 fixture 中声明的文本，不会根据输入推断风险，
+不得把它们描述成工作流自动化。若要测试真实输入身份、人类拒绝授权、过期批准拒绝、
+实际文件 effect 与恢复，请使用[`../reviewed-file-plan/`](../reviewed-file-plan/)。
+
 For the current native RC command surface, run from the repository root:
 
 ```bash

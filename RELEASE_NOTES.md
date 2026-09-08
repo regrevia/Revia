@@ -20,6 +20,22 @@ It is the first V1 milestone for independent deep trials, not Stable V1.0.
   与有界 HTTP/JSON/SQLite Server 一致性。
 - RC developer-evaluation license and notice / RC 开发评估许可与声明。
 
+### Trial runner correction / 试用 runner 修正
+
+The public trial runner now consumes the ordered `steps` contract in
+`revia.public-trial-kit@1.1.0`. The previous 1.0 runner could execute only the
+first command and falsely pass a multi-step trial; it also could not verify the
+`project-workflow` result digest. The 1.1 contract is intentionally incompatible
+with that broken execution shape. The reviewed-file-plan example is a bounded
+source-digest approval case: it is not general risk inference, an open-runtime
+security proof, a productivity benchmark, or production readiness.
+
+公开 trial runner 现在按 `revia.public-trial-kit@1.1.0` 的有序 `steps` 契约执行。
+旧版 1.0 runner 可能只执行第一条命令并错误通过多步骤试验，也无法核验
+`project-workflow` 的结果摘要；1.1 契约因此与旧的错误执行形状不兼容。
+`reviewed-file-plan` 只是绑定源码摘要的有界审批示例，不代表通用风险推断、
+开放 runtime 安全证明、生产效率基准或生产就绪。
+
 ### Explicit Limits / 明确限制
 
 - Only `darwin-arm64` is `measured-native`. Darwin x64, Linux arm64/x64, and

@@ -5,8 +5,8 @@ ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$ROOT"
 
 VERSION=$(sed -n '1p' VERSION)
-grep -Fq 'Agent-native executable language for the AI-native era.' README.md
-grep -Fq '面向 AI 原生时代的 Agent 原生可执行语言。' README.zh-CN.md
+grep -Fq 'research-stage language and source-closed runtime' README.md
+grep -Fq '研究阶段语言与闭源运行时' README.zh-CN.md
 grep -Fq '## Run The Full Loop' README.md
 grep -Fq '## 运行完整流程' README.zh-CN.md
 grep -Fq 'Revia translator from' README.md
@@ -26,7 +26,7 @@ grep -Fq 'Revia Release Candidate Developer Evaluation License 1.0' LICENSE-RC.m
 grep -Fq 'not legal advice' docs/rc1-license-and-limitations.md
 grep -Fq 'measured-emulated' docs/cross-platform-evidence.md
 grep -Fq 'revia.public-rc-export@1.0.0' docs/rc1-sealed-export-contract.md
-grep -Fq 'revia.public-trial-kit@1.0.0' docs/rc1-trial-kit-contract.md
+grep -Fq 'revia.public-trial-kit@1.1.0' docs/rc1-trial-kit-contract.md
 case "$VERSION" in
   0.1-preview.1)
     grep -Fq 'Closed-source technical preview' README.md
