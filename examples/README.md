@@ -14,6 +14,7 @@
 - [`agent-release-check.re`](agent-release-check.re): release evidence with an explicit blocked stability outcome / 带明确稳定性阻塞结果的发行证据清单
 - [`agent-counterexample.re`](agent-counterexample.re): falsifier handoff for a suspected false pass / 针对疑似错误通过的反例接续记录
 - [`challenges/`](challenges/): reproducible challenges for review, release evidence, and false-pass resistance / 面向审阅、发行证据与错误通过防护的可复现挑战
+- [`reviewed-file-plan/`](reviewed-file-plan/): executable source-digest approval, denial, stale-approval rejection, file effect, and recovery / 可执行的源码摘要批准、拒绝、过期批准拦截、文件 effect 与恢复
 
 Run commands from the repository root. / 请在仓库根目录运行命令。
 

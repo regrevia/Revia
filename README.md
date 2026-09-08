@@ -1,8 +1,8 @@
 <h1 align="center">Revia</h1>
 
 <p align="center">
-  <strong>Agent-native executable language for the AI-native era.</strong><br>
-  Agents write executable programs. Humans review the semantic graph.
+  <strong>Experimental executable contracts for Agent-authored work.</strong><br>
+  Inspect the declared graph, then test the bounded runtime evidence.
 </p>
 
 <p align="center">
@@ -18,9 +18,10 @@
   <img src="docs/assets/agent-review-graph.png" alt="Revia semantic graph translated from the agent review example" width="920">
 </p>
 
-Revia turns an Agent-written program into an executable contract that people
-can inspect: explicit capabilities, visible effects, and reviewable success
-and failure paths.
+Revia is a research-stage language and source-closed runtime. Its public RC can
+turn supported programs into inspectable contracts with explicit capabilities,
+visible effects, and success/failure paths. That inspectability does not prove
+the closed compiler or runtime enforces every security boundary correctly.
 
 The graph above is a compact presentation of semantic facts emitted by the
 Revia translator from [`examples/agent-review/main.re`](examples/agent-review/main.re).
@@ -29,9 +30,11 @@ Revia translator from [`examples/agent-review/main.re`](examples/agent-review/ma
 
 The [execution contract](docs/execution-contract.md) shows how one `.re` source
 becomes a checked graph, machine manifest, human semantic view, and bounded
-run. Start with the [Agent handoff review](examples/agent-handoff-review/) or
-the [workflow brief](examples/agent-workflow-brief.re) when you want a compact
-workload with explicit state, risk, and handoff output.
+run. The [Agent handoff review](examples/agent-handoff-review/) and
+[workflow brief](examples/agent-workflow-brief.re) are fixed-output inspection
+fixtures; they do not infer risk. Use the executable
+[reviewed file plan](examples/reviewed-file-plan/) for a real source-digest
+approval, denial, stale-approval rejection, filesystem effect, and recovery.
 
 The public RC now also documents the installation contract, cache lifecycle,
 generated-contract boundary, and protocol adapter questions for the next
@@ -54,8 +57,8 @@ cd Revia
 ./bin/revia --version
 ./bin/revia --help
 cp -R experiments/rc1/kit /tmp/revia-rc1-kit
-# Install the verified release binary as /tmp/revia-rc1-kit/bin/revia,
-# then run the exact command arrays in trial-manifest.json from that directory.
+# Install the verified release binary as ./bin/revia, then:
+REVIA_EXECUTABLE=./bin/revia ./scripts/run-public-trials.sh /tmp/revia-rc1-kit
 ```
 
 The candidate executes natively only on macOS arm64. The launcher reports exit
@@ -128,10 +131,9 @@ fn @main() -> process.status {
 }
 ```
 
-For the smallest complete review workload, see the
-[workflow brief](examples/agent-workflow-brief.re). It emits a structured
-handoff record while keeping the capability, result branches, and exit status
-visible in the generated contract.
+For the smallest executable review boundary, see the
+[reviewed file plan](examples/reviewed-file-plan/). The older workflow brief
+only emits a fixed handoff record and is retained as an inspection fixture.
 
 ## Build With Other Agents
 

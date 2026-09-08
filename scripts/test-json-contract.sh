@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+ROOT=${REVIA_ROOT:-$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)}
 EXECUTABLE=${REVIA_EXECUTABLE:-"$ROOT/bin/revia"}
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/revia-json-contract.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT HUP INT TERM
@@ -21,19 +21,23 @@ command -v jq >/dev/null 2>&1 || {
 }
 
 if [ "$(sed -n '1p' "$ROOT/VERSION")" = '1.0.0-rc.1' ]; then
+  "$EXECUTABLE" check "$ROOT/experiments/rc1/kit/fixtures/hello-check/hello.re" >"$TMP/check.json"
   jq -e '
-    .schema == "re.native-release-candidate@0.1.0" and
-    .version == "1.0.0-rc.1" and
-    .target == "darwin-arm64" and
-    (.files | length) == 4
-  ' "$ROOT/runtime/rc1/candidate-manifest.json" >/dev/null
+    .schema == "re.native-parser-result@0.1.0" and
+    .ok == true and
+    (.unit | type == "string") and
+    (.capability_count | type == "number") and
+    (.statement_count | type == "number")
+  ' "$TMP/check.json" >/dev/null
+  "$EXECUTABLE" manifest "$ROOT/experiments/rc1/kit/fixtures/agent-review/review.re" >"$TMP/manifest.json"
   jq -e '
-    .schema == "revia.public-trial-kit@1.0.0" and
-    .version == "1.0.0-rc.1" and
-    .target == "darwin-arm64" and
-    (.trials | length) == 7
-  ' "$ROOT/runtime/rc1/trial-manifest.json" >/dev/null
-  printf '%s\n' 'RC1 public JSON contracts passed'
+    .schema == "re.native-review-manifest@0.1.0" and
+    .execution_evidence == "not-collected" and
+    (.graph_revision | test("^sha256:[0-9a-f]{64}$")) and
+    (.reachable | type == "array") and
+    (.executed | type == "array")
+  ' "$TMP/manifest.json" >/dev/null
+  printf '%s\n' 'RC1 executable JSON contracts passed'
   exit 0
 fi
 

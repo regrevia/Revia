@@ -66,13 +66,16 @@ return match %printed {
 
 `check --format json` and `audit --format json` have independent, versioned
 contracts. They do not share a required envelope: `audit` deliberately has no
-`ok` field. The shipped binary contract is exercised by
-[`scripts/test-json-contract.sh`](../scripts/test-json-contract.sh).
+`ok` field. For RC1, [`scripts/test-json-contract.sh`](../scripts/test-json-contract.sh)
+executes the RC1 binary with `check` and `manifest` fixtures and validates their
+native schemas. It does not treat static JSON files as execution evidence or
+claim that the broader Node-preview envelope is an RC1 interface.
 
 `check --format json` 返回稳定、独立的命令契约；`audit --format json` 也有自己的
-版本化契约，并不共享一个强制封装，`audit` 输出刻意不包含 `ok` 字段。仓库通过
-[`scripts/test-json-contract.sh`](../scripts/test-json-contract.sh) 直接运行发行版二进制
-来验证这两个契约。
+版本化契约，并不共享一个强制封装，`audit` 输出刻意不包含 `ok` 字段。对于 RC1，
+[`scripts/test-json-contract.sh`](../scripts/test-json-contract.sh) 执行实际发行版二进制的
+`check` 与 `manifest`，而不是只读取静态 JSON 后返回成功。更宽的 Node preview JSON
+surface 不会被倒灌成 RC1 承诺。
 
 ### `check` result / `check` 结果
 
