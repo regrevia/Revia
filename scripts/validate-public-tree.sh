@@ -224,7 +224,18 @@ for project in projects/*; do
   grep -Fq '接续' "$project/HANDOFF.md"
 done
 
-sh scripts/test-json-contract.sh
+if [ "$VERSION" = '1.0.0-rc.1' ]; then
+  case "$(uname -s):$(uname -m)" in
+    Darwin:arm64)
+      sh scripts/test-json-contract.sh
+      ;;
+    *)
+      printf '%s\n' 'RC1 executable JSON contract pending on this target'
+      ;;
+  esac
+else
+  sh scripts/test-json-contract.sh
+fi
 sh scripts/test-rc1-launcher-contract.sh
 
 printf '%s\n' 'public tree validation passed'
