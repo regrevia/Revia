@@ -135,15 +135,15 @@ fn native_parser_survives_one_hundred_thousand_deterministic_mutations() {
         ),
         (
             "agent-business-starter",
-            include_str!("../../../public-preview/root/examples/agent-business-starter.re"),
+            include_str!("../../../examples/agent-business-starter.re"),
         ),
         (
             "agent-file-report",
-            include_str!("../../../public-preview/root/examples/agent-file-report.re"),
+            include_str!("../../../examples/agent-file-report.re"),
         ),
         (
             "agent-args-policy",
-            include_str!("../../../public-preview/root/examples/agent-args-policy.re"),
+            include_str!("../../../examples/agent-args-policy.re"),
         ),
     ];
     let baselines = seeds

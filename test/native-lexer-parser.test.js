@@ -21,9 +21,9 @@ const EXECUTABLE_FIXTURES = [
   'examples/read-check.re',
   'examples/read-encoding.re',
   'examples/write-check.re',
-  'public-preview/root/examples/agent-business-starter.re',
-  'public-preview/root/examples/agent-file-report.re',
-  'public-preview/root/examples/agent-args-policy.re',
+  'examples/agent-business-starter.re',
+  'examples/agent-file-report.re',
+  'examples/agent-args-policy.re',
 ]
 
 test('native workspace builds offline with no third-party dependency graph', () => {

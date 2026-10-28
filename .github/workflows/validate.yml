@@ -22,7 +22,7 @@ jobs:
           node-version: 22
       - name: Install pinned Gitleaks CLI
         run: |
-          go install github.com/gitleaks/gitleaks/v8@v8.28.0
+          go install github.com/zricethezav/gitleaks/v8@v8.28.0
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - name: Verify import manifest and public boundary
         run: |
