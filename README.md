@@ -29,15 +29,31 @@ interoperability, or Stable V1.0. See
 
 ## Start Here
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md), then run the reference toolchain:
+Choose a path:
+
+- **Try Revia:** [Quickstart](QUICKSTART.md) and the
+  [examples index](examples/README.md).
+- **Understand the language:** [language specifications](doc/README.md).
+- **Inspect implementation status:** [development status](docs/development-status.md)
+  and [compatibility](docs/compatibility.md).
+- **Run published trials:** [experiments index](experiments/README.md).
+- **Start a project:** [project template](projects/README.md).
+- **Contribute:** [contributor guide](CONTRIBUTING.md).
+
+Run the Node reference toolchain from the repository root:
 
 ```bash
-npm test
 npm run re -- check examples/hello.re
 npm run re -- run examples/hello.re
 ```
 
-For the native implementation:
+Run its conformance suite:
+
+```bash
+npm test
+```
+
+The Rust implementation lives in `native/`:
 
 ```bash
 cargo test --workspace --offline
@@ -52,20 +68,22 @@ requirement of the language.
 ## Repository Layout
 
 ```text
-doc/             language and semantic specifications
-examples/        executable and design fixtures
+doc/             language, syntax, semantics, and execution specifications
+docs/            compatibility, integration, release, evidence, and status
+examples/        small programs, Agent workflows, and review challenges
+experiments/     historical release trials and comparison records
+projects/        contributor project template and sample projects
 src/             Node reference toolchain and host adapters
-native/          Rust native toolchain
-test/            Node conformance tests and fixtures
-test-support/    shared test helpers
-scripts/         reproducible development and evidence commands
-docs/            public integration, release, and status documentation
+native/          Rust translator, VM, CLI, and native conformance tests
+test/            Node tests, fixtures, and byte-exact goldens
+test-support/    shared test adapters and fixtures
+scripts/         development, conformance, and evidence commands
+runtime/         historical packaged runtimes and release evidence
 ```
 
 The public repository is the source and test authority for the open
-development line. Private development history, relay state, local scratch
-data, credentials, and unpublished release evidence are not part of this
-repository.
+development line. `runtime/` and `experiments/rc1/` describe historical
+evaluation assets; they are separate from the current source toolchain.
 
 ## Design Direction
 

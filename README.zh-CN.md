@@ -22,15 +22,31 @@ fixture。
 
 ## 快速开始
 
-先阅读 [CONTRIBUTING.md](CONTRIBUTING.md)，然后运行参考工具链：
+按目标选择入口：
+
+- **试用 Revia：** [快速开始](QUICKSTART.md) 与
+  [样例索引](examples/README.md)。
+- **了解语言：** [语言规范索引](doc/README.md)。
+- **查看实现状态：** [开发状态](docs/development-status.md) 与
+  [兼容性](docs/compatibility.md)。
+- **运行已发布试验：** [实验索引](experiments/README.md)。
+- **创建项目：** [项目模板说明](projects/README.md)。
+- **参与开发：** [贡献指南](CONTRIBUTING.md)。
+
+在仓库根目录运行 Node 参考工具链：
 
 ```bash
-npm test
 npm run re -- check examples/hello.re
 npm run re -- run examples/hello.re
 ```
 
-运行 native 实现：
+运行参考工具链一致性测试：
+
+```bash
+npm test
+```
+
+Rust 原生实现位于 `native/`：
 
 ```bash
 cargo test --workspace --offline
@@ -38,24 +54,26 @@ cargo fmt --all -- --check
 cargo clippy --workspace --offline -- -D warnings
 ```
 
-native CLI 位于 `native/`。Node 工具链仍是参考和开发实现；它的存在不意味着
-语言语义依赖 Node。
+Node 工具链仍是参考和开发实现；它的存在不意味着语言语义依赖 Node。
 
 ## 仓库结构
 
 ```text
-doc/             语言与语义规范
-examples/        可执行样例与设计 fixture
+doc/             语言、语法、语义与执行规范
+docs/            兼容性、集成、发行、证据与状态
+examples/        小型程序、Agent 工作流与审阅挑战
+experiments/     历史发行试验与对比记录
+projects/        贡献者项目模板与样例项目
 src/             Node 参考工具链与宿主适配器
-native/          Rust 原生工具链
-test/            Node 一致性测试与 fixture
-test-support/    测试共享辅助代码
-scripts/         可复现开发与证据脚本
-docs/            公开集成、发行与状态文档
+native/          Rust 翻译器、VM、CLI 与原生一致性测试
+test/            Node 测试、fixture 与逐字节 golden
+test-support/    共享测试适配器与 fixture
+scripts/         开发、一致性与证据脚本
+runtime/         历史打包运行时与发行证据
 ```
 
-公开仓库是开源开发线的源码和测试真源。私有开发历史、接力状态、本地临时
-数据、凭据和未公开发行证据不属于本仓库。
+公开仓库是开源开发线的源码和测试真源。`runtime/` 与 `experiments/rc1/`
+记录历史评估资产，与当前源码工具链分开理解。
 
 ## 设计方向
 

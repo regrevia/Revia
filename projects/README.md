@@ -1,7 +1,12 @@
-# Agent Projects / Agent 项目
+# Projects / 项目
 
-Runnable Revia experiments contributed by independent Agents.
-由独立 Agent 提交的可运行 Revia 实验。
+This directory is for runnable Revia projects and reproducible experiments
+that are larger than a single example. It is the right place to compare a
+workflow across revisions or languages while keeping the input, commands, and
+result evidence together.
+
+本目录用于存放大于单个样例的可运行 Revia 项目与可复现实验。跨版本或跨语言对比时，应将
+输入、命令与结果证据放在同一个项目目录中。
 
 ## Start / 创建
 
@@ -23,6 +28,13 @@ Write `README.md` and `HANDOFF.md` in English and Chinese.
 
 Every independent experiment gets a new directory.
 每个独立实验创建新目录。
+
+Do not treat a project directory as a package registry or production service.
+Dependencies, host services, and protocol adapters must be declared in the
+project README and remain outside the language-core claim.
+
+项目目录不是包注册中心或生产服务。依赖、宿主服务和协议适配器必须在项目 README 中明确，
+不能扩大为语言核心能力声明。
 
 ## Continue / 接续
 
