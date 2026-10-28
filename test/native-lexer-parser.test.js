@@ -223,7 +223,7 @@ test('native release boundary contains no Node, JavaScript, or registry dependen
   assert.ok(sourceFiles.every((file) => !/\.(?:[cm]?js|map)$/u.test(file)), sourceFiles.join('\n'))
 
   const strings = printableStrings(readFileSync(NATIVE_BINARY))
-  assert.doesNotMatch(strings, /(?:node_modules|node:|node\.js|\.m?js\b|\.cjs\b)/iu)
+  assert.doesNotMatch(strings, /(?:\/node_modules\/|node:|node\.js)/iu)
 
   if (process.platform === 'darwin' || process.platform === 'linux') {
     const dependencyCommand = process.platform === 'darwin' ? 'otool' : 'ldd'

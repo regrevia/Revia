@@ -564,7 +564,9 @@ fn literal_value(literal: &crate::bytecode::BytecodeLiteral) -> Result<VmValue, 
                 .strip_prefix("hex:")
                 .ok_or_else(|| GraphError::new("native-vm-bytes-invalid"))?;
             let mut bytes = Vec::with_capacity(hex.len() / 2);
-            for pair in hex.as_bytes().chunks_exact(2) {
+            let (pairs, remainder) = hex.as_bytes().as_chunks::<2>();
+            debug_assert!(remainder.is_empty());
+            for pair in pairs {
                 let text = std::str::from_utf8(pair)
                     .map_err(|_| GraphError::new("native-vm-bytes-invalid"))?;
                 bytes.push(

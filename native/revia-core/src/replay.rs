@@ -427,8 +427,10 @@ fn parse_bytes(value: Option<&JsonValue>) -> Result<Vec<u8>, ReplayError> {
             "native-replay-transcript-vm-value-invalid",
         ));
     }
-    hex.as_bytes()
-        .chunks_exact(2)
+    let (pairs, remainder) = hex.as_bytes().as_chunks::<2>();
+    debug_assert!(remainder.is_empty());
+    pairs
+        .iter()
         .map(|pair| {
             std::str::from_utf8(pair)
                 .ok()
