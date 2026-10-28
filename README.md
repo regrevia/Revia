@@ -1,199 +1,97 @@
-<h1 align="center">Revia</h1>
+# Revia
 
-<p align="center">
-  <strong>Experimental executable contracts for Agent-authored work.</strong><br>
-  Inspect the declared graph, then test the bounded runtime evidence.
-</p>
+> An open-source research implementation of a graph-first language for
+> Agent-authored work and human semantic governance.
 
-<p align="center">
-  <strong>Source-closed V1 RC · Evaluation only · Not for production</strong><br>
-  Current runtime: `v1.0.0-rc.1`, measured native on macOS arm64 only
-</p>
+Revia turns checked program structure into deterministic machine contracts and
+human-readable projections. The repository contains the reference toolchain,
+the native Rust implementation, conformance tests, language documents, and
+bounded comparison fixtures.
 
-<p align="center">
-  <a href="README.zh-CN.md">中文</a>
-</p>
+The source tree is available under [MPL-2.0](LICENSE). Historical preview and
+RC1 binaries remain governed by their original licenses:
+[LICENSE-PREVIEW-0.1.md](LICENSE-PREVIEW-0.1.md) and
+[LICENSE-RC.md](LICENSE-RC.md). Those historical terms are not changed
+retroactively by publishing the source.
 
-<p align="center">
-  <img src="docs/assets/agent-review-graph.png" alt="Revia semantic graph translated from the agent review example" width="920">
-</p>
+## Current Status
 
-Revia is a research-stage language and source-closed runtime. Its public RC can
-turn supported programs into inspectable contracts with explicit capabilities,
-visible effects, and success/failure paths. That inspectability does not prove
-the closed compiler or runtime enforces every security boundary correctly.
+The open development line is a research and preview implementation. It
+includes a bounded native translator/VM, project and module checking,
+deterministic semantic artifacts, a bounded Server profile, interface
+projection, and conformance/experiment infrastructure.
 
-The graph above is a compact presentation of semantic facts emitted by the
-Revia translator from [`examples/agent-review/main.re`](examples/agent-review/main.re).
+These capabilities are bounded evidence, not claims of a production backend,
+complete language implementation, cross-platform equivalence, full A2A/MCP
+interoperability, or Stable V1.0. See
+[docs/development-status.md](docs/development-status.md) and
+[docs/stable-release-gate.md](docs/stable-release-gate.md).
 
-## See The Contract
+## Start Here
 
-The [execution contract](docs/execution-contract.md) shows how one `.re` source
-becomes a checked graph, machine manifest, human semantic view, and bounded
-run. The [Agent handoff review](examples/agent-handoff-review/) and
-[workflow brief](examples/agent-workflow-brief.re) are fixed-output inspection
-fixtures; they do not infer risk. Use the executable
-[reviewed file plan](examples/reviewed-file-plan/) for a real source-digest
-approval, denial, stale-approval rejection, filesystem effect, and recovery.
-
-The public RC now also documents the installation contract, cache lifecycle,
-generated-contract boundary, and protocol adapter questions for the next
-development stage. See the [Quickstart](QUICKSTART.md) and
-[Integration Guide](docs/integration.md).
-
-### Current Development Pulse
-
-The private development line has reviewed WP-307: a revision-pinned interface
-projection for future generated frontend contracts. It is not included in the
-public RC runtime or release assets. The public place to test today is the
-[examples progression](examples/README.md), including the
-[adversarial challenge track](examples/challenges/README.md).
-
-## Run The Full Loop
+Read [CONTRIBUTING.md](CONTRIBUTING.md), then run the reference toolchain:
 
 ```bash
-git clone https://github.com/tangshuang631/Revia.git
-cd Revia
-./bin/revia --version
-./bin/revia --help
-cp -R experiments/rc1/kit /tmp/revia-rc1-kit
-# Install the verified release binary as ./bin/revia, then:
-REVIA_EXECUTABLE=./bin/revia ./scripts/run-public-trials.sh /tmp/revia-rc1-kit
+npm test
+npm run re -- check examples/hello.re
+npm run re -- run examples/hello.re
 ```
 
-The candidate executes natively only on macOS arm64. The launcher reports exit
-`69` for every other target rather than claiming preview compatibility. See the
-[trial kit](experiments/rc1/kit/) and [Quickstart](QUICKSTART.md).
+For the native implementation:
+
+```bash
+cargo test --workspace --offline
+cargo fmt --all -- --check
+cargo clippy --workspace --offline -- -D warnings
+```
+
+The native CLI is built from `native/`. The Node toolchain remains a reference
+and development implementation; its presence does not make Node a semantic
+requirement of the language.
+
+## Repository Layout
 
 ```text
-revia 1.0.0-rc.1
+doc/             language and semantic specifications
+examples/        executable and design fixtures
+src/             Node reference toolchain and host adapters
+native/          Rust native toolchain
+test/            Node conformance tests and fixtures
+test-support/    shared test helpers
+scripts/         reproducible development and evidence commands
+docs/            public integration, release, and status documentation
 ```
 
-The trial manifest pins the fixtures, commands, output hashes, and declared
-limits for capability, project workflow, multi-module, and bounded server work.
+The public repository is the source and test authority for the open
+development line. Private development history, relay state, local scratch
+data, credentials, and unpublished release evidence are not part of this
+repository.
 
-## Release Runtime
+## Design Direction
 
-`v1.0.0-rc.1` is a version-pinned, source-closed developer-evaluation runtime.
-It ships one Darwin arm64 archive whose archive and executable SHA-256 are
-published in [runtime/checksums.txt](runtime/checksums.txt). See
-[Quickstart](QUICKSTART.md) for the bounded trial workflow and exit codes.
+Revia is built around a checked semantic graph:
 
-## V1 RC1 Trial Boundary
+- capabilities, effects, errors, and resources are explicit;
+- canonical serialization and graph identity are deterministic;
+- generated projections are derived from checked interfaces rather than
+  becoming a second semantic authority;
+- protocol adapters remain outside the language core;
+- evidence distinguishes measured, verified-only, pending, and
+  fault-observed results.
 
-`v1.0.0-rc.1` is the V1 deep-trial milestone, not Stable V1.0. Its sealed
-Darwin arm64 export binds the archive, binary, evaluation license, target
-matrix, capability evidence, multi-module evidence, and bounded Server evidence.
-The other five targets are explicitly `pending`, with no placeholder binaries.
-The [sealed export contract](docs/rc1-sealed-export-contract.md),
-[RC license](LICENSE-RC.md), and [cross-platform procedure](docs/cross-platform-evidence.md)
-define the boundary.
+The language and implementation are still evolving. A passing test or bounded
+experiment must be read together with its stated scope and limitations.
 
-## Current Development
+## Community
 
-The public RC is runnable on its sole measured target. Its trial kit exposes
-the bounded capability, project, multi-module, and Server experiments without
-exposing compiler or runtime source. It does not claim full language output
-byte determinism, cross-platform equivalence, production hosting, signing,
-SBOM, attestation, or immutable Stable V1.0. See the
-[development status](docs/development-status.md) and [evidence](docs/evidence.md)
-for the verified public boundary, current milestones, and what is not yet in
-the RC trial boundary.
-
-The HTTP/JSON/SQLite result is documented in
-[bounded Server conformance](docs/server-conformance.md). The
-[Stable V1.0 release gate](docs/stable-release-gate.md) remains open until
-release-side evidence is complete.
-
-## What Revia Makes Explicit
-
-- **Authority** — capabilities are declared and revision-pinned.
-- **Behavior** — effects return typed results instead of disappearing into
-  implicit control flow.
-- **Review** — `manifest` and `view` expose the same program to machines and
-  humans.
-
-## Learn Re In One Program
-
-```re
-re 0.1 compact
-
-unit @agent_review
-
-cap @stdout: process.stdout@0.1.0
-
-fn @main() -> process.status {
-  %handoff = @stdout.write("agent=ready\nnext=inspect-graph\n")
-  return match %handoff {
-    ok(_) => process.exit(0)
-    err(_) => process.exit(1)
-  }
-}
-```
-
-For the smallest executable review boundary, see the
-[reviewed file plan](examples/reviewed-file-plan/). The older workflow brief
-only emits a fixed handoff record and is retained as an inspection fixture.
-
-## Build With Other Agents
-
-Each independent experiment owns one directory:
-
-```text
-projects/<YYYY-MM-DD>-<agent>-<project>/
-  main.re
-  README.md
-  HANDOFF.md
-```
-
-Create a new directory for independent work. Update `HANDOFF.md` only when
-continuing that exact project. Submit one project or one continuation per PR.
-
-Bring a stronger example, a counterexample, or a reproducible finding. Start
-from the [project template](projects/_template/) and use the
-[feedback template](feedback/FEEDBACK_TEMPLATE.md) for focused reports.
-
-The fastest way to contribute is to pick one [challenge](examples/challenges/README.md),
-run it from a fresh checkout, and submit the smallest evidence-backed finding.
-
-## Explore
-
-### Start Here
-
-[Quickstart](QUICKSTART.md) · [Compatibility](docs/compatibility.md) ·
-[Integration Guide](docs/integration.md) · [Execution contract](docs/execution-contract.md)
-
-### Understand Revia
-
-[Architecture](docs/architecture.md) · [Language](docs/language.md) ·
-[Language reference](docs/language-reference.md) ·
-[Server conformance](docs/server-conformance.md) ·
-[Protocol](docs/protocol.md) · [Evidence](docs/evidence.md) ·
-[Evolution](docs/evolution.md) · [Development status](docs/development-status.md) ·
-[Release policy](docs/release-policy.md) ·
-[RC1 license and limits](docs/rc1-license-and-limitations.md) ·
-[Cross-platform evidence](docs/cross-platform-evidence.md) ·
-[Stable V1.0 gate](docs/stable-release-gate.md)
-
-### Collaborate
-
-[Agent workflow](docs/agent-workflow.md) · [Projects](projects/README.md) ·
-[Feedback loop](docs/feedback-loop.md) · [Challenges](examples/challenges/README.md)
-
-### Project
-
-[Release notes](RELEASE_NOTES.md) · [Contributing](CONTRIBUTING.md)
-
-### Community
-
-[Issues](https://github.com/tangshuang631/Revia/issues) ·
-[Discussions](https://github.com/tangshuang631/Revia/discussions) ·
-[Campaign poster](docs/assets/revia-agents-write-humans-govern.png) ·
-[API and protocol opinions](feedback/OPINION_TEMPLATE.md)
+Use GitHub issues for reproducible implementation problems and discussions for
+design proposals. Do not publish credentials, personal data, private
+messages, local paths, private infrastructure details, or proprietary
+material. Security-sensitive reports should use the repository's private
+security reporting channel.
 
 ## License
 
-`v1.0.0-rc.1` uses the [Developer Evaluation License](LICENSE-RC.md). The
-candidate permits local developer and Agent evaluation, research, and benchmark
-work; it does not permit production use, commercial hosting, redistribution, or
-reverse engineering. [Notice](NOTICE-RC.md) records the RC notice.
+Newly published source is licensed under [MPL-2.0](LICENSE). See
+[SOURCE-LICENSE.md](SOURCE-LICENSE.md) for the scope of the source transition
+and the relationship to historical release assets.

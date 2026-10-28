@@ -1,0 +1,1 @@
+{"outcome":{"diagnostics":[{"code":"missing-schema-revision","column":13,"file":"a.re","line":4,"reference":"fs.read@0.2.0"},{"code":"unknown-capability-member","column":2,"file":"z.re","line":1,"reference":"@input.delete_file"}],"kind":"check-failure"},"program_stdout":"","schema":"re.run-result@0.1.0"}

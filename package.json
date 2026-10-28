@@ -1,0 +1,20 @@
+{
+  "name": "revia-language",
+  "private": true,
+  "license": "MPL-2.0",
+  "type": "module",
+  "bin": {
+    "re": "./src/cli/re.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "g6:ollama": "node ./src/toolchain/cold-start-runner.js",
+    "re": "node ./src/cli/re.js",
+    "source:manifest": "node ./scripts/build-source-import-manifest.js --check",
+    "source:manifest:write": "node ./scripts/build-source-import-manifest.js --write",
+    "test": "node ./scripts/run-tracked-tests.js",
+    "test:grammar-fuzz": "node ./src/toolchain/grammar-fuzz-gate.js --iterations 1000000"
+  }
+}

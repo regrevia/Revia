@@ -1,0 +1,118 @@
+{
+  "schema": "re.module-contract-corpus@0.1.0",
+  "expected_package_digest": "sha256:1f6486fe15e3d2dca2fe33185b62719c248fddf469263e26bf8cdc1f3837f61e",
+  "manifest": {
+    "schema": "re.package-manifest@0.1.0",
+    "package": "agent.relay",
+    "external_interfaces": [
+      {
+        "package_digest": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+        "module": "std.log",
+        "interface_digest": "sha256:7c1db8f3affe2264d5e0dfec3045aad064e881ab78c2b1f86b817895154050aa",
+        "interface": {
+          "schema": "re.module-interface@0.1.0",
+          "module": "std.log",
+          "exports": [
+            {
+              "name": "write",
+              "kind": "function",
+              "contract_digest": "sha256:9999999999999999999999999999999999999999999999999999999999999999"
+            }
+          ],
+          "dependencies": []
+        }
+      }
+    ],
+    "modules": [
+      {
+        "name": "agent.relay.api",
+        "implementation_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "interface_digest": "sha256:5779705343e7f4562b4b006f2abfeadd3f24c2f164b0d2ed62a994fa94a1f240",
+        "interface": {
+          "schema": "re.module-interface@0.1.0",
+          "module": "agent.relay.api",
+          "exports": [
+            {
+              "name": "serve",
+              "kind": "function",
+              "contract_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+            }
+          ],
+          "dependencies": [
+            {
+              "binding": "log",
+              "scope": "external",
+              "module": "std.log",
+              "package_digest": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+              "interface_digest": "sha256:7c1db8f3affe2264d5e0dfec3045aad064e881ab78c2b1f86b817895154050aa"
+            },
+            {
+              "binding": "service",
+              "scope": "package",
+              "module": "agent.relay.service",
+              "interface_digest": "sha256:6cbfa0a9e364b386c5f6015b90a3bc4d962062b4ba553ad25e43f0bcf03fe71c"
+            }
+          ]
+        }
+      },
+      {
+        "name": "agent.relay.audit",
+        "implementation_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "interface_digest": "sha256:f9c8133a48b7ab0cc3fa2dc187acb1310aaaf45ad5e9b7ddd2bf6fda92f15a23",
+        "interface": {
+          "schema": "re.module-interface@0.1.0",
+          "module": "agent.relay.audit",
+          "exports": [
+            {
+              "name": "record",
+              "kind": "function",
+              "contract_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          ],
+          "dependencies": []
+        }
+      },
+      {
+        "name": "agent.relay.core",
+        "implementation_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "interface_digest": "sha256:49085501f04fda985961842d4b24c8d15c97f04375c5b05321a9cf764ba6eb55",
+        "interface": {
+          "schema": "re.module-interface@0.1.0",
+          "module": "agent.relay.core",
+          "exports": [
+            {
+              "name": "normalize",
+              "kind": "function",
+              "contract_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "dependencies": []
+        }
+      },
+      {
+        "name": "agent.relay.service",
+        "implementation_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+        "interface_digest": "sha256:6cbfa0a9e364b386c5f6015b90a3bc4d962062b4ba553ad25e43f0bcf03fe71c",
+        "interface": {
+          "schema": "re.module-interface@0.1.0",
+          "module": "agent.relay.service",
+          "exports": [
+            {
+              "name": "handle",
+              "kind": "function",
+              "contract_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            }
+          ],
+          "dependencies": [
+            {
+              "binding": "core",
+              "scope": "package",
+              "module": "agent.relay.core",
+              "interface_digest": "sha256:49085501f04fda985961842d4b24c8d15c97f04375c5b05321a9cf764ba6eb55"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

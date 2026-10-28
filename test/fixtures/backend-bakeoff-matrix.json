@@ -1,0 +1,121 @@
+{
+  "schema": "re.backend-bakeoff@0.2.0",
+  "status": "contract-defined",
+  "candidates": [
+    { "id": "aot-llvm", "role": "production-candidate", "artifact_kind": "native-aot" },
+    { "id": "cranelift", "role": "production-candidate", "artifact_kind": "native-aot" },
+    { "id": "go-lowering", "role": "production-candidate", "artifact_kind": "native-aot" },
+    { "id": "jvm-bytecode", "role": "production-candidate", "artifact_kind": "managed-bytecode" },
+    { "id": "node-reference", "role": "semantic-reference", "artifact_kind": "host-script" }
+  ],
+  "memory_contract": {
+    "ordinary_value": "observationally-immutable-after-construction",
+    "immutable_aliasing": "allowed-without-copy",
+    "mutable_state": "opaque-resource-only",
+    "cross_task_value": "immutable-share",
+    "cross_task_resource": "typed-handle-with-declared-footprint",
+    "region_reference": "cannot-outlive-owner",
+    "backend_representation": "internal-mutation-must-be-unobservable",
+    "forbidden_observable": [
+      "data-race",
+      "use-after-free",
+      "uninitialized-read",
+      "torn-read"
+    ]
+  },
+  "memory_probes": [
+    {
+      "id": "MEM-001",
+      "scenario": "ordinary-value-post-construction-mutation",
+      "expected": "verifier-reject"
+    },
+    {
+      "id": "MEM-002",
+      "scenario": "immutable-alias-shared-across-task",
+      "expected": "semantic-equivalence"
+    },
+    {
+      "id": "MEM-003",
+      "scenario": "resource-handle-without-footprint-crosses-task",
+      "expected": "verifier-reject"
+    },
+    {
+      "id": "MEM-004",
+      "scenario": "region-reference-outlives-owner",
+      "expected": "verifier-reject"
+    }
+  ],
+  "axes": [
+    "cold_start_ms",
+    "steady_state_warmup_ms",
+    "clean_build_ms",
+    "incremental_build_ms",
+    "artifact_bytes",
+    "peak_rss_bytes",
+    "allocation_bytes",
+    "gc_pause_p99_ms",
+    "throughput_ops_sec",
+    "p50_ms",
+    "p95_ms",
+    "p99_ms",
+    "cancel_latency_p99_ms",
+    "local_adapter_overhead_ns",
+    "foreign_adapter_overhead_ns"
+  ],
+  "workload_profiles": [
+    {
+      "id": "cpu-pure-graph",
+      "required_axes": ["throughput_ops_sec", "p99_ms", "allocation_bytes", "peak_rss_bytes"]
+    },
+    {
+      "id": "json-http",
+      "required_axes": ["throughput_ops_sec", "p50_ms", "p95_ms", "p99_ms", "peak_rss_bytes", "local_adapter_overhead_ns"]
+    },
+    {
+      "id": "db-transaction",
+      "required_axes": ["throughput_ops_sec", "p50_ms", "p95_ms", "p99_ms", "foreign_adapter_overhead_ns"]
+    },
+    {
+      "id": "task-10k",
+      "required_axes": ["throughput_ops_sec", "p99_ms", "cancel_latency_p99_ms", "allocation_bytes", "peak_rss_bytes"]
+    },
+    {
+      "id": "task-100k",
+      "required_axes": ["throughput_ops_sec", "p99_ms", "cancel_latency_p99_ms", "allocation_bytes", "peak_rss_bytes", "gc_pause_p99_ms"]
+    },
+    {
+      "id": "module-50-clean-incremental",
+      "required_axes": ["clean_build_ms", "incremental_build_ms", "artifact_bytes"]
+    },
+    {
+      "id": "module-500-clean-incremental",
+      "required_axes": ["clean_build_ms", "incremental_build_ms", "artifact_bytes", "peak_rss_bytes"]
+    },
+    {
+      "id": "module-5000-clean-incremental",
+      "required_axes": ["clean_build_ms", "incremental_build_ms", "artifact_bytes", "peak_rss_bytes"]
+    }
+  ],
+  "candidate_axes": [
+    "cold_start_ms",
+    "steady_state_warmup_ms",
+    "artifact_bytes",
+    "peak_rss_bytes"
+  ],
+  "hard_gates": [
+    "semantic-equivalence",
+    "memory-safety-contract",
+    "structured-cancellation",
+    "exact-release-lock",
+    "reproducible-artifact"
+  ],
+  "measurement": {
+    "hardware": "digest-pinned",
+    "operating_system": "digest-pinned",
+    "toolchain": "digest-pinned",
+    "inputs": "fixture-digest-bound",
+    "sample_order": "recorded",
+    "cold_and_warm": "reported-separately",
+    "budget": "fixed-after-first-bakeoff"
+  }
+}

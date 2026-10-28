@@ -1,0 +1,1 @@
+{"outcome":{"fault":{"capability_instance":"@input","capability_reference":"fs.read@0.1.0","code":"host-contract-violation","member":"read_file","node_uid":"3kf2a2bc4de6fg7h2j4km6np7q","phase":"invoke","reason":"return-type-mismatch"},"kind":"host-fault"},"program_stdout":"","schema":"re.run-result@0.1.0"}

@@ -1,0 +1,45 @@
+{
+  "schema": "re.agent-authoring-loop-corpus@0.1.0",
+  "cases": [
+    {
+      "id": "approved-state-change",
+      "expect": "success",
+      "rule": "approved digest-exact proposal commits one result revision"
+    },
+    {
+      "id": "stale-base",
+      "expect": "agent-authoring-proposal-digest-mismatch",
+      "rule": "base revision changes require a new proposal digest"
+    },
+    {
+      "id": "wrong-node",
+      "expect": "agent-authoring-affected-uid-missing",
+      "rule": "every existing affected UID is pinned by a fact precondition"
+    },
+    {
+      "id": "capability-escalation",
+      "expect": "project-patch-capability-escalation",
+      "rule": "capability additions remain inside the project allowlist"
+    },
+    {
+      "id": "effect-escalation",
+      "expect": "agent-authoring-effect-escalation",
+      "rule": "effect additions remain inside the project allowlist"
+    },
+    {
+      "id": "forged-digest",
+      "expect": "agent-authoring-proposal-digest-mismatch",
+      "rule": "operations cannot change after proposal signing"
+    },
+    {
+      "id": "unapproved",
+      "expect": "agent-authoring-not-approved",
+      "rule": "dry-run and review records never imply apply"
+    },
+    {
+      "id": "mid-apply-failure",
+      "expect": "agent-authoring-run-failed",
+      "rule": "a downstream failure does not expose the candidate project"
+    }
+  ]
+}

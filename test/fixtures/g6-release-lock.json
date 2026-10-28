@@ -1,0 +1,30 @@
+{
+  "allowed_tools": [
+    "source.read",
+    "re.check",
+    "re.manifest",
+    "re.module.resolve",
+    "re.patch",
+    "re.run"
+  ],
+  "budget": {
+    "max_output_tokens_per_call": 1024,
+    "max_tool_rounds": 12,
+    "max_total_tokens": 4096,
+    "request_timeout_ms": 30000
+  },
+  "model_ids": [
+    "model-a",
+    "model-b",
+    "model-c"
+  ],
+  "release": "g6-0.4.0",
+  "runner": {
+    "protocol": "ollama.generate",
+    "stream": false,
+    "temperature": 0
+  },
+  "schema": "re.g6-release-lock@0.1.0",
+  "task_pack_digest": "sha256:f3b4c9d9fbde7773a0aa842516b3a71ca41fc2dd80576fcbbe0639d2561db3b8",
+  "task_pack_schema": "re.g6-cold-start@0.5.0"
+}

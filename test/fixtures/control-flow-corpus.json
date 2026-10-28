@@ -1,0 +1,16 @@
+{
+  "schema": "re.control-flow-corpus@0.1.0",
+  "status": "executable-contract",
+  "cases": [
+    {"id":"CF-001","shape":"recursive-function","expected":"reject-recursive-function-not-supported-v1"},
+    {"id":"CF-002","shape":"guard-with-effect","expected":"reject-effect-in-match-guard"},
+    {"id":"CF-003","shape":"result-unmatched","expected":"reject-unconsumed-result"},
+    {"id":"CF-004","shape":"result-region-crosses-loop","expected":"reject-unsupported-v1-result-propagation-sugar"},
+    {"id":"CF-005","shape":"match-lowering","expected":"accept-match"},
+    {"id":"CF-006","shape":"loop-lowering","expected":"accept-loop"},
+    {"id":"CF-007","shape":"typed-state-transition","expected":"accept-state-machine"},
+    {"id":"CF-008","shape":"effect-in-transition","expected":"reject-effect-in-pure-transition"},
+    {"id":"CF-009","shape":"agent-relay-lifecycle","expected":"accept-state-machine"},
+    {"id":"CF-010","shape":"agent-relay-result-map-collision","expected":"reject-invalid-command-result-event-map"}
+  ]
+}

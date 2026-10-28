@@ -1,4 +1,4 @@
-name: Validate public boundary
+name: Source and release validation
 
 on:
   push:
@@ -10,107 +10,44 @@ permissions:
   contents: read
 
 jobs:
-  validate:
+  node:
+    name: Node source and privacy checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - name: Validate repository boundary and feedback schema
-        run: ./scripts/validate-public-tree.sh
-      - name: Check POSIX launcher contract
-        run: sh ./scripts/test-launchers.sh
-      - name: Check compact determinism probe contract
-        run: sh ./scripts/test-compact-determinism-contract.sh
-      - name: Record compact determinism evidence
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - name: Install pinned Gitleaks CLI
         run: |
-          if [ "$(sed -n '1p' VERSION)" = '0.1-preview.1' ]; then
-            sh ./scripts/test-compact-determinism.sh --report
-          else
-            printf '%s\n' 'RC1 does not reuse preview compact-determinism evidence.'
-          fi
-      - name: Check release-specific public behavior
+          go install github.com/zricethezav/gitleaks/v8@v8.28.0
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+      - name: Verify import manifest and public boundary
         run: |
-          set -euo pipefail
-          case "$(sed -n '1p' VERSION)" in
-            0.1-preview.1)
-              ./bin/revia check examples/agent-review/main.re
-              run_output=$(./bin/revia run examples/agent-review/main.re)
-              expected_output=$(printf 'agent=ready\nnext=inspect-graph')
-              if [ "$run_output" != "$expected_output" ]; then
-                printf 'unexpected preview run output: <%s>\n' "$run_output" >&2
-                exit 1
-              fi
-              ./bin/revia manifest examples/agent-review/main.re > manifest.json
-              grep -Fq '"module":"@agent_review"' manifest.json
-              ./bin/revia view --locale en-US --format html examples/agent-review/main.re > review.html
-              grep -Fq 'capability:@stdout' review.html
-              ;;
-            1.0.0-rc.1)
-              set +e
-              ./bin/revia check examples/agent-review/main.re > pending-target.out 2>&1
-              code=$?
-              set -e
-              test "$code" -eq 69
-              grep -Fqi 'pending target' pending-target.out
-              ;;
-            *)
-              echo "unsupported release identity" >&2
-              exit 65
-              ;;
-          esac
-  windows-launcher:
-    runs-on: windows-2025
+          npm run source:manifest
+          sh scripts/validate-public-tree.sh
+          gitleaks dir --redact .
+      - name: Run Node conformance suite
+        run: npm test
+
+  native:
+    name: Native Rust conformance
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - name: Parse PowerShell launcher and preserve Re source bytes
-        shell: pwsh
-        run: |
-          $launcher = Get-Content -LiteralPath bin/revia.ps1 -Raw
-          $null = [ScriptBlock]::Create($launcher)
-          $probe = Get-Content -LiteralPath scripts/test-compact-determinism.ps1 -Raw
-          $null = [ScriptBlock]::Create($probe)
-          Get-ChildItem examples -Filter *.re -Recurse | ForEach-Object {
-            $bytes = [IO.File]::ReadAllBytes($_.FullName)
-            if ($bytes -contains 13) { throw "CR byte found in $($_.Name)" }
-          }
-      - name: Check release-specific Windows launcher behavior
-        shell: powershell
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $release = (Get-Content -LiteralPath VERSION -TotalCount 1).Trim()
-          $version = & ./bin/revia.ps1 --version
-          if ($LASTEXITCODE -ne 0 -or $version -ne "revia $release") { throw 'version command failed' }
-          $usage = (& ./bin/revia.ps1 --help | Out-String)
-          if ($release -eq '1.0.0-rc.1') {
-            if ($LASTEXITCODE -ne 0 -or $usage -notmatch 'project-check|macOS arm64') { throw 'RC1 usage contract failed' }
-            $launcher = Get-Content -LiteralPath bin/revia.ps1 -Raw
-            if ($launcher -notmatch 'pending target|Only darwin-arm64 is measured') { throw 'pending-target branch missing' }
-          } elseif ($release -eq '0.1-preview.1') {
-            if ($LASTEXITCODE -ne 0 -or $usage -match 'project-check|project-run') { throw 'public usage exposed package commands' }
-            $help = & ./bin/revia.ps1 check --help
-            if ($LASTEXITCODE -ne 0 -or $help -ne 'Usage: revia check [--format json | --write] <file.re>') { throw 'help command failed' }
-          } else {
-            throw "unsupported release identity: $release"
-          }
-      - name: Record compact determinism evidence
-        shell: powershell
-        run: |
-          $release = (Get-Content -LiteralPath VERSION -TotalCount 1).Trim()
-          if ($release -eq '0.1-preview.1') {
-            ./scripts/test-compact-determinism.ps1 -Mode Report
-          } else {
-            Write-Output 'RC1 does not reuse preview compact-determinism evidence.'
-          }
-      - name: Run preview Agent review example
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $release = (Get-Content -LiteralPath VERSION -TotalCount 1).Trim()
-          if ($release -eq '0.1-preview.1') {
-            & ./bin/revia.ps1 check examples/agent-review/main.re
-            if ($LASTEXITCODE -ne 0) { throw "check failed: $LASTEXITCODE" }
-            $output = & ./bin/revia.ps1 run examples/agent-review/main.re
-            if ($LASTEXITCODE -ne 0) { throw "run failed: $LASTEXITCODE" }
-            if (($output -join "`n") -ne "agent=ready`nnext=inspect-graph") { throw "unexpected output" }
-          } elseif ($release -ne '1.0.0-rc.1') {
-            throw "unsupported release identity: $release"
-          }
+        with:
+          persist-credentials: false
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+        working-directory: native
+      - name: Build release binary for release-evidence tests
+        run: cargo build --workspace --release --offline
+        working-directory: native
+      - name: Run offline workspace tests
+        run: cargo test --workspace --offline
+        working-directory: native
+      - name: Run clippy
+        run: cargo clippy --workspace --offline --all-targets -- -D warnings
+        working-directory: native

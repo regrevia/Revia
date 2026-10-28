@@ -1,0 +1,57 @@
+{
+  "schema": "re.portable-fault-protocol-corpus@0.1.0",
+  "scenarios": [
+    {
+      "id": "core-check-failure",
+      "kind": "core-check-failure"
+    },
+    {
+      "id": "core-capability-fault",
+      "kind": "core-capability-fault"
+    },
+    {
+      "id": "bytecode-check-failure",
+      "kind": "bytecode-check-failure"
+    },
+    {
+      "id": "bytecode-capability-fault",
+      "kind": "bytecode-capability-fault"
+    },
+    {
+      "id": "process-preflight-check-failure",
+      "kind": "process-preflight-check-failure"
+    },
+    {
+      "id": "process-spawn-fault",
+      "kind": "process-spawn-fault"
+    },
+    {
+      "id": "process-timeout",
+      "kind": "process-timeout"
+    },
+    {
+      "id": "process-early-exit",
+      "kind": "process-early-exit"
+    },
+    {
+      "id": "process-malformed-output",
+      "kind": "process-malformed-output"
+    },
+    {
+      "id": "process-multiline-output",
+      "kind": "process-multiline-output"
+    },
+    {
+      "id": "process-oversized-stdout",
+      "kind": "process-oversized-stdout"
+    },
+    {
+      "id": "process-oversized-stderr",
+      "kind": "process-oversized-stderr"
+    },
+    {
+      "id": "process-forged-output",
+      "kind": "process-forged-output"
+    }
+  ]
+}

@@ -30,9 +30,10 @@ REVIA_EXECUTABLE=./bin/revia ./scripts/run-public-trials.sh experiments/rc1/kit
 The verifier and runner reject unsafe paths, symlinks, empty step sets, legacy
 1.0 command-only trials, digest drift, missing result files, and fixture
 mismatch. SHA-256 binds exact bytes and executable identity; it does not prove
-that the closed compiler/runtime correctly enforces every claimed security
-boundary.
+that the historical RC1 binary correctly enforces every claimed security
+boundary. The source repository is now published separately under MPL-2.0;
+that does not alter the RC1 binary's license or implementation.
 
 中文摘要：1.1 清单按步骤绑定命令、退出码、标准输出、标准错误和结果文件；
-`project-workflow` 必须顺序执行 init/check/test。摘要只证明字节身份，不证明闭源运行时
-实现了正确的安全边界。
+`project-workflow` 必须顺序执行 init/check/test。摘要只证明字节身份，不证明历史 RC1
+二进制实现了正确的安全边界。源码现已按 MPL-2.0 单独公开，不改变 RC1 二进制许可。

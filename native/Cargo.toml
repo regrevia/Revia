@@ -1,0 +1,13 @@
+[workspace]
+resolver = "3"
+members = [
+  "revia-macos-identity",
+  "revia-core",
+  "revia-cli",
+  "revia-conformance",
+]
+
+[workspace.package]
+edition = "2024"
+license = "MPL-2.0"
+version = "1.0.0-rc.2"

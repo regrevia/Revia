@@ -1,0 +1,504 @@
+{
+  "schema": "re.grammar-corpus@0.7.0",
+  "status": "candidate-evidence",
+  "cases": [
+    {
+      "id": "HDR-001",
+      "subject": "header",
+      "input": "re 0.1 compact\nunit hello\n",
+      "expected": { "ok": true, "body_offset": 15, "form": "compact", "version": "0.1" }
+    },
+    {
+      "id": "HDR-002",
+      "subject": "header",
+      "input": "re 0.1 canonical\nunit hello\n",
+      "expected": { "ok": true, "body_offset": 17, "form": "canonical", "version": "0.1" }
+    },
+    {
+      "id": "HDR-003",
+      "subject": "header",
+      "input": "\nre 0.1 compact\n",
+      "expected": { "ok": false, "diagnostic": "missing-grammar-header" }
+    },
+    {
+      "id": "HDR-004",
+      "subject": "header",
+      "input": "// prelude\nre 0.1 compact\n",
+      "expected": { "ok": false, "diagnostic": "missing-grammar-header" }
+    },
+    {
+      "id": "HDR-005",
+      "subject": "header",
+      "input": "re 0.1 compact\r\nunit hello\r\n",
+      "expected": { "ok": false, "diagnostic": "invalid-grammar-header" }
+    },
+    {
+      "id": "HDR-006",
+      "subject": "header",
+      "input": "re 0.2 compact\n",
+      "expected": { "ok": false, "diagnostic": "unsupported-language-version" }
+    },
+    {
+      "id": "HDR-007",
+      "subject": "header",
+      "input": "re 0.1\n",
+      "expected": { "ok": false, "diagnostic": "invalid-grammar-header" }
+    },
+    {
+      "id": "HDR-008",
+      "subject": "header",
+      "input": "re 0.1 compact\n// uid(\"not-a-form-signal\")\n",
+      "expected": { "ok": true, "body_offset": 15, "form": "compact", "version": "0.1" }
+    },
+    {
+      "id": "HDR-009",
+      "subject": "header",
+      "input": "re 0.1 compact",
+      "expected": { "ok": false, "diagnostic": "invalid-grammar-header" }
+    },
+    {
+      "id": "S2-TOK-001",
+      "subject": "s2-token",
+      "input": "vision.resize",
+      "expected": { "ok": true, "role": "semantic-symbol" }
+    },
+    {
+      "id": "S2-TOK-002",
+      "subject": "s2-token",
+      "input": "$stdout",
+      "expected": { "ok": true, "role": "capability" }
+    },
+    {
+      "id": "S2-TOK-003",
+      "subject": "s2-token",
+      "input": "%printed",
+      "expected": { "ok": true, "role": "compact-alias" }
+    },
+    {
+      "id": "S2-TOK-004",
+      "subject": "s2-token",
+      "input": "%uabcdefg",
+      "expected": { "ok": true, "role": "canonical-label" }
+    },
+    {
+      "id": "S2-TOK-005",
+      "subject": "s2-token",
+      "input": "process.stdout@0.1.0",
+      "expected": { "ok": true, "role": "pinned-reference" }
+    },
+    {
+      "id": "S2-TOK-006",
+      "subject": "s2-token",
+      "input": "#[audit.trace]",
+      "expected": { "ok": true, "role": "annotation" }
+    },
+    {
+      "id": "S2-TOK-007",
+      "subject": "s2-token",
+      "input": "@main",
+      "expected": { "ok": false, "diagnostic": "unrecognized-s2-token" }
+    },
+    {
+      "id": "S2-TOK-008",
+      "subject": "s2-token",
+      "input": "#uabcdefg",
+      "expected": { "ok": false, "diagnostic": "unrecognized-s2-token" }
+    },
+    {
+      "id": "S2-TOK-009",
+      "subject": "s2-token",
+      "input": "process.stdout@01.2.3",
+      "expected": { "ok": false, "diagnostic": "unrecognized-s2-token" }
+    },
+    {
+      "id": "S2-TOK-010",
+      "subject": "s2-token",
+      "input": "fn",
+      "expected": { "ok": false, "diagnostic": "unrecognized-s2-token" }
+    },
+    {
+      "id": "PAIR-HELLO-S1",
+      "subject": "paired-task",
+      "pair_id": "PAIR-HELLO",
+      "grammar": "S1",
+      "source_form": "compact",
+      "source_shape": "hello-call-match",
+      "body": "one capability call bound to an alias, then exhaustive result match to two pure exit calls",
+      "input": "re 0.1 compact\nunit @hello\ncap @stdout: process.stdout@0.1.0\nfn @main() -> process.status {\n  %printed = @stdout.write(data: \"Hello, World!\\n\")\n  return match %printed {\n    ok(_) => process.exit(code: 0)\n    err(_) => process.exit(code: 1)\n  }\n}\n",
+      "expected": { "ok": true, "summary": { "unit": "hello", "capabilities": [{ "instance": "stdout", "reference": "process.stdout@0.1.0" }], "function": "main", "return_type": "process.status", "statement_kinds": ["let", "return"], "call_targets": ["capability:stdout.write", "pure:process.exit", "pure:process.exit"], "match_input": "printed", "branch_variants": ["err", "ok"] } }
+    },
+    {
+      "id": "PAIR-HELLO-S2",
+      "subject": "paired-task",
+      "pair_id": "PAIR-HELLO",
+      "grammar": "S2",
+      "source_form": "compact",
+      "source_shape": "hello-call-match",
+      "body": "one capability call bound to an alias, then exhaustive result match to two pure exit calls",
+      "input": "re 0.1 compact\nunit hello\ncap $stdout: process.stdout@0.1.0\nfn main() -> process.status {\n  %printed = $stdout.write(data: \"Hello, World!\\n\")\n  return match %printed {\n    ok(_) => process.exit(code: 0)\n    err(_) => process.exit(code: 1)\n  }\n}\n",
+      "expected": { "ok": true, "summary": { "unit": "hello", "capabilities": [{ "instance": "stdout", "reference": "process.stdout@0.1.0" }], "function": "main", "return_type": "process.status", "statement_kinds": ["let", "return"], "call_targets": ["capability:stdout.write", "pure:process.exit", "pure:process.exit"], "match_input": "printed", "branch_variants": ["err", "ok"] } }
+    },
+    {
+      "id": "PAIR-UNPINNED-S1",
+      "subject": "paired-task",
+      "pair_id": "PAIR-UNPINNED",
+      "grammar": "S1",
+      "source_form": "compact",
+      "source_shape": "unpinned-capability-reference",
+      "body": "a capability declaration omits its schema revision",
+      "input": "re 0.1 compact\nunit @hello\ncap @stdout: process.stdout\n",
+      "expected": { "ok": false, "diagnostic": "unpinned-schema-reference" }
+    },
+    {
+      "id": "PAIR-UNPINNED-S2",
+      "subject": "paired-task",
+      "pair_id": "PAIR-UNPINNED",
+      "grammar": "S2",
+      "source_form": "compact",
+      "source_shape": "unpinned-capability-reference",
+      "body": "a capability declaration omits its schema revision",
+      "input": "re 0.1 compact\nunit hello\ncap $stdout: process.stdout\n",
+      "expected": { "ok": false, "diagnostic": "unpinned-schema-reference" }
+    },
+    {
+      "id": "PAIR-SIGIL-S1",
+      "subject": "paired-task",
+      "pair_id": "PAIR-SIGIL",
+      "grammar": "S1",
+      "source_form": "compact",
+      "source_shape": "wrong-capability-sigil",
+      "body": "a capability declaration uses the competing candidate sigil",
+      "input": "re 0.1 compact\nunit @hello\ncap $stdout: process.stdout@0.1.0\n",
+      "expected": { "ok": false, "diagnostic": "unexpected-candidate-token" }
+    },
+    {
+      "id": "PAIR-SIGIL-S2",
+      "subject": "paired-task",
+      "pair_id": "PAIR-SIGIL",
+      "grammar": "S2",
+      "source_form": "compact",
+      "source_shape": "wrong-capability-sigil",
+      "body": "a capability declaration uses the competing candidate sigil",
+      "input": "re 0.1 compact\nunit hello\ncap @stdout: process.stdout@0.1.0\n",
+      "expected": { "ok": false, "diagnostic": "unexpected-candidate-token" }
+    },
+    {
+      "id": "PAIR-ANNOTATION-S1",
+      "subject": "deferred-task",
+      "pair_id": "PAIR-ANNOTATION",
+      "grammar": "S1",
+      "source_form": "canonical",
+      "source_shape": "annotation-placement",
+      "blocked_by": "Q-sample-canonical",
+      "body": "canonical body carries a line annotation above a function",
+      "input": "re 0.1 canonical\nunit hello\n#[audit.trace]\nfn @main() -> process.status {\n  return match %printed {\n    ok(_) => process.exit(code: 0)\n    err(_) => process.exit(code: 1)\n  }\n}\n",
+      "expected": { "ok": false, "diagnostic": "unsupported-bakeoff-source-form" }
+    },
+    {
+      "id": "PAIR-ANNOTATION-S2",
+      "subject": "deferred-task",
+      "pair_id": "PAIR-ANNOTATION",
+      "grammar": "S2",
+      "source_form": "canonical",
+      "source_shape": "annotation-placement",
+      "blocked_by": "Q-sample-canonical",
+      "body": "canonical body carries a line annotation above a function",
+      "input": "re 0.1 canonical\nunit hello\n#[audit.trace]\nfn main() -> process.status {\n  return match %printed {\n    ok(_) => process.exit(code: 0)\n    err(_) => process.exit(code: 1)\n  }\n}\n",
+      "expected": { "ok": false, "diagnostic": "unsupported-bakeoff-source-form" }
+    },
+    {
+      "id": "PAIR-CANONICAL-BODY-S1",
+      "subject": "deferred-task",
+      "pair_id": "PAIR-CANONICAL-BODY",
+      "grammar": "S1",
+      "source_form": "canonical",
+      "source_shape": "canonical-body",
+      "blocked_by": "Q-sample-canonical",
+      "body": "canonical body must reject byte-identical source when not using canonical parser input",
+      "input": "re 0.1 canonical\nunit hello\ncap $stdout: process.stdout@0.1.0\nfn main() -> process.status {\n  %printed = $stdout.write(data: \"Hello, World!\\n\")\n  return match %printed {\n    ok(_) => process.exit(code: 0)\n    err(_) => process.exit(code: 1)\n  }\n}\n",
+      "expected": { "ok": false, "diagnostic": "unsupported-bakeoff-source-form" }
+    },
+    {
+      "id": "PAIR-CANONICAL-BODY-S2",
+      "subject": "deferred-task",
+      "pair_id": "PAIR-CANONICAL-BODY",
+      "grammar": "S2",
+      "source_form": "canonical",
+      "source_shape": "canonical-body",
+      "blocked_by": "Q-sample-canonical",
+      "body": "canonical body must reject byte-identical source when not using canonical parser input",
+      "input": "re 0.1 canonical\nunit hello\ncap $stdout: process.stdout@0.1.0\nfn main() -> process.status {\n  %printed = $stdout.write(data: \"Hello, World!\\n\")\n  return match %printed {\n    ok(_) => process.exit(code: 0)\n    err(_) => process.exit(code: 1)\n  }\n}\n",
+      "expected": { "ok": false, "diagnostic": "unsupported-bakeoff-source-form" }
+    },
+    {
+      "id": "PAIR-CROSS-MODULE-S1",
+      "subject": "paired-task",
+      "pair_id": "PAIR-CROSS-MODULE",
+      "grammar": "S1",
+      "source_form": "compact",
+      "source_shape": "unsupported-cross-module-export",
+      "blocked_by": "Q-module",
+      "body": "an export declaration reaches the compact candidate parser and fails without being reinterpreted",
+      "input": "re 0.1 compact\nunit @analytics.core\nexport @vision.resize: vision.resize@0.1.0\n",
+      "expected": { "ok": false, "diagnostic": "unexpected-candidate-token" }
+    },
+    {
+      "id": "PAIR-CROSS-MODULE-S2",
+      "subject": "paired-task",
+      "pair_id": "PAIR-CROSS-MODULE",
+      "grammar": "S2",
+      "source_form": "compact",
+      "source_shape": "unsupported-cross-module-export",
+      "blocked_by": "Q-module",
+      "body": "an export declaration reaches the compact candidate parser and fails without being reinterpreted",
+      "input": "re 0.1 compact\nunit analytics.core\nexport vision.resize: vision.resize@0.1.0\n",
+      "expected": { "ok": false, "diagnostic": "unexpected-candidate-token" }
+    },
+    {
+      "id": "PAIR-ANNOTATION-NEG-S1",
+      "subject": "paired-task",
+      "pair_id": "PAIR-ANNOTATION-NEG",
+      "grammar": "S1",
+      "source_form": "compact",
+      "source_shape": "annotation-token-crossing",
+      "blocked_by": "V1-deferred-annotation",
+      "body": "the reserved annotation prefix is rejected everywhere in V1 compact source",
+      "input": "re 0.1 compact\nunit @hello\n#[audit.trace]\nfn @main() -> process.status {\n  %printed = @stdout.write(data: \"Hello, World!\\n\")\n  return match %printed {\n    ok(_) => process.exit(code: 0)\n    err(_) => process.exit(code: 1)\n  }\n}\n",
+      "expected": { "ok": false, "diagnostic": "unsupported-v1-annotation" }
+    },
+    {
+      "id": "PAIR-ANNOTATION-NEG-S2",
+      "subject": "paired-task",
+      "pair_id": "PAIR-ANNOTATION-NEG",
+      "grammar": "S2",
+      "source_form": "compact",
+      "source_shape": "annotation-token-crossing",
+      "blocked_by": "V1-deferred-annotation",
+      "body": "the reserved annotation prefix is rejected everywhere in V1 compact source",
+      "input": "re 0.1 compact\nunit hello\n#[audit.trace]\nfn main() -> process.status {\n  %printed = $stdout.write(data: \"Hello, World!\\n\")\n  return match %printed {\n    ok(_) => process.exit(code: 0)\n    err(_) => process.exit(code: 1)\n  }\n}\n",
+      "expected": { "ok": false, "diagnostic": "unsupported-v1-annotation" }
+    },
+    {
+      "id": "PAIR-Q-WS-S1",
+      "subject": "deferred-task",
+      "pair_id": "PAIR-Q-WS",
+      "grammar": "S1",
+      "source_form": "canonical",
+      "source_shape": "canonical-whitespace",
+      "blocked_by": "Q-sample-canonical",
+      "body": "canonical comments are forbidden by serializer authority but the bake-off canonical parser remains deferred",
+      "input": "re 0.1 canonical\nunit hello\n  // canonical whitespace under discussion\nfn @main() -> process.status {\n  return match %printed {\n    ok(_) => process.exit(code: 0)\n    err(_) => process.exit(code: 1)\n  }\n}\n",
+      "expected": { "ok": false, "diagnostic": "unsupported-bakeoff-source-form" }
+    },
+    {
+      "id": "PAIR-Q-WS-S2",
+      "subject": "deferred-task",
+      "pair_id": "PAIR-Q-WS",
+      "grammar": "S2",
+      "source_form": "canonical",
+      "source_shape": "canonical-whitespace",
+      "blocked_by": "Q-sample-canonical",
+      "body": "canonical comments are forbidden by serializer authority but the bake-off canonical parser remains deferred",
+      "input": "re 0.1 canonical\nunit hello\n  // canonical whitespace under discussion\nfn main() -> process.status {\n  return match %printed {\n    ok(_) => process.exit(code: 0)\n    err(_) => process.exit(code: 1)\n  }\n}\n",
+      "expected": { "ok": false, "diagnostic": "unsupported-bakeoff-source-form" }
+    },
+    {
+      "id": "PAIR-NUMERIC-S1",
+      "subject": "paired-task",
+      "pair_id": "PAIR-NUMERIC",
+      "grammar": "S1",
+      "source_form": "compact",
+      "source_shape": "canonical-numeric-token",
+      "body": "an exact fixed-scale decimal is preserved as source text while both exit codes remain canonical integers",
+      "input": "re 0.1 compact\nunit @hello\ncap @stdout: process.stdout@0.1.0\nfn @main() -> process.status {\n  %printed = @stdout.write(data: -1234567890.00100)\n  return match %printed {\n    ok(_) => process.exit(code: 0)\n    err(_) => process.exit(code: 123456789012345678901234567890)\n  }\n}\n",
+      "expected": { "ok": true, "summary": { "unit": "hello", "capabilities": [{ "instance": "stdout", "reference": "process.stdout@0.1.0" }], "function": "main", "return_type": "process.status", "statement_kinds": ["let", "return"], "call_targets": ["capability:stdout.write", "pure:process.exit", "pure:process.exit"], "match_input": "printed", "branch_variants": ["err", "ok"] } }
+    },
+    {
+      "id": "PAIR-NUMERIC-S2",
+      "subject": "paired-task",
+      "pair_id": "PAIR-NUMERIC",
+      "grammar": "S2",
+      "source_form": "compact",
+      "source_shape": "canonical-numeric-token",
+      "body": "an exact fixed-scale decimal is preserved as source text while both exit codes remain canonical integers",
+      "input": "re 0.1 compact\nunit hello\ncap $stdout: process.stdout@0.1.0\nfn main() -> process.status {\n  %printed = $stdout.write(data: -1234567890.00100)\n  return match %printed {\n    ok(_) => process.exit(code: 0)\n    err(_) => process.exit(code: 123456789012345678901234567890)\n  }\n}\n",
+      "expected": { "ok": true, "summary": { "unit": "hello", "capabilities": [{ "instance": "stdout", "reference": "process.stdout@0.1.0" }], "function": "main", "return_type": "process.status", "statement_kinds": ["let", "return"], "call_targets": ["capability:stdout.write", "pure:process.exit", "pure:process.exit"], "match_input": "printed", "branch_variants": ["err", "ok"] } }
+    },
+    {
+      "id": "PAIR-NUMERIC-PLUS-S1",
+      "subject": "paired-task",
+      "pair_id": "PAIR-NUMERIC-PLUS",
+      "grammar": "S1",
+      "source_form": "compact",
+      "source_shape": "numeric-literal-format",
+      "body": "a leading plus sign is not part of the canonical numeric token surface",
+      "input": "re 0.1 compact\nunit @hello\nfn @main() -> process.status {\n  return match %done {\n    ok(_) => process.exit(code: +1)\n    err(_) => process.exit(code: 1)\n  }\n}\n",
+      "expected": { "ok": false, "diagnostic": "invalid-numeric-literal", "reason": "leading-plus" }
+    },
+    {
+      "id": "PAIR-NUMERIC-PLUS-S2",
+      "subject": "paired-task",
+      "pair_id": "PAIR-NUMERIC-PLUS",
+      "grammar": "S2",
+      "source_form": "compact",
+      "source_shape": "numeric-literal-format",
+      "body": "a leading plus sign is not part of the canonical numeric token surface",
+      "input": "re 0.1 compact\nunit hello\nfn main() -> process.status {\n  return match %done {\n    ok(_) => process.exit(code: +1)\n    err(_) => process.exit(code: 1)\n  }\n}\n",
+      "expected": { "ok": false, "diagnostic": "invalid-numeric-literal", "reason": "leading-plus" }
+    },
+    {
+      "id": "PAIR-NUMERIC-EXPONENT-S1",
+      "subject": "paired-task",
+      "pair_id": "PAIR-NUMERIC-EXPONENT",
+      "grammar": "S1",
+      "source_form": "compact",
+      "source_shape": "numeric-literal-format",
+      "body": "exponent notation is rejected instead of being converted through a host float",
+      "input": "re 0.1 compact\nunit @hello\nfn @main() -> process.status {\n  return match %done {\n    ok(_) => process.exit(code: 1e3)\n    err(_) => process.exit(code: 1)\n  }\n}\n",
+      "expected": { "ok": false, "diagnostic": "invalid-numeric-literal", "reason": "exponent" }
+    },
+    {
+      "id": "PAIR-NUMERIC-EXPONENT-S2",
+      "subject": "paired-task",
+      "pair_id": "PAIR-NUMERIC-EXPONENT",
+      "grammar": "S2",
+      "source_form": "compact",
+      "source_shape": "numeric-literal-format",
+      "body": "exponent notation is rejected instead of being converted through a host float",
+      "input": "re 0.1 compact\nunit hello\nfn main() -> process.status {\n  return match %done {\n    ok(_) => process.exit(code: 1e3)\n    err(_) => process.exit(code: 1)\n  }\n}\n",
+      "expected": { "ok": false, "diagnostic": "invalid-numeric-literal", "reason": "exponent" }
+    },
+    {
+      "id": "PAIR-NUMERIC-LEADING-ZERO-S1",
+      "subject": "paired-task",
+      "pair_id": "PAIR-NUMERIC-LEADING-ZERO",
+      "grammar": "S1",
+      "source_form": "compact",
+      "source_shape": "numeric-literal-format",
+      "body": "a multi-digit integer cannot start with zero",
+      "input": "re 0.1 compact\nunit @hello\nfn @main() -> process.status {\n  return match %done {\n    ok(_) => process.exit(code: 01)\n    err(_) => process.exit(code: 1)\n  }\n}\n",
+      "expected": { "ok": false, "diagnostic": "invalid-numeric-literal", "reason": "leading-zero" }
+    },
+    {
+      "id": "PAIR-NUMERIC-LEADING-ZERO-S2",
+      "subject": "paired-task",
+      "pair_id": "PAIR-NUMERIC-LEADING-ZERO",
+      "grammar": "S2",
+      "source_form": "compact",
+      "source_shape": "numeric-literal-format",
+      "body": "a multi-digit integer cannot start with zero",
+      "input": "re 0.1 compact\nunit hello\nfn main() -> process.status {\n  return match %done {\n    ok(_) => process.exit(code: 01)\n    err(_) => process.exit(code: 1)\n  }\n}\n",
+      "expected": { "ok": false, "diagnostic": "invalid-numeric-literal", "reason": "leading-zero" }
+    },
+    {
+      "id": "PAIR-NUMERIC-NEGATIVE-ZERO-S1",
+      "subject": "paired-task",
+      "pair_id": "PAIR-NUMERIC-NEGATIVE-ZERO",
+      "grammar": "S1",
+      "source_form": "compact",
+      "source_shape": "numeric-literal-format",
+      "body": "negative zero has no distinct canonical identity",
+      "input": "re 0.1 compact\nunit @hello\nfn @main() -> process.status {\n  return match %done {\n    ok(_) => process.exit(code: -0.00)\n    err(_) => process.exit(code: 1)\n  }\n}\n",
+      "expected": { "ok": false, "diagnostic": "invalid-numeric-literal", "reason": "negative-zero" }
+    },
+    {
+      "id": "PAIR-NUMERIC-NEGATIVE-ZERO-S2",
+      "subject": "paired-task",
+      "pair_id": "PAIR-NUMERIC-NEGATIVE-ZERO",
+      "grammar": "S2",
+      "source_form": "compact",
+      "source_shape": "numeric-literal-format",
+      "body": "negative zero has no distinct canonical identity",
+      "input": "re 0.1 compact\nunit hello\nfn main() -> process.status {\n  return match %done {\n    ok(_) => process.exit(code: -0.00)\n    err(_) => process.exit(code: 1)\n  }\n}\n",
+      "expected": { "ok": false, "diagnostic": "invalid-numeric-literal", "reason": "negative-zero" }
+    },
+    {
+      "id": "PAIR-NUMERIC-MALFORMED-DECIMAL-S1",
+      "subject": "paired-task",
+      "pair_id": "PAIR-NUMERIC-MALFORMED-DECIMAL",
+      "grammar": "S1",
+      "source_form": "compact",
+      "source_shape": "numeric-literal-format",
+      "body": "a decimal point requires fractional digits",
+      "input": "re 0.1 compact\nunit @hello\nfn @main() -> process.status {\n  return match %done {\n    ok(_) => process.exit(code: 1.)\n    err(_) => process.exit(code: 1)\n  }\n}\n",
+      "expected": { "ok": false, "diagnostic": "invalid-numeric-literal", "reason": "decimal-shape" }
+    },
+    {
+      "id": "PAIR-NUMERIC-MALFORMED-DECIMAL-S2",
+      "subject": "paired-task",
+      "pair_id": "PAIR-NUMERIC-MALFORMED-DECIMAL",
+      "grammar": "S2",
+      "source_form": "compact",
+      "source_shape": "numeric-literal-format",
+      "body": "a decimal point requires fractional digits",
+      "input": "re 0.1 compact\nunit hello\nfn main() -> process.status {\n  return match %done {\n    ok(_) => process.exit(code: 1.)\n    err(_) => process.exit(code: 1)\n  }\n}\n",
+      "expected": { "ok": false, "diagnostic": "invalid-numeric-literal", "reason": "decimal-shape" }
+    },
+    {
+      "id": "PAIR-TRIVIA-ASCII-S1",
+      "subject": "paired-task",
+      "pair_id": "PAIR-TRIVIA-ASCII",
+      "grammar": "S1",
+      "source_form": "compact",
+      "source_shape": "ascii-compact-trivia",
+      "body": "ASCII tab/space/LF separate tokens while UTF-8 text remains legal inside a line comment",
+      "input": "re 0.1 compact\nunit\t@hello // 中文说明只属于注释\nfn @main() -> process.status {\n\treturn match %done {\n\t\tok(_) => process.exit(code: 0)\n\t\terr(_) => process.exit(code: 1)\n\t}\n}\n",
+      "expected": { "ok": true, "summary": { "unit": "hello", "capabilities": [], "function": "main", "return_type": "process.status", "statement_kinds": ["return"], "call_targets": ["pure:process.exit", "pure:process.exit"], "match_input": "done", "branch_variants": ["err", "ok"] } }
+    },
+    {
+      "id": "PAIR-TRIVIA-ASCII-S2",
+      "subject": "paired-task",
+      "pair_id": "PAIR-TRIVIA-ASCII",
+      "grammar": "S2",
+      "source_form": "compact",
+      "source_shape": "ascii-compact-trivia",
+      "body": "ASCII tab/space/LF separate tokens while UTF-8 text remains legal inside a line comment",
+      "input": "re 0.1 compact\nunit\thello // 中文说明只属于注释\nfn main() -> process.status {\n\treturn match %done {\n\t\tok(_) => process.exit(code: 0)\n\t\terr(_) => process.exit(code: 1)\n\t}\n}\n",
+      "expected": { "ok": true, "summary": { "unit": "hello", "capabilities": [], "function": "main", "return_type": "process.status", "statement_kinds": ["return"], "call_targets": ["pure:process.exit", "pure:process.exit"], "match_input": "done", "branch_variants": ["err", "ok"] } }
+    },
+    {
+      "id": "PAIR-TRIVIA-NBSP-S1",
+      "subject": "paired-task",
+      "pair_id": "PAIR-TRIVIA-NBSP",
+      "grammar": "S1",
+      "source_form": "compact",
+      "source_shape": "non-ascii-compact-trivia",
+      "body": "NBSP between compact tokens must fail in the lexer instead of acting like an ASCII separator",
+      "input": "re 0.1 compact\nunit @hello\n",
+      "expected": { "ok": false, "diagnostic": "non-ascii-compact-trivia" }
+    },
+    {
+      "id": "PAIR-TRIVIA-NBSP-S2",
+      "subject": "paired-task",
+      "pair_id": "PAIR-TRIVIA-NBSP",
+      "grammar": "S2",
+      "source_form": "compact",
+      "source_shape": "non-ascii-compact-trivia",
+      "body": "NBSP between compact tokens must fail in the lexer instead of acting like an ASCII separator",
+      "input": "re 0.1 compact\nunit hello\n",
+      "expected": { "ok": false, "diagnostic": "non-ascii-compact-trivia" }
+    },
+    {
+      "id": "PAIR-TRIVIA-CR-S1",
+      "subject": "paired-task",
+      "pair_id": "PAIR-TRIVIA-CR",
+      "grammar": "S1",
+      "source_form": "compact",
+      "source_shape": "non-lf-compact-line-ending",
+      "body": "CR in the compact body must fail even when the header uses the required LF",
+      "input": "re 0.1 compact\nunit @hello\r\n",
+      "expected": { "ok": false, "diagnostic": "non-ascii-compact-trivia" }
+    },
+    {
+      "id": "PAIR-TRIVIA-CR-S2",
+      "subject": "paired-task",
+      "pair_id": "PAIR-TRIVIA-CR",
+      "grammar": "S2",
+      "source_form": "compact",
+      "source_shape": "non-lf-compact-line-ending",
+      "body": "CR in the compact body must fail even when the header uses the required LF",
+      "input": "re 0.1 compact\nunit hello\r\n",
+      "expected": { "ok": false, "diagnostic": "non-ascii-compact-trivia" }
+    }
+  ]
+}

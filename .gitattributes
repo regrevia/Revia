@@ -4,3 +4,7 @@ bin/revia.ps1 text eol=lf
 scripts/*.sh text eol=lf
 *.re text eol=lf
 runtime/NODE_LICENSE text eol=lf -whitespace
+*.json text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+LICENSE -whitespace

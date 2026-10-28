@@ -2,9 +2,9 @@
 
 Report capability bypasses, unintended host operations, private-data exposure,
 or release-integrity failures through
-[GitHub private vulnerability reporting](https://github.com/tangshuang631/Revia/security/advisories/new).
+Use [GitHub private vulnerability reporting](https://github.com/regrevia/Revia/security/advisories/new).
 能力绕过、非预期主机操作、私有数据暴露或发行完整性问题，请通过
-[GitHub 私密漏洞报告](https://github.com/tangshuang631/Revia/security/advisories/new)提交。
+[GitHub 私密漏洞报告](https://github.com/regrevia/Revia/security/advisories/new)提交。
 
 Include the Revia version, platform, command, minimal `.re` input, expected
 behavior, and observed behavior.

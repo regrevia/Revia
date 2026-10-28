@@ -1,0 +1,282 @@
+{
+  "schema": "re.agent-writing-evaluation-corpus@0.1.0",
+  "mode": "fixed-proposal",
+  "cases": [
+    {
+      "id": "modify-business-rule",
+      "axis": "business-rule",
+      "kind": "apply",
+      "first_generation_pass": true,
+      "repair_rounds": 0,
+      "affected_fact_ids": [
+        "fact:project/module/api/state/draft"
+      ],
+      "operations": [
+        {
+          "kind": "rename-state",
+          "module": "api",
+          "new_name": "approved",
+          "uid": "bbbbbbbbbbbbbbbbbbbbbbbbbe"
+        }
+      ],
+      "impact": {
+        "capabilities_added": [],
+        "capabilities_removed": [],
+        "effects_added": [],
+        "effects_removed": []
+      },
+      "expect": "success",
+      "rule": "business rule edits must produce one checked semantic diff"
+    },
+    {
+      "id": "add-error-branch",
+      "axis": "error-branch",
+      "kind": "apply",
+      "first_generation_pass": true,
+      "repair_rounds": 0,
+      "affected_fact_ids": [
+        "fact:project/module/api"
+      ],
+      "operations": [
+        {
+          "expected_uid": "aaaaaaaaaaaaaaaaaaaaaaaaae",
+          "kind": "add-state",
+          "module": "api",
+          "value": {
+            "name": "invalid_expense"
+          }
+        }
+      ],
+      "impact": {
+        "capabilities_added": [],
+        "capabilities_removed": [],
+        "effects_added": [],
+        "effects_removed": []
+      },
+      "expect": "success",
+      "rule": "the fixed preview representative adds a closed rejection branch"
+    },
+    {
+      "id": "modify-closed-type",
+      "axis": "closed-type",
+      "kind": "apply",
+      "first_generation_pass": true,
+      "repair_rounds": 0,
+      "affected_fact_ids": [
+        "fact:project/module/policy/state/waiting"
+      ],
+      "operations": [
+        {
+          "kind": "rename-state",
+          "module": "policy",
+          "new_name": "second_review",
+          "uid": "jjjjjjjjjjjjjjjjjjjjjjjjje"
+        }
+      ],
+      "impact": {
+        "capabilities_added": [],
+        "capabilities_removed": [],
+        "effects_added": [],
+        "effects_removed": []
+      },
+      "expect": "success",
+      "rule": "closed state identities remain UID anchored"
+    },
+    {
+      "id": "adjust-retry-policy",
+      "axis": "retry-policy",
+      "kind": "apply",
+      "first_generation_pass": true,
+      "repair_rounds": 0,
+      "affected_fact_ids": [
+        "fact:project/module/policy/state/retry_wait"
+      ],
+      "operations": [
+        {
+          "kind": "rename-state",
+          "module": "policy",
+          "new_name": "retry_pending",
+          "uid": "iiiiiiiiiiiiiiiiiiiiiiiiie"
+        }
+      ],
+      "impact": {
+        "capabilities_added": [],
+        "capabilities_removed": [],
+        "effects_added": [],
+        "effects_removed": []
+      },
+      "expect": "success",
+      "rule": "retry policy edits stay inside the checked state surface"
+    },
+    {
+      "id": "modify-http-contract",
+      "axis": "http-contract",
+      "kind": "apply",
+      "first_generation_pass": true,
+      "repair_rounds": 0,
+      "affected_fact_ids": [
+        "fact:project/module/api/state/draft"
+      ],
+      "operations": [
+        {
+          "kind": "rename-state",
+          "module": "api",
+          "new_name": "http_ready",
+          "uid": "bbbbbbbbbbbbbbbbbbbbbbbbbe"
+        }
+      ],
+      "impact": {
+        "capabilities_added": [],
+        "capabilities_removed": [],
+        "effects_added": [],
+        "effects_removed": []
+      },
+      "expect": "success",
+      "rule": "HTTP contract edits remain bound to the declared capability UID"
+    },
+    {
+      "id": "cross-module-modification",
+      "axis": "cross-module",
+      "kind": "apply",
+      "first_generation_pass": true,
+      "repair_rounds": 0,
+      "affected_fact_ids": [
+        "fact:project/module/policy/state/waiting"
+      ],
+      "operations": [
+        {
+          "kind": "rename-state",
+          "module": "policy",
+          "new_name": "escalated",
+          "uid": "jjjjjjjjjjjjjjjjjjjjjjjjje"
+        }
+      ],
+      "impact": {
+        "capabilities_added": [],
+        "capabilities_removed": [],
+        "effects_added": [],
+        "effects_removed": []
+      },
+      "expect": "success",
+      "rule": "cross-module edits retain the same proposal and receipt authority"
+    },
+    {
+      "id": "zero-semantic-reorder",
+      "axis": "carrier-equivalence",
+      "kind": "equivalence",
+      "first_generation_pass": true,
+      "repair_rounds": 0,
+      "affected_fact_ids": [
+        "fact:project/module/api/state/draft",
+        "fact:project/module/policy/state/retry_wait"
+      ],
+      "operations": [
+        {
+          "kind": "rename-state",
+          "module": "api",
+          "new_name": "approved",
+          "uid": "bbbbbbbbbbbbbbbbbbbbbbbbbe"
+        },
+        {
+          "kind": "rename-state",
+          "module": "policy",
+          "new_name": "retry_pending",
+          "uid": "iiiiiiiiiiiiiiiiiiiiiiiiie"
+        }
+      ],
+      "impact": {
+        "capabilities_added": [],
+        "capabilities_removed": [],
+        "effects_added": [],
+        "effects_removed": []
+      },
+      "expect": "zero-semantic-change",
+      "rule": "operation order is a carrier difference when final semantic facts are identical"
+    },
+    {
+      "id": "stale-revision-attack",
+      "axis": "stale-revision",
+      "kind": "stale",
+      "first_generation_pass": false,
+      "repair_rounds": 0,
+      "affected_fact_ids": [
+        "fact:project/module/api/state/draft"
+      ],
+      "operations": [
+        {
+          "kind": "rename-state",
+          "module": "api",
+          "new_name": "approved",
+          "uid": "bbbbbbbbbbbbbbbbbbbbbbbbbe"
+        }
+      ],
+      "impact": {
+        "capabilities_added": [],
+        "capabilities_removed": [],
+        "effects_added": [],
+        "effects_removed": []
+      },
+      "expect": "agent-authoring-proposal-digest-mismatch",
+      "rule": "stale base revisions cannot be repaired by replay"
+    },
+    {
+      "id": "capability-overreach-attack",
+      "axis": "capability-boundary",
+      "kind": "apply",
+      "first_generation_pass": false,
+      "repair_rounds": 0,
+      "affected_fact_ids": [
+        "fact:project/module/api"
+      ],
+      "operations": [
+        {
+          "expected_uid": "aaaaaaaaaaaaaaaaaaaaaaaaae",
+          "kind": "add-capability",
+          "module": "api",
+          "value": {
+            "instance": "@secret",
+            "member": "read",
+            "name": "secret",
+            "reference": "secret.read@0.1.0"
+          }
+        }
+      ],
+      "impact": {
+        "capabilities_added": [
+          "secret.read@0.1.0"
+        ],
+        "capabilities_removed": [],
+        "effects_added": [],
+        "effects_removed": []
+      },
+      "expect": "project-patch-capability-escalation",
+      "rule": "capability additions outside the project allowlist are rejected"
+    },
+    {
+      "id": "receipt-replay-attack",
+      "axis": "receipt-replay",
+      "kind": "replay",
+      "first_generation_pass": false,
+      "repair_rounds": 0,
+      "affected_fact_ids": [
+        "fact:project/module/api/state/draft"
+      ],
+      "operations": [
+        {
+          "kind": "rename-state",
+          "module": "api",
+          "new_name": "approved",
+          "uid": "bbbbbbbbbbbbbbbbbbbbbbbbbe"
+        }
+      ],
+      "impact": {
+        "capabilities_added": [],
+        "capabilities_removed": [],
+        "effects_added": [],
+        "effects_removed": []
+      },
+      "expect": "agent-authoring-base-revision-mismatch",
+      "rule": "a receipt cannot be replayed against a committed result"
+    }
+  ]
+}

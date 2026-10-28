@@ -1,0 +1,73 @@
+{
+  "schema": "re.grammar-fuzz-baseline@0.5.0",
+  "accepted_changed": 62170,
+  "candidate": "S2",
+  "crash_count": 0,
+  "iterations": 1000000,
+  "mutation": "two-distinct-grammar-byte-replacements",
+  "mutation_offsets": 907,
+  "nondeterministic_count": 0,
+  "outcome_digest": "sha256:2f164dab1f5dd82874ec87c3a6a067d1891405be686b6e1f4efbcb17bb3139fb",
+  "rejected": 937830,
+  "seed": 1380278066,
+  "seed_cases": [
+    {
+      "accepted_changed": 26723,
+      "crash_count": 0,
+      "id": "PAIR-HELLO-S2",
+      "iterations": 250000,
+      "mutation_offsets": 183,
+      "nondeterministic_count": 0,
+      "parser": "grammar-candidate:S2",
+      "rejected": 223277,
+      "seed": 1380278066,
+      "source_digest": "sha256:ea2766f3d05b9361150e456ac210fc3f040db7d4f96c514a241798f57031ed64",
+      "wrong_graph_count": 0,
+      "outcome_digest": "sha256:bf46ee870dc5c3ca8ad2b64e9e31196e45c9445579b2854e70f98642cc957cda"
+    },
+    {
+      "accepted_changed": 5527,
+      "crash_count": 0,
+      "id": "PAIR-NUMERIC-S2",
+      "iterations": 250000,
+      "mutation_offsets": 229,
+      "nondeterministic_count": 0,
+      "parser": "grammar-candidate:S2",
+      "rejected": 244473,
+      "seed": 4034713835,
+      "source_digest": "sha256:895e8547fef5897448e5518d853e094d70b1e9f208cc9d8de968b93a9ac699e5",
+      "wrong_graph_count": 0,
+      "outcome_digest": "sha256:35ccc36c2ffebaabff64662c99993b212de38f0e0d9264c934243997bd1aeb23"
+    },
+    {
+      "accepted_changed": 0,
+      "crash_count": 0,
+      "id": "SRC-001",
+      "iterations": 250000,
+      "mutation_offsets": 323,
+      "nondeterministic_count": 0,
+      "parser": "module-surface",
+      "rejected": 250000,
+      "seed": 2394182308,
+      "source_digest": "sha256:9445a7ab2af7f40fad8c63c013d9c30ebb5f5542d7b84218ab4a6d6afbfa710c",
+      "wrong_graph_count": 0,
+      "outcome_digest": "sha256:87365f5bf89428c84651446864c75bf66062dc267b42665288ffe0f761d0adbb"
+    },
+    {
+      "accepted_changed": 29920,
+      "crash_count": 0,
+      "id": "ARGS-CHECK",
+      "iterations": 250000,
+      "mutation_offsets": 172,
+      "nondeterministic_count": 0,
+      "parser": "production:parseProgram",
+      "rejected": 220080,
+      "seed": 753650781,
+      "source_digest": "sha256:bb7d18561e1755060c5142c058ec52a43cf080af65aa2180c7cfd8eae8159831",
+      "wrong_graph_count": 0,
+      "outcome_digest": "sha256:17e892debe916acd85fa240e96ed1f80160022f97bc1dd1225b53615b0d93489"
+    }
+  ],
+  "source_digest": "sha256:e06b09e749a36b3927361cf183e4a892a69bcc07e70ef516570d6882ff7c9507",
+  "wrong_graph_count": 0
+}

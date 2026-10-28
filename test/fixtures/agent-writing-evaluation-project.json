@@ -1,0 +1,123 @@
+{
+  "agents": [
+    {
+      "agent": "expense.review",
+      "contract": {
+        "events": [
+          "ready"
+        ],
+        "initial_state": "created",
+        "states": [
+          "created",
+          "succeeded"
+        ],
+        "terminal_states": [
+          {
+            "outcome": "succeeded",
+            "state": "succeeded"
+          }
+        ],
+        "transitions": [
+          {
+            "event": "ready",
+            "from": "created",
+            "to": "succeeded"
+          }
+        ]
+      },
+      "module": "api",
+      "node_uid": "ggggggggggggggggggggggggge"
+    }
+  ],
+  "allowed_capabilities": [
+    "db.read@0.1.0",
+    "http.request@0.1.0"
+  ],
+  "allowed_effects": [
+    "audit.record"
+  ],
+  "graph_revision": "sha256:cae662172fd450bb0cd710a769079c05bfc5d8e35efa6576edc7d0377afdd4a2",
+  "modules": [
+    {
+      "edges": [
+        {
+          "from": "start",
+          "to": "finish",
+          "uid": "ccccccccccccccccccccccccce"
+        }
+      ],
+      "name": "api",
+      "source_sha256": "sha256:41cf6794ba4200b839c53531555f0f3998df4cbb01a4d5cb0b94e3ca5e23947d",
+      "states": [
+        {
+          "name": "draft",
+          "uid": "bbbbbbbbbbbbbbbbbbbbbbbbbe"
+        }
+      ],
+      "surface": {
+        "capabilities": [
+          {
+            "instance": "@db",
+            "member": "read",
+            "name": "db",
+            "reference": "db.read@0.1.0",
+            "uid": "ddddddddddddddddddddddddde"
+          }
+        ],
+        "errors": [
+          {
+            "name": "invalid",
+            "uid": "eeeeeeeeeeeeeeeeeeeeeeeeee"
+          }
+        ]
+      },
+      "uid": "aaaaaaaaaaaaaaaaaaaaaaaaae"
+    },
+    {
+      "edges": [
+        {
+          "from": "start",
+          "to": "finish",
+          "uid": "llllllllllllllllllllllllle"
+        }
+      ],
+      "name": "policy",
+      "source_sha256": "sha256:51cf6794ba4200b839c53531555f0f3998df4cbb01a4d5cb0b94e3ca5e23947d",
+      "states": [
+        {
+          "name": "retry_wait",
+          "uid": "iiiiiiiiiiiiiiiiiiiiiiiiie"
+        },
+        {
+          "name": "waiting",
+          "uid": "jjjjjjjjjjjjjjjjjjjjjjjjje"
+        }
+      ],
+      "tasks": [
+        {
+          "name": "enforce",
+          "task_id": "sha256:6ebb71180870f7945155fbb02f4b0a2e3faa2a62d6d31b7039013055ed19869a"
+        }
+      ],
+      "surface": {
+        "capabilities": [],
+        "errors": [
+          {
+            "name": "policy_denied",
+            "uid": "kkkkkkkkkkkkkkkkkkkkkkkkke"
+          }
+        ]
+      },
+      "uid": "hhhhhhhhhhhhhhhhhhhhhhhhhe"
+    }
+  ],
+  "package_digest": "sha256:bc4a71180870f7945155fbb02f4b0a2e3faa2a62d6d31b7039013055ed19869a",
+  "project_digest": "sha256:cae662172fd450bb0cd710a769079c05bfc5d8e35efa6576edc7d0377afdd4a2",
+  "resources": [
+    {
+      "alias": "database",
+      "key": "database",
+      "uid": "fffffffffffffffffffffffffe"
+    }
+  ]
+}

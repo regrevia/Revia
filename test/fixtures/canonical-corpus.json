@@ -1,0 +1,125 @@
+{
+  "schema": "re.canonical-corpus@0.2.0",
+  "status": "serializer-owned-evidence",
+  "required_coverage": [
+    "literal:bytes",
+    "literal:decimal<scale>",
+    "literal:fs.path",
+    "literal:int",
+    "literal:text.encoding",
+    "literal:text.utf8",
+    "node:call",
+    "node:cap",
+    "node:function",
+    "node:let",
+    "node:literal",
+    "node:match",
+    "node:match-branch",
+    "node:return",
+    "support:checked-program-graph",
+    "support:value-edge",
+    "target:capability-member",
+    "target:pure-operation"
+  ],
+  "graph_cases": [
+    {
+      "id": "CANON-GRAPH-HELLO",
+      "fixture": "examples/hello.re",
+      "source_form": "compact",
+      "canonical_golden": "test/golden/canonical-hello.re",
+      "sha256": "fbc879084d06d619f700d640826bebd4e758489171e269d162c57f1c26a19083"
+    },
+    {
+      "id": "CANON-GRAPH-MULTI",
+      "fixture": "test/fixtures/canonical-multi.re",
+      "source_form": "compact",
+      "canonical_golden": "test/golden/canonical-multi.re",
+      "sha256": "b371f730485e5f4991e225cf4c32c3bd5411c48036de8fcd257941382803f4ea"
+    },
+    {
+      "id": "CANON-GRAPH-ARGS-CHECK",
+      "fixture": "examples/args-check.re",
+      "source_form": "compact",
+      "canonical_golden": "test/golden/canonical-args-check.re",
+      "sha256": "6c1152d2d7059790790cc11c022ca51d813fcb222cd6a512ec6f10e37563df47"
+    },
+    {
+      "id": "CANON-GRAPH-READ-CHECK",
+      "fixture": "examples/read-check.re",
+      "source_form": "compact",
+      "canonical_golden": "test/golden/canonical-read-check.re",
+      "sha256": "2c2695d4f61181d52d852636033fc651a3889aae42f726bca6a31dab64a5d4f3"
+    },
+    {
+      "id": "CANON-GRAPH-READ-ENCODING",
+      "fixture": "examples/read-encoding.re",
+      "source_form": "compact",
+      "canonical_golden": "test/golden/canonical-read-encoding.re",
+      "sha256": "a6cfecdee8119828b68807f29b868ed70f0a616f2e4bd092e0dd8bdf9c75665e"
+    },
+    {
+      "id": "CANON-GRAPH-WRITE-CHECK",
+      "fixture": "examples/write-check.re",
+      "source_form": "compact",
+      "canonical_golden": "test/golden/canonical-write-check.re",
+      "sha256": "9f7b330fb2b03a6b82984feb9139d2593c27abd6ce36962773bbcdd638da9bcb"
+    },
+    {
+      "id": "CANON-GRAPH-DECIMAL",
+      "fixture": "test/fixtures/canonical-decimal.re",
+      "source_form": "canonical",
+      "canonical_golden": "test/fixtures/canonical-decimal.re",
+      "sha256": "ad9a724ec7f8f83d665adadbb97dfddcae84b321d9f70f5bdd21636f30a280a9"
+    }
+  ],
+  "mutation_cases": [
+    {
+      "id": "CANON-001",
+      "graph": "CANON-GRAPH-HELLO",
+      "operation": "insert-blank-line",
+      "expected": { "ok": false, "diagnostic": "non-canonical-source" }
+    },
+    {
+      "id": "CANON-002",
+      "graph": "CANON-GRAPH-HELLO",
+      "operation": "append-trailing-newline",
+      "expected": { "ok": false, "diagnostic": "non-canonical-source" }
+    },
+    {
+      "id": "CANON-003",
+      "graph": "CANON-GRAPH-HELLO",
+      "operation": "insert-comment",
+      "expected": { "ok": false, "diagnostic": "unexpected-canonical-line" }
+    },
+    {
+      "id": "CANON-004",
+      "graph": "CANON-GRAPH-HELLO",
+      "operation": "insert-annotation",
+      "expected": { "ok": false, "diagnostic": "unexpected-canonical-line" }
+    },
+    {
+      "id": "CANON-005",
+      "graph": "CANON-GRAPH-MULTI",
+      "operation": "decompose-nfc-string",
+      "expected": { "ok": false, "diagnostic": "non-canonical-source" }
+    },
+    {
+      "id": "CANON-006",
+      "graph": "CANON-GRAPH-MULTI",
+      "operation": "reverse-capabilities",
+      "expected": { "ok": false, "diagnostic": "non-canonical-source" }
+    },
+    {
+      "id": "CANON-007",
+      "graph": "CANON-GRAPH-MULTI",
+      "operation": "reverse-let-statements",
+      "expected": { "ok": false, "diagnostic": "non-canonical-source" }
+    },
+    {
+      "id": "CANON-008",
+      "graph": "CANON-GRAPH-HELLO",
+      "operation": "reverse-branches",
+      "expected": { "ok": false, "diagnostic": "non-canonical-source" }
+    }
+  ]
+}

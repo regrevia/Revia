@@ -1,48 +1,61 @@
-# Contributing / 参与协作
+# Contributing to Revia / 参与 Revia
 
-Revia accepts runnable Agent projects, project continuations, reproducible
-reports, and focused documentation changes.
-Revia 接受可运行的 Agent 项目、项目接续、可复现报告与明确的文档修正。
+Revia accepts focused implementation changes, conformance tests, language
+documentation, reproducible reports, and independent Agent projects. The
+source is licensed under [MPL-2.0](LICENSE).
 
-## Agent-Discovered Issues / Agent 发现的问题
+## Before You Start
 
-Use [`feedback/agent-discovered-issues/`](feedback/agent-discovered-issues/)
-for a verified, reproducible finding. Copy the template, use one dated file,
-and update the lifecycle only when a public release and regression evidence
-exist.
-对于经过验证且可复现的问题，使用
-[`feedback/agent-discovered-issues/`](feedback/agent-discovered-issues/)。复制模板并创建一份带日期的独立文件；只有存在公开版本和回归证据时才更新生命周期。
+1. Read `README.md`, the relevant language specification, and the current
+   development-status documents.
+2. Choose one coherent change. Explain its smallest counterexample, authority
+   boundary, and executable acceptance criteria before expanding scope.
+3. Keep unrelated projects, reports, and documentation changes in separate
+   pull requests.
 
-See the [feedback loop](docs/feedback-loop.md) for comment curation and
-attribution rules.
-评论整理和署名规则见[反馈循环](docs/feedback-loop.md)。
+## Required Checks
 
-## New Project / 新项目
+- Code, schema, corpus, or test changes must include focused verification.
+- Run `git diff --check`.
+- Run `npm test` for Node toolchain changes.
+- Run `cargo test --workspace --offline`, `cargo fmt --all -- --check`, and
+  `cargo clippy --workspace --offline -- -D warnings` for native changes.
+- Do not claim production readiness, full protocol interoperability,
+  cross-platform equivalence, or Stable V1.0 from a bounded test result.
 
-Create one independent directory / 创建一个独立目录：
+## Privacy And Provenance
+
+Do not commit credentials, personal data, private messages, local absolute
+paths, private infrastructure details, source maps, generated archives,
+dependencies, or code whose provenance is uncertain. Use ignored `scratch/`
+for temporary probes.
+
+Do not place personal email addresses in source files, documentation, issue
+templates, or new commit metadata. Public contributors may use an account
+identity they control. Project-domain contact details will be published only
+after the domain and mail channel are operational.
+
+## Pull Requests
+
+Describe the observable behavior changed, the smallest counterexample or
+regression covered, exact commands and exit statuses, remaining limitations,
+and any license or third-party provenance considerations.
+
+Security-sensitive reports must use the repository's private security channel,
+not a public issue.
+
+## Projects And Reports
+
+Independent projects use:
 
 ```text
-projects/<YYYY-MM-DD>-<agent>-<project>/
+projects/<YYYY-MM-DD>-<project>/
+  main.re
+  README.md
+  HANDOFF.md
 ```
 
-Include `main.re`, `README.md`, and `HANDOFF.md`. Document exact check and run
-commands. Keep unrelated projects in separate pull requests.
-包含 `main.re`、`README.md`、`HANDOFF.md`，文档使用中英双语，记录准确的检查与运行命令；无关项目分别提交 PR。
-
-## Continue A Project / 接续项目
-
-Work inside one existing project and update its `HANDOFF.md` with the new
-state, verification, and next task.
-只修改一个已有项目，并在其 `HANDOFF.md` 中记录新状态、验证证据与下一任务。
-
-## Reports And Proposals / 报告与提案
-
-- Reports / 报告：`feedback/submissions/<YYYY-MM-DD>-<agent-or-project>-<short-name>.md`
-- Proposals / 提案：minimal `.re` example + executable acceptance criteria / 最小 `.re` 示例与可执行验收条件
-- Documentation / 文档：one observable correction per PR / 每个 PR 一个明确修正
-
-Do not submit executables, archives, dependencies, source maps, credentials,
-private data, proprietary source, or compiler/runtime implementation source.
-不要提交可执行文件、归档、依赖、source map、凭据、私有数据、专有源码或编译器/运行时实现源码。
-
-[License / 许可](LICENSE)
+Reproducible reports belong under `feedback/submissions/`; verified public
+issues with stable reproduction belong under
+`feedback/agent-discovered-issues/`. Keep public records free of credentials,
+personal data, private paths, and private repository material.

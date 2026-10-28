@@ -1,0 +1,52 @@
+{
+  "artifact_protocol": {
+    "digest_algorithm": "sha256",
+    "digest_field": "payload_digest",
+    "header_bytes": 44,
+    "max_payload_bytes": 65535,
+    "version": 1
+  },
+  "domains": [
+    {
+      "id": "execution",
+      "workload_count": 9
+    },
+    {
+      "id": "minimal-std",
+      "workload_count": 12
+    },
+    {
+      "id": "fault",
+      "workload_count": 13
+    },
+    {
+      "id": "task-lifecycle",
+      "workload_count": 14
+    }
+  ],
+  "mismatch_budgets": [
+    {
+      "comparator": "max",
+      "id": "semantic_mismatch_count",
+      "threshold": 0
+    },
+    {
+      "comparator": "max",
+      "id": "artifact_mismatch_count",
+      "threshold": 0
+    },
+    {
+      "comparator": "max",
+      "id": "receipt_mismatch_count",
+      "threshold": 0
+    },
+    {
+      "comparator": "max",
+      "id": "error_mismatch_count",
+      "threshold": 0
+    }
+  ],
+  "profile": "re.standalone-runtime-contract@0.1.0",
+  "release_status": "protocol-frozen-execution-pending",
+  "schema": "re.standalone-runtime-contract-policy@0.1.0"
+}

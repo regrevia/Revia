@@ -1,0 +1,57 @@
+{
+  "schema": "re.portable-runtime-package-policy@0.1.0",
+  "package": {
+    "name": "revia-portable-runtime",
+    "version": "0.1.0-preview.0"
+  },
+  "static_files": [
+    {
+      "archive_path": "LICENSE",
+      "source_path": "LICENSE"
+    },
+    {
+      "archive_path": "abi/minimal-std-abi.json",
+      "source_path": "test/fixtures/minimal-std-abi.json"
+    },
+    {
+      "archive_path": "abi/portable-conformance.json",
+      "source_path": "test/fixtures/portable-conformance.json"
+    },
+    {
+      "archive_path": "abi/portable-runtime-abi.json",
+      "source_path": "test/fixtures/portable-runtime-abi.json"
+    },
+    {
+      "archive_path": "runtime/portable-vm-core.js",
+      "source_path": "src/toolchain/portable-vm-core.js"
+    }
+  ],
+  "target": {
+    "candidate": "aot-llvm",
+    "status": "reported",
+    "target_triple": "arm64-apple-darwin"
+  },
+  "conformance_entry": "conformance/index.json",
+  "pending": [
+    {
+      "id": "wasm-runtime",
+      "reason": "no external WASM runtime evidence"
+    },
+    {
+      "id": "cranelift-runtime",
+      "reason": "no external Cranelift runtime evidence"
+    },
+    {
+      "id": "darwin-arm64-node-22",
+      "reason": "current toolchain receipt pending"
+    },
+    {
+      "id": "linux-x64-node-22",
+      "reason": "current toolchain receipt pending"
+    },
+    {
+      "id": "linux-x64-node-24",
+      "reason": "current toolchain receipt pending"
+    }
+  ]
+}

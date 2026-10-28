@@ -1,0 +1,55 @@
+{
+  "schema": "re.human-semantic-review-corpus@0.1.0",
+  "cases": [
+    {
+      "id": "ordinary-modification",
+      "expect": "success",
+      "rule": "a UID-stable rename is one modified semantic fact"
+    },
+    {
+      "id": "high-risk-additions",
+      "expect": "capability-added,effect-added,error-added",
+      "rule": "new capability, effect, and error facts are marked high risk"
+    },
+    {
+      "id": "zero-semantic-reorder",
+      "expect": "zero-semantic-change",
+      "rule": "source carrier and declaration order changes do not create semantic changes"
+    },
+    {
+      "id": "unsupported-template",
+      "expect": "human-review-template-missing",
+      "rule": "missing locale templates fail closed"
+    },
+    {
+      "id": "stale-revision",
+      "expect": "human-review-revision-mismatch",
+      "rule": "stale result authority cannot be reviewed"
+    },
+    {
+      "id": "renderer-drift",
+      "expect": "human-review-renderer-drift",
+      "rule": "derived output drift cannot be silently accepted"
+    },
+    {
+      "id": "fact-omission",
+      "expect": "human-review-authority-mismatch",
+      "rule": "omitted facts remain detectable after synchronized resigning"
+    },
+    {
+      "id": "approve-decision",
+      "expect": "success",
+      "rule": "approve binds current review authority without graph writes"
+    },
+    {
+      "id": "reject-decision",
+      "expect": "success",
+      "rule": "reject binds current review authority without graph writes"
+    },
+    {
+      "id": "decision-forgery",
+      "expect": "human-review-decision-authority-mismatch",
+      "rule": "a decision cannot be replayed against another review"
+    }
+  ]
+}

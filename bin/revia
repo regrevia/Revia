@@ -28,7 +28,7 @@ done
 
 ROOT=$(CDPATH= cd -P -- "$(dirname -- "$SOURCE")/.." && pwd)
 VERSION=$(sed -n '1p' "$ROOT/VERSION")
-REPOSITORY=${REVIA_REPOSITORY:-tangshuang631/Revia}
+REPOSITORY=${REVIA_REPOSITORY:-regrevia/Revia}
 CACHE_ROOT=${XDG_CACHE_HOME:-"$HOME/.cache"}/revia
 RELEASE_BASE_URL=${REVIA_RELEASE_BASE_URL:-"https://github.com/$REPOSITORY/releases/download/v$VERSION"}
 

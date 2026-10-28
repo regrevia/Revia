@@ -1,0 +1,336 @@
+{
+  "schema": "re.minimal-std-native-corpus@0.1.0",
+  "graph_revision": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "cases": [
+    {
+      "id": "MINIMAL-STD-BYTES-BYTE-COUNT",
+      "operation": "std.bytes.byte_count",
+      "type_arguments": [],
+      "parameter_witness": {
+        "parameters": [
+          {
+            "name": "value",
+            "value": {
+              "encoding": "hex",
+              "kind": "bytes",
+              "value": "000102"
+            }
+          }
+        ],
+        "schema": "re.minimal-std-parameter-witness@0.1.0"
+      }
+    },
+    {
+      "id": "MINIMAL-STD-BYTES-CONCAT",
+      "operation": "std.bytes.concat",
+      "type_arguments": [],
+      "parameter_witness": {
+        "parameters": [
+          {
+            "name": "left",
+            "value": {
+              "encoding": "hex",
+              "kind": "bytes",
+              "value": "00ff"
+            }
+          },
+          {
+            "name": "right",
+            "value": {
+              "encoding": "hex",
+              "kind": "bytes",
+              "value": "0102"
+            }
+          }
+        ],
+        "schema": "re.minimal-std-parameter-witness@0.1.0"
+      }
+    },
+    {
+      "id": "MINIMAL-STD-BYTES-DECODE-OK",
+      "operation": "std.bytes.decode_utf8",
+      "type_arguments": [],
+      "parameter_witness": {
+        "parameters": [
+          {
+            "name": "value",
+            "value": {
+              "encoding": "hex",
+              "kind": "bytes",
+              "value": "68656c6c6f"
+            }
+          }
+        ],
+        "schema": "re.minimal-std-parameter-witness@0.1.0"
+      }
+    },
+    {
+      "id": "MINIMAL-STD-BYTES-DECODE-ERR",
+      "operation": "std.bytes.decode_utf8",
+      "type_arguments": [],
+      "parameter_witness": {
+        "parameters": [
+          {
+            "name": "value",
+            "value": {
+              "encoding": "hex",
+              "kind": "bytes",
+              "value": "ffff"
+            }
+          }
+        ],
+        "schema": "re.minimal-std-parameter-witness@0.1.0"
+      }
+    },
+    {
+      "id": "MINIMAL-STD-LIST-APPEND",
+      "operation": "std.list.append",
+      "type_arguments": [
+        "text.utf8"
+      ],
+      "parameter_witness": {
+        "parameters": [
+          {
+            "name": "value",
+            "value": {
+              "kind": "text",
+              "value": "c"
+            }
+          },
+          {
+            "name": "values",
+            "value": {
+              "items": [
+                {
+                  "kind": "text",
+                  "value": "a"
+                },
+                {
+                  "kind": "text",
+                  "value": "b"
+                }
+              ],
+              "kind": "list"
+            }
+          }
+        ],
+        "schema": "re.minimal-std-parameter-witness@0.1.0"
+      }
+    },
+    {
+      "id": "MINIMAL-STD-LIST-CONCAT",
+      "operation": "std.list.concat",
+      "type_arguments": [
+        "text.utf8"
+      ],
+      "parameter_witness": {
+        "parameters": [
+          {
+            "name": "left",
+            "value": {
+              "items": [
+                {
+                  "kind": "text",
+                  "value": "a"
+                }
+              ],
+              "kind": "list"
+            }
+          },
+          {
+            "name": "right",
+            "value": {
+              "items": [
+                {
+                  "kind": "text",
+                  "value": "b"
+                },
+                {
+                  "kind": "text",
+                  "value": "c"
+                }
+              ],
+              "kind": "list"
+            }
+          }
+        ],
+        "schema": "re.minimal-std-parameter-witness@0.1.0"
+      }
+    },
+    {
+      "id": "MINIMAL-STD-LIST-LENGTH",
+      "operation": "std.list.length",
+      "type_arguments": [
+        "text.utf8"
+      ],
+      "parameter_witness": {
+        "parameters": [
+          {
+            "name": "values",
+            "value": {
+              "items": [
+                {
+                  "kind": "text",
+                  "value": "a"
+                },
+                {
+                  "kind": "text",
+                  "value": "b"
+                },
+                {
+                  "kind": "text",
+                  "value": "c"
+                }
+              ],
+              "kind": "list"
+            }
+          }
+        ],
+        "schema": "re.minimal-std-parameter-witness@0.1.0"
+      }
+    },
+    {
+      "id": "MINIMAL-STD-RESULT-IS-ERR",
+      "operation": "std.result.is_err",
+      "type_arguments": [
+        "text.utf8",
+        "std.bytes.decode_error"
+      ],
+      "parameter_witness": {
+        "parameters": [
+          {
+            "name": "value",
+            "value": {
+              "fields": [
+                {
+                  "name": "error",
+                  "value": {
+                    "fields": [
+                      {
+                        "name": "type",
+                        "value": {
+                          "kind": "text",
+                          "value": "std.bytes.decode_error"
+                        }
+                      },
+                      {
+                        "name": "variant",
+                        "value": {
+                          "kind": "text",
+                          "value": "invalid_utf8"
+                        }
+                      }
+                    ],
+                    "kind": "record"
+                  }
+                },
+                {
+                  "name": "kind",
+                  "value": {
+                    "kind": "text",
+                    "value": "err"
+                  }
+                }
+              ],
+              "kind": "record"
+            }
+          }
+        ],
+        "schema": "re.minimal-std-parameter-witness@0.1.0"
+      }
+    },
+    {
+      "id": "MINIMAL-STD-RESULT-IS-OK",
+      "operation": "std.result.is_ok",
+      "type_arguments": [
+        "text.utf8",
+        "std.bytes.decode_error"
+      ],
+      "parameter_witness": {
+        "parameters": [
+          {
+            "name": "value",
+            "value": {
+              "fields": [
+                {
+                  "name": "kind",
+                  "value": {
+                    "kind": "text",
+                    "value": "ok"
+                  }
+                },
+                {
+                  "name": "value",
+                  "value": {
+                    "kind": "text",
+                    "value": "ok"
+                  }
+                }
+              ],
+              "kind": "record"
+            }
+          }
+        ],
+        "schema": "re.minimal-std-parameter-witness@0.1.0"
+      }
+    },
+    {
+      "id": "MINIMAL-STD-TEXT-CONCAT",
+      "operation": "std.text.concat",
+      "type_arguments": [],
+      "parameter_witness": {
+        "parameters": [
+          {
+            "name": "left",
+            "value": {
+              "kind": "text",
+              "value": "re"
+            }
+          },
+          {
+            "name": "right",
+            "value": {
+              "kind": "text",
+              "value": "via"
+            }
+          }
+        ],
+        "schema": "re.minimal-std-parameter-witness@0.1.0"
+      }
+    },
+    {
+      "id": "MINIMAL-STD-TEXT-ENCODE",
+      "operation": "std.text.encode_utf8",
+      "type_arguments": [],
+      "parameter_witness": {
+        "parameters": [
+          {
+            "name": "value",
+            "value": {
+              "kind": "text",
+              "value": "hé"
+            }
+          }
+        ],
+        "schema": "re.minimal-std-parameter-witness@0.1.0"
+      }
+    },
+    {
+      "id": "MINIMAL-STD-TEXT-SCALAR-COUNT",
+      "operation": "std.text.scalar_count",
+      "type_arguments": [],
+      "parameter_witness": {
+        "parameters": [
+          {
+            "name": "value",
+            "value": {
+              "kind": "text",
+              "value": "hé🙂"
+            }
+          }
+        ],
+        "schema": "re.minimal-std-parameter-witness@0.1.0"
+      }
+    }
+  ]
+}

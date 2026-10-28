@@ -1,0 +1,41 @@
+{
+  "schema": "re.module-surface-corpus@0.2.0",
+  "status": "abstract-boundary",
+  "cases": [
+    {
+      "id": "MS-001",
+      "shape": "consistent-diamond",
+      "expected": { "ok": true }
+    },
+    {
+      "id": "MS-002",
+      "shape": "inconsistent-diamond-pin",
+      "expected": { "ok": false, "diagnostic": "package-dependency-interface-mismatch" }
+    },
+    {
+      "id": "MS-003",
+      "shape": "same-name-binding",
+      "expected": { "ok": false, "diagnostic": "invalid-module-dependency-set" }
+    },
+    {
+      "id": "MS-004",
+      "shape": "same-name-export",
+      "expected": { "ok": false, "diagnostic": "invalid-module-export-set" }
+    },
+    {
+      "id": "MS-005",
+      "shape": "unresolved-external-package-substitution",
+      "expected": { "ok": false, "diagnostic": "external-dependency-not-found" }
+    },
+    {
+      "id": "MS-006",
+      "shape": "coherent-external-package-substitution",
+      "expected": { "ok": true, "package_digest_changed": true }
+    },
+    {
+      "id": "MS-007",
+      "shape": "exact-pin-success",
+      "expected": { "ok": true, "package_digest_changed": false }
+    }
+  ]
+}
