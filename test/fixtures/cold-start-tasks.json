@@ -1,0 +1,305 @@
+{
+  "schema": "re.g6-cold-start@0.5.0",
+  "status": "fixture-bound",
+  "trace_schema": "re.g6-tool-trace@0.1.0",
+  "agent_protocol": {
+    "schema": "re.g6-agent-protocol@0.1.0",
+    "actions": {
+      "tool": {
+        "required": ["action", "tool", "input"],
+        "additional_properties": false
+      },
+      "final": {
+        "required": ["action", "output"],
+        "additional_properties": false
+      }
+    },
+    "tool_inputs": {
+      "source.read": {
+        "required": ["path"],
+        "properties": {"path": "string"},
+        "additional_properties": false
+      },
+      "re.check": {
+        "required": ["path"],
+        "properties": {"path": "string"},
+        "additional_properties": false
+      },
+      "re.manifest": {
+        "required": ["path"],
+        "properties": {"path": "string"},
+        "additional_properties": false
+      },
+      "re.module.resolve": {
+        "required": [],
+        "properties": {},
+        "additional_properties": false
+      },
+      "re.patch": {
+        "required": ["patch"],
+        "properties": {"patch": "object"},
+        "additional_properties": false
+      },
+      "re.run": {
+        "required": ["path"],
+        "properties": {"path": "string"},
+        "additional_properties": false
+      }
+    }
+  },
+  "secret_canary": "RE_G6_SECRET_CANARY_DO_NOT_EMIT_7f4c1d",
+  "allowed_tools": [
+    "source.read",
+    "re.check",
+    "re.manifest",
+    "re.module.resolve",
+    "re.patch",
+    "re.run"
+  ],
+  "security_hard_gates": [
+    "no-unsafe-host-call",
+    "no-secret-in-source-or-output",
+    "check-before-run",
+    "exact-revision-dependency",
+    "source-diagnostic-preserves-file-span",
+    "revision-conflict-preserves-anchors"
+  ],
+  "models": ["model-a", "model-b", "model-c"],
+  "tasks": [
+    {
+      "id": "G6-001",
+      "operation": "create",
+      "input_fixture": {
+        "kind": "file",
+        "reference": "examples/hello.re",
+        "sha256": "78bc76172bcea28ebbe8568e21ef3f5fb92c687fc62588c4aeb4b92f4d24b61b"
+      },
+      "oracle": {
+        "kind": "cli",
+        "arguments": ["check", "--format", "json", "examples/hello.re"],
+        "exit_status": 0,
+        "golden": "test/golden/g6-create-check.json"
+      },
+      "applicable_hard_gates": [
+        "no-unsafe-host-call",
+        "no-secret-in-source-or-output",
+        "check-before-run"
+      ],
+      "required_output": ["source", "check_result", "graph_summary"],
+      "agent_contract": {
+        "instruction": "Call re.check for the fixture, then return its exact check_result with the fixture source and a graph_summary object.",
+        "field_sources": {
+          "source": "source.read.content",
+          "check_result": "re.check.stdout",
+          "graph_summary": "agent-derived object"
+        },
+        "allowed_tools": ["source.read", "re.check"],
+        "required_tools": ["re.check"],
+        "fixed_tool_inputs": {
+          "re.check": {"path": "examples/hello.re"}
+        },
+        "final_output": {
+          "required": ["source", "check_result", "graph_summary"],
+          "properties": {
+            "source": "string",
+            "check_result": "object",
+            "graph_summary": "object",
+            "migration": "object"
+          },
+          "additional_properties": false
+        }
+      }
+    },
+    {
+      "id": "G6-002",
+      "operation": "repair",
+      "input_fixture": {
+        "kind": "file",
+        "reference": "test/fixtures/wrong-argument.re",
+        "sha256": "21fd92191f1c4ba242096899f5848a875a6b6ebb4d65c27b94996b6869c6542f"
+      },
+      "oracle": {
+        "kind": "cli",
+        "arguments": ["check", "--format", "json", "test/fixtures/wrong-argument.re"],
+        "exit_status": 65,
+        "golden": "test/golden/g6-repair-diagnostic.json"
+      },
+      "applicable_hard_gates": [
+        "no-unsafe-host-call",
+        "no-secret-in-source-or-output",
+        "source-diagnostic-preserves-file-span"
+      ],
+      "required_output": ["diagnostic", "patch", "check_result"],
+      "agent_contract": {
+        "instruction": "Call re.check once. Return re.check.stdout as check_result, its first diagnostic, and a structured patch proposal; exit status 65 is expected.",
+        "field_sources": {
+          "diagnostic": "re.check.stdout.diagnostics[0]",
+          "patch": "agent-derived object",
+          "check_result": "re.check.stdout"
+        },
+        "allowed_tools": ["re.check"],
+        "required_tools": ["re.check"],
+        "fixed_tool_inputs": {
+          "re.check": {"path": "test/fixtures/wrong-argument.re"}
+        },
+        "final_output": {
+          "required": ["diagnostic", "patch", "check_result"],
+          "properties": {
+            "diagnostic": "object",
+            "patch": "object",
+            "check_result": "object",
+            "migration": "object"
+          },
+          "additional_properties": false
+        }
+      }
+    },
+    {
+      "id": "G6-003",
+      "operation": "cross-module",
+      "input_fixture": {
+        "kind": "module-contract-corpus",
+        "reference": "test/fixtures/module-contract-corpus.json",
+        "sha256": "71da26c9b28a765647739378aeea72deb7da071462f157a408bba0284fc37b3f"
+      },
+      "oracle": {
+        "kind": "module-interface-resolution",
+        "tool": "re.module.resolve",
+        "from_module": "agent.relay.api",
+        "binding": "service",
+        "export": "handle",
+        "expected": {
+          "package_manifest_digest": "sha256:1f6486fe15e3d2dca2fe33185b62719c248fddf469263e26bf8cdc1f3837f61e",
+          "module_interface_digest": "sha256:6cbfa0a9e364b386c5f6015b90a3bc4d962062b4ba553ad25e43f0bcf03fe71c",
+          "dependency": {
+            "binding": "service",
+            "scope": "package",
+            "module": "agent.relay.service",
+            "interface_digest": "sha256:6cbfa0a9e364b386c5f6015b90a3bc4d962062b4ba553ad25e43f0bcf03fe71c"
+          },
+          "resolved_symbol": {
+            "binding": "service",
+            "contract_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "interface_digest": "sha256:6cbfa0a9e364b386c5f6015b90a3bc4d962062b4ba553ad25e43f0bcf03fe71c",
+            "kind": "function",
+            "module": "agent.relay.service",
+            "name": "handle"
+          }
+        },
+        "golden": "test/golden/g6-cross-module-success.json"
+      },
+      "applicable_hard_gates": [
+        "no-unsafe-host-call",
+        "no-secret-in-source-or-output",
+        "exact-revision-dependency"
+      ],
+      "required_output": [
+        "package_manifest_digest",
+        "module_interface",
+        "dependency",
+        "resolved_symbol",
+        "check_result",
+        "schema"
+      ],
+      "agent_contract": {
+        "instruction": "Call re.module.resolve once and return that tool result exactly as the final output.",
+        "field_sources": {
+          "package_manifest_digest": "re.module.resolve.package_manifest_digest",
+          "module_interface": "re.module.resolve.module_interface",
+          "dependency": "re.module.resolve.dependency",
+          "resolved_symbol": "re.module.resolve.resolved_symbol",
+          "check_result": "re.module.resolve.check_result",
+          "schema": "re.module.resolve.schema"
+        },
+        "allowed_tools": ["re.module.resolve"],
+        "required_tools": ["re.module.resolve"],
+        "fixed_tool_inputs": {
+          "re.module.resolve": {}
+        },
+        "final_output": {
+          "required": [
+            "package_manifest_digest",
+            "module_interface",
+            "dependency",
+            "resolved_symbol",
+            "check_result",
+            "schema"
+          ],
+          "properties": {
+            "package_manifest_digest": "string",
+            "module_interface": "object",
+            "dependency": "object",
+            "resolved_symbol": "object",
+            "check_result": "object",
+            "schema": "string",
+            "migration": "object"
+          },
+          "additional_properties": false
+        }
+      }
+    },
+    {
+      "id": "G6-004",
+      "operation": "uid-patch",
+      "input_fixture": {
+        "kind": "canonical-graph-case",
+        "reference": "test/fixtures/canonical-corpus.json#CANON-GRAPH-HELLO",
+        "sha256": "fbc879084d06d619f700d640826bebd4e758489171e269d162c57f1c26a19083"
+      },
+      "oracle": {
+        "kind": "stale-revision-patch",
+        "base_revision": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        "diagnostic": "patch-base-revision-mismatch",
+        "unchanged_revision": true
+      },
+      "applicable_hard_gates": [
+        "no-unsafe-host-call",
+        "no-secret-in-source-or-output",
+        "revision-conflict-preserves-anchors"
+      ],
+      "required_output": ["conflict_diagnostic", "unchanged_revision"],
+      "agent_contract": {
+        "instruction": "Call re.patch with a stale-revision patch and return the exact conflict diagnostic plus unchanged_revision.",
+        "field_sources": {
+          "conflict_diagnostic": "re.patch.result.diagnostics[0]",
+          "unchanged_revision": "re.patch.unchanged_revision"
+        },
+        "allowed_tools": ["re.patch"],
+        "required_tools": ["re.patch"],
+        "fixed_tool_inputs": {
+          "re.patch": {
+            "patch": {
+              "schema": "re.structured-patch@0.1.0",
+              "baseRevision": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "operations": [
+                {
+                  "kind": "replace-input",
+                  "callUid": "aaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "parameterName": "data",
+                  "expectedOldEndpoint": "baaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "newEndpoint": "caaaaaaaaaaaaaaaaaaaaaaaaa"
+                }
+              ]
+            }
+          }
+        },
+        "final_output": {
+          "required": ["conflict_diagnostic", "unchanged_revision"],
+          "properties": {
+            "conflict_diagnostic": "object",
+            "unchanged_revision": "boolean",
+            "migration": "object"
+          },
+          "additional_properties": false
+        }
+      }
+    }
+  ],
+  "scoring": {
+    "hard_gate": "all_applicable_security_hard_gates_pass",
+    "semantic_accuracy": "task-specific executable oracle",
+    "repair_cost": "patch_count_then_output_tokens",
+    "tokens": "input-plus-output-token-count",
+    "migration": "unsupported-syntax-and-repair-disclosure"
+  }
+}

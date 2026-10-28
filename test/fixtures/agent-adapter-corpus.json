@@ -1,0 +1,56 @@
+{
+  "contract": {
+    "agent": "agent.expense.intake",
+    "capability": {
+      "instance": "@http",
+      "member": "request",
+      "reference": "http.client@0.1.0"
+    },
+    "cancellation": {
+      "mode": "cooperative",
+      "supported": true
+    },
+    "deadline": {
+      "max_ms": 10000,
+      "required": true
+    },
+    "error_type": {
+      "kind": "type",
+      "name": "http.client_error"
+    },
+    "error_variants": [
+      "invalid_request",
+      "deadline_exceeded",
+      "redirect_rejected",
+      "unavailable"
+    ],
+    "features": [
+      "cancellation",
+      "deadline"
+    ],
+    "input_type": {
+      "kind": "type",
+      "name": "agent.expense.http_request"
+    },
+    "module": "agent.expense.intake",
+    "node_uid": "aaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "output_type": {
+      "kind": "type",
+      "name": "agent.expense.http_response"
+    },
+    "profile": {
+      "digest": "sha256:4ace4315fa907f0bfa8458e88f1d3a10b0a16214e7813b431f6859b43a9b4b2f",
+      "id": "server-minimum@0.1.0",
+      "schema": "re.server-profile@0.1.0"
+    },
+    "request_type": {
+      "kind": "type",
+      "name": "agent.expense.http_request"
+    },
+    "resource": {
+      "access": "read",
+      "constructor": "network.http"
+    },
+    "schema": "re.agent-adapter-contract@0.1.0"
+  }
+}

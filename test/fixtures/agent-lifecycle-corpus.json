@@ -1,0 +1,152 @@
+{
+  "contract": {
+    "agent": "agent.expense.intake",
+    "error_type": {
+      "arguments": [],
+      "declaration_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "kind": "declared"
+    },
+    "events": [
+      "ready",
+      "task_started",
+      "approval_required",
+      "approval_granted",
+      "transient_failure",
+      "retry_due",
+      "task_succeeded",
+      "task_failed",
+      "cancel_requested",
+      "cancelled",
+      "shutdown"
+    ],
+    "identity_type": {
+      "arguments": [],
+      "declaration_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "kind": "declared"
+    },
+    "initial_state": "created",
+    "input_type": {
+      "arguments": [],
+      "declaration_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "kind": "declared"
+    },
+    "module": "agent.expense.intake",
+    "output_type": {
+      "arguments": [],
+      "declaration_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "kind": "declared"
+    },
+    "retryable_states": [
+      "retry_wait"
+    ],
+    "schema": "re.agent-contract@0.1.0",
+    "states": [
+      "created",
+      "ready",
+      "running",
+      "waiting_approval",
+      "retry_wait",
+      "cancelling",
+      "succeeded",
+      "failed",
+      "cancelled",
+      "stopped"
+    ],
+    "terminal_states": [
+      {
+        "outcome": "cancelled",
+        "state": "cancelled"
+      },
+      {
+        "outcome": "failed",
+        "state": "failed"
+      },
+      {
+        "outcome": "stopped",
+        "state": "stopped"
+      },
+      {
+        "outcome": "succeeded",
+        "state": "succeeded"
+      }
+    ],
+    "transitions": [
+      {
+        "event": "ready",
+        "from": "created",
+        "to": "ready"
+      },
+      {
+        "event": "shutdown",
+        "from": "created",
+        "to": "stopped"
+      },
+      {
+        "event": "cancel_requested",
+        "from": "ready",
+        "to": "cancelling"
+      },
+      {
+        "event": "shutdown",
+        "from": "ready",
+        "to": "stopped"
+      },
+      {
+        "event": "task_started",
+        "from": "ready",
+        "to": "running"
+      },
+      {
+        "event": "approval_required",
+        "from": "running",
+        "to": "waiting_approval"
+      },
+      {
+        "event": "cancel_requested",
+        "from": "running",
+        "to": "cancelling"
+      },
+      {
+        "event": "task_failed",
+        "from": "running",
+        "to": "failed"
+      },
+      {
+        "event": "task_succeeded",
+        "from": "running",
+        "to": "succeeded"
+      },
+      {
+        "event": "transient_failure",
+        "from": "running",
+        "to": "retry_wait"
+      },
+      {
+        "event": "approval_granted",
+        "from": "waiting_approval",
+        "to": "running"
+      },
+      {
+        "event": "cancel_requested",
+        "from": "waiting_approval",
+        "to": "cancelling"
+      },
+      {
+        "event": "cancel_requested",
+        "from": "retry_wait",
+        "to": "cancelling"
+      },
+      {
+        "event": "retry_due",
+        "from": "retry_wait",
+        "to": "ready"
+      },
+      {
+        "event": "cancelled",
+        "from": "cancelling",
+        "to": "cancelled"
+      }
+    ]
+  },
+  "schema": "re.agent-lifecycle-corpus@0.1.0"
+}

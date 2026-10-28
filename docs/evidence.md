@@ -1,8 +1,9 @@
 # Evidence / 验证证据
 
-This page records public, reproducible evidence for `v1.0.0-rc.1`. The source
-implementation remains outside this repository; only the sealed public export,
-trial fixtures, hashes, and evidence records are published.
+This page records the historical public evidence for `v1.0.0-rc.1`. The source
+transition is documented separately in
+[development-status.md](development-status.md); this page remains scoped to the
+sealed RC1 binary, its trial fixtures, hashes, and measured evidence.
 
 本页记录 `v1.0.0-rc.1` 的公开、可复现证据。源码实现不在本仓库；公开内容仅为密封导出、
 试用 fixtures、摘要与证据记录。
@@ -18,7 +19,7 @@ trial fixtures, hashes, and evidence records are published.
 | Candidate identity / 候选身份 | [`candidate-manifest.json`](../runtime/rc1/candidate-manifest.json) |
 | Native evidence / 原生证据 | [`native-evidence.json`](../runtime/rc1/native-evidence.json) |
 | Trial boundary / 试用边界 | [`trial-manifest.json`](../experiments/rc1/kit/trial-manifest.json) |
-| Public boundary / 公开边界 | GitHub Actions [`Validate public boundary`](https://github.com/tangshuang631/Revia/actions/workflows/validate.yml) |
+| Public boundary / 公开边界 | GitHub Actions [`Source and release validation`](https://github.com/regrevia/Revia/actions/workflows/validate.yml) |
 
 The trial kit records seven measured command paths: source check, review
 manifest, argument capability, file capability, project workflow, multi-module

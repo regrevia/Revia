@@ -1,0 +1,1 @@
+{"diagnostics":[{"actual":"message","code":"unexpected-argument","column":28,"expected":["data"],"file":"test/fixtures/wrong-argument.re","line":6,"member":"write","reference":"process.stdout@0.1.0"}],"file":"test/fixtures/wrong-argument.re","ok":false,"schema":"re.check-result@0.1.0"}

@@ -1,0 +1,142 @@
+{
+  "schema": "re.type-value-corpus@0.1.0",
+  "decisions": {
+    "int": "signed arbitrary-precision mathematical integer; canonical base-10 string",
+    "decimal": "exact fixed scale 0..255; no exponent; every rescale names a rounding mode and lossless rescale requires exact",
+    "float": "deferred from V1 Core",
+    "key_types": ["bool", "int", "decimal<scale>", "text.utf8", "bytes", "newtype<key>"],
+    "containers": "immutable; map and set canonicalize by type-defined total key order",
+    "text": "Unicode scalar sequence normalized to NFC; isolated surrogate rejected",
+    "recursion": "productive same-declaration self with the current generic arguments; canonical payload depth <= 128"
+  },
+  "canonical_values": [
+    {
+      "id": "TV-001",
+      "type": { "kind": "primitive", "name": "int" },
+      "input": "12345678901234567890123456789012345678901234567890",
+      "expected": { "ok": true, "value": "12345678901234567890123456789012345678901234567890" }
+    },
+    {
+      "id": "TV-002",
+      "type": { "kind": "primitive", "name": "int" },
+      "input": "-0",
+      "expected": { "ok": false, "code": "invalid-canonical-int" }
+    },
+    {
+      "id": "TV-003",
+      "type": { "kind": "primitive", "name": "int" },
+      "input": "+1",
+      "expected": { "ok": false, "code": "invalid-canonical-int" }
+    },
+    {
+      "id": "TV-004",
+      "type": { "kind": "decimal", "scale": 2 },
+      "input": "-0.01",
+      "expected": { "ok": true, "value": "-0.01" }
+    },
+    {
+      "id": "TV-005",
+      "type": { "kind": "decimal", "scale": 2 },
+      "input": "1.2",
+      "expected": { "ok": false, "code": "invalid-canonical-decimal" }
+    },
+    {
+      "id": "TV-006",
+      "type": { "kind": "decimal", "scale": 2 },
+      "input": "1e2",
+      "expected": { "ok": false, "code": "invalid-canonical-decimal" }
+    },
+    {
+      "id": "TV-007",
+      "type": {
+        "kind": "map",
+        "key": { "kind": "primitive", "name": "int" },
+        "value": { "kind": "primitive", "name": "text.utf8" }
+      },
+      "input": [
+        { "key": "10", "value": "ten" },
+        { "key": "-2", "value": "minus two" },
+        { "key": "2", "value": "two" }
+      ],
+      "expected": {
+        "ok": true,
+        "value": [
+          { "key": "-2", "value": "minus two" },
+          { "key": "2", "value": "two" },
+          { "key": "10", "value": "ten" }
+        ]
+      }
+    },
+    {
+      "id": "TV-008",
+      "type": {
+        "kind": "map",
+        "key": { "kind": "list", "element": { "kind": "primitive", "name": "int" } },
+        "value": { "kind": "primitive", "name": "unit" }
+      },
+      "input": [],
+      "expected": { "ok": false, "code": "non-canonical-map-key-type" }
+    },
+    {
+      "id": "TV-009",
+      "type": { "kind": "set", "element": { "kind": "primitive", "name": "text.utf8" } },
+      "input": ["b", "a", "a"],
+      "expected": { "ok": false, "code": "duplicate-canonical-set-element" }
+    },
+    {
+      "id": "TV-010",
+      "type": { "kind": "primitive", "name": "float64" },
+      "input": 1.5,
+      "expected": { "ok": false, "code": "unsupported-primitive-type" }
+    },
+    {
+      "id": "TV-011",
+      "type": {
+        "kind": "resource",
+        "name": "connection",
+        "contract_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "input": "host-object",
+      "expected": { "ok": false, "code": "resource-value-not-canonicalizable" }
+    },
+    {
+      "id": "TV-012",
+      "type": { "kind": "primitive", "name": "text.utf8" },
+      "input": "é",
+      "expected": { "ok": true, "value": "é" }
+    },
+    {
+      "id": "TV-013",
+      "type": { "kind": "set", "element": { "kind": "primitive", "name": "bytes" } },
+      "input": ["hex:ff", "hex:00", "hex:0a"],
+      "expected": { "ok": true, "value": ["hex:00", "hex:0a", "hex:ff"] }
+    },
+    {
+      "id": "TV-014",
+      "type": {
+        "kind": "map",
+        "key": { "kind": "decimal", "scale": 2 },
+        "value": { "kind": "primitive", "name": "unit" }
+      },
+      "input": [
+        { "key": "10.00", "value": null },
+        { "key": "-2.00", "value": null },
+        { "key": "2.00", "value": null }
+      ],
+      "expected": {
+        "ok": true,
+        "value": [
+          { "key": "-2.00", "value": null },
+          { "key": "2.00", "value": null },
+          { "key": "10.00", "value": null }
+        ]
+      }
+    },
+    {
+      "id": "TV-015",
+      "type": { "kind": "primitive", "name": "text.utf8" },
+      "input": "\ud800",
+      "expected": { "ok": false, "code": "invalid-text-value" }
+    }
+  ]
+}

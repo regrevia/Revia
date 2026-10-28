@@ -1,0 +1,27 @@
+{
+  "contract": {
+    "agent": "agent.expense.intake",
+    "backoff_ms": [10, 20],
+    "checkpoint": {
+      "fields": ["revision", "input_digest", "cursor"],
+      "revision_field": "revision",
+      "schema": "re.task-checkpoint@0.1.0"
+    },
+    "error_type": {"kind": "type", "name": "agent.expense.error"},
+    "input_type": {"kind": "type", "name": "agent.expense.request"},
+    "max_attempts": 3,
+    "module": "agent.expense.intake",
+    "node_uid": "aaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "output_type": {"kind": "type", "name": "agent.expense.result"},
+    "retryable_errors": ["conflict", "timeout"],
+    "schema": "re.task-contract@0.1.0"
+  },
+  "request": {
+    "agent": "agent.expense.intake",
+    "idempotency_key": "expense-001",
+    "input": {"amount": 1200, "currency": "CNY"},
+    "module": "agent.expense.intake",
+    "node_uid": "aaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "revision": "project-rev-1"
+  }
+}

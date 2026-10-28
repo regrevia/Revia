@@ -1,0 +1,25 @@
+{
+  "schema": "re.project-patch-corpus@0.1.0",
+  "cases": [
+    {
+      "id": "rename-preserves-uid",
+      "expect": "success",
+      "rule": "rename and move keep historical identity"
+    },
+    {
+      "id": "stale-precondition",
+      "expect": "project-patch-uid-precondition-failed",
+      "rule": "affected UID preconditions are checked before mutation"
+    },
+    {
+      "id": "capability-escalation",
+      "expect": "project-patch-capability-escalation",
+      "rule": "new capabilities must be in the project allowlist"
+    },
+    {
+      "id": "atomic-batch",
+      "expect": "no-partial-apply",
+      "rule": "a failed operation does not expose an earlier operation"
+    }
+  ]
+}

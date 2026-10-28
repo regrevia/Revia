@@ -1,0 +1,358 @@
+{
+  "schema": "re.minimal-std-abi-corpus@0.1.0",
+  "package": "std",
+  "modules": [
+    {
+      "module": "std.bytes",
+      "types": [
+        {
+          "schema": "re.type-declaration@0.1.0",
+          "module": "std.bytes",
+          "name": "decode_error",
+          "parameters": [],
+          "body": {
+            "kind": "sum",
+            "variants": [
+              {
+                "name": "invalid_utf8"
+              }
+            ]
+          }
+        }
+      ],
+      "operations": [
+        {
+          "schema": "re.std-operation@0.1.0",
+          "module": "std.bytes",
+          "name": "byte_count",
+          "kind": "pure",
+          "type_parameters": [],
+          "parameters": [
+            {
+              "name": "value",
+              "type": {
+                "kind": "primitive",
+                "name": "bytes"
+              }
+            }
+          ],
+          "result": {
+            "kind": "primitive",
+            "name": "int"
+          },
+          "error_variants": []
+        },
+        {
+          "schema": "re.std-operation@0.1.0",
+          "module": "std.bytes",
+          "name": "concat",
+          "kind": "pure",
+          "type_parameters": [],
+          "parameters": [
+            {
+              "name": "left",
+              "type": {
+                "kind": "primitive",
+                "name": "bytes"
+              }
+            },
+            {
+              "name": "right",
+              "type": {
+                "kind": "primitive",
+                "name": "bytes"
+              }
+            }
+          ],
+          "result": {
+            "kind": "primitive",
+            "name": "bytes"
+          },
+          "error_variants": []
+        },
+        {
+          "schema": "re.std-operation@0.1.0",
+          "module": "std.bytes",
+          "name": "decode_utf8",
+          "kind": "pure",
+          "type_parameters": [],
+          "parameters": [
+            {
+              "name": "value",
+              "type": {
+                "kind": "primitive",
+                "name": "bytes"
+              }
+            }
+          ],
+          "result": {
+            "kind": "result",
+            "ok": {
+              "kind": "primitive",
+              "name": "text.utf8"
+            },
+            "error": {
+              "kind": "declared",
+              "declaration_digest": "sha256:c2b3587ce9ed29a0279096c1b4f81cf48e34fe3a0729ac4b87574173147ee69b",
+              "arguments": []
+            }
+          },
+          "error_variants": [
+            "invalid_utf8"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "std.list",
+      "types": [],
+      "operations": [
+        {
+          "schema": "re.std-operation@0.1.0",
+          "module": "std.list",
+          "name": "append",
+          "kind": "pure",
+          "type_parameters": [
+            "t"
+          ],
+          "parameters": [
+            {
+              "name": "value",
+              "type": {
+                "kind": "parameter",
+                "name": "t"
+              }
+            },
+            {
+              "name": "values",
+              "type": {
+                "kind": "list",
+                "element": {
+                  "kind": "parameter",
+                  "name": "t"
+                }
+              }
+            }
+          ],
+          "result": {
+            "kind": "list",
+            "element": {
+              "kind": "parameter",
+              "name": "t"
+            }
+          },
+          "error_variants": []
+        },
+        {
+          "schema": "re.std-operation@0.1.0",
+          "module": "std.list",
+          "name": "concat",
+          "kind": "pure",
+          "type_parameters": [
+            "t"
+          ],
+          "parameters": [
+            {
+              "name": "left",
+              "type": {
+                "kind": "list",
+                "element": {
+                  "kind": "parameter",
+                  "name": "t"
+                }
+              }
+            },
+            {
+              "name": "right",
+              "type": {
+                "kind": "list",
+                "element": {
+                  "kind": "parameter",
+                  "name": "t"
+                }
+              }
+            }
+          ],
+          "result": {
+            "kind": "list",
+            "element": {
+              "kind": "parameter",
+              "name": "t"
+            }
+          },
+          "error_variants": []
+        },
+        {
+          "schema": "re.std-operation@0.1.0",
+          "module": "std.list",
+          "name": "length",
+          "kind": "pure",
+          "type_parameters": [
+            "t"
+          ],
+          "parameters": [
+            {
+              "name": "values",
+              "type": {
+                "kind": "list",
+                "element": {
+                  "kind": "parameter",
+                  "name": "t"
+                }
+              }
+            }
+          ],
+          "result": {
+            "kind": "primitive",
+            "name": "int"
+          },
+          "error_variants": []
+        }
+      ]
+    },
+    {
+      "module": "std.result",
+      "types": [],
+      "operations": [
+        {
+          "schema": "re.std-operation@0.1.0",
+          "module": "std.result",
+          "name": "is_err",
+          "kind": "pure",
+          "type_parameters": [
+            "t",
+            "e"
+          ],
+          "parameters": [
+            {
+              "name": "value",
+              "type": {
+                "kind": "result",
+                "ok": {
+                  "kind": "parameter",
+                  "name": "t"
+                },
+                "error": {
+                  "kind": "parameter",
+                  "name": "e"
+                }
+              }
+            }
+          ],
+          "result": {
+            "kind": "primitive",
+            "name": "bool"
+          },
+          "error_variants": []
+        },
+        {
+          "schema": "re.std-operation@0.1.0",
+          "module": "std.result",
+          "name": "is_ok",
+          "kind": "pure",
+          "type_parameters": [
+            "t",
+            "e"
+          ],
+          "parameters": [
+            {
+              "name": "value",
+              "type": {
+                "kind": "result",
+                "ok": {
+                  "kind": "parameter",
+                  "name": "t"
+                },
+                "error": {
+                  "kind": "parameter",
+                  "name": "e"
+                }
+              }
+            }
+          ],
+          "result": {
+            "kind": "primitive",
+            "name": "bool"
+          },
+          "error_variants": []
+        }
+      ]
+    },
+    {
+      "module": "std.text",
+      "types": [],
+      "operations": [
+        {
+          "schema": "re.std-operation@0.1.0",
+          "module": "std.text",
+          "name": "concat",
+          "kind": "pure",
+          "type_parameters": [],
+          "parameters": [
+            {
+              "name": "left",
+              "type": {
+                "kind": "primitive",
+                "name": "text.utf8"
+              }
+            },
+            {
+              "name": "right",
+              "type": {
+                "kind": "primitive",
+                "name": "text.utf8"
+              }
+            }
+          ],
+          "result": {
+            "kind": "primitive",
+            "name": "text.utf8"
+          },
+          "error_variants": []
+        },
+        {
+          "schema": "re.std-operation@0.1.0",
+          "module": "std.text",
+          "name": "encode_utf8",
+          "kind": "pure",
+          "type_parameters": [],
+          "parameters": [
+            {
+              "name": "value",
+              "type": {
+                "kind": "primitive",
+                "name": "text.utf8"
+              }
+            }
+          ],
+          "result": {
+            "kind": "primitive",
+            "name": "bytes"
+          },
+          "error_variants": []
+        },
+        {
+          "schema": "re.std-operation@0.1.0",
+          "module": "std.text",
+          "name": "scalar_count",
+          "kind": "pure",
+          "type_parameters": [],
+          "parameters": [
+            {
+              "name": "value",
+              "type": {
+                "kind": "primitive",
+                "name": "text.utf8"
+              }
+            }
+          ],
+          "result": {
+            "kind": "primitive",
+            "name": "int"
+          },
+          "error_variants": []
+        }
+      ]
+    }
+  ]
+}

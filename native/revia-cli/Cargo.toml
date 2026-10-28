@@ -1,0 +1,12 @@
+[package]
+name = "revia-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+revia-core = { path = "../revia-core" }
+
+[[bin]]
+name = "revia"
+path = "src/main.rs"

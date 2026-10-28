@@ -1,0 +1,439 @@
+{
+  "schema": "re.portable-conformance-bundle@0.1.0",
+  "status": "backend-neutral-semantic-oracle",
+  "required_coverage": [
+    "branch:err",
+    "branch:ok",
+    "capability:fs.read@0.1.0.read_file",
+    "capability:fs.write@0.1.0.write_file",
+    "capability:process.args@0.1.0.read",
+    "capability:process.stdout@0.1.0.write",
+    "literal:bytes",
+    "arguments:named"
+  ],
+  "cases": [
+    {
+      "id": "PORTABLE-STDOUT-OK",
+      "graph": "test/golden/canonical-hello.re",
+      "graph_revision": "sha256:fbc879084d06d619f700d640826bebd4e758489171e269d162c57f1c26a19083",
+      "contract": {
+        "executor": "portable-core",
+        "graph_revision": "sha256:fbc879084d06d619f700d640826bebd4e758489171e269d162c57f1c26a19083",
+        "input_digest": "sha256:fbc879084d06d619f700d640826bebd4e758489171e269d162c57f1c26a19083",
+        "profile": "re.portable-reference@0.1.0",
+        "schema": "re.portable-executor-contract@0.1.0"
+      },
+      "invocations": [
+        {
+          "instance": "@stdout",
+          "member": "write",
+          "invocation_id": "aaaaaacaaaaaaaaaaaaaaaaaaa",
+          "arguments": { "data": "Hello, World!\n" },
+          "response": {
+            "kind": "value",
+            "value": { "kind": "ok", "value": null }
+          }
+        }
+      ],
+      "expected": {
+        "outcome": { "code": 0, "type": "process.status" },
+        "receipt": {
+          "executor": "portable-core",
+          "graph_revision": "sha256:fbc879084d06d619f700d640826bebd4e758489171e269d162c57f1c26a19083",
+          "input_digest": "sha256:fbc879084d06d619f700d640826bebd4e758489171e269d162c57f1c26a19083",
+          "invocations": [
+            {
+              "instance": "@stdout",
+              "invocation_id": "aaaaaacaaaaaaaaaaaaaaaaaaa",
+              "member": "write",
+              "outcome": "ok"
+            }
+          ],
+          "outcome": { "code": 0, "type": "process.status" },
+          "profile": "re.portable-reference@0.1.0",
+          "schema": "re.portable-execution-receipt@0.1.0"
+        }
+      }
+    },
+    {
+      "id": "PORTABLE-STDOUT-ERR",
+      "graph": "test/golden/canonical-hello.re",
+      "graph_revision": "sha256:fbc879084d06d619f700d640826bebd4e758489171e269d162c57f1c26a19083",
+      "contract": {
+        "executor": "portable-core",
+        "graph_revision": "sha256:fbc879084d06d619f700d640826bebd4e758489171e269d162c57f1c26a19083",
+        "input_digest": "sha256:fbc879084d06d619f700d640826bebd4e758489171e269d162c57f1c26a19083",
+        "profile": "re.portable-reference@0.1.0",
+        "schema": "re.portable-executor-contract@0.1.0"
+      },
+      "invocations": [
+        {
+          "instance": "@stdout",
+          "member": "write",
+          "invocation_id": "aaaaaacaaaaaaaaaaaaaaaaaaa",
+          "arguments": { "data": "Hello, World!\n" },
+          "response": {
+            "kind": "value",
+            "value": {
+              "error": {
+                "type": "io.write_error",
+                "variant": "broken_pipe"
+              },
+              "kind": "err"
+            }
+          }
+        }
+      ],
+      "expected": {
+        "outcome": { "code": 1, "type": "process.status" },
+        "receipt": {
+          "executor": "portable-core",
+          "graph_revision": "sha256:fbc879084d06d619f700d640826bebd4e758489171e269d162c57f1c26a19083",
+          "input_digest": "sha256:fbc879084d06d619f700d640826bebd4e758489171e269d162c57f1c26a19083",
+          "invocations": [
+            {
+              "instance": "@stdout",
+              "invocation_id": "aaaaaacaaaaaaaaaaaaaaaaaaa",
+              "member": "write",
+              "outcome": "err"
+            }
+          ],
+          "outcome": { "code": 1, "type": "process.status" },
+          "profile": "re.portable-reference@0.1.0",
+          "schema": "re.portable-execution-receipt@0.1.0"
+        }
+      }
+    },
+    {
+      "id": "PORTABLE-ARGS-OK",
+      "graph": "test/golden/canonical-args-check.re",
+      "graph_revision": "sha256:6c1152d2d7059790790cc11c022ca51d813fcb222cd6a512ec6f10e37563df47",
+      "contract": {
+        "executor": "portable-core",
+        "graph_revision": "sha256:6c1152d2d7059790790cc11c022ca51d813fcb222cd6a512ec6f10e37563df47",
+        "input_digest": "sha256:6c1152d2d7059790790cc11c022ca51d813fcb222cd6a512ec6f10e37563df47",
+        "profile": "re.portable-reference@0.1.0",
+        "schema": "re.portable-executor-contract@0.1.0"
+      },
+      "invocations": [
+        {
+          "instance": "@args",
+          "member": "read",
+          "invocation_id": "aaaaaacaaaaaaaaaaaaaaaaaaa",
+          "arguments": {},
+          "response": {
+            "kind": "value",
+            "value": {
+              "kind": "ok",
+              "value": ["alpha", "β"]
+            }
+          }
+        }
+      ],
+      "expected": {
+        "outcome": { "code": 0, "type": "process.status" },
+        "receipt": {
+          "executor": "portable-core",
+          "graph_revision": "sha256:6c1152d2d7059790790cc11c022ca51d813fcb222cd6a512ec6f10e37563df47",
+          "input_digest": "sha256:6c1152d2d7059790790cc11c022ca51d813fcb222cd6a512ec6f10e37563df47",
+          "invocations": [
+            {
+              "instance": "@args",
+              "invocation_id": "aaaaaacaaaaaaaaaaaaaaaaaaa",
+              "member": "read",
+              "outcome": "ok"
+            }
+          ],
+          "outcome": { "code": 0, "type": "process.status" },
+          "profile": "re.portable-reference@0.1.0",
+          "schema": "re.portable-execution-receipt@0.1.0"
+        }
+      }
+    },
+    {
+      "id": "PORTABLE-ARGS-ERR",
+      "graph": "test/golden/canonical-args-check.re",
+      "graph_revision": "sha256:6c1152d2d7059790790cc11c022ca51d813fcb222cd6a512ec6f10e37563df47",
+      "contract": {
+        "executor": "portable-core",
+        "graph_revision": "sha256:6c1152d2d7059790790cc11c022ca51d813fcb222cd6a512ec6f10e37563df47",
+        "input_digest": "sha256:6c1152d2d7059790790cc11c022ca51d813fcb222cd6a512ec6f10e37563df47",
+        "profile": "re.portable-reference@0.1.0",
+        "schema": "re.portable-executor-contract@0.1.0"
+      },
+      "invocations": [
+        {
+          "instance": "@args",
+          "member": "read",
+          "invocation_id": "aaaaaacaaaaaaaaaaaaaaaaaaa",
+          "arguments": {},
+          "response": {
+            "kind": "value",
+            "value": {
+              "error": {
+                "type": "process.args_error",
+                "variant": "invalid_utf8"
+              },
+              "kind": "err"
+            }
+          }
+        }
+      ],
+      "expected": {
+        "outcome": { "code": 2, "type": "process.status" },
+        "receipt": {
+          "executor": "portable-core",
+          "graph_revision": "sha256:6c1152d2d7059790790cc11c022ca51d813fcb222cd6a512ec6f10e37563df47",
+          "input_digest": "sha256:6c1152d2d7059790790cc11c022ca51d813fcb222cd6a512ec6f10e37563df47",
+          "invocations": [
+            {
+              "instance": "@args",
+              "invocation_id": "aaaaaacaaaaaaaaaaaaaaaaaaa",
+              "member": "read",
+              "outcome": "err"
+            }
+          ],
+          "outcome": { "code": 2, "type": "process.status" },
+          "profile": "re.portable-reference@0.1.0",
+          "schema": "re.portable-execution-receipt@0.1.0"
+        }
+      }
+    },
+    {
+      "id": "PORTABLE-READ-OK",
+      "graph": "test/golden/canonical-read-check.re",
+      "graph_revision": "sha256:2c2695d4f61181d52d852636033fc651a3889aae42f726bca6a31dab64a5d4f3",
+      "contract": {
+        "executor": "portable-core",
+        "graph_revision": "sha256:2c2695d4f61181d52d852636033fc651a3889aae42f726bca6a31dab64a5d4f3",
+        "input_digest": "sha256:2c2695d4f61181d52d852636033fc651a3889aae42f726bca6a31dab64a5d4f3",
+        "profile": "re.portable-reference@0.1.0",
+        "schema": "re.portable-executor-contract@0.1.0"
+      },
+      "invocations": [
+        {
+          "instance": "@input",
+          "member": "read_file",
+          "invocation_id": "aaaaaacaaaaaaaaaaaaaaaaaaa",
+          "arguments": { "path": "input.txt" },
+          "response": {
+            "kind": "value",
+            "value": { "kind": "ok", "value": "hello" }
+          }
+        }
+      ],
+      "expected": {
+        "outcome": { "code": 0, "type": "process.status" },
+        "receipt": {
+          "executor": "portable-core",
+          "graph_revision": "sha256:2c2695d4f61181d52d852636033fc651a3889aae42f726bca6a31dab64a5d4f3",
+          "input_digest": "sha256:2c2695d4f61181d52d852636033fc651a3889aae42f726bca6a31dab64a5d4f3",
+          "invocations": [
+            {
+              "instance": "@input",
+              "invocation_id": "aaaaaacaaaaaaaaaaaaaaaaaaa",
+              "member": "read_file",
+              "outcome": "ok"
+            }
+          ],
+          "outcome": { "code": 0, "type": "process.status" },
+          "profile": "re.portable-reference@0.1.0",
+          "schema": "re.portable-execution-receipt@0.1.0"
+        }
+      }
+    },
+    {
+      "id": "PORTABLE-READ-ERR",
+      "graph": "test/golden/canonical-read-check.re",
+      "graph_revision": "sha256:2c2695d4f61181d52d852636033fc651a3889aae42f726bca6a31dab64a5d4f3",
+      "contract": {
+        "executor": "portable-core",
+        "graph_revision": "sha256:2c2695d4f61181d52d852636033fc651a3889aae42f726bca6a31dab64a5d4f3",
+        "input_digest": "sha256:2c2695d4f61181d52d852636033fc651a3889aae42f726bca6a31dab64a5d4f3",
+        "profile": "re.portable-reference@0.1.0",
+        "schema": "re.portable-executor-contract@0.1.0"
+      },
+      "invocations": [
+        {
+          "instance": "@input",
+          "member": "read_file",
+          "invocation_id": "aaaaaacaaaaaaaaaaaaaaaaaaa",
+          "arguments": { "path": "input.txt" },
+          "response": {
+            "kind": "value",
+            "value": {
+              "error": {
+                "type": "fs.read_error",
+                "variant": "not_found"
+              },
+              "kind": "err"
+            }
+          }
+        }
+      ],
+      "expected": {
+        "outcome": { "code": 2, "type": "process.status" },
+        "receipt": {
+          "executor": "portable-core",
+          "graph_revision": "sha256:2c2695d4f61181d52d852636033fc651a3889aae42f726bca6a31dab64a5d4f3",
+          "input_digest": "sha256:2c2695d4f61181d52d852636033fc651a3889aae42f726bca6a31dab64a5d4f3",
+          "invocations": [
+            {
+              "instance": "@input",
+              "invocation_id": "aaaaaacaaaaaaaaaaaaaaaaaaa",
+              "member": "read_file",
+              "outcome": "err"
+            }
+          ],
+          "outcome": { "code": 2, "type": "process.status" },
+          "profile": "re.portable-reference@0.1.0",
+          "schema": "re.portable-execution-receipt@0.1.0"
+        }
+      }
+    },
+    {
+      "id": "PORTABLE-READ-NAMED-OK",
+      "graph": "test/golden/canonical-read-encoding.re",
+      "graph_revision": "sha256:a6cfecdee8119828b68807f29b868ed70f0a616f2e4bd092e0dd8bdf9c75665e",
+      "contract": {
+        "executor": "portable-core",
+        "graph_revision": "sha256:a6cfecdee8119828b68807f29b868ed70f0a616f2e4bd092e0dd8bdf9c75665e",
+        "input_digest": "sha256:a6cfecdee8119828b68807f29b868ed70f0a616f2e4bd092e0dd8bdf9c75665e",
+        "profile": "re.portable-reference@0.1.0",
+        "schema": "re.portable-executor-contract@0.1.0"
+      },
+      "invocations": [
+        {
+          "instance": "@input",
+          "member": "read_file",
+          "invocation_id": "aaaaaacaaaaaaaaaaaaaaaaaaa",
+          "arguments": {
+            "encoding": "text.encoding.utf8",
+            "path": "input.txt"
+          },
+          "response": {
+            "kind": "value",
+            "value": { "kind": "ok", "value": "β" }
+          }
+        }
+      ],
+      "expected": {
+        "outcome": { "code": 0, "type": "process.status" },
+        "receipt": {
+          "executor": "portable-core",
+          "graph_revision": "sha256:a6cfecdee8119828b68807f29b868ed70f0a616f2e4bd092e0dd8bdf9c75665e",
+          "input_digest": "sha256:a6cfecdee8119828b68807f29b868ed70f0a616f2e4bd092e0dd8bdf9c75665e",
+          "invocations": [
+            {
+              "instance": "@input",
+              "invocation_id": "aaaaaacaaaaaaaaaaaaaaaaaaa",
+              "member": "read_file",
+              "outcome": "ok"
+            }
+          ],
+          "outcome": { "code": 0, "type": "process.status" },
+          "profile": "re.portable-reference@0.1.0",
+          "schema": "re.portable-execution-receipt@0.1.0"
+        }
+      }
+    },
+    {
+      "id": "PORTABLE-WRITE-OK",
+      "graph": "test/golden/canonical-write-check.re",
+      "graph_revision": "sha256:9f7b330fb2b03a6b82984feb9139d2593c27abd6ce36962773bbcdd638da9bcb",
+      "contract": {
+        "executor": "portable-core",
+        "graph_revision": "sha256:9f7b330fb2b03a6b82984feb9139d2593c27abd6ce36962773bbcdd638da9bcb",
+        "input_digest": "sha256:9f7b330fb2b03a6b82984feb9139d2593c27abd6ce36962773bbcdd638da9bcb",
+        "profile": "re.portable-reference@0.1.0",
+        "schema": "re.portable-executor-contract@0.1.0"
+      },
+      "invocations": [
+        {
+          "instance": "@output",
+          "member": "write_file",
+          "invocation_id": "aaaaaacaaaaaaaaaaaaaaaaaaa",
+          "arguments": {
+            "data": { "$bytes": "hex:410042" },
+            "path": "output.txt"
+          },
+          "response": {
+            "kind": "value",
+            "value": { "kind": "ok", "value": null }
+          }
+        }
+      ],
+      "expected": {
+        "outcome": { "code": 0, "type": "process.status" },
+        "receipt": {
+          "executor": "portable-core",
+          "graph_revision": "sha256:9f7b330fb2b03a6b82984feb9139d2593c27abd6ce36962773bbcdd638da9bcb",
+          "input_digest": "sha256:9f7b330fb2b03a6b82984feb9139d2593c27abd6ce36962773bbcdd638da9bcb",
+          "invocations": [
+            {
+              "instance": "@output",
+              "invocation_id": "aaaaaacaaaaaaaaaaaaaaaaaaa",
+              "member": "write_file",
+              "outcome": "ok"
+            }
+          ],
+          "outcome": { "code": 0, "type": "process.status" },
+          "profile": "re.portable-reference@0.1.0",
+          "schema": "re.portable-execution-receipt@0.1.0"
+        }
+      }
+    },
+    {
+      "id": "PORTABLE-WRITE-ERR",
+      "graph": "test/golden/canonical-write-check.re",
+      "graph_revision": "sha256:9f7b330fb2b03a6b82984feb9139d2593c27abd6ce36962773bbcdd638da9bcb",
+      "contract": {
+        "executor": "portable-core",
+        "graph_revision": "sha256:9f7b330fb2b03a6b82984feb9139d2593c27abd6ce36962773bbcdd638da9bcb",
+        "input_digest": "sha256:9f7b330fb2b03a6b82984feb9139d2593c27abd6ce36962773bbcdd638da9bcb",
+        "profile": "re.portable-reference@0.1.0",
+        "schema": "re.portable-executor-contract@0.1.0"
+      },
+      "invocations": [
+        {
+          "instance": "@output",
+          "member": "write_file",
+          "invocation_id": "aaaaaacaaaaaaaaaaaaaaaaaaa",
+          "arguments": {
+            "data": { "$bytes": "hex:410042" },
+            "path": "output.txt"
+          },
+          "response": {
+            "kind": "value",
+            "value": {
+              "error": {
+                "type": "fs.write_error",
+                "variant": "permission_denied"
+              },
+              "kind": "err"
+            }
+          }
+        }
+      ],
+      "expected": {
+        "outcome": { "code": 2, "type": "process.status" },
+        "receipt": {
+          "executor": "portable-core",
+          "graph_revision": "sha256:9f7b330fb2b03a6b82984feb9139d2593c27abd6ce36962773bbcdd638da9bcb",
+          "input_digest": "sha256:9f7b330fb2b03a6b82984feb9139d2593c27abd6ce36962773bbcdd638da9bcb",
+          "invocations": [
+            {
+              "instance": "@output",
+              "invocation_id": "aaaaaacaaaaaaaaaaaaaaaaaaa",
+              "member": "write_file",
+              "outcome": "err"
+            }
+          ],
+          "outcome": { "code": 2, "type": "process.status" },
+          "profile": "re.portable-reference@0.1.0",
+          "schema": "re.portable-execution-receipt@0.1.0"
+        }
+      }
+    }
+  ]
+}

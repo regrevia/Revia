@@ -71,13 +71,15 @@ attestation。这些是后续候选的路线图项目；在门禁真正检查之
 
 ## V1 RC1 Gate / V1 RC1 门禁
 
-`v1.0.0-rc.1` is a separate source-closed, non-production evaluation channel.
-Its initial declared target is native Darwin arm64 only. The other five target
-records remain `pending`; the RC does not publish placeholder assets or reuse
-preview evidence as if it measured the new runtime.
+The historical `v1.0.0-rc.1` binary remains a non-production evaluation
+candidate under its dedicated license. Its initial declared target is native
+Darwin arm64 only. The other five target records remain `pending`; the RC does
+not publish placeholder assets or reuse preview evidence as if it measured the
+new runtime. This binary boundary is separate from the MPL-2.0 source tree.
 
-`v1.0.0-rc.1` 是独立的闭源、非生产评估通道，初始只声明原生 Darwin arm64。
-其余五个目标记录保持 `pending`；RC 不发布占位资产，也不会把旧预览版证据冒充为新运行时实测。
+历史版本 `v1.0.0-rc.1` 二进制仍是受专用许可约束的非生产评估候选，初始只声明原生
+Darwin arm64。其余五个目标记录保持 `pending`；RC 不发布占位资产，也不会把旧预览版证据
+冒充为新运行时实测。二进制边界与按 MPL-2.0 发布的源码树相互独立。
 
 The RC release uses the [sealed export](rc1-sealed-export-contract.md). The
 public verifier checks the exact file set, hashes, canonical JSON,

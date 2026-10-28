@@ -1,0 +1,141 @@
+{
+  "schema": "re.grammar-mutations@0.3.0",
+  "cases": [
+    {
+      "id": "MUT-S1-SEMANTIC-PREFIX",
+      "seed_pair_id": "PAIR-HELLO-S1",
+      "scope": "semantic-sigil",
+      "search": "unit @hello",
+      "replacement": "unit hello",
+      "expected": { "code": "unexpected-candidate-token", "phase": "parse", "line": 2, "column": 6 }
+    },
+    {
+      "id": "MUT-S2-SEMANTIC-PREFIX",
+      "seed_pair_id": "PAIR-HELLO-S2",
+      "scope": "semantic-sigil",
+      "search": "unit hello",
+      "replacement": "unit @hello",
+      "expected": { "code": "unexpected-candidate-token", "phase": "parse", "line": 2, "column": 6 }
+    },
+    {
+      "id": "MUT-S1-CAPABILITY-PREFIX",
+      "seed_pair_id": "PAIR-HELLO-S1",
+      "scope": "capability-sigil",
+      "search": "cap @stdout:",
+      "replacement": "cap $stdout:",
+      "expected": { "code": "unexpected-candidate-token", "phase": "parse", "line": 3, "column": 5 }
+    },
+    {
+      "id": "MUT-S2-CAPABILITY-PREFIX",
+      "seed_pair_id": "PAIR-HELLO-S2",
+      "scope": "capability-sigil",
+      "search": "cap $stdout:",
+      "replacement": "cap @stdout:",
+      "expected": { "code": "unexpected-candidate-token", "phase": "parse", "line": 3, "column": 5 }
+    },
+    {
+      "id": "MUT-S2-UNPINNED-REFERENCE",
+      "seed_pair_id": "PAIR-HELLO-S2",
+      "scope": "schema-reference",
+      "search": "process.stdout@0.1.0",
+      "replacement": "process.stdout",
+      "expected": { "code": "unpinned-schema-reference", "phase": "parse", "line": 3, "column": 14 }
+    },
+    {
+      "id": "MUT-S2-LEADING-ZERO-REVISION",
+      "seed_pair_id": "PAIR-HELLO-S2",
+      "scope": "schema-reference",
+      "search": "process.stdout@0.1.0",
+      "replacement": "process.stdout@01.1.0",
+      "expected": { "code": "invalid-schema-reference", "phase": "parse", "line": 3, "column": 14 }
+    },
+    {
+      "id": "MUT-S2-ALIAS-ROLE-CROSSING",
+      "seed_pair_id": "PAIR-HELLO-S2",
+      "scope": "token-role",
+      "search": "%printed =",
+      "replacement": "%uabcdefg =",
+      "expected": { "code": "reserved-canonical-label", "phase": "parse", "line": 5, "column": 3 }
+    },
+    {
+      "id": "MUT-S2-SOURCE-FORM",
+      "seed_pair_id": "PAIR-HELLO-S2",
+      "scope": "source-form",
+      "search": "re 0.1 compact\n",
+      "replacement": "re 0.1 canonical\n",
+      "expected": { "code": "unsupported-bakeoff-source-form", "phase": "dispatch", "line": 1, "column": 1 }
+    },
+    {
+      "id": "MUT-S1-CAPABILITY-CALL-PREFIX",
+      "seed_pair_id": "PAIR-HELLO-S1",
+      "scope": "capability-sigil",
+      "search": "@stdout.write",
+      "replacement": "$stdout.write",
+      "expected": { "code": "unexpected-candidate-token", "phase": "parse", "line": 5, "column": 14 }
+    },
+    {
+      "id": "MUT-S2-CAPABILITY-CALL-PREFIX",
+      "seed_pair_id": "PAIR-HELLO-S2",
+      "scope": "capability-sigil",
+      "search": "$stdout.write",
+      "replacement": "@stdout.write",
+      "expected": { "code": "unexpected-candidate-token", "phase": "parse", "line": 5, "column": 14 }
+    },
+    {
+      "id": "MUT-S2-NUMERIC-LEADING-PLUS",
+      "seed_pair_id": "PAIR-NUMERIC-S2",
+      "scope": "numeric-format",
+      "search": "code: 0",
+      "replacement": "code: +1",
+      "expected": { "code": "invalid-numeric-literal", "phase": "parse", "line": 7, "column": 33, "reason": "leading-plus" }
+    },
+    {
+      "id": "MUT-S2-NUMERIC-EXPONENT",
+      "seed_pair_id": "PAIR-NUMERIC-S2",
+      "scope": "numeric-format",
+      "search": "code: 0",
+      "replacement": "code: 1e3",
+      "expected": { "code": "invalid-numeric-literal", "phase": "parse", "line": 7, "column": 33, "reason": "exponent" }
+    },
+    {
+      "id": "MUT-S2-NUMERIC-LEADING-ZERO",
+      "seed_pair_id": "PAIR-NUMERIC-S2",
+      "scope": "numeric-format",
+      "search": "code: 0",
+      "replacement": "code: 01",
+      "expected": { "code": "invalid-numeric-literal", "phase": "parse", "line": 7, "column": 33, "reason": "leading-zero" }
+    },
+    {
+      "id": "MUT-S2-NUMERIC-NEGATIVE-ZERO",
+      "seed_pair_id": "PAIR-NUMERIC-S2",
+      "scope": "numeric-format",
+      "search": "code: 0",
+      "replacement": "code: -0.00",
+      "expected": { "code": "invalid-numeric-literal", "phase": "parse", "line": 7, "column": 33, "reason": "negative-zero" }
+    },
+    {
+      "id": "MUT-S2-NUMERIC-DIGIT-SEPARATOR",
+      "seed_pair_id": "PAIR-NUMERIC-S2",
+      "scope": "numeric-format",
+      "search": "code: 0",
+      "replacement": "code: 1_000",
+      "expected": { "code": "invalid-numeric-literal", "phase": "parse", "line": 7, "column": 33, "reason": "digit-separator" }
+    },
+    {
+      "id": "MUT-S2-NUMERIC-MALFORMED-DECIMAL",
+      "seed_pair_id": "PAIR-NUMERIC-S2",
+      "scope": "numeric-format",
+      "search": "code: 0",
+      "replacement": "code: 1.",
+      "expected": { "code": "invalid-numeric-literal", "phase": "parse", "line": 7, "column": 33, "reason": "decimal-shape" }
+    },
+    {
+      "id": "MUT-S2-MISSING-CAPABILITY-SIGIL",
+      "seed_pair_id": "PAIR-HELLO-S2",
+      "scope": "capability-sigil",
+      "search": "$stdout.write",
+      "replacement": "stdout.write",
+      "expected": { "code": "missing-capability-sigil", "phase": "parse", "line": 5, "column": 14 }
+    }
+  ]
+}

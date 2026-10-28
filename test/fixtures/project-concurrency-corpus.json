@@ -1,0 +1,25 @@
+{
+  "schema": "re.project-concurrency-corpus@0.1.0",
+  "cases": [
+    {
+      "id": "root-read-read",
+      "expect": "joined",
+      "rule": "read/read resources are compatible"
+    },
+    {
+      "id": "write-conflict",
+      "expect": "project-resource-conflict",
+      "rule": "write overlap is rejected before runner dispatch"
+    },
+    {
+      "id": "mutable-alias",
+      "expect": "mutable-resource-alias-conflict",
+      "rule": "a mutable alias cannot be shared by task scopes"
+    },
+    {
+      "id": "nested-host-fault",
+      "expect": "host-fault",
+      "rule": "nested host fault joins cleanup before parent terminal"
+    }
+  ]
+}

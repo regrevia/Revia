@@ -7,3 +7,15 @@ diagnostic.json
 /manifest.json
 /graph.svg
 /review.html
+/node_modules/
+/native/target/
+/target/
+/build/
+/dist/
+/scratch/
+*.wasm
+*.map
+*.local
+.env
+.env.*
+.git-credentials

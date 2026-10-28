@@ -1,0 +1,21 @@
+{
+  "schema": "re.portable-runtime-abi-corpus@0.1.0",
+  "domains": [
+    {
+      "id": "execution",
+      "kind": "portable-execution",
+      "workload_count": 9
+    },
+    {
+      "id": "fault",
+      "kind": "portable-fault",
+      "workload_count": 13
+    },
+    {
+      "id": "task-lifecycle",
+      "kind": "task-lifecycle",
+      "workload_count": 14
+    }
+  ],
+  "fault_graph_case_id": "PORTABLE-STDOUT-OK"
+}

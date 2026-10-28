@@ -1,0 +1,100 @@
+{
+  "schema": "re.module-source-surface-corpus@0.2.0",
+  "status": "lowering-prototype",
+  "span_contract": {
+    "byte_offsets": "zero-based UTF-8 half-open",
+    "line_column": "one-based Unicode scalar positions; tab counts as one scalar"
+  },
+  "cases": [
+    {
+      "id": "SRC-001",
+      "source": "re 1.0 compact\nmodule agent.relay.api\nimport agent.relay.service@sha256:6cbfa0a9e364b386c5f6015b90a3bc4d962062b4ba553ad25e43f0bcf03fe71c as service\nimport external std.log@sha256:7c1db8f3affe2264d5e0dfec3045aad064e881ab78c2b1f86b817895154050aa from sha256:8888888888888888888888888888888888888888888888888888888888888888 as log\nexport serve\n",
+      "expected": { "ok": true, "interface_digest": "sha256:5779705343e7f4562b4b006f2abfeadd3f24c2f164b0d2ed62a994fa94a1f240" }
+    },
+    {
+      "id": "SRC-002",
+      "source": "re 1.0 compact\nmodule agent.relay.api\nimport external std.log@sha256:7c1db8f3affe2264d5e0dfec3045aad064e881ab78c2b1f86b817895154050aa from sha256:8888888888888888888888888888888888888888888888888888888888888888 as log\nimport agent.relay.service@sha256:6cbfa0a9e364b386c5f6015b90a3bc4d962062b4ba553ad25e43f0bcf03fe71c as service\nexport serve\n",
+      "expected": { "ok": true, "interface_digest": "sha256:5779705343e7f4562b4b006f2abfeadd3f24c2f164b0d2ed62a994fa94a1f240" }
+    },
+    {
+      "id": "SRC-003",
+      "source": "re 1.0 compact\nmodule agent.relay.api\nimport agent.relay.service@sha256:6cbfa0a9e364b386c5f6015b90a3bc4d962062b4ba553ad25e43f0bcf03fe71c as service\nimport external std.log@sha256:7c1db8f3affe2264d5e0dfec3045aad064e881ab78c2b1f86b817895154050aa from sha256:8888888888888888888888888888888888888888888888888888888888888888 as log\nimport agent.relay.service@sha256:6cbfa0a9e364b386c5f6015b90a3bc4d962062b4ba553ad25e43f0bcf03fe71c as service\nexport serve\n",
+      "expected": { "ok": false, "diagnostic": { "code": "duplicate-module-binding", "byte_start": 430, "byte_end": 437, "line": 5, "column": 103, "end_line": 5, "end_column": 110, "lexeme": "service" } }
+    },
+    {
+      "id": "SRC-004",
+      "source": "re 1.0 compact\nmodule agent.relay.api\nimport agent.relay.service@sha256:6cbfa0a9e364b386c5f6015b90a3bc4d962062b4ba553ad25e43f0bcf03fe71c as service\nimport external std.log@sha256:7c1db8f3affe2264d5e0dfec3045aad064e881ab78c2b1f86b817895154050aa from sha256:8888888888888888888888888888888888888888888888888888888888888888 as log\nexport serve\nexport serve\n",
+      "expected": { "ok": false, "diagnostic": { "code": "duplicate-module-export", "byte_start": 348, "byte_end": 353, "line": 6, "column": 8, "end_line": 6, "end_column": 13, "lexeme": "serve" } }
+    },
+    {
+      "id": "SRC-005",
+      "source": "re 1.0 compact\nmodule agent.relay.api\nimport agent.relay.service@sha256:6cbfa0a9e364b386c5f6015b90a3bc4d962062b4ba553ad25e43f0bcf03fe71c as service\nimport external std.log@sha256:7c1db8f3affe2264d5e0dfec3045aad064e881ab78c2b1f86b817895154050aa from sha256:0000000000000000000000000000000000000000000000000000000000000000 as log\nexport serve\n",
+      "expected": { "ok": false, "diagnostic": { "code": "source-import-pin-mismatch", "binding": "log", "byte_start": 249, "byte_end": 320, "line": 4, "column": 102, "end_line": 4, "end_column": 173, "lexeme": "sha256:0000000000000000000000000000000000000000000000000000000000000000" } }
+    },
+    {
+      "id": "SRC-006",
+      "source": "re 1.0 compact\nmodule agent.relay.api\nimport agent.relay.service@sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff as service\nimport external std.log@sha256:7c1db8f3affe2264d5e0dfec3045aad064e881ab78c2b1f86b817895154050aa from sha256:8888888888888888888888888888888888888888888888888888888888888888 as log\nexport serve\n",
+      "expected": { "ok": false, "diagnostic": { "code": "source-import-pin-mismatch", "binding": "service", "byte_start": 65, "byte_end": 136, "line": 3, "column": 28, "end_line": 3, "end_column": 99, "lexeme": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" } }
+    },
+    {
+      "id": "SRC-007",
+      "source": "re 1.0 compact\nmodule agent.relay.api\nimport agent.relay.service@sha256:6cbfa0a9e364b386c5f6015b90a3bc4d962062b4ba553ad25e43f0bcf03fe71c as service\nexport serve\n",
+      "expected": { "ok": false, "diagnostic": { "code": "source-import-missing", "binding": "log", "byte_start": 22, "byte_end": 37, "line": 2, "column": 8, "end_line": 2, "end_column": 23, "lexeme": "agent.relay.api" } }
+    },
+    {
+      "id": "SRC-008",
+      "source": "re 1.0 compact\nmodule agent.relay.api\nimport agent.relay.service@sha256:6cbfa0a9e364b386c5f6015b90a3bc4d962062b4ba553ad25e43f0bcf03fe71c as service\nimport external std.log@sha256:7c1db8f3affe2264d5e0dfec3045aad064e881ab78c2b1f86b817895154050aa from sha256:8888888888888888888888888888888888888888888888888888888888888888 as log\nimport agent.relay.core@sha256:49085501f04fda985961842d4b24c8d15c97f04375c5b05321a9cf764ba6eb55 as core\nexport serve\n",
+      "expected": { "ok": false, "diagnostic": { "code": "source-import-not-in-interface", "binding": "core", "byte_start": 427, "byte_end": 431, "line": 5, "column": 100, "end_line": 5, "end_column": 104, "lexeme": "core" } }
+    },
+    {
+      "id": "SRC-009",
+      "source": "re 1.0 compact\nmodule agent.relay.api\nimport agent.relay.service@sha256:6cbfa0a9e364b386c5f6015b90a3bc4d962062b4ba553ad25e43f0bcf03fe71c as service\nimport external std.log@sha256:7c1db8f3affe2264d5e0dfec3045aad064e881ab78c2b1f86b817895154050aa from sha256:8888888888888888888888888888888888888888888888888888888888888888 as log\nexport *\n",
+      "expected": { "ok": false, "diagnostic": { "code": "transparent-reexport-not-supported", "byte_start": 335, "byte_end": 336, "line": 5, "column": 8, "end_line": 5, "end_column": 9, "lexeme": "*" } }
+    },
+    {
+      "id": "SRC-010",
+      "source": "re 1.0 compact\nmodule agent.relay.api\nimport agent.relay.service as service\nimport external std.log@sha256:7c1db8f3affe2264d5e0dfec3045aad064e881ab78c2b1f86b817895154050aa from sha256:8888888888888888888888888888888888888888888888888888888888888888 as log\nexport serve\n",
+      "expected": { "ok": false, "diagnostic": { "code": "missing-module-interface-digest", "byte_start": 45, "byte_end": 64, "line": 3, "column": 8, "end_line": 3, "end_column": 27, "lexeme": "agent.relay.service" } }
+    },
+    {
+      "id": "SRC-011",
+      "source": "re 1.0 compact\n// 中文说明\nmodule agent.relay.api\nimport agent.relay.service@sha256:6cbfa0a9e364b386c5f6015b90a3bc4d962062b4ba553ad25e43f0bcf03fe71c as service\nimport external std.log@sha256:7c1db8f3affe2264d5e0dfec3045aad064e881ab78c2b1f86b817895154050aa from sha256:8888888888888888888888888888888888888888888888888888888888888888 as log\nexport serve\nteleport value\n",
+      "expected": { "ok": false, "diagnostic": { "code": "unsupported-module-surface-construct", "byte_start": 357, "byte_end": 365, "line": 7, "column": 1, "end_line": 7, "end_column": 9, "lexeme": "teleport" } }
+    },
+    {
+      "id": "SRC-012",
+      "source": "re 1.0 canonical\nmodule agent.relay.api\n",
+      "expected": { "ok": false, "diagnostic": { "code": "unsupported-module-surface-header", "byte_start": 0, "byte_end": 16, "line": 1, "column": 1, "end_line": 1, "end_column": 17, "lexeme": "re 1.0 canonical" } }
+    },
+    {
+      "id": "SRC-013",
+      "source": "re 1.0 compact\nmodule agent.relay.api\nmodule agent.relay.api\n",
+      "expected": { "ok": false, "diagnostic": { "code": "duplicate-module-declaration", "byte_start": 45, "byte_end": 60, "line": 3, "column": 8, "end_line": 3, "end_column": 23, "lexeme": "agent.relay.api" } }
+    },
+    {
+      "id": "SRC-014",
+      "source": "re 1.0 compact\nimport agent.relay.service@sha256:6cbfa0a9e364b386c5f6015b90a3bc4d962062b4ba553ad25e43f0bcf03fe71c as service\nmodule agent.relay.api\nimport external std.log@sha256:7c1db8f3affe2264d5e0dfec3045aad064e881ab78c2b1f86b817895154050aa from sha256:8888888888888888888888888888888888888888888888888888888888888888 as log\nexport serve\n",
+      "expected": { "ok": false, "diagnostic": { "code": "module-declaration-must-be-first", "byte_start": 117, "byte_end": 124, "line": 2, "column": 103, "end_line": 2, "end_column": 110, "lexeme": "service" } }
+    },
+    {
+      "id": "SRC-015",
+      "source": "re 1.0 compact\n",
+      "expected": { "ok": false, "diagnostic": { "code": "missing-module-declaration", "byte_start": 15, "byte_end": 15, "line": 2, "column": 1, "end_line": 2, "end_column": 1, "lexeme": "" } }
+    },
+    {
+      "id": "SRC-016",
+      "source": "re 1.0 compact\nmodule agent.relay.unknown\n",
+      "expected": { "ok": false, "diagnostic": { "code": "source-module-not-in-package", "byte_start": 22, "byte_end": 41, "line": 2, "column": 8, "end_line": 2, "end_column": 27, "lexeme": "agent.relay.unknown" } }
+    },
+    {
+      "id": "SRC-017",
+      "source": "re 1.0 compact\nmodule agent.relay.api\nimport agent.relay.service@sha256:6cbfa0a9e364b386c5f6015b90a3bc4d962062b4ba553ad25e43f0bcf03fe71c as service\nimport external std.log@sha256:7c1db8f3affe2264d5e0dfec3045aad064e881ab78c2b1f86b817895154050aa from sha256:8888888888888888888888888888888888888888888888888888888888888888 as log\nexport other\n",
+      "expected": { "ok": false, "diagnostic": { "code": "source-export-not-in-interface", "export": "other", "byte_start": 335, "byte_end": 340, "line": 5, "column": 8, "end_line": 5, "end_column": 13, "lexeme": "other" } }
+    },
+    {
+      "id": "SRC-018",
+      "source": "re 1.0 compact\nmodule agent.relay.api\nimport agent.relay.service@sha256:6cbfa0a9e364b386c5f6015b90a3bc4d962062b4ba553ad25e43f0bcf03fe71c as service\nimport external std.log@sha256:7c1db8f3affe2264d5e0dfec3045aad064e881ab78c2b1f86b817895154050aa from sha256:8888888888888888888888888888888888888888888888888888888888888888 as log\n",
+      "expected": { "ok": false, "diagnostic": { "code": "source-export-missing", "export": "serve", "byte_start": 22, "byte_end": 37, "line": 2, "column": 8, "end_line": 2, "end_column": 23, "lexeme": "agent.relay.api" } }
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+[package]
+name = "revia-conformance"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+revia-core = { path = "../revia-core" }

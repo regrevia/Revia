@@ -1,0 +1,89 @@
+{
+  "schema": "re.decimal-rescale-corpus@0.1.0",
+  "semantics": {
+    "coefficient": "arbitrary-precision signed integer",
+    "lossless": "scale increase or equal scale requires rounding=exact",
+    "lossy": "scale decrease applies the named rounding mode to discarded decimal digits",
+    "negative_zero": "never emitted"
+  },
+  "workloads": [
+    {
+      "id": "DR-001",
+      "profile": "database-numeric-exact",
+      "input": { "value": "123.4500", "from_scale": 4, "to_scale": 2, "rounding": "exact" },
+      "expected": { "ok": true, "value": "123.45" }
+    },
+    {
+      "id": "DR-002",
+      "profile": "database-numeric-reject-loss",
+      "input": { "value": "10.005", "from_scale": 3, "to_scale": 2, "rounding": "exact" },
+      "expected": { "ok": false, "code": "inexact-decimal-rescale" }
+    },
+    {
+      "id": "DR-003",
+      "profile": "finance-half-even-tie-even",
+      "input": { "value": "10.005", "from_scale": 3, "to_scale": 2, "rounding": "half_even" },
+      "expected": { "ok": true, "value": "10.00" }
+    },
+    {
+      "id": "DR-004",
+      "profile": "finance-half-away-positive",
+      "input": { "value": "10.005", "from_scale": 3, "to_scale": 2, "rounding": "half_away_from_zero" },
+      "expected": { "ok": true, "value": "10.01" }
+    },
+    {
+      "id": "DR-005",
+      "profile": "finance-half-even-tie-odd",
+      "input": { "value": "10.015", "from_scale": 3, "to_scale": 2, "rounding": "half_even" },
+      "expected": { "ok": true, "value": "10.02" }
+    },
+    {
+      "id": "DR-006",
+      "profile": "finance-half-even-negative-zero-normalization",
+      "input": { "value": "-0.005", "from_scale": 3, "to_scale": 2, "rounding": "half_even" },
+      "expected": { "ok": true, "value": "0.00" }
+    },
+    {
+      "id": "DR-007",
+      "profile": "finance-half-away-negative",
+      "input": { "value": "-10.005", "from_scale": 3, "to_scale": 2, "rounding": "half_away_from_zero" },
+      "expected": { "ok": true, "value": "-10.01" }
+    },
+    {
+      "id": "DR-008",
+      "profile": "directed-floor-negative",
+      "input": { "value": "-1.231", "from_scale": 3, "to_scale": 2, "rounding": "floor" },
+      "expected": { "ok": true, "value": "-1.24" }
+    },
+    {
+      "id": "DR-009",
+      "profile": "directed-ceiling-negative",
+      "input": { "value": "-1.231", "from_scale": 3, "to_scale": 2, "rounding": "ceiling" },
+      "expected": { "ok": true, "value": "-1.23" }
+    },
+    {
+      "id": "DR-010",
+      "profile": "directed-toward-zero-negative",
+      "input": { "value": "-1.239", "from_scale": 3, "to_scale": 2, "rounding": "toward_zero" },
+      "expected": { "ok": true, "value": "-1.23" }
+    },
+    {
+      "id": "DR-011",
+      "profile": "lossless-scale-increase",
+      "input": { "value": "1.20", "from_scale": 2, "to_scale": 4, "rounding": "exact" },
+      "expected": { "ok": true, "value": "1.2000" }
+    },
+    {
+      "id": "DR-012",
+      "profile": "lossless-mode-canonicalization",
+      "input": { "value": "1.20", "from_scale": 2, "to_scale": 4, "rounding": "half_even" },
+      "expected": { "ok": false, "code": "lossless-decimal-rescale-requires-exact" }
+    },
+    {
+      "id": "DR-013",
+      "profile": "arbitrary-precision-coefficient",
+      "input": { "value": "123456789012345678901234567890.555", "from_scale": 3, "to_scale": 2, "rounding": "half_even" },
+      "expected": { "ok": true, "value": "123456789012345678901234567890.56" }
+    }
+  ]
+}

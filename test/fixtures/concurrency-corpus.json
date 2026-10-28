@@ -1,0 +1,20 @@
+{
+  "schema": "re.concurrency-corpus@0.1.0",
+  "status": "executable-contract",
+  "cases": [
+    {"id":"PAR-001","shape":"disjoint-write","expected":"accept-par"},
+    {"id":"PAR-002","shape":"same-resource-read-read","expected":"accept-par"},
+    {"id":"PAR-003","shape":"same-resource-read-write","expected":"reject-parallel-resource-conflict"},
+    {"id":"PAR-004","shape":"parent-child-write","expected":"reject-parallel-resource-conflict"},
+    {"id":"PAR-005","shape":"unknown-key-write","expected":"reject-parallel-resource-conflict"},
+    {"id":"PAR-006","shape":"unordered-branch-effects","expected":"reject-unordered-effects-in-par-branch"},
+    {"id":"PAR-007","shape":"detached-task","expected":"reject-unexpected-par-region-field"},
+    {"id":"PAR-008","shape":"relative-timeout","expected":"reject-unexpected-par-region-field"},
+    {"id":"PAR-009","shape":"child-handle-escape","expected":"reject-child-resource-escape"},
+    {"id":"PAR-010","shape":"program-error-value","expected":"accept-par"},
+    {"id":"PAR-011","shape":"projected-control-path","expected":"accept-par"},
+    {"id":"PAR-012","shape":"unprojected-match-effect-path","expected":"reject-unprojected-match-effect-path"},
+    {"id":"PAR-013","shape":"branch-uid-anchors","expected":"accept-par"},
+    {"id":"PAR-014","shape":"duplicate-branch-uid-anchor","expected":"reject-duplicate-par-branch-identity"}
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "candidates": [
+    {
+      "id": "node-reference",
+      "role": "semantic-reference"
+    },
+    {
+      "id": "standalone-c11",
+      "role": "portable-native-candidate"
+    },
+    {
+      "id": "llvm-aot",
+      "role": "external-native-candidate"
+    },
+    {
+      "id": "cranelift",
+      "role": "external-native-candidate"
+    }
+  ],
+  "domains": [
+    {
+      "id": "execution",
+      "workload_count": 9
+    },
+    {
+      "id": "minimal-std",
+      "workload_count": 12
+    },
+    {
+      "id": "fault",
+      "workload_count": 13
+    },
+    {
+      "id": "task-lifecycle",
+      "workload_count": 14
+    }
+  ],
+  "performance_profile": {
+    "metrics": [
+      {
+        "comparator": "max",
+        "id": "cold_start_ns",
+        "threshold": 5000000000
+      },
+      {
+        "comparator": "max",
+        "id": "p99_ns",
+        "threshold": 2000000000
+      },
+      {
+        "comparator": "max",
+        "id": "peak_rss_bytes",
+        "threshold": 1073741824
+      },
+      {
+        "comparator": "min",
+        "id": "throughput_ops_sec",
+        "threshold": 1
+      }
+    ],
+    "required_sample_count": 5,
+    "warmup": "candidate-defined-but-versioned",
+    "workload_profile": "frozen-standalone-four-domain-suite"
+  },
+  "profile": "re.standalone-semantic-performance-hard-gate@0.1.0",
+  "schema": "re.standalone-semantic-performance-hard-gate-policy@0.1.0",
+  "semantic_budgets": [
+    {
+      "comparator": "max",
+      "id": "semantic_mismatch_count",
+      "threshold": 0
+    },
+    {
+      "comparator": "max",
+      "id": "artifact_mismatch_count",
+      "threshold": 0
+    },
+    {
+      "comparator": "max",
+      "id": "receipt_mismatch_count",
+      "threshold": 0
+    },
+    {
+      "comparator": "max",
+      "id": "error_mismatch_count",
+      "threshold": 0
+    }
+  ]
+}

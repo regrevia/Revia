@@ -117,7 +117,7 @@ try {
     exit 69
   }
 
-  $Repository = if ($env:REVIA_REPOSITORY) { $env:REVIA_REPOSITORY } else { 'tangshuang631/Revia' }
+  $Repository = if ($env:REVIA_REPOSITORY) { $env:REVIA_REPOSITORY } else { 'regrevia/Revia' }
   $ReleaseBaseUrl = if ($env:REVIA_RELEASE_BASE_URL) {
     $env:REVIA_RELEASE_BASE_URL.TrimEnd('/')
   } else {

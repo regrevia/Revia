@@ -1,0 +1,342 @@
+{
+  "agents": [
+    {
+      "agent": "agent.expense.intake",
+      "error_type": {
+        "arguments": [],
+        "declaration_digest": "sha256:2089f8715c2cea08461b985470bc7b846c34fa6d418017f37879aab67550e2f2",
+        "kind": "declared"
+      },
+      "events": [
+        "ready",
+        "task_started",
+        "approval_required",
+        "approval_granted",
+        "transient_failure",
+        "retry_due",
+        "task_succeeded",
+        "task_failed",
+        "cancel_requested",
+        "cancelled",
+        "shutdown"
+      ],
+      "identity_type": {
+        "arguments": [],
+        "declaration_digest": "sha256:d9caa6704bafcf84bdaf72a1f97062c1cfab592ed427d3bf8332d7b3fee8e2b5",
+        "kind": "declared"
+      },
+      "initial_state": "created",
+      "input_type": {
+        "arguments": [],
+        "declaration_digest": "sha256:4591984d6746485ac6a0501ab798606c74bd39802b501714f907cdc2363c4068",
+        "kind": "declared"
+      },
+      "module": "agent.expense.intake",
+      "output_type": {
+        "arguments": [],
+        "declaration_digest": "sha256:24b4bb66798b40ec6b8025e36270234cf1bcaab8bdac789779b3c12e056849c5",
+        "kind": "declared"
+      },
+      "retryable_states": [
+        "retry_wait"
+      ],
+      "schema": "re.agent-contract@0.1.0",
+      "states": [
+        "created",
+        "ready",
+        "running",
+        "waiting_approval",
+        "retry_wait",
+        "cancelling",
+        "succeeded",
+        "failed",
+        "cancelled",
+        "stopped"
+      ],
+      "terminal_states": [
+        {
+          "outcome": "cancelled",
+          "state": "cancelled"
+        },
+        {
+          "outcome": "failed",
+          "state": "failed"
+        },
+        {
+          "outcome": "stopped",
+          "state": "stopped"
+        },
+        {
+          "outcome": "succeeded",
+          "state": "succeeded"
+        }
+      ],
+      "transitions": [
+        {
+          "event": "ready",
+          "from": "created",
+          "to": "ready"
+        },
+        {
+          "event": "shutdown",
+          "from": "created",
+          "to": "stopped"
+        },
+        {
+          "event": "cancel_requested",
+          "from": "ready",
+          "to": "cancelling"
+        },
+        {
+          "event": "shutdown",
+          "from": "ready",
+          "to": "stopped"
+        },
+        {
+          "event": "task_started",
+          "from": "ready",
+          "to": "running"
+        },
+        {
+          "event": "approval_required",
+          "from": "running",
+          "to": "waiting_approval"
+        },
+        {
+          "event": "cancel_requested",
+          "from": "running",
+          "to": "cancelling"
+        },
+        {
+          "event": "task_failed",
+          "from": "running",
+          "to": "failed"
+        },
+        {
+          "event": "task_succeeded",
+          "from": "running",
+          "to": "succeeded"
+        },
+        {
+          "event": "transient_failure",
+          "from": "running",
+          "to": "retry_wait"
+        },
+        {
+          "event": "approval_granted",
+          "from": "waiting_approval",
+          "to": "running"
+        },
+        {
+          "event": "cancel_requested",
+          "from": "waiting_approval",
+          "to": "cancelling"
+        },
+        {
+          "event": "cancel_requested",
+          "from": "retry_wait",
+          "to": "cancelling"
+        },
+        {
+          "event": "retry_due",
+          "from": "retry_wait",
+          "to": "ready"
+        },
+        {
+          "event": "cancelled",
+          "from": "cancelling",
+          "to": "cancelled"
+        }
+      ]
+    }
+  ],
+  "allowed_capabilities": [
+    "db.read@0.1.0",
+    "db.write@0.1.0",
+    "http.request@0.1.0"
+  ],
+  "modules": [
+    {
+      "name": "agent.expense.domain",
+      "path": "modules/domain.re",
+      "source_sha256": "sha256:b3d6c06641231a33384c692eb05f733145e0993603f00682478ca642cdd998be"
+    },
+    {
+      "name": "agent.expense.policy",
+      "path": "modules/policy.re",
+      "source_sha256": "sha256:99832f7bba4e1b3d6684be01b54242722c0bcfcc7b8031b0c586b0bac7a2d887"
+    },
+    {
+      "name": "agent.expense.persistence",
+      "path": "modules/persistence.re",
+      "source_sha256": "sha256:205a0115151e4b8f8419d8a951f439983c3ccaf2d75dadd0b899121beff60eac"
+    },
+    {
+      "name": "agent.expense.intake",
+      "path": "modules/intake.re",
+      "source_sha256": "sha256:6e42574111d1300869416bd836cfc742076746dd9301fd82c892552213de2393"
+    },
+    {
+      "name": "agent.expense.approval",
+      "path": "modules/approval.re",
+      "source_sha256": "sha256:21f972df61d8c3bcafb4554fbf8f1757c6305340f71f8635730235e5159f00d9"
+    },
+    {
+      "name": "agent.expense.api",
+      "path": "modules/api.re",
+      "source_sha256": "sha256:75309ffb4b367ae360c70458d3511f40044f0d19c28485773e499212ccfd9dbb"
+    }
+  ],
+  "package_manifest": {
+    "external_interfaces": [],
+    "modules": [
+      {
+        "implementation_digest": "sha256:b3d6c06641231a33384c692eb05f733145e0993603f00682478ca642cdd998be",
+        "interface": {
+          "dependencies": [],
+          "exports": [
+            {
+              "contract_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "kind": "function",
+              "name": "expense"
+            }
+          ],
+          "module": "agent.expense.domain",
+          "schema": "re.module-interface@0.1.0"
+        },
+        "interface_digest": "sha256:63a55e339472c7a44d4032f79c328a78400703c169cde25264efebd38c901005",
+        "name": "agent.expense.domain"
+      },
+      {
+        "implementation_digest": "sha256:99832f7bba4e1b3d6684be01b54242722c0bcfcc7b8031b0c586b0bac7a2d887",
+        "interface": {
+          "dependencies": [
+            {
+              "binding": "domain",
+              "interface_digest": "sha256:63a55e339472c7a44d4032f79c328a78400703c169cde25264efebd38c901005",
+              "module": "agent.expense.domain",
+              "scope": "package"
+            }
+          ],
+          "exports": [
+            {
+              "contract_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "kind": "function",
+              "name": "decide"
+            }
+          ],
+          "module": "agent.expense.policy",
+          "schema": "re.module-interface@0.1.0"
+        },
+        "interface_digest": "sha256:151064aa4524d1159b35797aea42f8aca77ba7f13f1d18cc7a7869820fcbc7ec",
+        "name": "agent.expense.policy"
+      },
+      {
+        "implementation_digest": "sha256:205a0115151e4b8f8419d8a951f439983c3ccaf2d75dadd0b899121beff60eac",
+        "interface": {
+          "dependencies": [
+            {
+              "binding": "policy",
+              "interface_digest": "sha256:151064aa4524d1159b35797aea42f8aca77ba7f13f1d18cc7a7869820fcbc7ec",
+              "module": "agent.expense.policy",
+              "scope": "package"
+            }
+          ],
+          "exports": [
+            {
+              "contract_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "kind": "function",
+              "name": "save"
+            }
+          ],
+          "module": "agent.expense.persistence",
+          "schema": "re.module-interface@0.1.0"
+        },
+        "interface_digest": "sha256:25f63094b5bc67efb831c60b7cdcc8268c6ec02125554d58c24610cafe1a353e",
+        "name": "agent.expense.persistence"
+      },
+      {
+        "implementation_digest": "sha256:6e42574111d1300869416bd836cfc742076746dd9301fd82c892552213de2393",
+        "interface": {
+          "dependencies": [
+            {
+              "binding": "persistence",
+              "interface_digest": "sha256:25f63094b5bc67efb831c60b7cdcc8268c6ec02125554d58c24610cafe1a353e",
+              "module": "agent.expense.persistence",
+              "scope": "package"
+            }
+          ],
+          "exports": [
+            {
+              "contract_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "kind": "function",
+              "name": "accept"
+            }
+          ],
+          "module": "agent.expense.intake",
+          "schema": "re.module-interface@0.1.0"
+        },
+        "interface_digest": "sha256:32cf7bbb15a48c1677520e314a6e9d911c3c1e3e5f3f6417fdceb731d76d8d9e",
+        "name": "agent.expense.intake"
+      },
+      {
+        "implementation_digest": "sha256:21f972df61d8c3bcafb4554fbf8f1757c6305340f71f8635730235e5159f00d9",
+        "interface": {
+          "dependencies": [
+            {
+              "binding": "intake",
+              "interface_digest": "sha256:32cf7bbb15a48c1677520e314a6e9d911c3c1e3e5f3f6417fdceb731d76d8d9e",
+              "module": "agent.expense.intake",
+              "scope": "package"
+            }
+          ],
+          "exports": [
+            {
+              "contract_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+              "kind": "function",
+              "name": "approve"
+            }
+          ],
+          "module": "agent.expense.approval",
+          "schema": "re.module-interface@0.1.0"
+        },
+        "interface_digest": "sha256:065612927ac2a2fb067f27955f13e8d2ed5d3b22b041aa49317570079aab4277",
+        "name": "agent.expense.approval"
+      },
+      {
+        "implementation_digest": "sha256:75309ffb4b367ae360c70458d3511f40044f0d19c28485773e499212ccfd9dbb",
+        "interface": {
+          "dependencies": [
+            {
+              "binding": "approval",
+              "interface_digest": "sha256:065612927ac2a2fb067f27955f13e8d2ed5d3b22b041aa49317570079aab4277",
+              "module": "agent.expense.approval",
+              "scope": "package"
+            }
+          ],
+          "exports": [
+            {
+              "contract_digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+              "kind": "function",
+              "name": "serve"
+            }
+          ],
+          "module": "agent.expense.api",
+          "schema": "re.module-interface@0.1.0"
+        },
+        "interface_digest": "sha256:ca46f6245f3b81f43e401627289e5c072f9e7d6b4a78c50652381b2c1ab1998a",
+        "name": "agent.expense.api"
+      }
+    ],
+    "package": "agent.expense",
+    "schema": "re.package-manifest@0.1.0"
+  },
+  "resources": [
+    {
+      "alias": "expense_db",
+      "key": "expense_db",
+      "uid": "ggggggggggggggggggggggggge"
+    }
+  ],
+  "schema": "re.project-manifest@0.1.0"
+}

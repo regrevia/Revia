@@ -1,0 +1,44 @@
+{
+  "schema": "re.task-runtime-lifecycle-corpus@0.1.0",
+  "contract": {
+    "agent": "agent.expense.intake",
+    "backoff_ms": [10, 20],
+    "checkpoint": {
+      "fields": ["revision", "input_digest", "cursor"],
+      "revision_field": "revision",
+      "schema": "re.task-checkpoint@0.1.0"
+    },
+    "error_type": {"kind": "type", "name": "agent.expense.error"},
+    "input_type": {"kind": "type", "name": "agent.expense.request"},
+    "max_attempts": 3,
+    "module": "agent.expense.intake",
+    "node_uid": "aaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "output_type": {"kind": "type", "name": "agent.expense.result"},
+    "retryable_errors": ["conflict", "timeout"],
+    "schema": "re.task-contract@0.1.0"
+  },
+  "request": {
+    "agent": "agent.expense.intake",
+    "idempotency_key": "expense-001",
+    "input": {"amount": 1200, "currency": "CNY"},
+    "module": "agent.expense.intake",
+    "node_uid": "aaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "revision": "project-rev-1"
+  },
+  "scenarios": [
+    {"id": "success-resource-close", "kind": "success-resource-close"},
+    {"id": "retry-transient-success", "kind": "retry-transient-success"},
+    {"id": "permanent-error", "kind": "permanent-error"},
+    {"id": "replay-existing-effect", "kind": "replay-existing-effect"},
+    {"id": "cancel-before-start", "kind": "cancel-before-start"},
+    {"id": "parent-already-aborted", "kind": "parent-already-aborted"},
+    {"id": "timeout-late-effect", "kind": "timeout-late-effect"},
+    {"id": "parent-wins-timeout", "kind": "parent-wins-timeout"},
+    {"id": "performer-host-fault", "kind": "performer-host-fault"},
+    {"id": "stale-checkpoint", "kind": "stale-checkpoint"},
+    {"id": "resource-close-fault", "kind": "resource-close-fault"},
+    {"id": "cleanup-first-fault", "kind": "cleanup-first-fault"},
+    {"id": "listener-setup-fault", "kind": "listener-setup-fault"},
+    {"id": "timer-setup-fault", "kind": "timer-setup-fault"}
+  ]
+}

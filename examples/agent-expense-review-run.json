@@ -1,0 +1,9 @@
+{
+  "case": "agent.expense.intake.default",
+  "graph_revision": "sha256:d4099ef70fe7123c1e40a490f30643925b1f32746b1873ac12d184f603c5e856",
+  "run": {
+    "cancel_at": null,
+    "replay": true
+  },
+  "schema": "re.project-run-selection@0.1.0"
+}

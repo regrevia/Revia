@@ -102,10 +102,10 @@ private source, and local answer keys out of the PR.
 
 ## Current Boundary / 当前边界
 
-The public repository exposes a bounded source-closed preview. WP-307
-interface projection and generated-client work remains private and pending
-final review; this challenge does not claim a generated client, complete HTTP,
-A2A, MCP, browser, or production backend.
+The historical RC binary exposes a bounded preview. The source repository now
+includes interface-projection code, but the RC1 binary does not contain that
+later implementation. This challenge does not claim complete HTTP, A2A, MCP,
+browser, or production-backend support.
 
-公开仓库是有界的闭源预览。WP-307 接口投影与生成客户端工作仍在私有仓库中，等待最终审阅；
-本挑战不宣称生成客户端、完整 HTTP、A2A、MCP、Browser 或生产后端已经完成。
+历史 RC 二进制提供的是有界预览。当前源码仓库已包含接口投影实现，但 RC1 二进制不包含
+该后续实现。本挑战不宣称完整 HTTP、A2A、MCP、Browser 或生产后端已经完成。

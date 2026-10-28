@@ -34,7 +34,7 @@ EOF
 
 BASE=$(mktemp -d "${TMPDIR:-/tmp}/revia-rc1-assets.XXXXXX")
 trap 'rm -rf "$BASE"' EXIT HUP INT TERM
-REPO=${GITHUB_REPOSITORY:-tangshuang631/Revia}
+REPO=${GITHUB_REPOSITORY:-regrevia/Revia}
 release=$(gh release view "$TAG" --repo "$REPO" --json isDraft,isPrerelease,tagName,assets)
 printf '%s' "$release" | jq -e --arg tag "$TAG" \
   '.isDraft == true and .isPrerelease == true and .tagName == $tag and (.assets | length == 12)' >/dev/null \

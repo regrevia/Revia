@@ -1,0 +1,448 @@
+{
+  "schema": "re.server-profile-conformance@0.1.0",
+  "config_vectors": [
+    {
+      "id": "CONFIG-001",
+      "values": [["app.mode", "production"]],
+      "key": "app.mode",
+      "expected": {"kind": "value", "value": {"kind": "ok", "value": "production"}}
+    },
+    {
+      "id": "CONFIG-002",
+      "values": [],
+      "key": "missing",
+      "expected": {"kind": "value", "value": {"error": {"type": "config.read_error", "variant": "not_found"}, "kind": "err"}}
+    },
+    {
+      "id": "CONFIG-003",
+      "unavailable": true,
+      "values": [["app.mode", "production"]],
+      "key": "app.mode",
+      "expected": {"kind": "value", "value": {"error": {"type": "config.read_error", "variant": "unavailable"}, "kind": "err"}}
+    }
+  ],
+  "clock_vectors": [
+    {
+      "id": "CLOCK-001",
+      "instants": [100, 100, 101],
+      "expected": [100, 100, 101]
+    },
+    {
+      "id": "CLOCK-002",
+      "instants": [],
+      "expected_error": "unavailable"
+    }
+  ],
+  "random_vectors": [
+    {
+      "id": "RANDOM-001",
+      "chunks_hex": ["00ff10", ""],
+      "requests": [
+        {"length": 3, "expected_hex": "00ff10"},
+        {"length": 0, "expected_hex": ""}
+      ]
+    },
+    {
+      "id": "RANDOM-002",
+      "chunks_hex": [],
+      "requests": [
+        {"length": 4, "expected_error": "unavailable"}
+      ]
+    },
+    {
+      "id": "RANDOM-003",
+      "chunks_hex": [],
+      "requests": [
+        {"length": -1, "expected_error": "invalid_length"}
+      ]
+    }
+  ],
+  "secret_vectors": [
+    {
+      "id": "SECRET-001",
+      "values_hex": [["api.token", "736563726574"]],
+      "name": "api.token",
+      "expected_hex": "736563726574"
+    },
+    {
+      "id": "SECRET-002",
+      "values_hex": [],
+      "name": "missing",
+      "expected_error": "not_found"
+    },
+    {
+      "id": "SECRET-003",
+      "unavailable": true,
+      "values_hex": [["api.token", "736563726574"]],
+      "name": "api.token",
+      "expected_error": "unavailable"
+    }
+  ],
+  "log_vectors": [
+    {
+      "id": "LOG-001",
+      "entries": [
+        {
+          "level": "info",
+          "message": "ready",
+          "node_uid": "3kf2a2bc4de6fg7h2j4km6np7q",
+          "task_id": "request-main",
+          "attempt": 1,
+          "request_correlation": "req-42"
+        },
+        {
+          "level": "error",
+          "message": "failed",
+          "node_uid": "3kf2a2bc4de6fg7h2j4km6np7r",
+          "task_id": "request-main",
+          "attempt": 2,
+          "request_correlation": "req-42"
+        }
+      ]
+    },
+    {
+      "id": "LOG-002",
+      "unavailable": true,
+      "entries": [
+        {
+          "level": "warn",
+          "message": "dropped",
+          "node_uid": "3kf2a2bc4de6fg7h2j4km6np7s",
+          "task_id": "request-main",
+          "attempt": 1,
+          "request_correlation": "req-43"
+        }
+      ],
+      "expected_error": "unavailable"
+    }
+  ],
+  "trace_vectors": [
+    {
+      "id": "TRACE-001",
+      "events": [
+        {
+          "event": "request.start",
+          "span_id": "span-1",
+          "parent_span_id": "",
+          "node_uid": "3kf2a2bc4de6fg7h2j4km6np7q",
+          "task_id": "request-main",
+          "attempt": 1,
+          "request_correlation": "req-42"
+        }
+      ]
+    },
+    {
+      "id": "TRACE-002",
+      "unavailable": true,
+      "events": [
+        {
+          "event": "request.end",
+          "span_id": "span-1",
+          "parent_span_id": "",
+          "node_uid": "3kf2a2bc4de6fg7h2j4km6np7r",
+          "task_id": "request-main",
+          "attempt": 1,
+          "request_correlation": "req-42"
+        }
+      ],
+      "expected_error": "unavailable"
+    }
+  ],
+  "json_vectors": [
+    {
+      "id": "JSON-001",
+      "schemas": [
+        {
+          "reference": "example.record@0.1.0",
+          "encode": [
+            [
+              "{\"name\":\"Ada\",\"age\":37}",
+              "{\"age\":37,\"name\":\"Ada\"}"
+            ]
+          ],
+          "decode": [
+            [
+              "{\"age\":37,\"name\":\"Ada\"}",
+              "{\"name\":\"Ada\",\"age\":37}"
+            ]
+          ]
+        }
+      ],
+      "operations": [
+        {
+          "member": "encode",
+          "schema": "example.record@0.1.0",
+          "input": "{\"name\":\"Ada\",\"age\":37}",
+          "output": "{\"age\":37,\"name\":\"Ada\"}"
+        },
+        {
+          "member": "decode",
+          "schema": "example.record@0.1.0",
+          "input": "{\"age\":37,\"name\":\"Ada\"}",
+          "output": "{\"name\":\"Ada\",\"age\":37}"
+        }
+      ]
+    },
+    {
+      "id": "JSON-002",
+      "schemas": [
+        {
+          "reference": "example.record@0.1.0",
+          "encode": [],
+          "decode": []
+        }
+      ],
+      "operations": [
+        {
+          "member": "encode",
+          "schema": "unknown@0.1.0",
+          "input": "{\"name\":\"Ada\"}",
+          "expected_error": "invalid_schema"
+        },
+        {
+          "member": "decode",
+          "schema": "example.record@0.1.0",
+          "input": "{not-json}",
+          "expected_error": "invalid_json"
+        }
+      ]
+    },
+    {
+      "id": "JSON-003",
+      "unavailable": true,
+      "schemas": [
+        {
+          "reference": "example.record@0.1.0",
+          "encode": [],
+          "decode": []
+        }
+      ],
+      "operations": [
+        {
+          "member": "encode",
+          "schema": "example.record@0.1.0",
+          "input": "{\"name\":\"Ada\"}",
+          "expected_error": "unavailable"
+        }
+      ]
+    }
+  ],
+  "http_client_vectors": [
+    {
+      "id": "HTTP-001",
+      "responses": [
+        {
+          "request": {
+            "body_hex": "",
+            "deadline": 5000,
+            "headers": "accept:application/json\nx-request-id:req-1",
+            "method": "GET",
+            "redirect_policy": "follow",
+            "url": "https://api.example.test/users"
+          },
+          "outcome": "{\"status\":200,\"body\":\"[{\\\"id\\\":1}]\"}"
+        }
+      ],
+      "requests": [
+        {
+          "body_hex": "",
+          "deadline": 5000,
+          "headers": "accept:application/json\nx-request-id:req-1",
+          "method": "GET",
+          "redirect_policy": "follow",
+          "url": "https://api.example.test/users",
+          "response": "{\"status\":200,\"body\":\"[{\\\"id\\\":1}]\"}"
+        }
+      ]
+    },
+    {
+      "id": "HTTP-002",
+      "responses": [
+        {
+          "request": {
+            "body_hex": "",
+            "deadline": 10,
+            "headers": "",
+            "method": "GET",
+            "redirect_policy": "follow",
+            "url": "https://api.example.test/slow"
+          },
+          "outcome": {
+            "error": "deadline_exceeded"
+          }
+        },
+        {
+          "request": {
+            "body_hex": "",
+            "deadline": 1000,
+            "headers": "",
+            "method": "GET",
+            "redirect_policy": "reject",
+            "url": "https://api.example.test/redirect"
+          },
+          "outcome": {
+            "error": "redirect_rejected"
+          }
+        }
+      ],
+      "requests": [
+        {
+          "body_hex": "7b7d",
+          "deadline": 1000,
+          "headers": "",
+          "method": "POST",
+          "redirect_policy": "reject",
+          "url": "https://api.example.test/users",
+          "expected_error": "invalid_request"
+        },
+        {
+          "body_hex": "",
+          "deadline": 10,
+          "headers": "",
+          "method": "GET",
+          "redirect_policy": "follow",
+          "url": "https://api.example.test/slow",
+          "expected_error": "deadline_exceeded"
+        },
+        {
+          "body_hex": "",
+          "deadline": 1000,
+          "headers": "",
+          "method": "GET",
+          "redirect_policy": "reject",
+          "url": "https://api.example.test/redirect",
+          "expected_error": "redirect_rejected"
+        }
+      ]
+    },
+    {
+      "id": "HTTP-003",
+      "unavailable": true,
+      "responses": [],
+      "requests": [
+        {
+          "body_hex": "",
+          "deadline": 5000,
+          "headers": "",
+          "method": "GET",
+          "redirect_policy": "follow",
+          "url": "https://api.example.test/users",
+          "expected_error": "unavailable"
+        }
+      ]
+    }
+  ],
+  "db_sql_vectors": [
+    {
+      "id": "SQL-001",
+      "transactions": ["tx-1"],
+      "outcomes": [
+        {
+          "member": "query",
+          "database": "main",
+          "transaction": "tx-1",
+          "statement": "select name from users where id = ?",
+          "bound_parameters_hex": "5b315d",
+          "outcome": "[{\"name\":\"Ada\"}]"
+        },
+        {
+          "member": "execute",
+          "database": "main",
+          "transaction": "tx-1",
+          "statement": "update users set name = ? where id = ?",
+          "bound_parameters_hex": "5b22416461222c315d",
+          "outcome": 1
+        }
+      ],
+      "steps": [
+        {
+          "member": "begin",
+          "database": "main",
+          "expected": "tx-1"
+        },
+        {
+          "member": "query",
+          "database": "main",
+          "transaction": "tx-1",
+          "statement": "select name from users where id = ?",
+          "bound_parameters_hex": "5b315d",
+          "expected": "[{\"name\":\"Ada\"}]"
+        },
+        {
+          "member": "execute",
+          "database": "main",
+          "transaction": "tx-1",
+          "statement": "update users set name = ? where id = ?",
+          "bound_parameters_hex": "5b22416461222c315d",
+          "expected": 1
+        },
+        {
+          "member": "commit",
+          "database": "main",
+          "transaction": "tx-1",
+          "expected_unit": true
+        },
+        {
+          "member": "query",
+          "database": "main",
+          "transaction": "tx-1",
+          "statement": "select name from users where id = ?",
+          "bound_parameters_hex": "5b315d",
+          "expected_error": "invalid_transaction"
+        }
+      ]
+    },
+    {
+      "id": "SQL-002",
+      "transactions": ["tx-conflict"],
+      "commit_conflicts": ["tx-conflict"],
+      "outcomes": [],
+      "steps": [
+        {
+          "member": "begin",
+          "database": "main",
+          "expected": "tx-conflict"
+        },
+        {
+          "member": "query",
+          "database": "main",
+          "transaction": "tx-conflict",
+          "statement": "select missing",
+          "bound_parameters_hex": "",
+          "expected_error": "invalid_statement"
+        },
+        {
+          "member": "commit",
+          "database": "main",
+          "transaction": "tx-conflict",
+          "expected_error": "conflict"
+        },
+        {
+          "member": "rollback",
+          "database": "main",
+          "transaction": "tx-conflict",
+          "expected_unit": true
+        },
+        {
+          "member": "commit",
+          "database": "main",
+          "transaction": "tx-conflict",
+          "expected_error": "invalid_transaction"
+        }
+      ]
+    },
+    {
+      "id": "SQL-003",
+      "transactions": ["tx-unavailable"],
+      "outcomes": [],
+      "unavailable": true,
+      "steps": [
+        {
+          "member": "begin",
+          "database": "main",
+          "expected_error": "unavailable"
+        }
+      ]
+    }
+  ]
+}
