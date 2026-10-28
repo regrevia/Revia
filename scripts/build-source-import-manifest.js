@@ -62,6 +62,7 @@ const EXPLICIT_PATHS = [
   'scripts/run-module-artifact-cache-benchmark.js',
   'scripts/run-native-runtime-abi.js',
   'scripts/run-portable-conformance-matrix.js',
+  'scripts/portable-conformance-evidence-store.js',
   'scripts/run-portable-execution-hard-gate.js',
   'scripts/run-portable-executor-benchmark.js',
   'scripts/run-portable-fault-protocol-benchmark.js',
