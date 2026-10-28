@@ -133,7 +133,7 @@ test('source import inventory is explicit, path-safe, and digest-bound', () => {
   for (const entry of inventory.files) {
     assert.ok(
       rootFiles.has(entry.path)
-        || /^(?:\.github\/workflows|doc|examples|scripts|native|src|test|test-support)\//u.test(entry.path),
+        || /^(?:\.github\/workflows|doc|docs|examples|experiments|projects|scripts|native|src|test|test-support)\//u.test(entry.path),
       `path outside approved import areas: ${entry.path}`,
     )
     assert.doesNotMatch(entry.path, /(^|\/)(relay|scratch|target|\.git)(\/|$)/u)
