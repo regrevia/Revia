@@ -1813,8 +1813,10 @@ fn decode_capability_hex(value: &str) -> Result<Vec<u8>, String> {
     let hex = value
         .strip_prefix("hex:")
         .ok_or_else(|| "native-capability-comparison-sandbox-invalid".to_owned())?;
-    hex.as_bytes()
-        .chunks_exact(2)
+    let (pairs, remainder) = hex.as_bytes().as_chunks::<2>();
+    debug_assert!(remainder.is_empty());
+    pairs
+        .iter()
         .map(|pair| {
             let text = std::str::from_utf8(pair)
                 .map_err(|_| "native-capability-comparison-sandbox-invalid".to_owned())?;
