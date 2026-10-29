@@ -12,7 +12,7 @@ use crate::{
 pub const RELEASE_CANDIDATE_SCHEMA: &str = "re.native-release-candidate@0.1.0";
 pub const RELEASE_LOCK_SCHEMA: &str = "re.native-release-lock@0.1.0";
 pub const RELEASE_MATRIX_SCHEMA: &str = "re.native-release-matrix@0.1.0";
-pub const RELEASE_VERSION: &str = "1.0.0-rc.2.2";
+pub const RELEASE_VERSION: &str = "1.0.0-rc.2.2.1";
 
 const NOTICE: &[u8] =
     b"Revia native release candidate\n\nThis artifact is built from the public Revia source tree. It remains a preview candidate and is not a Stable V1.0 release.\n";

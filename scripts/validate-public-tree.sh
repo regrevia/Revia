@@ -44,9 +44,10 @@ assert.equal(
   '598c836cc8838ab3cdbc66a36ee350aa05ed67d1c9e9cedbb5862751e716ab71',
 )
 NODE
-elif [ "$VERSION" = '1.0.0-rc.2.1' ] || [ "$VERSION" = '1.0.0-rc.2.2' ]; then
+elif [ "$VERSION" = '1.0.0-rc.2.1' ] || [ "$VERSION" = '1.0.0-rc.2.2' ] || [ "$VERSION" = '1.0.0-rc.2.2.1' ]; then
 RC_ROOT='runtime/rc2.1'
 [ "$VERSION" = '1.0.0-rc.2.2' ] && RC_ROOT='runtime/rc2.2'
+[ "$VERSION" = '1.0.0-rc.2.2.1' ] && RC_ROOT='runtime/rc2.2.1'
 REVIA_RC_ROOT="$RC_ROOT" \
 REVIA_EXPECTED_VERSION="$VERSION" \
 node --input-type=module <<'NODE'

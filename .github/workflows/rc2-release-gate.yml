@@ -182,5 +182,6 @@ jobs:
           test "$(sha256sum linux.tar.gz | awk '{print $1}')" = "$expected"
           mkdir linux
           tar -xzf linux.tar.gz -C linux
+          chmod +x ./linux/revia
           ./linux/revia --version
 
