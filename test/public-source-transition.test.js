@@ -42,14 +42,12 @@ test('the RC1 license and sealed archive digests remain unchanged', () => {
     exportManifest.files.find(({ path }) => path === 'LICENSE-RC.md')?.sha256,
     digest(license),
   )
-  assert.match(
-    checksums,
-    /^fcc820a80fd893eff1500a5c36210affa056623c8a566a0cdd9f8c2a664cb556  revia-1\.0\.0-rc\.1-darwin-arm64\.tar\.gz$/mu,
-  )
-  assert.match(
-    checksums,
-    /^8680c8df50bec5cd0a6c0e2f421d0ea78e4fd4808cbf437f8c185906bde9eb4d  revia-1\.0\.0-rc\.1-darwin-arm64$/mu,
-  )
+  assert.ok(checksums.includes(
+    'fcc820a80fd893eff1500a5c36210affa056623c8a566a0cdd9f8c2a664cb556  revia-1.0.0-rc.1-darwin-arm64.tar.gz',
+  ))
+  assert.ok(checksums.includes(
+    '8680c8df50bec5cd0a6c0e2f421d0ea78e4fd4808cbf437f8c185906bde9eb4d  revia-1.0.0-rc.1-darwin-arm64',
+  ))
 })
 
 test('current source documentation no longer describes the runtime as closed', () => {
