@@ -1,0 +1,16 @@
+{
+  "schema": "re.native-release-lock@0.1.0",
+  "version": "1.0.0-rc.2.1",
+  "target": "windows-x64",
+  "source_commit": "3a7c099152210f5556f0cb748547bcee515fd53b",
+  "artifact": {
+    "path": "revia.exe",
+    "sha256": "sha256:3b30599f8b748682f3403e1be6a34b3af617eea4496b7ac1a2c6d0666cdf6f36",
+    "size": 3462656
+  },
+  "execution": {
+    "windows_native_run": 40867766279,
+    "runner": "regrevia-win"
+  },
+  "status": "measured-native"
+}

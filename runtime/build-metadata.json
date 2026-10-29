@@ -1,18 +1,18 @@
 {
   "schema": "revia.public-build-metadata@1.0.0",
-  "release": "Revia 1.0.0-rc.2",
-  "candidate_manifest": "runtime/rc2/candidate-manifest.json",
-  "target_matrix": "runtime/rc2/target-matrix.json",
-  "evidence": "runtime/rc2/native-evidence.json",
+  "release": "Revia 1.0.0-rc.2.1",
+  "candidate_manifest": "runtime/rc2.1/candidate-manifest.json",
+  "target_matrix": "runtime/rc2.1/target-matrix.json",
+  "evidence": "runtime/rc2.1/native-evidence.json",
   "source_maps_included": false,
   "builds": [
     {
       "target": "windows-x64",
       "status": "measured-native",
-      "source_commit": "4f1ae6c9608ee614c79dd7876f8fb8243b7c3435",
-      "source_inventory_digest": "sha256:73d6f74381432ea99fc488702c69f8a9a87abbb4f22ec764be60553ebe52098c",
-      "archive_sha256": "sha256:f6f2a3a13e26152fb0f598b804e161eccb6d4e24f2b9d498ae8908f7fbe8fdd1b",
-      "binary_sha256": "sha256:5094bff4659b2d022432fea8d5fa88e4ba6a349804a23671f295a2e9f3190c1a"
+      "source_commit": "3a7c099152210f5556f0cb748547bcee515fd53b",
+      "source_inventory_digest": "sha256:2d6af7e4fdff9c2f333eec910211fec3ff81475c15bcb38b330b56e5e225c1ea",
+      "archive_sha256": "sha256:ea07d6aa3b688e7e03e737411cb4c598ba2436d9fbf13b9877ec2a4726ef8db8",
+      "binary_sha256": "sha256:3b30599f8b748682f3403e1be6a34b3af617eea4496b7ac1a2c6d0666cdf6f36"
     }
   ]
 }

@@ -1,4 +1,4 @@
 fcc820a80fd893eff1500a5c36210affa056623c8a566a0cdd9f8c2a664cb556  revia-1.0.0-rc.1-darwin-arm64.tar.gz
 8680c8df50bec5cd0a6c0e2f421d0ea78e4fd4808cbf437f8c185906bde9eb4d  revia-1.0.0-rc.1-darwin-arm64
-f6f2a3a13e26152fb0f598b804e161eccb6d4e24f2b9d498ae8908f7fbe8fdd1b  revia-1.0.0-rc.2-windows-x64.zip
-5094bff4659b2d022432fea8d5fa88e4ba6a349804a23671f295a2e9f3190c1a  revia-1.0.0-rc.2-windows-x64
+ea07d6aa3b688e7e03e737411cb4c598ba2436d9fbf13b9877ec2a4726ef8db8  revia-1.0.0-rc.2.1-windows-x64.zip
+3b30599f8b748682f3403e1be6a34b3af617eea4496b7ac1a2c6d0666cdf6f36  revia-1.0.0-rc.2.1-windows-x64

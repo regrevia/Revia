@@ -1,0 +1,9 @@
+{
+  "schema": "revia.public-multi-module-evidence@1.0.0",
+  "version": "1.0.0-rc.2.1",
+  "target": "windows-x64",
+  "status": "measured-native",
+  "source_commit": "3a7c099152210f5556f0cb748547bcee515fd53b",
+  "verification_run": 40867766279,
+  "scope": "native conformance suite on Windows x64; bounded evidence only"
+}

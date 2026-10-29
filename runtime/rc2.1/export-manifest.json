@@ -1,0 +1,66 @@
+{
+  "schema": "revia.public-rc-export@1.0.0",
+  "version": "1.0.0-rc.2.1",
+  "tag": "v1.0.0-rc.2.1",
+  "target": "windows-x64",
+  "status": "measured-native",
+  "source_commit": "3a7c099152210f5556f0cb748547bcee515fd53b",
+  "license_sha256": "sha256:7156f38141cf6c48c73802b181f3e309d9b13db71eb2a2feab0b5f50c1a414cf",
+  "files": [
+    {
+      "path": "LICENSE-RC.md",
+      "sha256": "sha256:7156f38141cf6c48c73802b181f3e309d9b13db71eb2a2feab0b5f50c1a414cf",
+      "size": 4350
+    },
+    {
+      "path": "NOTICE-RC.md",
+      "sha256": "sha256:d11ba7cfa744a8544f83e30f0b7b0798a9db0ab17a2862d61222303d33d3ce85",
+      "size": 621
+    },
+    {
+      "path": "checksums.txt",
+      "sha256": "sha256:c214710140cf634c036bb29e7e80e6e32ae5b0948f440e5b28a2242d247a988c",
+      "size": 397
+    },
+    {
+      "path": "candidate-manifest.json",
+      "sha256": "sha256:8c9ca63892c8eaac37841cd89d866493a9950a91dabb1ba25200d8e185866e37",
+      "size": 1237
+    },
+    {
+      "path": "capability-evidence.json",
+      "sha256": "sha256:f1f38e98c27891ff514cb5f546eb13a0632a02a9f14bf8a266cc514f04eb397c",
+      "size": 319
+    },
+    {
+      "path": "multi-module-evidence.json",
+      "sha256": "sha256:6b4c4005fab7352d96dcfd78596e87f2a32f8e5058c5326b5554da2d9d4bf252",
+      "size": 321
+    },
+    {
+      "path": "native-evidence.json",
+      "sha256": "sha256:6cfc47ef160b7ed9712e9ab2791155e34d231975463dd134e7ce01d38179187c",
+      "size": 782
+    },
+    {
+      "path": "release-lock.json",
+      "sha256": "sha256:7b1e6cf08508897ce4623513954865956a68b0ed8d497d6ae285123e03cbad6c",
+      "size": 442
+    },
+    {
+      "path": "server-evidence.json",
+      "sha256": "sha256:af528768acf10170321118ce002ce48958aadd714570518263b08db163debb2f",
+      "size": 315
+    },
+    {
+      "path": "target-matrix.json",
+      "sha256": "sha256:b9d939c5ff63009f6e00a123907e34a8b313c6ab736c62da26bbe3becca5b2e5",
+      "size": 527
+    },
+    {
+      "path": "revia-1.0.0-rc.2.1-windows-x64.zip",
+      "sha256": "sha256:ea07d6aa3b688e7e03e737411cb4c598ba2436d9fbf13b9877ec2a4726ef8db8",
+      "size": 1224339
+    }
+  ]
+}
