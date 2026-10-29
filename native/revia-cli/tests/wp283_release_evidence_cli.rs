@@ -27,7 +27,8 @@ fn release_evidence_gate_runs_fresh_authorities_and_emits_exact_file() {
         "build the release binary before this test"
     );
 
-    let output = Command::new(&release_binary)
+    let mut command = Command::new(&release_binary);
+    command
         .current_dir(&repo_root)
         .args([
             "release-evidence-gate",
@@ -38,9 +39,21 @@ fn release_evidence_gate_runs_fresh_authorities_and_emits_exact_file() {
             evidence_path.to_str().unwrap(),
         ])
         .env_clear()
-        .env("PATH", &empty_path)
-        .output()
-        .unwrap();
+        .env("PATH", &empty_path);
+    #[cfg(windows)]
+    for key in [
+        "SystemRoot",
+        "WINDIR",
+        "SystemDrive",
+        "ComSpec",
+        "TEMP",
+        "TMP",
+    ] {
+        if let Some(value) = std::env::var_os(key) {
+            command.env(key, value);
+        }
+    }
+    let output = command.output().unwrap();
 
     assert!(
         output.status.success(),
