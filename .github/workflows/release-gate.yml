@@ -141,7 +141,7 @@ jobs:
   windows-x64-native:
     name: Gate Windows x64 asset on regrevia-win
     runs-on: [self-hosted, Windows, X64, regrevia-win]
-    timeout-minutes: 30
+    timeout-minutes: 15
     permissions:
       contents: read
     steps:

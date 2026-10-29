@@ -9,10 +9,10 @@ permissions:
   contents: read
 
 jobs:
-  windows-x64-native:
-    name: Windows x64 native source build
+  windows-x64-build:
+    name: Build and test Windows x64 native source
     if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
-    runs-on: [self-hosted, Windows, X64, regrevia-win]
+    runs-on: windows-2025
     timeout-minutes: 45
     steps:
       - name: Checkout trusted source
@@ -24,31 +24,23 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
-            throw 'cargo is not installed on regrevia-win'
-          }
-          if (-not (Get-Command rustc -ErrorAction SilentlyContinue)) {
-            throw 'rustc is not installed on regrevia-win'
-          }
-          if (-not (Get-Command rustup -ErrorAction SilentlyContinue)) {
-            throw 'rustup is not installed on regrevia-win'
-          }
+          if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) { throw 'cargo unavailable' }
+          if (-not (Get-Command rustc -ErrorAction SilentlyContinue)) { throw 'rustc unavailable' }
           $PSVersionTable
-          rustup toolchain install stable --profile minimal
-          rustc +stable --version
-          cargo +stable --version
+          rustc --version
+          cargo --version
 
       - name: Build native release binary
         shell: pwsh
         working-directory: native
-        run: cargo +stable build --workspace --release --locked
+        run: cargo build --workspace --release --locked
 
       - name: Run native workspace tests
         shell: pwsh
         working-directory: native
-        run: cargo +stable test --workspace --release --locked
+        run: cargo test --workspace --release --locked
 
-      - name: Verify Windows x64 native CLI
+      - name: Verify build target and record executable digest
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -64,16 +56,59 @@ jobs:
 
           $hash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
           "windows-x64 source-built executable sha256=$hash"
-
           & $exe --version
           if ($LASTEXITCODE -ne 0) { throw "version failed: $LASTEXITCODE" }
-
           & $exe --help
           if ($LASTEXITCODE -ne 0) { throw "help failed: $LASTEXITCODE" }
-
           & $exe check examples/hello.re
           if ($LASTEXITCODE -ne 0) { throw "check failed: $LASTEXITCODE" }
+          $manifest = & $exe manifest examples/hello.re | Out-String
+          if ($LASTEXITCODE -ne 0 -or $manifest -notmatch 'graph_revision') {
+            throw 'manifest smoke failed'
+          }
 
+      - name: Upload source-built Windows x64 executable
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4
+        with:
+          name: revia-windows-x64-source-build
+          if-no-files-found: error
+          path: native/target/release/revia.exe
+
+  windows-x64-bound-runner:
+    name: Execute Windows x64 binary on regrevia-win
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    needs: windows-x64-build
+    runs-on: [self-hosted, Windows, X64, regrevia-win]
+    timeout-minutes: 15
+    steps:
+      - name: Checkout trusted source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Download source-built Windows executable
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v4
+        with:
+          name: revia-windows-x64-source-build
+          path: incoming
+
+      - name: Execute source-built binary on bound Windows x64 node
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -ne 'X64') {
+            throw 'Windows x64 runner required'
+          }
+          $exe = 'incoming/revia.exe'
+          if (-not (Test-Path -LiteralPath $exe)) { throw 'source-built executable missing' }
+          $hash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          "regrevia-win executable sha256=$hash"
+          & $exe --version
+          if ($LASTEXITCODE -ne 0) { throw "version failed: $LASTEXITCODE" }
+          & $exe --help
+          if ($LASTEXITCODE -ne 0) { throw "help failed: $LASTEXITCODE" }
+          & $exe check examples/hello.re
+          if ($LASTEXITCODE -ne 0) { throw "check failed: $LASTEXITCODE" }
           $manifest = & $exe manifest examples/hello.re | Out-String
           if ($LASTEXITCODE -ne 0 -or $manifest -notmatch 'graph_revision') {
             throw 'manifest smoke failed'
