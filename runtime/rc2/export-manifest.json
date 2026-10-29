@@ -1,0 +1,61 @@
+{
+  "schema": "revia.public-rc-export@1.0.0",
+  "version": "1.0.0-rc.2",
+  "tag": "v1.0.0-rc.2",
+  "target": "windows-x64",
+  "status": "measured-native",
+  "source_commit": "4f1ae6c9608ee614c79dd7876f8fb8243b7c3435",
+  "license_sha256": "sha256:7156f38141cf6c48c73802b181f3e309d9b13db71eb2a2feab0b5f50c1a414cf",
+  "files": [
+    {
+      "path": "LICENSE-RC.md",
+      "sha256": "sha256:7156f38141cf6c48c73802b181f3e309d9b13db71eb2a2feab0b5f50c1a414cf",
+      "size": 4350
+    },
+    {
+      "path": "NOTICE-RC.md",
+      "sha256": "sha256:d11ba7cfa744a8544f83e30f0b7b0798a9db0ab17a2862d61222303d33d3ce85",
+      "size": 621
+    },
+    {
+      "path": "candidate-manifest.json",
+      "sha256": "sha256:67c31d283711ccd49c5715c9bfc3c0631352783df59ef20c7455c5d1e92b6dd8",
+      "size": 1227
+    },
+    {
+      "path": "capability-evidence.json",
+      "sha256": "sha256:17c1629cefc2262b5ab54a5e15c4f92cae3ff85f702b5c14f558b2b51bf64f37",
+      "size": 317
+    },
+    {
+      "path": "checksums.txt",
+      "sha256": "sha256:9b8c102a586ac5789f88bccf0cb93530b5c46cfe0a03f7e37b947f8f02742757",
+      "size": 394
+    },
+    {
+      "path": "multi-module-evidence.json",
+      "sha256": "sha256:35be340583a144c85b8be9ed0c53c1d67ed2eb4e1539b4c65d7bd3d0cb74e68d",
+      "size": 319
+    },
+    {
+      "path": "native-evidence.json",
+      "sha256": "sha256:36c91be2000a84f052d64fe7762461457880bd4c47b0082b72495f6ca09ca99b",
+      "size": 781
+    },
+    {
+      "path": "revia-1.0.0-rc.2-windows-x64.zip",
+      "sha256": "sha256:f6f2a3a13e26152fb0f598b804e161eccb6d4e24f2b9d498ae890f7fbe8fdd1b",
+      "size": 1225147
+    },
+    {
+      "path": "server-evidence.json",
+      "sha256": "sha256:9790baae4d32bfec2908d9d3819e2105fe9d609746777b754d6b3f27da8ad0d9",
+      "size": 309
+    },
+    {
+      "path": "target-matrix.json",
+      "sha256": "sha256:6262639144154a2520ba901741e0b781fc9f4fe18900138aae22a1ace3f41ea3",
+      "size": 525
+    }
+  ]
+}

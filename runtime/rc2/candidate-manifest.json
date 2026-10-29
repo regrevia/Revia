@@ -1,0 +1,38 @@
+{
+  "schema": "re.native-release-candidate@0.1.0",
+  "version": "1.0.0-rc.2",
+  "release_version": "1.0.0-rc.2",
+  "target": "windows-x64",
+  "status": "measured-native",
+  "candidate_id": "revia-windows-x64-5094bff4659b2d02",
+  "source_commit": "4f1ae6c9608ee614c79dd7876f8fb8243b7c3435",
+  "source_inventory_digest": "sha256:73d6f74381432ea99fc488702c69f8a9a87abbb4f22ec764be60553ebe52098c",
+  "archive_digest": "sha256:f6f2a3a13e26152fb0f598b804e161eccb6d4e24f2b9d498ae8908f7fbe8fdd1b",
+  "binary": "revia.exe",
+  "files": [
+    {
+      "path": "revia.exe",
+      "digest": "sha256:5094bff4659b2d022432fea8d5fa88e4ba6a349804a23671f295a2e9f3190c1a",
+      "size": 3462656
+    },
+    {
+      "path": "LICENSE",
+      "digest": "sha256:7156f38141cf6c48c73802b181f3e309d9b13db71eb2a2feab0b5f50c1a414cf",
+      "size": 4350
+    },
+    {
+      "path": "NOTICE",
+      "digest": "sha256:d11ba7cfa744a8544f83e30f0b7b0798a9db0ab17a2862d61222303d33d3ce85",
+      "size": 621
+    },
+    {
+      "path": "release-lock.json",
+      "digest": "sha256:35f1c9a4ee0c447b74329c95db261ddffd8f9da3e42a146ff13a4fece0a64486",
+      "size": 440
+    }
+  ],
+  "execution": {
+    "windows_native_run": 40863385443,
+    "runner": "regrevia-win"
+  }
+}

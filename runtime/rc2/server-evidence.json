@@ -1,0 +1,9 @@
+{
+  "schema": "revia.public-server-evidence@1.0.0",
+  "version": "1.0.0-rc.2",
+  "target": "windows-x64",
+  "status": "measured-native",
+  "source_commit": "4f1ae6c9608ee614c79dd7876f8fb8243b7c3435",
+  "verification_run": 40863385443,
+  "scope": "bounded HTTP/JSON/SQLite Server conformance on Windows x64"
+}

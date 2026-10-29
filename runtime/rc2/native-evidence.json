@@ -1,0 +1,22 @@
+{
+  "schema": "revia.public-native-evidence@1.0.0",
+  "version": "1.0.0-rc.2",
+  "target": "windows-x64",
+  "status": "measured-native",
+  "source_commit": "4f1ae6c9608ee614c79dd7876f8fb8243b7c3435",
+  "source_inventory_digest": "sha256:73d6f74381432ea99fc488702c69f8a9a87abbb4f22ec764be60553ebe52098c",
+  "binary_sha256": "sha256:5094bff4659b2d022432fea8d5fa88e4ba6a349804a23671f295a2e9f3190c1a",
+  "archive_sha256": "sha256:f6f2a3a13e26152fb0f598b804e161eccb6d4e24f2b9d498ae8908f7fbe8fdd1b",
+  "windows_hosted_run": 40863385443,
+  "bound_runner": "regrevia-win",
+  "scope": [
+    "cargo build --workspace --release --locked",
+    "cargo test --workspace --locked",
+    "server-smoke",
+    "SQLite Server conformance",
+    "check",
+    "manifest",
+    "help",
+    "version"
+  ]
+}
