@@ -34,19 +34,19 @@ jobs:
             throw 'rustup is not installed on regrevia-win'
           }
           $PSVersionTable
-          rustup show active-toolchain
-          rustc --version
-          cargo --version
+          rustup toolchain install stable --profile minimal
+          rustc +stable --version
+          cargo +stable --version
 
       - name: Build native release binary
         shell: pwsh
         working-directory: native
-        run: cargo build --workspace --release --locked
+        run: cargo +stable build --workspace --release --locked
 
       - name: Run native workspace tests
         shell: pwsh
         working-directory: native
-        run: cargo test --workspace --release --locked
+        run: cargo +stable test --workspace --release --locked
 
       - name: Verify Windows x64 native CLI
         shell: pwsh
