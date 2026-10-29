@@ -5325,7 +5325,14 @@ fn run_native_command(
 fn configure_empty_path_command(command: &mut process::Command, empty_path: &Path) {
     command.env_clear().env("PATH", empty_path);
     #[cfg(target_os = "windows")]
-    for variable in ["SystemRoot", "windir", "SystemDrive", "ComSpec"] {
+    for variable in [
+        "SystemRoot",
+        "windir",
+        "SystemDrive",
+        "ComSpec",
+        "TEMP",
+        "TMP",
+    ] {
         if let Some(value) = env::var_os(variable) {
             command.env(variable, value);
         }
