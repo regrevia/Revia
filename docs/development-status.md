@@ -10,16 +10,16 @@ translator/VM slice, project and module checking, deterministic semantic
 artifacts, a bounded Server profile, interface projection, and conformance
 tests.
 
-The latest published binary remains the historical `v1.0.0-rc.1` evaluation
-candidate. A `v1.0.0-rc.2.1` Windows x64 candidate is being verified separately;
-it does not rewrite or replace the historical RC1 release.
+The historical `v1.0.0-rc.1` evaluation candidate remains unchanged. The
+published `v1.0.0-rc.2.1` candidate adds one separately verified native target:
+Windows x64. It does not rewrite or replace the historical RC1 release.
 
 公开仓库现已包含按 MPL-2.0 发布、经过筛选的 RE 源码。当前源码包括 Node 参考工具链、
 Rust native 翻译器/VM 切片、项目与模块检查、确定性语义产物、有界 Server profile、
 接口投影以及一致性测试。
 
-最新已发布二进制仍是历史版本 `v1.0.0-rc.1` 评估候选；`v1.0.0-rc.2.1` 的
-Windows x64 候选正在独立验证，不会改写或替换历史 RC1 发行。
+历史版本 `v1.0.0-rc.1` 评估候选保持不变。已发布的 `v1.0.0-rc.2.1`
+新增一个独立验证的原生目标：Windows x64；不会改写或替换历史 RC1 发行。
 
 ## Verified Scope
 
@@ -30,6 +30,7 @@ Windows x64 候选正在独立验证，不会改写或替换历史 RC1 发行。
 | Rust native toolchain | Workspace tests, formatting, and clippy are required in CI |
 | Runtime target support | Only targets with published native evidence are measured |
 | Historical RC1 | Existing Darwin arm64 archive, checksums, manifest, and RC license remain unchanged |
+| RC2.1 Windows x64 | Published ZIP, source build, native conformance, bound-runner smoke, and public-download checksum verified |
 | Production readiness | Not claimed |
 | Complete A2A/MCP interoperability | Not claimed |
 | Stable V1.0 | Blocked by [stable-release-gate.md](stable-release-gate.md) |

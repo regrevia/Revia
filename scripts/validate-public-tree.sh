@@ -4,7 +4,7 @@ set -eu
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$ROOT"
 
-test "$(sed -n '1p' VERSION)" = '1.0.0-rc.1'
+VERSION=$(sed -n '1p' VERSION)
 test "$(shasum -a 256 LICENSE | awk '{print $1}')" = \
   '66a3107d5ad6a058aab753eaac2047ccb2ed0e39465dd0fe5844da3e300d5172'
 test -f SOURCE-LICENSE.md
@@ -23,6 +23,7 @@ sh -n scripts/run-public-trials.sh
 sh -n scripts/run-reviewed-file-plan.sh
 node scripts/build-source-import-manifest.js --check
 
+if [ "$VERSION" = '1.0.0-rc.1' ]; then
 node --input-type=module <<'NODE'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
@@ -43,5 +44,41 @@ assert.equal(
   '598c836cc8838ab3cdbc66a36ee350aa05ed67d1c9e9cedbb5862751e716ab71',
 )
 NODE
+elif [ "$VERSION" = '1.0.0-rc.2.1' ]; then
+node --input-type=module <<'NODE'
+import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
+import { readFileSync } from 'node:fs'
+
+const root = 'runtime/rc2.1'
+const manifest = JSON.parse(readFileSync(`${root}/export-manifest.json`, 'utf8'))
+const candidate = JSON.parse(readFileSync(`${root}/candidate-manifest.json`, 'utf8'))
+const matrix = JSON.parse(readFileSync(`${root}/target-matrix.json`, 'utf8'))
+const checksums = readFileSync('runtime/checksums.txt', 'utf8')
+const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex')
+
+assert.equal(manifest.version, '1.0.0-rc.2.1')
+assert.equal(manifest.tag, 'v1.0.0-rc.2.1')
+assert.equal(manifest.target, 'windows-x64')
+assert.equal(candidate.version, manifest.version)
+assert.equal(candidate.target, manifest.target)
+assert.equal(candidate.status, 'measured-native')
+assert.equal(matrix.version, manifest.version)
+assert.equal(matrix.targets.find(({ target }) => target === 'windows-x64').status, 'measured-native')
+assert.match(checksums, /^[0-9a-f]{64}  revia-1\.0\.0-rc\.2\.1-windows-x64\.zip$/m)
+assert.match(checksums, /^[0-9a-f]{64}  revia-1\.0\.0-rc\.2\.1-windows-x64$/m)
+assert.equal(
+  manifest.files.find(({ path }) => path === 'LICENSE-RC.md').sha256,
+  `sha256:${sha256(readFileSync('LICENSE-RC.md'))}`,
+)
+assert.equal(
+  manifest.files.find(({ path }) => path === 'NOTICE-RC.md').sha256,
+  `sha256:${sha256(readFileSync('NOTICE-RC.md'))}`,
+)
+NODE
+else
+  printf '%s\n' "unsupported VERSION: $VERSION" >&2
+  exit 65
+fi
 
 git diff --check

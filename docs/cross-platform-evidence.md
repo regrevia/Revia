@@ -29,7 +29,31 @@ manifest, native evidence, and bounded trial manifest in
 Darwin arm64 声明绑定 `runtime/rc1/` 中的密封归档、二进制摘要、候选 manifest、原生证据和
 有界试用 manifest；该声明不会转移到其他目标。
 
-## Next Expansion / 下一次扩展
+## RC2.1 Windows x64 Evidence / RC2.1 Windows x64 证据
+
+`v1.0.0-rc.2.1` publishes only the `windows-x64` asset. The candidate passed
+the hosted Windows source build and native conformance workflow, executed the
+same source-built binary on the bound `regrevia-win` runner, and passed the
+public download checksum and archive-content smoke.
+
+- Release gate: [Windows RC2.1 gate](https://github.com/regrevia/Revia/actions/runs/40869293781)
+- Windows source/bound-runner evidence: [Windows native workflow](https://github.com/regrevia/Revia/actions/runs/40867766279)
+- Archive SHA-256: `ea07d6aa3b688e7e03e737411cb4c598ba2436d9fbf13b9877ec2a4726ef8db8`
+- Executable SHA-256: `3b30599f8b748682f3403e1be6a34b3af617eea4496b7ac1a2c6d0666cdf6f36`
+
+This evidence does not upgrade the other targets, Stable V1.0, production
+readiness, or complete protocol interoperability.
+
+`v1.0.0-rc.2.1` 只发布 `windows-x64` 资产。该候选已通过 Windows 托管构建与 native
+一致性测试，在绑定的 `regrevia-win` runner 上执行同一 source-built 二进制，并通过公开下载
+摘要、解包内容与 smoke 校验。
+
+- 发行门禁：[Windows RC2.1 gate](https://github.com/regrevia/Revia/actions/runs/40869293781)
+- Windows 构建/绑定节点证据：[Windows native workflow](https://github.com/regrevia/Revia/actions/runs/40867766279)
+- 归档 SHA-256：`ea07d6aa3b688e7e03e737411cb4c598ba2436d9fbf13b9877ec2a4726ef8db8`
+- 可执行文件 SHA-256：`3b30599f8b748682f3403e1be6a34b3af617eea4496b7ac1a2c6d0666cdf6f36`
+
+该证据不会升级其他目标，也不代表 Stable V1.0、生产就绪或完整协议互操作。
 
 The next public-native acceptance order is Linux x64 on `ubuntu-24.04`, Windows
 x64 on `windows-2025`, then Linux arm64 on `ubuntu-24.04-arm`. Each remains
@@ -42,6 +66,8 @@ does not alter this six-target matrix.
 再到 `ubuntu-24.04-arm` 上的 Linux arm64。每个目标在满足独立的
 [RC2 目标扩展合同](rc2-target-expansion-contract.md)前都保持 pending。Android arm64 / Termux
 在[Android 实验合同](android-termux-experimental-contract.md)中作为独立实验轨道，不改变此六目标矩阵。
+
+## Next Expansion / 下一次扩展
 
 ## Evidence Required For A New Target / 新目标所需证据
 
