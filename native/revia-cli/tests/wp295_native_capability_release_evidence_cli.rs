@@ -20,7 +20,8 @@ fn release_evidence_gate_binds_fresh_project_capability_report() {
     let first_path = root.join("first.json");
     let second_path = root.join("second.json");
     let repo_root = repo_root();
-    let binary = repo_root.join("native/target/release/revia");
+    let binary_name = if cfg!(windows) { "revia.exe" } else { "revia" };
+    let binary = repo_root.join("native/target/release").join(binary_name);
 
     let first = run(&binary, &repo_root, &empty_path, &first_path);
     assert!(first.status.success(), "{}", text(&first.stderr));

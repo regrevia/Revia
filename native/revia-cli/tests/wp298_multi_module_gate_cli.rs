@@ -174,7 +174,10 @@ fn fixture() -> Fixture {
 }
 
 fn run(root: &Path, plan: &Path, report: &Path) -> std::process::Output {
-    let binary = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../target/release/revia");
+    let binary_name = if cfg!(windows) { "revia.exe" } else { "revia" };
+    let binary = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../target/release")
+        .join(binary_name);
     Command::new(binary)
         .args([
             "project-multi-module-gate",

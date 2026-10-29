@@ -20,7 +20,8 @@ fn release_evidence_gate_runs_fresh_authorities_and_emits_exact_file() {
     fs::create_dir_all(&empty_path).unwrap();
     let evidence_path = root.join("evidence.json");
     let repo_root = repo_root();
-    let release_binary = repo_root.join("native/target/release/revia");
+    let release_name = if cfg!(windows) { "revia.exe" } else { "revia" };
+    let release_binary = repo_root.join("native/target/release").join(release_name);
     assert!(
         release_binary.is_file(),
         "build the release binary before this test"

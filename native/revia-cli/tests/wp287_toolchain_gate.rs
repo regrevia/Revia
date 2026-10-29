@@ -209,7 +209,10 @@ fn run_debug(args: &[&str]) -> std::process::Output {
 }
 
 fn release_binary() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../target/release/revia")
+    let name = if cfg!(windows) { "revia.exe" } else { "revia" };
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../target/release")
+        .join(name)
 }
 
 fn temp_root(label: &str) -> PathBuf {

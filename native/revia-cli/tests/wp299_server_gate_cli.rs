@@ -202,7 +202,10 @@ fn run_with_sqlite(
     sqlite_executable: &str,
     input: &str,
 ) -> std::process::Output {
-    let binary = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../target/release/revia");
+    let binary_name = if cfg!(windows) { "revia.exe" } else { "revia" };
+    let binary = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../target/release")
+        .join(binary_name);
     Command::new(binary)
         .args([
             "project-server-gate",
