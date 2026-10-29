@@ -48,7 +48,7 @@ jobs:
       - name: Run native workspace tests
         shell: pwsh
         working-directory: native
-        run: cargo test --workspace --release --locked
+        run: cargo test --workspace --locked
 
       - name: Verify build target and record executable digest
         shell: pwsh
