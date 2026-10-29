@@ -1,6 +1,6 @@
 {
   "schema": "revia.public-target-matrix@1.0.0",
-  "version": "1.0.0-rc.2.2.1.1",
+  "version": "1.0.0-rc.2.2.1",
   "targets": [
     {
       "target": "darwin-arm64",

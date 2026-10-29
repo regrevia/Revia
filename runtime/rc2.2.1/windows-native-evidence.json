@@ -1,9 +1,9 @@
 {
   "schema": "revia.public-native-evidence@1.0.0",
-  "version": "1.0.0-rc.2.2",
+  "version": "1.0.0-rc.2.2.1",
   "target": "windows-x64",
   "status": "measured-native",
-  "source_commit": "5f4f2d8613c146ec1a17a908c34c92f5ec1c984a",
+  "source_commit": "b76dbfc23d8f72e5a727eabea51653de2d697020",
   "source_inventory_digest": "sha256:b48a59e3e80eed7067b7564515796f56523a28e2fdae2123755a3ed52d436d34",
   "binary_sha256": "2061e8c82077113094220b1101a9fabd0ae94b4f741a1e626ddf4c79742bef55",
   "archive_sha256": "44235373030f0e93a26bfcdf9992f9e1d96ec79c9934c949e9486f211ded9c14",
