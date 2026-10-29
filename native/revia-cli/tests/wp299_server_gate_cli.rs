@@ -86,7 +86,8 @@ fn server_gate_rejects_route_and_input_drift_before_report_write() {
 fn server_gate_rejects_unavailable_sqlite_executable_before_report_write() {
     let fixture = fixture();
     fs::write(&fixture.report, b"sentinel\n").unwrap();
-    let result = run_with_sqlite(&fixture, "/missing/revia-sqlite3", INPUT);
+    let missing_sqlite = fixture.root.join("missing-sqlite3");
+    let result = run_with_sqlite(&fixture, &missing_sqlite.to_string_lossy(), INPUT);
     assert_eq!(
         result.status.code(),
         Some(65),
