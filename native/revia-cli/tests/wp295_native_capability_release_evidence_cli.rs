@@ -93,6 +93,7 @@ fn run(
     command.output().unwrap()
 }
 
+#[allow(unused_variables)]
 fn preserve_windows_environment(command: &mut Command) {
     #[cfg(windows)]
     for key in [
