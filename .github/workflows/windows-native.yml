@@ -35,6 +35,16 @@ jobs:
         working-directory: native
         run: cargo build --workspace --release --locked
 
+      - name: Run bounded Windows loopback server smoke
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $exe = 'native/target/release/revia.exe'
+          $output = & $exe server-smoke 2>&1
+          $code = $LASTEXITCODE
+          $output | ForEach-Object { Write-Output $_ }
+          if ($code -ne 0) { throw "server-smoke failed: $code" }
+
       - name: Run native workspace tests
         shell: pwsh
         working-directory: native
