@@ -1,0 +1,9 @@
+{
+  "schema": "revia.public-capability-evidence@1.0.0",
+  "version": "1.0.0-rc.2.2",
+  "status": "measured-native",
+  "source_commit": "50d78d9604c4fb45b5f2b04fbdd8d784b63c8f4b",
+  "linux_x64_workflow": 40875713157,
+  "windows_x64_workflow": 40875713103,
+  "scope": "bounded native conformance evidence on Linux x64 and Windows x64"
+}

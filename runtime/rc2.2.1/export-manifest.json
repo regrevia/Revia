@@ -1,0 +1,44 @@
+{
+  "schema": "revia.public-rc-export@1.0.0",
+  "version": "1.0.0-rc.2.2.1",
+  "tag": "v1.0.0-rc.2.2.1",
+  "status": "measured-native",
+  "source_commit": "b76dbfc23d8f72e5a727eabea51653de2d697020",
+  "license_sha256": "sha256:7156f38141cf6c48c73802b181f3e309d9b13db71eb2a2feab0b5f50c1a414cf",
+  "targets": [
+    "linux-x64",
+    "windows-x64"
+  ],
+  "files": [
+    {
+      "path": "LICENSE-RC.md",
+      "sha256": "sha256:7156f38141cf6c48c73802b181f3e309d9b13db71eb2a2feab0b5f50c1a414cf",
+      "size": 4350
+    },
+    {
+      "path": "NOTICE-RC.md",
+      "sha256": "sha256:d11ba7cfa744a8544f83e30f0b7b0798a9db0ab17a2862d61222303d33d3ce85",
+      "size": 621
+    },
+    {
+      "path": "checksums.txt",
+      "sha256": "sha256:c89820f20d66a60cd5e46199880d590c34757d6f2d82155f0050907ad3f31528",
+      "size": 602
+    },
+    {
+      "path": "revia-1.0.0-rc.2.2.1-linux-x64.tar.gz",
+      "sha256": "sha256:cee357cf80fe48068fa8c16dc59590ac1299fb0f992eb38f22e0be769c0631b9",
+      "size": 1377686
+    },
+    {
+      "path": "revia-1.0.0-rc.2.2.1-windows-x64.zip",
+      "sha256": "sha256:d36fc1c473cd9de6f5a7b231b1747b6158dcd9b15462d52c22c63064ba294175",
+      "size": 1224388
+    },
+    {
+      "path": "target-matrix.json",
+      "sha256": "sha256:8189b244e30023642a22e2c2fb24a8899b6a25664783d1520e55a2b629a46215",
+      "size": 539
+    }
+  ]
+}
