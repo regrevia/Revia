@@ -52,11 +52,15 @@ jobs:
           if (-not $archiveLine -or -not $binaryLine) { throw 'missing Windows checksums' }
           $expectedArchive = ($archiveLine -split '\s+')[0].ToLowerInvariant()
           $expectedBinary = ($binaryLine -split '\s+')[0].ToLowerInvariant()
-          if ((Get-FileHash "assets/$asset" -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expectedArchive) {
+          $actualArchive = (Get-FileHash "assets/$asset" -Algorithm SHA256).Hash.ToLowerInvariant()
+          "archive expected=$expectedArchive actual=$actualArchive"
+          if ($actualArchive -ne $expectedArchive) {
             throw 'archive checksum mismatch'
           }
           Expand-Archive "assets/$asset" package
-          if ((Get-FileHash package/revia.exe -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expectedBinary) {
+          $actualBinary = (Get-FileHash package/revia.exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          "binary expected=$expectedBinary actual=$actualBinary"
+          if ($actualBinary -ne $expectedBinary) {
             throw 'executable checksum mismatch'
           }
           & package/revia.exe --version
