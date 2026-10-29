@@ -8,7 +8,13 @@ fn native_cli_server_smoke_uses_loopback_and_emits_deterministic_receipt() {
         .env("PATH", "")
         .output()
         .unwrap();
-    assert!(first.status.success());
+    assert!(
+        first.status.success(),
+        "first server-smoke failed: status={:?}, stdout={}, stderr={}",
+        first.status,
+        String::from_utf8_lossy(&first.stdout),
+        String::from_utf8_lossy(&first.stderr)
+    );
     assert_eq!(
         String::from_utf8(first.stdout.clone()).unwrap(),
         "{\"body\":\"{\\\"status\\\":\\\"ok\\\"}\",\"route_id\":\"health\",\"schema\":\"re.native-server-smoke@0.1.0\",\"status\":200,\"transport\":\"loopback\"}\n"
