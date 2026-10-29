@@ -48,7 +48,8 @@ fn release_evidence_gate_rejects_debug_before_project_capability_children() {
     fs::create_dir_all(&empty_path).unwrap();
     let evidence_path = root.join("evidence.json");
     let repo_root = repo_root();
-    let output = Command::new(env!("CARGO_BIN_EXE_revia"))
+    let mut command = Command::new(env!("CARGO_BIN_EXE_revia"));
+    command
         .current_dir(&repo_root)
         .args([
             "release-evidence-gate",
@@ -59,9 +60,9 @@ fn release_evidence_gate_rejects_debug_before_project_capability_children() {
             evidence_path.to_str().unwrap(),
         ])
         .env_clear()
-        .env("PATH", &empty_path)
-        .output()
-        .unwrap();
+        .env("PATH", &empty_path);
+    preserve_windows_environment(&mut command);
+    let output = command.output().unwrap();
 
     assert_eq!(output.status.code(), Some(65));
     assert!(output.stdout.is_empty());
@@ -75,7 +76,8 @@ fn run(
     empty_path: &Path,
     evidence_path: &Path,
 ) -> std::process::Output {
-    Command::new(binary)
+    let mut command = Command::new(binary);
+    command
         .current_dir(repo_root)
         .args([
             "release-evidence-gate",
@@ -86,9 +88,25 @@ fn run(
             &evidence_path.to_string_lossy(),
         ])
         .env_clear()
-        .env("PATH", empty_path)
-        .output()
-        .unwrap()
+        .env("PATH", empty_path);
+    preserve_windows_environment(&mut command);
+    command.output().unwrap()
+}
+
+fn preserve_windows_environment(command: &mut Command) {
+    #[cfg(windows)]
+    for key in [
+        "SystemRoot",
+        "WINDIR",
+        "SystemDrive",
+        "ComSpec",
+        "TEMP",
+        "TMP",
+    ] {
+        if let Some(value) = std::env::var_os(key) {
+            command.env(key, value);
+        }
+    }
 }
 
 fn text(bytes: &[u8]) -> String {
