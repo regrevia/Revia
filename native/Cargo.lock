@@ -4,22 +4,22 @@ version = 4
 
 [[package]]
 name = "revia-cli"
-version = "1.0.0-rc.2.1"
+version = "1.0.0-rc.2.2"
 dependencies = [
  "revia-core",
 ]
 
 [[package]]
 name = "revia-conformance"
-version = "1.0.0-rc.2.1"
+version = "1.0.0-rc.2.2"
 dependencies = [
  "revia-core",
 ]
 
 [[package]]
 name = "revia-core"
-version = "1.0.0-rc.2.1"
+version = "1.0.0-rc.2.2"
 
 [[package]]
 name = "revia-macos-identity"
-version = "1.0.0-rc.2.1"
+version = "1.0.0-rc.2.2"

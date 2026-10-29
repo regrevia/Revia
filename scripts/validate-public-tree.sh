@@ -44,29 +44,33 @@ assert.equal(
   '598c836cc8838ab3cdbc66a36ee350aa05ed67d1c9e9cedbb5862751e716ab71',
 )
 NODE
-elif [ "$VERSION" = '1.0.0-rc.2.1' ]; then
+elif [ "$VERSION" = '1.0.0-rc.2.1' ] || [ "$VERSION" = '1.0.0-rc.2.2' ]; then
+RC_ROOT='runtime/rc2.1'
+[ "$VERSION" = '1.0.0-rc.2.2' ] && RC_ROOT='runtime/rc2.2'
+REVIA_RC_ROOT="$RC_ROOT" \
+REVIA_EXPECTED_VERSION="$VERSION" \
 node --input-type=module <<'NODE'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 
-const root = 'runtime/rc2.1'
+const root = process.env.REVIA_RC_ROOT || 'runtime/rc2.1'
 const manifest = JSON.parse(readFileSync(`${root}/export-manifest.json`, 'utf8'))
 const candidate = JSON.parse(readFileSync(`${root}/candidate-manifest.json`, 'utf8'))
 const matrix = JSON.parse(readFileSync(`${root}/target-matrix.json`, 'utf8'))
 const checksums = readFileSync('runtime/checksums.txt', 'utf8')
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex')
 
-assert.equal(manifest.version, '1.0.0-rc.2.1')
-assert.equal(manifest.tag, 'v1.0.0-rc.2.1')
+assert.equal(manifest.version, process.env.REVIA_EXPECTED_VERSION || '1.0.0-rc.2.1')
+assert.equal(manifest.tag, `v${manifest.version}`)
 assert.equal(manifest.target, 'windows-x64')
 assert.equal(candidate.version, manifest.version)
 assert.equal(candidate.target, manifest.target)
 assert.equal(candidate.status, 'measured-native')
 assert.equal(matrix.version, manifest.version)
 assert.equal(matrix.targets.find(({ target }) => target === 'windows-x64').status, 'measured-native')
-assert.match(checksums, /^[0-9a-f]{64}  revia-1\.0\.0-rc\.2\.1-windows-x64\.zip$/m)
-assert.match(checksums, /^[0-9a-f]{64}  revia-1\.0\.0-rc\.2\.1-windows-x64$/m)
+assert.match(checksums, new RegExp(`^[0-9a-f]{64}  revia-${manifest.version}-windows-x64\\.zip$`, 'm'))
+assert.match(checksums, new RegExp(`^[0-9a-f]{64}  revia-${manifest.version}-windows-x64$`, 'm'))
 assert.equal(
   manifest.files.find(({ path }) => path === 'LICENSE-RC.md').sha256,
   `sha256:${sha256(readFileSync('LICENSE-RC.md'))}`,

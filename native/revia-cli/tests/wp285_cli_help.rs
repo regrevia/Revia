@@ -14,7 +14,7 @@ fn native_cli_help_and_version_are_stable_without_input_or_path_dependencies() {
 
     let top_level = run(&root, &["--help"]);
     assert!(top_level.status.success());
-    assert!(top_level.stdout.contains("revia native 1.0.0-rc.2.1"));
+    assert!(top_level.stdout.contains("revia native 1.0.0-rc.2.2"));
     assert!(top_level.stdout.contains("check <file>"));
     assert!(
         top_level
@@ -42,7 +42,7 @@ fn native_cli_help_and_version_are_stable_without_input_or_path_dependencies() {
 
     let version = run(&root, &["--version"]);
     assert!(version.status.success());
-    assert_eq!(version.stdout, "revia native 1.0.0-rc.2.1\n");
+    assert_eq!(version.stdout, "revia native 1.0.0-rc.2.2\n");
     assert!(version.stderr.is_empty());
 
     assert!(fs::read_dir(&root).unwrap().next().is_none());

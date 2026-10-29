@@ -1,0 +1,157 @@
+name: Gate Revia RC2.2 targets
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Draft prerelease tag to verify and publish
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  linux-x64:
+    name: Verify Linux x64 draft
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+      - name: Download and verify Linux asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          version=$(sed -n '1p' VERSION)
+          test "$TAG" = "v$version"
+          asset="revia-${version}-linux-x64.tar.gz"
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "$asset" --dir assets
+          archive=$(awk -v name="$asset" '$2 == name { print $1 }' runtime/checksums.txt)
+          binary=$(awk -v name="${asset%.tar.gz}" '$2 == name { print $1 }' runtime/checksums.txt)
+          test -n "$archive" -a -n "$binary"
+          test "$(sha256sum "assets/$asset" | awk '{print $1}')" = "$archive"
+          mkdir package
+          tar -xzf "assets/$asset" -C package
+          test "$(sha256sum package/revia | awk '{print $1}')" = "$binary"
+          ./package/revia --version
+          ./package/revia --help
+          ./package/revia check examples/hello.re
+          ./package/revia manifest examples/hello.re | grep -Fq graph_revision
+          REVIA_EXECUTABLE="$PWD/package/revia" sh scripts/test-compact-determinism.sh --require
+
+  windows-x64:
+    name: Verify Windows x64 draft
+    runs-on: windows-2025
+    timeout-minutes: 25
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+      - name: Download and verify Windows asset
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = (Get-Content VERSION -TotalCount 1).Trim()
+          if ($env:TAG -ne "v$version") { throw 'tag/version mismatch' }
+          $asset = "revia-$version-windows-x64.zip"
+          gh release download $env:TAG --repo $env:GITHUB_REPOSITORY --pattern $asset --dir assets
+          $lines = Get-Content runtime/checksums.txt
+          $archive = (($lines | Where-Object { $_ -match "\s$([Regex]::Escape($asset))$" }) -split '\s+')[0]
+          $binary = (($lines | Where-Object { $_ -match "\s$([Regex]::Escape($asset.Substring(0,$asset.Length-4)))$" }) -split '\s+')[0]
+          if ((Get-FileHash "assets/$asset" -Algorithm SHA256).Hash.ToLowerInvariant() -ne $archive) { throw 'archive checksum mismatch' }
+          Expand-Archive "assets/$asset" package
+          if ((Get-FileHash package/revia.exe -Algorithm SHA256).Hash.ToLowerInvariant() -ne $binary) { throw 'binary checksum mismatch' }
+          & package/revia.exe --version
+          & package/revia.exe --help
+          & package/revia.exe check examples/hello.re
+          $manifest = & package/revia.exe manifest examples/hello.re | Out-String
+          if ($manifest -notmatch 'graph_revision') { throw 'manifest smoke failed' }
+          ./scripts/test-compact-determinism.ps1 -Mode Require
+
+  windows-bound:
+    name: Verify Windows x64 draft on regrevia-win
+    needs: windows-x64
+    runs-on: [self-hosted, Windows, X64, regrevia-win]
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+      - name: Download and execute Windows asset
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = (Get-Content VERSION -TotalCount 1).Trim()
+          New-Item -ItemType Directory -Force assets | Out-Null
+          gh release download $env:TAG --repo $env:GITHUB_REPOSITORY --pattern "revia-$version-windows-x64.zip" --dir assets
+          Expand-Archive "assets/revia-$version-windows-x64.zip" package
+          & package/revia.exe --version
+          & package/revia.exe check examples/hello.re
+          $manifest = & package/revia.exe manifest examples/hello.re | Out-String
+          if ($manifest -notmatch 'graph_revision') { throw 'manifest smoke failed' }
+
+  publish:
+    name: Publish verified RC2.2 draft
+    needs: [linux-x64, windows-x64, windows-bound]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+      - name: Publish verified draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          version=$(sed -n '1p' VERSION)
+          test "$TAG" = "v$version"
+          release=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft,isPrerelease,tagName,name)
+          test "$(printf '%s' "$release" | jq -r .isDraft)" = true
+          test "$(printf '%s' "$release" | jq -r .isPrerelease)" = true
+          test "$(printf '%s' "$release" | jq -r .tagName)" = "$TAG"
+          test "$(printf '%s' "$release" | jq -r .name)" = "Revia $version"
+          gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false
+
+  public-download-smoke:
+    name: Smoke public Linux and Windows downloads
+    needs: publish
+    runs-on: ubuntu-24.04
+    permissions: {}
+    steps:
+      - name: Download public Linux asset without token
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          version=${TAG#v}
+          base="https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG"
+          curl --fail --location "$base/revia-${version}-linux-x64.tar.gz" -o linux.tar.gz
+          curl --fail --location "https://raw.githubusercontent.com/$GITHUB_REPOSITORY/$TAG/runtime/checksums.txt" -o checksums.txt
+          expected=$(awk -v name="revia-${version}-linux-x64.tar.gz" '$2 == name { print $1 }' checksums.txt)
+          test "$(sha256sum linux.tar.gz | awk '{print $1}')" = "$expected"
+          mkdir linux
+          tar -xzf linux.tar.gz -C linux
+          ./linux/revia --version
+

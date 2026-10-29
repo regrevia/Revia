@@ -1,0 +1,87 @@
+name: Linux x64 native conformance
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux-x64-build:
+    name: Build and test Linux x64 native source
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Check Linux toolchain
+        run: |
+          set -euo pipefail
+          rustc --version
+          cargo --version
+          uname -srm
+
+      - name: Build native release binary
+        working-directory: native
+        run: cargo build --workspace --release --locked
+
+      - name: Run bounded Linux loopback server smoke
+        run: |
+          set -euo pipefail
+          native/target/release/revia server-smoke
+
+      - name: Install SQLite CLI
+        run: |
+          set -euo pipefail
+          command -v sqlite3 || {
+            sudo apt-get update
+            sudo apt-get install -y sqlite3
+          }
+          sqlite3 --version
+
+      - name: Run native workspace tests
+        working-directory: native
+        run: cargo test --workspace --locked
+
+      - name: Verify Linux x64 CLI
+        run: |
+          set -euo pipefail
+          exe=native/target/release/revia
+          test -x "$exe"
+          test "$(uname -m)" = x86_64
+          "$exe" --version
+          "$exe" --help
+          "$exe" check examples/hello.re
+          "$exe" manifest examples/hello.re | grep -Fq graph_revision
+
+      - name: Verify fresh-process translation and manifest bytes
+        run: |
+          set -euo pipefail
+          exe="$PWD/native/target/release/revia"
+          base="$(mktemp -d)"
+          trap 'rm -rf "$base"' EXIT
+          for mode in manifest translate; do
+            mkdir -p "$base/first/$mode" "$base/second/$mode"
+            cp examples/hello.re "$base/first/$mode/main.re"
+            cp examples/hello.re "$base/second/$mode/main.re"
+            "$exe" "$mode" "$base/first/$mode/main.re" > "$base/first/$mode/out"
+            "$exe" "$mode" "$base/second/$mode/main.re" > "$base/second/$mode/out"
+            cmp "$base/first/$mode/out" "$base/second/$mode/out"
+          done
+
+      - name: Record Linux x64 executable digest
+        run: |
+          set -euo pipefail
+          sha256sum native/target/release/revia
+
+      - name: Upload source-built Linux x64 executable
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4
+        with:
+          name: revia-linux-x64-source-build
+          if-no-files-found: error
+          path: native/target/release/revia
