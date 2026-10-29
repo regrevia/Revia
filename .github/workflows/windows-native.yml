@@ -1,0 +1,80 @@
+name: Windows x64 native conformance
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-x64-native:
+    name: Windows x64 native source build
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, Windows, X64, regrevia-win]
+    timeout-minutes: 45
+    steps:
+      - name: Checkout trusted source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Check Windows toolchain
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
+            throw 'cargo is not installed on regrevia-win'
+          }
+          if (-not (Get-Command rustc -ErrorAction SilentlyContinue)) {
+            throw 'rustc is not installed on regrevia-win'
+          }
+          if (-not (Get-Command rustup -ErrorAction SilentlyContinue)) {
+            throw 'rustup is not installed on regrevia-win'
+          }
+          $PSVersionTable
+          rustup show active-toolchain
+          rustc --version
+          cargo --version
+
+      - name: Build native release binary
+        shell: pwsh
+        working-directory: native
+        run: cargo build --workspace --release --locked
+
+      - name: Run native workspace tests
+        shell: pwsh
+        working-directory: native
+        run: cargo test --workspace --release --locked
+
+      - name: Verify Windows x64 native CLI
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $exe = 'native/target/release/revia.exe'
+          if (-not (Test-Path -LiteralPath $exe)) {
+            throw "missing native executable: $exe"
+          }
+
+          $identity = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture
+          if ($identity -ne 'X64') {
+            throw "expected Windows x64 runner, got $identity"
+          }
+
+          $hash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          "windows-x64 source-built executable sha256=$hash"
+
+          & $exe --version
+          if ($LASTEXITCODE -ne 0) { throw "version failed: $LASTEXITCODE" }
+
+          & $exe --help
+          if ($LASTEXITCODE -ne 0) { throw "help failed: $LASTEXITCODE" }
+
+          & $exe check examples/hello.re
+          if ($LASTEXITCODE -ne 0) { throw "check failed: $LASTEXITCODE" }
+
+          $manifest = & $exe manifest examples/hello.re | Out-String
+          if ($LASTEXITCODE -ne 0 -or $manifest -notmatch 'graph_revision') {
+            throw 'manifest smoke failed'
+          }

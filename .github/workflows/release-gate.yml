@@ -138,9 +138,95 @@ jobs:
           if ((Get-Content -Raw diagnostic.json) -notmatch 'unexpected-argument') { throw 'diagnostic smoke failed' }
           exit 0
 
+  windows-x64-native:
+    name: Gate Windows x64 asset on regrevia-win
+    runs-on: [self-hosted, Windows, X64, regrevia-win]
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact candidate tag
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+
+      - name: Check Windows runner and download draft asset
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -ne 'X64') {
+            throw 'Windows x64 runner required'
+          }
+          if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
+            throw 'GitHub CLI is required on regrevia-win'
+          }
+          $version = (Get-Content -LiteralPath VERSION -TotalCount 1).Trim()
+          if ($env:TAG -ne "v$version") { throw 'tag and VERSION mismatch' }
+          $asset = "revia-$version-windows-x64.zip"
+          New-Item -ItemType Directory -Force -Path assets | Out-Null
+          gh release download $env:TAG --repo $env:GITHUB_REPOSITORY `
+            --pattern $asset --dir assets
+          if (-not (Test-Path -LiteralPath "assets/$asset")) {
+            throw 'Windows x64 draft asset missing'
+          }
+
+      - name: Verify and execute Windows x64 draft asset
+        shell: pwsh
+        env:
+          GH_TOKEN: ''
+          GITHUB_TOKEN: ''
+          TAG: ${{ inputs.tag }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Remove-Item Env:GH_TOKEN -ErrorAction SilentlyContinue
+          Remove-Item Env:GITHUB_TOKEN -ErrorAction SilentlyContinue
+          $version = (Get-Content -LiteralPath VERSION -TotalCount 1).Trim()
+          $asset = "revia-$version-windows-x64.zip"
+          $binary = "revia-$version-windows-x64"
+          $archiveLine = Get-Content -LiteralPath runtime/checksums.txt |
+            Where-Object { $_ -match "\s$([Regex]::Escape($asset))$" } |
+            Select-Object -First 1
+          $binaryLine = Get-Content -LiteralPath runtime/checksums.txt |
+            Where-Object { $_ -match "\s$([Regex]::Escape($binary))$" } |
+            Select-Object -First 1
+          if (-not $archiveLine -or -not $binaryLine) {
+            throw 'Windows x64 checksums missing'
+          }
+          $expectedArchive = ($archiveLine -split '\s+')[0].ToLowerInvariant()
+          $expectedBinary = ($binaryLine -split '\s+')[0].ToLowerInvariant()
+          $actualArchive = (Get-FileHash -LiteralPath "assets/$asset" -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actualArchive -ne $expectedArchive) {
+            throw "archive checksum mismatch: $actualArchive"
+          }
+          Expand-Archive -LiteralPath "assets/$asset" -DestinationPath package
+          $exe = 'package/revia.exe'
+          if (-not (Test-Path -LiteralPath $exe)) { throw 'revia.exe missing from archive' }
+          $actualBinary = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actualBinary -ne $expectedBinary) {
+            throw "executable checksum mismatch: $actualBinary"
+          }
+          & $exe --version
+          if ($LASTEXITCODE -ne 0) { throw "version failed: $LASTEXITCODE" }
+          & $exe --help
+          if ($LASTEXITCODE -ne 0) { throw "help failed: $LASTEXITCODE" }
+          & $exe check examples/hello.re
+          if ($LASTEXITCODE -ne 0) { throw "check failed: $LASTEXITCODE" }
+          $manifest = & $exe manifest examples/hello.re | Out-String
+          if ($LASTEXITCODE -ne 0 -or $manifest -notmatch 'graph_revision') {
+            throw 'manifest smoke failed'
+          }
+          ./scripts/test-compact-determinism.ps1 -Mode Require
+          if ($LASTEXITCODE -ne 0) {
+            throw "compact determinism gate failed: $LASTEXITCODE"
+          }
+
   publish:
     name: Publish verified draft
-    needs: smoke
+    needs: [smoke, windows-x64-native]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
