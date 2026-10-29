@@ -1,0 +1,12 @@
+{
+  "schema": "revia.public-native-evidence@1.0.0",
+  "version": "1.0.0-rc.2.2",
+  "target": "linux-x64",
+  "status": "measured-native",
+  "source_commit": "5f4f2d8613c146ec1a17a908c34c92f5ec1c984a",
+  "source_inventory_digest": "sha256:b48a59e3e80eed7067b7564515796f56523a28e2fdae2123755a3ed52d436d34",
+  "binary_sha256": "db6ccd7c3b7aee54cc33a66b3991572b94bd4f22d938891b328b1a8be38fbbbd",
+  "archive_sha256": "2e67b8b79fe2e32252fbf7756d6ef2c255b8ae3a71ecab627c61d18c08ba33bb",
+  "native_workflow": 40881177716,
+  "scope": "native build, tests, server conformance, fresh-process artifact checks, and public target gate"
+}

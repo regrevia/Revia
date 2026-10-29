@@ -25,11 +25,11 @@ byte determinism.
 
 ## RC2.2 Native Targets / RC2.2 原生目标
 
-`v1.0.0-rc.2.2` publishes and measures `linux-x64` and `windows-x64`.
+`v1.0.0-rc.2.2.1` publishes and measures `linux-x64` and `windows-x64`.
 macOS and Windows arm64 remain pending. The RC2.2 target evidence does not
 upgrade Stable V1.0 or claim all language output surfaces are byte-identical.
 
-`v1.0.0-rc.2.2` 发布并实测 `linux-x64` 与 `windows-x64`；macOS 与 Windows arm64
+`v1.0.0-rc.2.2.1` 发布并实测 `linux-x64` 与 `windows-x64`；macOS 与 Windows arm64
 仍为 pending。RC2.2 目标证据不会升级 Stable V1.0，也不声明所有语言产物面均已逐字节一致。
 
 ## Runtime And Integration Surface / 运行时与集成范围
