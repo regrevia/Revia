@@ -16,7 +16,7 @@ jobs:
     runs-on: windows-2025
     timeout-minutes: 25
     permissions:
-      contents: read
+      contents: write
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -74,7 +74,7 @@ jobs:
     runs-on: [self-hosted, Windows, X64, regrevia-win]
     timeout-minutes: 15
     permissions:
-      contents: read
+      contents: write
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
