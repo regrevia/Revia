@@ -36,7 +36,7 @@ fn native_release_candidate_is_digest_bound_and_rolls_back_atomically() {
     )
     .unwrap();
     assert!(first.contains("re.native-release-candidate@0.1.0"));
-    assert!(first.contains("\"release_version\":\"1.0.0-rc.2\""));
+    assert!(first.contains("\"release_version\":\"1.0.0-rc.2.1\""));
     assert!(!first.contains(root.to_str().unwrap()));
     assert_eq!(
         fs::read(candidate_one.join("LICENSE")).unwrap(),

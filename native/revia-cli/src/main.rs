@@ -166,7 +166,7 @@ const RUNTIME_BUNDLE_VERIFICATION_SCHEMA: &str = "re.native-runtime-bundle-verif
 const DEVELOPER_GATE_SCHEMA: &str = "re.native-developer-gate@0.1.0";
 const TOOLCHAIN_GATE_SCHEMA: &str = "re.native-toolchain-gate@0.1.0";
 static TEMP_WORKSPACE_COUNTER: AtomicU64 = AtomicU64::new(0);
-const CLI_HELP: &str = r#"revia native 1.0.0-rc.2
+const CLI_HELP: &str = r#"revia native 1.0.0-rc.2.1
 
 Usage:
   revia <command> [arguments]
@@ -609,7 +609,7 @@ fn main() {
             evidence_path,
         ),
         [command] if command == "--version" => {
-            println!("revia native 1.0.0-rc.2");
+            println!("revia native 1.0.0-rc.2.1");
             Ok(())
         }
         _ => {

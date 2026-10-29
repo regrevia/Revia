@@ -1,14 +1,14 @@
 # Release Notes / 发行说明
 
-## v1.0.0-rc.2 — Windows x64 Native Candidate / Windows x64 原生候选
+## v1.0.0-rc.2.1 — Windows x64 Native Candidate / Windows x64 原生候选
 
-`v1.0.0-rc.2` is a source-available, non-production developer-evaluation
+`v1.0.0-rc.2.1` is a source-available, non-production developer-evaluation
 candidate for the measured `windows-x64` target. Its Windows asset is accepted
 only after the hosted Windows build, native conformance suite, bound
 `regrevia-win` execution, checksum verification, and public-download smoke all
 pass.
 
-`v1.0.0-rc.2` 是源码公开、非生产的开发者评估候选。当前只在
+`v1.0.0-rc.2.1` 是源码公开、非生产的开发者评估候选。当前只在
 `windows-x64` 目标完成原生候选验证；必须通过 Windows 构建、native 一致性测试、
 `regrevia-win` 实机执行、摘要校验和公开下载 smoke 后才可发布。
 
