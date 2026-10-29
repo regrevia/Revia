@@ -38,12 +38,22 @@ jobs:
           test "$(sha256sum "assets/$asset" | awk '{print $1}')" = "$archive"
           mkdir package
           tar -xzf "assets/$asset" -C package
+          chmod +x package/revia
           test "$(sha256sum package/revia | awk '{print $1}')" = "$binary"
           ./package/revia --version
           ./package/revia --help
           ./package/revia check examples/hello.re
           ./package/revia manifest examples/hello.re | grep -Fq graph_revision
-          REVIA_EXECUTABLE="$PWD/package/revia" sh scripts/test-compact-determinism.sh --require
+          base=$(mktemp -d)
+          trap 'rm -rf "$base"' EXIT
+          for command_name in check digest manifest translate; do
+            mkdir -p "$base/first/$command_name" "$base/second/$command_name"
+            cp examples/hello.re "$base/first/$command_name/main.re"
+            cp examples/hello.re "$base/second/$command_name/main.re"
+            ./package/revia "$command_name" "$base/first/$command_name/main.re" > "$base/first/$command_name/out"
+            ./package/revia "$command_name" "$base/second/$command_name/main.re" > "$base/second/$command_name/out"
+            cmp "$base/first/$command_name/out" "$base/second/$command_name/out"
+          done
 
   windows-x64:
     name: Verify Windows x64 draft
@@ -78,7 +88,26 @@ jobs:
           & package/revia.exe check examples/hello.re
           $manifest = & package/revia.exe manifest examples/hello.re | Out-String
           if ($manifest -notmatch 'graph_revision') { throw 'manifest smoke failed' }
-          ./scripts/test-compact-determinism.ps1 -Mode Require
+          $base = Join-Path $env:TEMP ("revia-rc2-determinism-" + [Guid]::NewGuid().ToString('N'))
+          New-Item -ItemType Directory -Force $base | Out-Null
+          try {
+            foreach ($commandName in @('check', 'digest', 'manifest', 'translate')) {
+              $first = Join-Path $base "first/$commandName"
+              $second = Join-Path $base "second/$commandName"
+              New-Item -ItemType Directory -Force $first, $second | Out-Null
+              Copy-Item examples/hello.re "$first/main.re"
+              Copy-Item examples/hello.re "$second/main.re"
+              & package/revia.exe $commandName "$first/main.re" *> "$first/out"
+              if ($LASTEXITCODE -ne 0) { throw "$commandName first failed" }
+              & package/revia.exe $commandName "$second/main.re" *> "$second/out"
+              if ($LASTEXITCODE -ne 0) { throw "$commandName second failed" }
+              if ((Get-FileHash "$first/out" -Algorithm SHA256).Hash -ne (Get-FileHash "$second/out" -Algorithm SHA256).Hash) {
+                throw "$commandName output is not byte-identical"
+              }
+            }
+          } finally {
+            Remove-Item $base -Recurse -Force -ErrorAction SilentlyContinue
+          }
 
   windows-bound:
     name: Verify Windows x64 draft on regrevia-win
