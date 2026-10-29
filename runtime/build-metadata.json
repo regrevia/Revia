@@ -1,18 +1,26 @@
 {
   "schema": "revia.public-build-metadata@1.0.0",
-  "release": "Revia 1.0.0-rc.2.1",
-  "candidate_manifest": "runtime/rc2.1/candidate-manifest.json",
-  "target_matrix": "runtime/rc2.1/target-matrix.json",
-  "evidence": "runtime/rc2.1/native-evidence.json",
+  "release": "Revia 1.0.0-rc.2.2",
+  "candidate_manifest": "runtime/rc2.2/candidate-manifest.json",
+  "target_matrix": "runtime/rc2.2/target-matrix.json",
+  "evidence": "runtime/rc2.2/linux-native-evidence.json",
   "source_maps_included": false,
   "builds": [
     {
+      "target": "linux-x64",
+      "status": "measured-native",
+      "source_commit": "50d78d9604c4fb45b5f2b04fbdd8d784b63c8f4b",
+      "source_inventory_digest": "sha256:e8f346ca1301bb1211601bb425750066a3e5a0be19504427cba7803bc803fed0",
+      "archive_sha256": "sha256:14d87be6c4eb2cb2eb78520d6a1fe50cbe0f6b4c847bba1e8bade0767ee4b351",
+      "binary_sha256": "sha256:db6ccd7c3b7aee54cc33a66b3991572b94bd4f22d938891b328b1a8be38fbbbd"
+    },
+    {
       "target": "windows-x64",
       "status": "measured-native",
-      "source_commit": "3a7c099152210f5556f0cb748547bcee515fd53b",
-      "source_inventory_digest": "sha256:2d6af7e4fdff9c2f333eec910211fec3ff81475c15bcb38b330b56e5e225c1ea",
-      "archive_sha256": "sha256:ea07d6aa3b688e7e03e737411cb4c598ba2436d9fbf13b9877ec2a4726ef8db8",
-      "binary_sha256": "sha256:3b30599f8b748682f3403e1be6a34b3af617eea4496b7ac1a2c6d0666cdf6f36"
+      "source_commit": "50d78d9604c4fb45b5f2b04fbdd8d784b63c8f4b",
+      "source_inventory_digest": "sha256:e8f346ca1301bb1211601bb425750066a3e5a0be19504427cba7803bc803fed0",
+      "archive_sha256": "sha256:571d4038911a67215c3a4c1ed1ceb0ac4213c754c3a986d9a7b63c88c1c22ec6",
+      "binary_sha256": "sha256:e20f48378e35cf5bf71534f25ec38536c12271347c1ee534176739b8a1a09fe0"
     }
   ]
 }

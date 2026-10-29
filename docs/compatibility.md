@@ -23,6 +23,15 @@ byte determinism.
 [`runtime/rc1/`](../runtime/rc1/)。`measured-native` 表示密封候选已在声明的原生目标上
 通过验收与执行，不表示 Stable V1.0 或完整语言产物逐字节确定性。
 
+## RC2.2 Native Targets / RC2.2 原生目标
+
+`v1.0.0-rc.2.2` publishes and measures `linux-x64` and `windows-x64`.
+macOS and Windows arm64 remain pending. The RC2.2 target evidence does not
+upgrade Stable V1.0 or claim all language output surfaces are byte-identical.
+
+`v1.0.0-rc.2.2` 发布并实测 `linux-x64` 与 `windows-x64`；macOS 与 Windows arm64
+仍为 pending。RC2.2 目标证据不会升级 Stable V1.0，也不声明所有语言产物面均已逐字节一致。
+
 ## Runtime And Integration Surface / 运行时与集成范围
 
 - Native candidate, no Node.js runtime required / 原生候选，不需要 Node.js 运行时。

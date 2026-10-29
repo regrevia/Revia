@@ -1,5 +1,21 @@
 # Release Notes / 发行说明
 
+## v1.0.0-rc.2.2 — Linux and Windows x64 Native Candidate / Linux 与 Windows x64 原生候选
+
+`v1.0.0-rc.2.2` adds measured-native Linux x64 evidence alongside the
+previously verified Windows x64 target. Both assets are non-production
+developer-evaluation artifacts. The candidate requires native build/test,
+fresh-process artifact checks, archive and executable checksums, and public
+download smoke before publication.
+
+`v1.0.0-rc.2.2` 在已验证的 Windows x64 目标之外新增 Linux x64 原生证据。两个目标
+均为非生产开发评估资产；候选必须通过原生构建/测试、全新进程产物检查、归档与可执行文件
+摘要校验及公开下载 smoke 后才能发布。
+
+- Linux x64 archive: `revia-1.0.0-rc.2.2-linux-x64.tar.gz`
+- Windows x64 archive: `revia-1.0.0-rc.2.2-windows-x64.zip`
+- Other targets remain `pending`.
+
 ## v1.0.0-rc.2.1 — Windows x64 Native Candidate / Windows x64 原生候选
 
 `v1.0.0-rc.2.1` is a source-available, non-production developer-evaluation

@@ -63,14 +63,23 @@ const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex')
 
 assert.equal(manifest.version, process.env.REVIA_EXPECTED_VERSION || '1.0.0-rc.2.1')
 assert.equal(manifest.tag, `v${manifest.version}`)
-assert.equal(manifest.target, 'windows-x64')
 assert.equal(candidate.version, manifest.version)
-assert.equal(candidate.target, manifest.target)
 assert.equal(candidate.status, 'measured-native')
 assert.equal(matrix.version, manifest.version)
-assert.equal(matrix.targets.find(({ target }) => target === 'windows-x64').status, 'measured-native')
-assert.match(checksums, new RegExp(`^[0-9a-f]{64}  revia-${manifest.version}-windows-x64\\.zip$`, 'm'))
-assert.match(checksums, new RegExp(`^[0-9a-f]{64}  revia-${manifest.version}-windows-x64$`, 'm'))
+if (manifest.version === '1.0.0-rc.2.1') {
+  assert.equal(manifest.target, 'windows-x64')
+  assert.equal(matrix.targets.find(({ target }) => target === 'windows-x64').status, 'measured-native')
+  assert.match(checksums, new RegExp(`^[0-9a-f]{64}  revia-${manifest.version}-windows-x64\\.zip$`, 'm'))
+  assert.match(checksums, new RegExp(`^[0-9a-f]{64}  revia-${manifest.version}-windows-x64$`, 'm'))
+} else {
+  assert.deepEqual(manifest.targets.sort(), ['linux-x64', 'windows-x64'])
+  assert.equal(matrix.targets.find(({ target }) => target === 'linux-x64').status, 'measured-native')
+  assert.equal(matrix.targets.find(({ target }) => target === 'windows-x64').status, 'measured-native')
+  assert.match(checksums, new RegExp(`^[0-9a-f]{64}  revia-${manifest.version}-linux-x64\\.tar\\.gz$`, 'm'))
+  assert.match(checksums, new RegExp(`^[0-9a-f]{64}  revia-${manifest.version}-linux-x64$`, 'm'))
+  assert.match(checksums, new RegExp(`^[0-9a-f]{64}  revia-${manifest.version}-windows-x64\\.zip$`, 'm'))
+  assert.match(checksums, new RegExp(`^[0-9a-f]{64}  revia-${manifest.version}-windows-x64$`, 'm'))
+}
 assert.equal(
   manifest.files.find(({ path }) => path === 'LICENSE-RC.md').sha256,
   `sha256:${sha256(readFileSync('LICENSE-RC.md'))}`,

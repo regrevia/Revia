@@ -1,0 +1,21 @@
+{
+  "schema": "revia.public-native-evidence@1.0.0",
+  "version": "1.0.0-rc.2.2",
+  "target": "linux-x64",
+  "status": "measured-native",
+  "source_commit": "50d78d9604c4fb45b5f2b04fbdd8d784b63c8f4b",
+  "source_inventory_digest": "sha256:e8f346ca1301bb1211601bb425750066a3e5a0be19504427cba7803bc803fed0",
+  "binary_sha256": "sha256:db6ccd7c3b7aee54cc33a66b3991572b94bd4f22d938891b328b1a8be38fbbbd",
+  "archive_sha256": "sha256:14d87be6c4eb2cb2eb78520d6a1fe50cbe0f6b4c847bba1e8bade0767ee4b351",
+  "native_workflow": 40875713157,
+  "runner": "ubuntu-24.04",
+  "scope": [
+    "cargo build --workspace --release --locked",
+    "cargo test --workspace --locked",
+    "cargo fmt --all -- --check",
+    "cargo clippy --workspace --offline --all-targets -- -D warnings",
+    "server-smoke",
+    "SQLite Server conformance",
+    "fresh-process manifest/translate byte comparison"
+  ]
+}
