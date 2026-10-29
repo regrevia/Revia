@@ -45,6 +45,17 @@ jobs:
           $output | ForEach-Object { Write-Output $_ }
           if ($code -ne 0) { throw "server-smoke failed: $code" }
 
+      - name: Install SQLite CLI for Windows Server conformance
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (-not (Get-Command sqlite3 -ErrorAction SilentlyContinue)) {
+            choco install sqlite -y --no-progress
+          }
+          $sqlite = (Get-Command sqlite3 -ErrorAction Stop).Source
+          "REVIA_TEST_SQLITE=$sqlite" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          & $sqlite --version
+
       - name: Run native workspace tests
         shell: pwsh
         working-directory: native

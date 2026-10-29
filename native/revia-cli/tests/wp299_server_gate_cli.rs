@@ -184,7 +184,9 @@ fn fixture() -> Fixture {
         plan: plan_path,
         report,
         database,
-        sqlite_executable: PathBuf::from("/usr/bin/sqlite3"),
+        sqlite_executable: std::env::var_os("REVIA_TEST_SQLITE")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| PathBuf::from("/usr/bin/sqlite3")),
         root,
     }
 }
@@ -206,7 +208,8 @@ fn run_with_sqlite(
     let binary = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../target/release")
         .join(binary_name);
-    Command::new(binary)
+    let mut command = Command::new(binary);
+    command
         .args([
             "project-server-gate",
             fixture.root.to_str().unwrap(),
@@ -219,9 +222,21 @@ fn run_with_sqlite(
             fixture.report.to_str().unwrap(),
         ])
         .env_clear()
-        .env("PATH", "/usr/bin")
-        .output()
-        .unwrap()
+        .env("PATH", if cfg!(windows) { "" } else { "/usr/bin" });
+    #[cfg(windows)]
+    for key in [
+        "SystemRoot",
+        "WINDIR",
+        "SystemDrive",
+        "ComSpec",
+        "TEMP",
+        "TMP",
+    ] {
+        if let Some(value) = std::env::var_os(key) {
+            command.env(key, value);
+        }
+    }
+    command.output().unwrap()
 }
 
 fn text(bytes: &[u8]) -> String {
