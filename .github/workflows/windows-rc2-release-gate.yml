@@ -1,0 +1,126 @@
+name: Gate Windows x64 RC2 release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Draft prerelease tag to verify and publish
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  windows-hosted:
+    name: Verify Windows x64 draft on hosted runner
+    runs-on: windows-2025
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+      - name: Download draft asset
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = (Get-Content VERSION -TotalCount 1).Trim()
+          if ($env:TAG -ne "v$version") { throw 'tag/version mismatch' }
+          New-Item -ItemType Directory -Force assets | Out-Null
+          gh release download $env:TAG --repo $env:GITHUB_REPOSITORY `
+            --pattern "revia-$version-windows-x64.zip" --dir assets
+      - name: Verify and execute draft asset
+        shell: pwsh
+        env:
+          GH_TOKEN: ''
+          GITHUB_TOKEN: ''
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Remove-Item Env:GH_TOKEN -ErrorAction SilentlyContinue
+          Remove-Item Env:GITHUB_TOKEN -ErrorAction SilentlyContinue
+          $version = (Get-Content VERSION -TotalCount 1).Trim()
+          $asset = "revia-$version-windows-x64.zip"
+          $binary = "revia-$version-windows-x64"
+          $lines = Get-Content runtime/checksums.txt
+          $archiveLine = $lines | Where-Object { $_ -match "\s$([Regex]::Escape($asset))$" } | Select-Object -First 1
+          $binaryLine = $lines | Where-Object { $_ -match "\s$([Regex]::Escape($binary))$" } | Select-Object -First 1
+          if (-not $archiveLine -or -not $binaryLine) { throw 'missing Windows checksums' }
+          $expectedArchive = ($archiveLine -split '\s+')[0].ToLowerInvariant()
+          $expectedBinary = ($binaryLine -split '\s+')[0].ToLowerInvariant()
+          if ((Get-FileHash "assets/$asset" -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expectedArchive) {
+            throw 'archive checksum mismatch'
+          }
+          Expand-Archive "assets/$asset" package
+          if ((Get-FileHash package/revia.exe -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expectedBinary) {
+            throw 'executable checksum mismatch'
+          }
+          & package/revia.exe --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & package/revia.exe --help
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & package/revia.exe check examples/hello.re
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $manifest = & package/revia.exe manifest examples/hello.re | Out-String
+          if ($manifest -notmatch 'graph_revision') { throw 'manifest smoke failed' }
+
+  windows-bound:
+    name: Verify Windows x64 draft on regrevia-win
+    needs: windows-hosted
+    runs-on: [self-hosted, Windows, X64, regrevia-win]
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+      - name: Download and execute public draft asset
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = (Get-Content VERSION -TotalCount 1).Trim()
+          New-Item -ItemType Directory -Force assets | Out-Null
+          gh release download $env:TAG --repo $env:GITHUB_REPOSITORY `
+            --pattern "revia-$version-windows-x64.zip" --dir assets
+          Expand-Archive "assets/revia-$version-windows-x64.zip" package
+          & package/revia.exe --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & package/revia.exe check examples/hello.re
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $manifest = & package/revia.exe manifest examples/hello.re | Out-String
+          if ($manifest -notmatch 'graph_revision') { throw 'manifest smoke failed' }
+
+  publish:
+    name: Publish verified Windows x64 draft
+    needs: [windows-hosted, windows-bound]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+      - name: Publish verified draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          version=$(sed -n '1p' VERSION)
+          test "$TAG" = "v$version"
+          release=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft,isPrerelease,tagName,name)
+          test "$(printf '%s' "$release" | jq -r .isDraft)" = true
+          test "$(printf '%s' "$release" | jq -r .isPrerelease)" = true
+          test "$(printf '%s' "$release" | jq -r .tagName)" = "$TAG"
+          test "$(printf '%s' "$release" | jq -r .name)" = "Revia $version"
+          gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false
