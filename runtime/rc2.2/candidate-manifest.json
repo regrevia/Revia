@@ -7,20 +7,20 @@
     {
       "target": "linux-x64",
       "archive": "revia-1.0.0-rc.2.2-linux-x64.tar.gz",
-      "archive_sha256": "sha256:14d87be6c4eb2cb2eb78520d6a1fe50cbe0f6b4c847bba1e8bade0767ee4b351",
+      "archive_sha256": "sha256:2e67b8b79fe2e32252fbf7756d6ef2c255b8ae3a71ecab627c61d18c08ba33bb",
       "binary": "revia-1.0.0-rc.2.2-linux-x64",
       "binary_sha256": "sha256:db6ccd7c3b7aee54cc33a66b3991572b94bd4f22d938891b328b1a8be38fbbbd",
-      "workflow": 40875713157
+      "workflow": 40881177716
     },
     {
       "target": "windows-x64",
       "archive": "revia-1.0.0-rc.2.2-windows-x64.zip",
-      "archive_sha256": "sha256:571d4038911a67215c3a4c1ed1ceb0ac4213c754c3a986d9a7b63c88c1c22ec6",
+      "archive_sha256": "sha256:44235373030f0e93a26bfcdf9992f9e1d96ec79c9934c949e9486f211ded9c14",
       "binary": "revia-1.0.0-rc.2.2-windows-x64",
-      "binary_sha256": "sha256:e20f48378e35cf5bf71534f25ec38536c12271347c1ee534176739b8a1a09fe0",
-      "workflow": 40875713103
+      "binary_sha256": "sha256:2061e8c82077113094220b1101a9fabd0ae94b4f741a1e626ddf4c79742bef55",
+      "workflow": 40881177895
     }
   ],
-  "source_commit": "50d78d9604c4fb45b5f2b04fbdd8d784b63c8f4b",
-  "source_inventory_digest": "sha256:e8f346ca1301bb1211601bb425750066a3e5a0be19504427cba7803bc803fed0"
+  "source_commit": "5f4f2d8613c146ec1a17a908c34c92f5ec1c984a",
+  "source_inventory_digest": "sha256:b48a59e3e80eed7067b7564515796f56523a28e2fdae2123755a3ed52d436d34"
 }

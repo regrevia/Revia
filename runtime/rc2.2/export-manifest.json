@@ -3,7 +3,7 @@
   "version": "1.0.0-rc.2.2",
   "tag": "v1.0.0-rc.2.2",
   "status": "measured-native",
-  "source_commit": "50d78d9604c4fb45b5f2b04fbdd8d784b63c8f4b",
+  "source_commit": "5f4f2d8613c146ec1a17a908c34c92f5ec1c984a",
   "license_sha256": "sha256:7156f38141cf6c48c73802b181f3e309d9b13db71eb2a2feab0b5f50c1a414cf",
   "targets": [
     "linux-x64",
@@ -22,7 +22,7 @@
     },
     {
       "path": "candidate-manifest.json",
-      "sha256": "sha256:b0991ce14149497d16523485be947f69b64a3e540819cd7349bb7cf66a4d579b",
+      "sha256": "sha256:6b4c2da52c665ad5538744f5b37388a356b143ad503d7556a6cd006d455ed1a0",
       "size": 1087
     },
     {
@@ -32,13 +32,18 @@
     },
     {
       "path": "checksums.txt",
-      "sha256": "sha256:d1b38aca0e484a7b1edf314ded2e67dd4b0ea50961220d16285ca7f02e595cae",
+      "sha256": "sha256:963f78faaf0b5a45e3be1b06ed3230223018ffde1fd7064b73298e3a57959b77",
       "size": 594
     },
     {
+      "path": "export-manifest.json",
+      "sha256": "sha256:2c9418ff18bae7766f8a1c802dd4099782d25667d941cd762c813a743e543a5d",
+      "size": 2325
+    },
+    {
       "path": "linux-native-evidence.json",
-      "sha256": "sha256:34110e3a4adf2d37779b7ceb7075e2c477e34f30a7741bdeb3c88eed548ed0e7",
-      "size": 876
+      "sha256": "sha256:e9045234d1997a0667b366439b789aa265f836b83ec3b4fea2991d27964e167e",
+      "size": 623
     },
     {
       "path": "multi-module-evidence.json",
@@ -47,12 +52,12 @@
     },
     {
       "path": "revia-1.0.0-rc.2.2-linux-x64.tar.gz",
-      "sha256": "sha256:14d87be6c4eb2cb2eb78520d6a1fe50cbe0f6b4c847bba1e8bade0767ee4b351",
-      "size": 1378875
+      "sha256": "sha256:2e67b8b79fe2e32252fbf7756d6ef2c255b8ae3a71ecab627c61d18c08ba33bb",
+      "size": 1378868
     },
     {
       "path": "revia-1.0.0-rc.2.2-windows-x64.zip",
-      "sha256": "sha256:571d4038911a67215c3a4c1ed1ceb0ac4213c754c3a986d9a7b63c88c1c22ec6",
+      "sha256": "sha256:44235373030f0e93a26bfcdf9992f9e1d96ec79c9934c949e9486f211ded9c14",
       "size": 1223924
     },
     {
@@ -67,8 +72,8 @@
     },
     {
       "path": "windows-native-evidence.json",
-      "sha256": "sha256:ee9a5c86c1f728b953253fa0f714a096e0bf8533b075fffd497be39ac7e46e54",
-      "size": 721
+      "sha256": "sha256:392c749cb8b04cf11d2cb69c3c19d3968375819892aa84a50427d5ebf2e2f189",
+      "size": 625
     }
   ]
 }
