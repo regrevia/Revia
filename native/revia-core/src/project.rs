@@ -2124,11 +2124,15 @@ fn first_unlisted_file(
             if let Some(found) = first_unlisted_file(root, &path, declared)? {
                 return Ok(Some(found));
             }
-        } else if !declared.contains(&relative) {
+        } else if !declared.contains(&relative) && !is_project_metadata(&relative) {
             return Ok(Some(path));
         }
     }
     Ok(None)
+}
+
+fn is_project_metadata(relative: &str) -> bool {
+    matches!(relative, "HANDOFF.md" | "README.md")
 }
 
 fn unique_nonce() -> u128 {

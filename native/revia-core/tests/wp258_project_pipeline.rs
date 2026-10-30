@@ -129,6 +129,10 @@ fn native_project_loader_rejects_stale_pin_cycle_escape_and_unknown_fields() {
 #[test]
 fn native_project_loader_rejects_source_digest_drift_and_unlisted_files() {
     let fixture = make_fixture();
+    fs::write(fixture.project.join("README.md"), b"project notes").unwrap();
+    fs::write(fixture.project.join("HANDOFF.md"), b"handoff notes").unwrap();
+    assert!(load_project_directory(&fixture.project).is_ok());
+
     fs::write(fixture.project.join("notes.txt"), b"unlisted").unwrap();
     let mut manifest = read_manifest(&fixture.project);
     manifest = manifest.replace(
