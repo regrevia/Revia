@@ -1,7 +1,7 @@
 re 1.0 compact
 module agent.expense.intake
 import agent.expense.persistence@sha256:25f63094b5bc67efb831c60b7cdcc8268c6ec02125554d58c24610cafe1a353e as persistence
-export accept
+export review
 capability agent.expense.intake.db read db.read@0.1.0 uid ddddddddddddddddddddddddde
 error agent.expense.intake.error uid 5555555555555555555555555e
 state ready uid rrrrrrrrrrrrrrrrrrrrrrrrre

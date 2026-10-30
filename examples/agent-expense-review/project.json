@@ -174,17 +174,17 @@
     {
       "name": "agent.expense.intake",
       "path": "modules/intake.re",
-      "source_sha256": "sha256:6e42574111d1300869416bd836cfc742076746dd9301fd82c892552213de2393"
+      "source_sha256": "sha256:4a41bb0f3c2cf15a936cfbd933cd3afb54c8f0732054cc56802a4aa7c4f2b7d5"
     },
     {
       "name": "agent.expense.approval",
       "path": "modules/approval.re",
-      "source_sha256": "sha256:21f972df61d8c3bcafb4554fbf8f1757c6305340f71f8635730235e5159f00d9"
+      "source_sha256": "sha256:74bffc8fbb895cbbca8a8c2a737e316d8432ca5135e88e38468db21f9268d4ff"
     },
     {
       "name": "agent.expense.api",
       "path": "modules/api.re",
-      "source_sha256": "sha256:75309ffb4b367ae360c70458d3511f40044f0d19c28485773e499212ccfd9dbb"
+      "source_sha256": "sha256:0c1dbae387fc888b08c90bc242154723736564e55b3715c97a81c0b2e1313dc5"
     }
   ],
   "package_manifest": {
@@ -256,7 +256,7 @@
         "name": "agent.expense.persistence"
       },
       {
-        "implementation_digest": "sha256:6e42574111d1300869416bd836cfc742076746dd9301fd82c892552213de2393",
+        "implementation_digest": "sha256:4a41bb0f3c2cf15a936cfbd933cd3afb54c8f0732054cc56802a4aa7c4f2b7d5",
         "interface": {
           "dependencies": [
             {
@@ -268,24 +268,24 @@
           ],
           "exports": [
             {
-              "contract_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "contract_digest": "sha256:ee63a5c4a4264404f475905c38a1fc4beeb98e54973e3c3d8d893283a14a3714",
               "kind": "function",
-              "name": "accept"
+              "name": "review"
             }
           ],
           "module": "agent.expense.intake",
           "schema": "re.module-interface@0.1.0"
         },
-        "interface_digest": "sha256:32cf7bbb15a48c1677520e314a6e9d911c3c1e3e5f3f6417fdceb731d76d8d9e",
+        "interface_digest": "sha256:40b80e4d888d72f4e1a0374d0e64f1cf30801a7b730a7bf9cc95873f3f423f1f",
         "name": "agent.expense.intake"
       },
       {
-        "implementation_digest": "sha256:21f972df61d8c3bcafb4554fbf8f1757c6305340f71f8635730235e5159f00d9",
+        "implementation_digest": "sha256:74bffc8fbb895cbbca8a8c2a737e316d8432ca5135e88e38468db21f9268d4ff",
         "interface": {
           "dependencies": [
             {
               "binding": "intake",
-              "interface_digest": "sha256:32cf7bbb15a48c1677520e314a6e9d911c3c1e3e5f3f6417fdceb731d76d8d9e",
+              "interface_digest": "sha256:40b80e4d888d72f4e1a0374d0e64f1cf30801a7b730a7bf9cc95873f3f423f1f",
               "module": "agent.expense.intake",
               "scope": "package"
             }
@@ -300,16 +300,16 @@
           "module": "agent.expense.approval",
           "schema": "re.module-interface@0.1.0"
         },
-        "interface_digest": "sha256:065612927ac2a2fb067f27955f13e8d2ed5d3b22b041aa49317570079aab4277",
+        "interface_digest": "sha256:7fa55f645c949a07d607778b68864016390c441abc60183b383f0e7b196f14d3",
         "name": "agent.expense.approval"
       },
       {
-        "implementation_digest": "sha256:75309ffb4b367ae360c70458d3511f40044f0d19c28485773e499212ccfd9dbb",
+        "implementation_digest": "sha256:0c1dbae387fc888b08c90bc242154723736564e55b3715c97a81c0b2e1313dc5",
         "interface": {
           "dependencies": [
             {
               "binding": "approval",
-              "interface_digest": "sha256:065612927ac2a2fb067f27955f13e8d2ed5d3b22b041aa49317570079aab4277",
+              "interface_digest": "sha256:7fa55f645c949a07d607778b68864016390c441abc60183b383f0e7b196f14d3",
               "module": "agent.expense.approval",
               "scope": "package"
             }
@@ -324,7 +324,7 @@
           "module": "agent.expense.api",
           "schema": "re.module-interface@0.1.0"
         },
-        "interface_digest": "sha256:ca46f6245f3b81f43e401627289e5c072f9e7d6b4a78c50652381b2c1ab1998a",
+        "interface_digest": "sha256:02ad030b89cdcb93f226fbdaa3968da03391989b55326f9ef1e2b05cdf621b6f",
         "name": "agent.expense.api"
       }
     ],

@@ -25,14 +25,28 @@ this release.
 ./bin/revia build --out build/agent-review examples/agent-review/main.re
 ```
 
-Use `project-check` and `project-run` only with the fixtures and project
-contracts included in the RC trial kit. The public template is a contribution
-shape, not proof of a complete package manager or production project system.
+Use `project-check` on checked project examples. Projects with Agent or
+business facts can also use `project-translate`. Native
+`project-build`/`project-run` remain bound to versioned candidate contracts;
+the public source tree does not present them as a complete package manager or
+production project system.
 
 ## Generated Frontend Contract / 前端生成契约
 
-The generated contract is derived from the checked manifest. A future client
-generator may expose:
+The public source tree includes a bounded interface projection command:
+
+```bash
+node src/cli/re.js project-projection \
+  --routes examples/agent-expense-review/interface-routes.json \
+  --out /tmp/revia-expense-client \
+  examples/agent-expense-review
+```
+
+It writes `types.ts`, `client.ts`, and `projection.json`. The contract is
+derived from the checked manifest and route input; it is intentionally bounded
+and does not claim to be a complete frontend generator or production SDK.
+
+The generated contract exposes:
 
 - operation names and input/output types;
 - typed success and error branches;
@@ -42,6 +56,10 @@ generator may expose:
 Hand-written DTOs, guessed dynamic JSON fields and UI framework conventions do
 not define Revia semantics. A client must treat revision mismatch, unknown
 error kinds and absent evidence as explicit states.
+
+公开源码包含一个有界的 interface projection 命令，生成 `types.ts`、`client.ts` 和
+`projection.json`。契约由 checked manifest 与 route 输入派生，不代表完整前端生成器或
+生产 SDK。手写 DTO、猜测式动态 JSON 和 UI 框架约定不构成 Revia 语义。
 
 ## HTTP Adapter / HTTP 适配器
 
@@ -86,7 +104,7 @@ Questions for Agent experiments:
 |---|---|
 | Native CLI, check/run/manifest/view | measured on macOS arm64 |
 | Bounded HTTP/JSON/SQLite trial | published as bounded evidence |
-| Generated frontend contract | design surface, not a complete generator |
+| Generated frontend contract | bounded TypeScript projection, not a complete generator |
 | HTTP adapter | bounded trial only |
 | A2A adapter | planned / pending |
 | MCP adapter | planned / pending |

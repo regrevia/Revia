@@ -1,0 +1,23 @@
+{
+  "graph_revision": "sha256:4f1d43f022b8134764c8a4a29fd37a8809de7b15c751ff7bdcd27335d403af28",
+  "routes": [
+    {
+      "adapter": "agent.expense.intake.db",
+      "auth": {
+        "mode": "none"
+      },
+      "error_variants": [
+        "transient",
+        "unavailable"
+      ],
+      "idempotency": {
+        "mode": "required"
+      },
+      "method": "POST",
+      "operation": "agent.expense.intake.review",
+      "path": "/v1/expense/review",
+      "success_status": 200
+    }
+  ],
+  "schema": "re.interface-projection-routes@0.1.0"
+}

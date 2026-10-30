@@ -63,6 +63,7 @@ export async function loadProjectDirectory(rootDirectory) {
     'project.json',
     'README.md',
     'HANDOFF.md',
+    'interface-routes.json',
   ])
   for (const entry of manifest.modules) {
     const filePath = resolve(root, entry.path)

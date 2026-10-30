@@ -1,6 +1,6 @@
 re 1.0 compact
 module agent.expense.approval
-import agent.expense.intake@sha256:32cf7bbb15a48c1677520e314a6e9d911c3c1e3e5f3f6417fdceb731d76d8d9e as intake
+import agent.expense.intake@sha256:40b80e4d888d72f4e1a0374d0e64f1cf30801a7b730a7bf9cc95873f3f423f1f as intake
 export approve
 capability agent.expense.approval.db write db.write@0.1.0 uid eeeeeeeeeeeeeeeeeeeeeeeeee
 error agent.expense.approval.error uid 6666666666666666666666666e

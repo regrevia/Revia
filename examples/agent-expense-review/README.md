@@ -29,6 +29,10 @@ node src/cli/re.js project-translate \
   --locale en-US \
   --format json \
   examples/agent-expense-review
+node src/cli/re.js project-projection \
+  --routes examples/agent-expense-review/interface-routes.json \
+  --out /tmp/revia-expense-client \
+  examples/agent-expense-review
 ```
 
 The first command checks module pins, source digests, capabilities, resources,
@@ -39,6 +43,10 @@ digest across locales and output media.
 请在仓库根目录运行。第一个命令检查模块 pin、源码摘要、能力、资源、任务、adapter、
 run case 与图身份；第二个命令生成面向人类审阅的事实，同时保持不同 locale 和输出介质
 共享同一 graph revision 与 semantic fact digest。
+
+第三个命令生成确定性的 `types.ts`、`client.ts` 和 `projection.json`。route manifest
+固定 graph revision、checked operation、adapter 契约、错误 variant、幂等要求和 HTTP
+路径。生成 client 是有界集成产物，不是第二语义真源或完整生产 SDK。
 
 ## What To Inspect / 审阅重点
 

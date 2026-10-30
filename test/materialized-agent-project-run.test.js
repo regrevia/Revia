@@ -56,7 +56,7 @@ test('materialized project-run executes a checked task and emits deterministic r
     ],
   )
   assert.match(first.value.receipt.receipt_digest, /^sha256:[0-9a-f]{64}$/)
-  assert.equal(first.value.receipt.graph_revision, 'sha256:d4099ef70fe7123c1e40a490f30643925b1f32746b1873ac12d184f603c5e856')
+  assert.equal(first.value.receipt.graph_revision, 'sha256:4f1d43f022b8134764c8a4a29fd37a8809de7b15c751ff7bdcd27335d403af28')
   assert.equal(first.value.receipt.task.name, 'agent.expense.intake.task')
   assert.equal(first.value.receipt.task.outcome, 'succeeded')
   assert.equal(first.value.receipt.task.attempts, 2)
