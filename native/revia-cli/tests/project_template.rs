@@ -140,17 +140,17 @@ fn native_project_surface_check_rejects_detached_adapter_authority() {
         (
             "\"member\":\"read\"",
             "\"member\":\"write\"",
-            "native-project-module-surface-adapter-capability-detached",
+            "native-project-module-surface-capability-detached",
         ),
         (
             "\"reference\":\"db.read@0.1.0\"",
             "\"reference\":\"db.write@0.1.0\"",
-            "native-project-module-surface-adapter-capability-detached",
+            "native-project-module-surface-capability-detached",
         ),
         (
             "\"node_uid\":\"ddddddddddddddddddddddddde\"",
             "\"node_uid\":\"eeeeeeeeeeeeeeeeeeeeeeeeee\"",
-            "native-project-module-surface-adapter-capability-detached",
+            "native-project-module-surface-capability-detached",
         ),
         (
             "\"constructor\":\"expense_db\"",
@@ -163,7 +163,7 @@ fn native_project_surface_check_rejects_detached_adapter_authority() {
             "native-project-module-surface-resource-mismatch",
         ),
     ] {
-        let project = mutated_expense_project(old_field, new_field);
+        let project = mutated_expense_project("adapter-contract ", old_field, new_field);
         let output = Command::new(env!("CARGO_BIN_EXE_revia"))
             .args(["project-surface-check", project.to_str().unwrap()])
             .output()
@@ -171,6 +171,62 @@ fn native_project_surface_check_rejects_detached_adapter_authority() {
         assert!(
             !output.status.success(),
             "adapter mutation unexpectedly passed: {old_field} -> {new_field}"
+        );
+        assert!(
+            String::from_utf8_lossy(&output.stdout).contains(expected_code),
+            "expected {expected_code} for {old_field} -> {new_field}, got:\n{}",
+            String::from_utf8_lossy(&output.stdout)
+        );
+        assert!(
+            String::from_utf8_lossy(&output.stdout)
+                .contains("\"schema\":\"re.native-project-surface-result@0.1.0\"")
+        );
+        fs::remove_dir_all(project).unwrap();
+    }
+}
+
+#[test]
+fn native_project_surface_check_rejects_detached_function_capability_calls() {
+    for (old_field, new_field, expected_code) in [
+        (
+            "\"instance\":\"@expense_db\"",
+            "\"instance\":\"@other_db\"",
+            "native-project-module-surface-resource-mismatch",
+        ),
+        (
+            "\"member\":\"read\"",
+            "\"member\":\"write\"",
+            "native-project-module-surface-capability-detached",
+        ),
+        (
+            "\"reference\":\"db.read@0.1.0\"",
+            "\"reference\":\"db.write@0.1.0\"",
+            "native-project-module-surface-capability-detached",
+        ),
+        (
+            "\"node_uid\":\"ddddddddddddddddddddddddde\"",
+            "\"node_uid\":\"eeeeeeeeeeeeeeeeeeeeeeeeee\"",
+            "native-project-module-surface-capability-detached",
+        ),
+        (
+            "\"constructor\":\"expense_db\"",
+            "\"constructor\":\"other_db\"",
+            "native-project-module-surface-resource-not-declared",
+        ),
+        (
+            "\"access\":\"read\"",
+            "\"access\":\"write\"",
+            "native-project-module-surface-resource-mismatch",
+        ),
+    ] {
+        let project = mutated_expense_project("function-declaration ", old_field, new_field);
+        let output = Command::new(env!("CARGO_BIN_EXE_revia"))
+            .args(["project-surface-check", project.to_str().unwrap()])
+            .output()
+            .unwrap();
+        assert!(
+            !output.status.success(),
+            "function call mutation unexpectedly passed: {old_field} -> {new_field}"
         );
         assert!(
             String::from_utf8_lossy(&output.stdout).contains(expected_code),
@@ -243,7 +299,7 @@ fn temp_project(source: &str) -> PathBuf {
     root
 }
 
-fn mutated_expense_project(old_field: &str, new_field: &str) -> PathBuf {
+fn mutated_expense_project(declaration_prefix: &str, old_field: &str, new_field: &str) -> PathBuf {
     let source_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../examples/agent-expense-review")
         .canonicalize()
@@ -259,7 +315,7 @@ fn mutated_expense_project(old_field: &str, new_field: &str) -> PathBuf {
     let original_source = fs::read_to_string(&module_path).unwrap();
     let adapter_line = original_source
         .lines()
-        .find(|line| line.starts_with("adapter-contract "))
+        .find(|line| line.starts_with(declaration_prefix))
         .unwrap()
         .to_owned();
     assert!(

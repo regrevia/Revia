@@ -901,6 +901,13 @@ fn validate_module_surface_declaration(
                     resources,
                     declared_capabilities,
                 )?;
+            } else if prefix == "function-declaration " {
+                validate_function_capability_calls(
+                    &value,
+                    allowed_capabilities,
+                    resources,
+                    declared_capabilities,
+                )?;
             }
             let has_module_owner = matches!(
                 &value,
@@ -953,27 +960,101 @@ fn validate_adapter_authority(
         .get("capability")
         .ok_or_else(|| ProjectError::new("native-project-module-surface-adapter-invalid"))?;
     let capability_fields = exact_object(capability, &["instance", "member", "reference"])?;
-    let instance = string(&capability_fields, "instance")?;
-    let member = string(&capability_fields, "member")?;
-    let reference = string(&capability_fields, "reference")?;
+    let resource = fields
+        .get("resource")
+        .ok_or_else(|| ProjectError::new("native-project-module-surface-adapter-invalid"))?;
+    validate_capability_resource_authority(
+        &capability_fields,
+        string(&fields, "node_uid")?,
+        resource,
+        allowed_capabilities,
+        resources,
+        declared_capabilities,
+    )
+}
+
+fn validate_function_capability_calls(
+    value: &JsonValue,
+    allowed_capabilities: &BTreeSet<String>,
+    resources: &[NativeResource],
+    declared_capabilities: &BTreeSet<(String, String, String)>,
+) -> Result<(), ProjectError> {
+    let fields = exact_object(
+        value,
+        &[
+            "body",
+            "error_type",
+            "input_type",
+            "module",
+            "name",
+            "output_type",
+            "schema",
+        ],
+    )?;
+    let body = fields
+        .get("body")
+        .ok_or_else(|| ProjectError::new("native-project-module-surface-function-invalid"))?;
+    let body_fields = exact_object(
+        body,
+        &["calls", "capability_calls", "control_flow", "effect_edges"],
+    )?;
+    for call in array(&body_fields, "capability_calls")? {
+        let call_fields = exact_object(
+            call,
+            &[
+                "capability",
+                "error_type",
+                "id",
+                "input_type",
+                "node_uid",
+                "output_type",
+                "resource",
+            ],
+        )?;
+        let capability = call_fields.get("capability").ok_or_else(|| {
+            ProjectError::new("native-project-module-surface-function-call-invalid")
+        })?;
+        let capability_fields = exact_object(capability, &["instance", "member", "reference"])?;
+        let resource = call_fields.get("resource").ok_or_else(|| {
+            ProjectError::new("native-project-module-surface-function-call-invalid")
+        })?;
+        validate_capability_resource_authority(
+            &capability_fields,
+            string(&call_fields, "node_uid")?,
+            resource,
+            allowed_capabilities,
+            resources,
+            declared_capabilities,
+        )?;
+    }
+    Ok(())
+}
+
+fn validate_capability_resource_authority(
+    capability_fields: &BTreeMap<String, &JsonValue>,
+    node_uid: &str,
+    resource: &JsonValue,
+    allowed_capabilities: &BTreeSet<String>,
+    resources: &[NativeResource],
+    declared_capabilities: &BTreeSet<(String, String, String)>,
+) -> Result<(), ProjectError> {
+    let instance = string(capability_fields, "instance")?;
+    let member = string(capability_fields, "member")?;
+    let reference = string(capability_fields, "reference")?;
     if !allowed_capabilities.contains(reference) {
         return Err(ProjectError::new(
             "native-project-module-surface-capability-not-allowed",
         ));
     }
-    let node_uid = string(&fields, "node_uid")?;
     if !declared_capabilities.contains(&(
         node_uid.to_owned(),
         member.to_owned(),
         reference.to_owned(),
     )) {
         return Err(ProjectError::new(
-            "native-project-module-surface-adapter-capability-detached",
+            "native-project-module-surface-capability-detached",
         ));
     }
-    let resource = fields
-        .get("resource")
-        .ok_or_else(|| ProjectError::new("native-project-module-surface-adapter-invalid"))?;
     let resource_fields = exact_object(resource, &["access", "constructor"])?;
     let access = string(&resource_fields, "access")?;
     let constructor = string(&resource_fields, "constructor")?;
