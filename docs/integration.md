@@ -51,15 +51,16 @@ The generated contract exposes:
 - operation names and input/output types;
 - typed success and error branches;
 - interface revision and graph revision;
-- generated-file source path and source commit.
+- checked fact IDs, adapter authority, profile and idempotency policy.
 
 Hand-written DTOs, guessed dynamic JSON fields and UI framework conventions do
 not define Revia semantics. A client must treat revision mismatch, unknown
 error kinds and absent evidence as explicit states.
 
 公开源码包含一个有界的 interface projection 命令，生成 `types.ts`、`client.ts` 和
-`projection.json`。契约由 checked manifest 与 route 输入派生，不代表完整前端生成器或
-生产 SDK。手写 DTO、猜测式动态 JSON 和 UI 框架约定不构成 Revia 语义。
+`projection.json`。契约由 checked manifest 与 route 输入派生，并绑定 fact ID、adapter
+authority、profile 和幂等策略；不代表完整前端生成器或生产 SDK。手写 DTO、猜测式动态
+JSON 和 UI 框架约定不构成 Revia 语义。
 
 ## HTTP Adapter / HTTP 适配器
 
