@@ -43,8 +43,8 @@ to a complete Agent workflow.
   suspected false pass / 疑似错误通过的反例接续
 - [`agent-release-check.re`](agent-release-check.re): blocked release outcome /
   明确阻塞的发行结果
-- [`agent-expense-review/`](agent-expense-review/): multi-module project
-  fixture / 多模块项目 fixture
+- [`agent-expense-review/`](agent-expense-review/): six-module project fixture
+  with review and handoff instructions / 带审阅与接续说明的六模块项目 fixture
 
 ## Challenges And Approval / 挑战与批准
 
