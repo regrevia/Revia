@@ -91,6 +91,7 @@ fn every_supported_native_command_has_a_help_entry() {
         "run",
         "project-init",
         "project-check",
+        "project-surface-check",
         "project-test",
         "project-scale",
         "project-build",

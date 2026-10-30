@@ -706,6 +706,9 @@ fn command_help(command: &str) -> Result<(), i32> {
         "project-check" => {
             "revia project-check <project>\n  Check a project manifest and module graph.\n"
         }
+        "project-surface-check" => {
+            "revia project-surface-check <project>\n  Check re 1.0 module-surface authority without translation.\n"
+        }
         "project-test" => {
             "revia project-test <project>\n  Translate each project module in dependency order.\n"
         }
