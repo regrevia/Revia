@@ -5921,11 +5921,11 @@ fn project_check(path: &str) -> Result<(), i32> {
 
 fn project_surface_check(path: &str) -> Result<(), i32> {
     let project = load_project_directory(path).map_err(|error| {
-        print_project_error(&error.code);
+        print_project_surface_error(&error.code);
         65
     })?;
     revia_core::project::validate_project_module_surfaces(path, &project).map_err(|error| {
-        print_project_error(&error.code);
+        print_project_surface_error(&error.code);
         65
     })?;
     println!(
@@ -7642,6 +7642,14 @@ fn print_project_error(code: &str) {
         "{{\"diagnostics\":[{{\"code\":{}}}],\"ok\":false,\"schema\":{}}}",
         quote(code),
         quote("re.native-project-result@0.1.0"),
+    );
+}
+
+fn print_project_surface_error(code: &str) {
+    println!(
+        "{{\"diagnostics\":[{{\"code\":{}}}],\"ok\":false,\"schema\":{}}}",
+        quote(code),
+        quote("re.native-project-surface-result@0.1.0"),
     );
 }
 

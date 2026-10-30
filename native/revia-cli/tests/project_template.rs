@@ -141,6 +141,10 @@ fn assert_surface_rejected(source: &str, expected_code: &str) {
         "expected {expected_code}, got:\n{}",
         String::from_utf8_lossy(&output.stdout)
     );
+    assert!(
+        String::from_utf8_lossy(&output.stdout)
+            .contains("\"schema\":\"re.native-project-surface-result@0.1.0\"")
+    );
     fs::remove_dir_all(root).unwrap();
 }
 
