@@ -331,6 +331,34 @@ fn native_project_surface_check_rejects_agent_contract_content_drift() {
 }
 
 #[test]
+fn native_project_check_binds_agent_contracts_to_project_identity() {
+    let baseline = copy_expense_project();
+    let drifted = expense_project_with_agent_contract_event("forged_event");
+    let baseline_output = Command::new(env!("CARGO_BIN_EXE_revia"))
+        .args(["project-check", baseline.to_str().unwrap()])
+        .output()
+        .unwrap();
+    let drifted_output = Command::new(env!("CARGO_BIN_EXE_revia"))
+        .args(["project-check", drifted.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(baseline_output.status.success());
+    assert!(drifted_output.status.success());
+    let baseline_stdout = String::from_utf8_lossy(&baseline_output.stdout);
+    let drifted_stdout = String::from_utf8_lossy(&drifted_output.stdout);
+    assert_ne!(
+        json_field(&baseline_stdout, "graph_revision"),
+        json_field(&drifted_stdout, "graph_revision")
+    );
+    assert_ne!(
+        json_field(&baseline_stdout, "project_digest"),
+        json_field(&drifted_stdout, "project_digest")
+    );
+    fs::remove_dir_all(baseline).unwrap();
+    fs::remove_dir_all(drifted).unwrap();
+}
+
+#[test]
 fn native_project_surface_check_rejects_detached_task_contract_agent() {
     let project = mutated_expense_project(
         "task-contract ",
@@ -368,6 +396,15 @@ fn assert_surface_rejected(source: &str, expected_code: &str) {
             .contains("\"schema\":\"re.native-project-surface-result@0.1.0\"")
     );
     fs::remove_dir_all(root).unwrap();
+}
+
+fn json_field(source: &str, field: &str) -> String {
+    let marker = format!("\"{field}\":\"");
+    let start = source
+        .find(&marker)
+        .unwrap_or_else(|| panic!("missing {field} in {source}"))
+        + marker.len();
+    source[start..].split('"').next().unwrap().to_owned()
 }
 
 fn temp_project(source: &str) -> PathBuf {

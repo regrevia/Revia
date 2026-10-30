@@ -572,6 +572,7 @@ pub fn load_project_directory(
         &package,
         &modules,
         &package_digest,
+        &agents,
         &allowed_capabilities,
         &resources,
     );
@@ -580,6 +581,7 @@ pub fn load_project_directory(
         &package,
         &modules,
         &package_digest,
+        &agents,
         &allowed_capabilities,
         &resources,
     ));
@@ -2565,6 +2567,7 @@ fn project_graph_json(
     package: &NativePackage,
     modules: &[NativeProjectModuleLoaded],
     package_digest: &str,
+    agents: &BTreeMap<String, (String, String)>,
     allowed_capabilities: &BTreeSet<String>,
     resources: &[NativeResource],
 ) -> JsonValue {
@@ -2620,6 +2623,23 @@ fn project_graph_json(
             ),
         ));
     }
+    if !agents.is_empty() {
+        entries.push((
+            "agents",
+            JsonValue::Array(
+                agents
+                    .iter()
+                    .map(|(agent, (module, digest))| {
+                        object(vec![
+                            ("agent", JsonValue::String(agent.clone())),
+                            ("contract_digest", JsonValue::String(digest.clone())),
+                            ("module", JsonValue::String(module.clone())),
+                        ])
+                    })
+                    .collect(),
+            ),
+        ));
+    }
     if !resources.is_empty() {
         entries.push((
             "resources",
@@ -2633,6 +2653,7 @@ fn project_identity_json(
     package: &NativePackage,
     modules: &[NativeProjectModuleLoaded],
     package_digest: &str,
+    agents: &BTreeMap<String, (String, String)>,
     allowed_capabilities: &BTreeSet<String>,
     resources: &[NativeResource],
 ) -> JsonValue {
@@ -2673,6 +2694,23 @@ fn project_identity_json(
                     .iter()
                     .cloned()
                     .map(JsonValue::String)
+                    .collect(),
+            ),
+        ));
+    }
+    if !agents.is_empty() {
+        entries.push((
+            "agents",
+            JsonValue::Array(
+                agents
+                    .iter()
+                    .map(|(agent, (module, digest))| {
+                        object(vec![
+                            ("agent", JsonValue::String(agent.clone())),
+                            ("contract_digest", JsonValue::String(digest.clone())),
+                            ("module", JsonValue::String(module.clone())),
+                        ])
+                    })
                     .collect(),
             ),
         ));
