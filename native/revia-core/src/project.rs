@@ -822,7 +822,8 @@ fn validate_module_surface_declaration(
                     if fields.iter().any(|(key, value)| {
                         key == "module" && value == &JsonValue::String(module.to_owned())
                     })
-            );
+            ) || (prefix == "run-case "
+                && name.starts_with(&format!("{module}.")));
             if !has_module_owner {
                 return Err(ProjectError::new(
                     "native-project-module-surface-declaration-module-mismatch",
