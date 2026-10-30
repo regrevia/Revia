@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { cp, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { spawnSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -77,6 +77,40 @@ test('materialized Agent project checks and translates across locales and media'
       assert.match(body, new RegExp(json.receipt.graph_revision))
       assert.match(body, new RegExp(json.receipt.semantic_fact_digest))
     }
+  }
+})
+
+test('materialized Agent project projection is byte-identical across fresh outputs', async () => {
+  const left = await mkdtemp(join(tmpdir(), 're-expense-projection-left-'))
+  const right = await mkdtemp(join(tmpdir(), 're-expense-projection-right-'))
+  try {
+    for (const output of [left, right]) {
+      const result = run([
+        'project-projection',
+        '--routes',
+        join(projectPath, 'interface-routes.json'),
+        '--out',
+        output,
+        projectPath,
+      ])
+      assert.equal(result.status, 0, result.stderr)
+      assert.equal(result.value.ok, true)
+      assert.equal(
+        result.value.manifest.contract.authority.graph_revision,
+        result.value.manifest.contract.authority.project_digest,
+      )
+    }
+    const names = (await readdir(left)).sort()
+    assert.deepEqual(names, ['client.ts', 'projection.json', 'types.ts'])
+    for (const name of names) {
+      assert.equal(
+        await readFile(join(left, name), 'utf8'),
+        await readFile(join(right, name), 'utf8'),
+      )
+    }
+  } finally {
+    await rm(left, { force: true, recursive: true })
+    await rm(right, { force: true, recursive: true })
   }
 })
 
