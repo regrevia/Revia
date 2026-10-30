@@ -192,12 +192,21 @@ impl NativeProjectModule {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NativeProject {
+    pub allowed_capabilities: BTreeSet<String>,
     pub graph_revision: String,
     pub modules: Vec<NativeProjectModuleLoaded>,
     pub package: String,
     pub package_digest: String,
     pub package_manifest: NativePackage,
     pub project_digest: String,
+    pub resources: Vec<NativeResource>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NativeResource {
+    pub alias: String,
+    pub key: String,
+    pub uid: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -472,7 +481,8 @@ pub fn load_project_directory(
     let manifest_source = fs::read_to_string(&manifest_path)
         .map_err(|_| ProjectError::new("project-manifest-unreadable"))?;
     let document = parse_json(&manifest_source)?;
-    let (project_modules, package) = parse_project_manifest(&document)?;
+    let (project_modules, package, allowed_capabilities, resources) =
+        parse_project_manifest(&document)?;
     validate_package(&package)?;
     validate_project_package_alignment(&project_modules, &package)?;
 
@@ -539,16 +549,30 @@ pub fn load_project_directory(
         })
         .collect::<Result<Vec<_>, _>>()?;
     let package_digest = package_manifest_digest(&package)?;
-    let graph_value = project_graph_json(&package, &modules, &package_digest);
+    let graph_value = project_graph_json(
+        &package,
+        &modules,
+        &package_digest,
+        &allowed_capabilities,
+        &resources,
+    );
     let graph_revision = digest_value(&graph_value);
-    let project_digest = digest_value(&project_identity_json(&package, &modules, &package_digest));
+    let project_digest = digest_value(&project_identity_json(
+        &package,
+        &modules,
+        &package_digest,
+        &allowed_capabilities,
+        &resources,
+    ));
     Ok(NativeProject {
+        allowed_capabilities,
         graph_revision,
         modules,
         package: package.package.clone(),
         package_digest,
         package_manifest: package,
         project_digest,
+        resources,
     })
 }
 
@@ -559,7 +583,13 @@ pub fn validate_project_module_surfaces(
     for module in &project.modules {
         let source = fs::read_to_string(root_directory.as_ref().join(&module.path))
             .map_err(|_| ProjectError::new("native-project-source-unreadable"))?;
-        validate_module_surface(&source, module, &project.package_manifest)?;
+        validate_module_surface(
+            &source,
+            module,
+            &project.package_manifest,
+            &project.allowed_capabilities,
+            &project.resources,
+        )?;
     }
     Ok(())
 }
@@ -568,6 +598,8 @@ fn validate_module_surface(
     source: &str,
     module: &NativeProjectModuleLoaded,
     package: &NativePackage,
+    allowed_capabilities: &BTreeSet<String>,
+    resources: &[NativeResource],
 ) -> Result<(), ProjectError> {
     let mut lines = source.lines();
     if lines.next() != Some("re 1.0 compact") {
@@ -658,7 +690,13 @@ fn validate_module_surface(
             }
             continue;
         }
-        validate_module_surface_declaration(line, &module.name, &mut review_uids)?;
+        validate_module_surface_declaration(
+            line,
+            &module.name,
+            allowed_capabilities,
+            resources,
+            &mut review_uids,
+        )?;
     }
     if !saw_module {
         return Err(ProjectError::new(
@@ -693,6 +731,8 @@ fn validate_module_surface(
 fn validate_module_surface_declaration(
     line: &str,
     module: &str,
+    allowed_capabilities: &BTreeSet<String>,
+    resources: &[NativeResource],
     review_uids: &mut BTreeSet<String>,
 ) -> Result<(), ProjectError> {
     if let Some(rest) = line.strip_prefix("capability ") {
@@ -712,6 +752,11 @@ fn validate_module_surface_declaration(
         if !review_uids.insert(fields[4].to_owned()) {
             return Err(ProjectError::new(
                 "native-project-module-surface-review-uid-duplicate",
+            ));
+        }
+        if !allowed_capabilities.contains(fields[2]) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-capability-not-allowed",
             ));
         }
         return Ok(());
@@ -816,6 +861,9 @@ fn validate_module_surface_declaration(
                     "native-project-module-surface-declaration-noncanonical",
                 ));
             }
+            if prefix == "adapter-contract " {
+                validate_adapter_authority(&value, allowed_capabilities, resources)?;
+            }
             let has_module_owner = matches!(
                 &value,
                 JsonValue::Object(fields)
@@ -835,6 +883,57 @@ fn validate_module_surface_declaration(
     Err(ProjectError::new(
         "native-project-module-surface-construct-unsupported",
     ))
+}
+
+fn validate_adapter_authority(
+    value: &JsonValue,
+    allowed_capabilities: &BTreeSet<String>,
+    resources: &[NativeResource],
+) -> Result<(), ProjectError> {
+    let fields = exact_object(
+        value,
+        &[
+            "agent",
+            "cancellation",
+            "capability",
+            "deadline",
+            "error_type",
+            "error_variants",
+            "features",
+            "input_type",
+            "module",
+            "node_uid",
+            "output_type",
+            "profile",
+            "request_type",
+            "resource",
+            "schema",
+        ],
+    )?;
+    let capability = fields
+        .get("capability")
+        .ok_or_else(|| ProjectError::new("native-project-module-surface-adapter-invalid"))?;
+    let capability_fields = exact_object(capability, &["instance", "member", "reference"])?;
+    let reference = string(&capability_fields, "reference")?;
+    if !allowed_capabilities.contains(reference) {
+        return Err(ProjectError::new(
+            "native-project-module-surface-capability-not-allowed",
+        ));
+    }
+    let resource = fields
+        .get("resource")
+        .ok_or_else(|| ProjectError::new("native-project-module-surface-adapter-invalid"))?;
+    let resource_fields = exact_object(resource, &["access", "constructor"])?;
+    let constructor = string(&resource_fields, "constructor")?;
+    if !resources
+        .iter()
+        .any(|resource| resource.alias == constructor || resource.key == constructor)
+    {
+        return Err(ProjectError::new(
+            "native-project-module-surface-resource-not-declared",
+        ));
+    }
+    Ok(())
 }
 
 fn valid_capability_reference(value: &str) -> bool {
@@ -1438,7 +1537,15 @@ fn validate_artifact(
 
 fn parse_project_manifest(
     value: &JsonValue,
-) -> Result<(Vec<NativeProjectModule>, NativePackage), ProjectError> {
+) -> Result<
+    (
+        Vec<NativeProjectModule>,
+        NativePackage,
+        BTreeSet<String>,
+        Vec<NativeResource>,
+    ),
+    ProjectError,
+> {
     let entries = exact_object(
         value,
         &[
@@ -1465,20 +1572,30 @@ fn parse_project_manifest(
     {
         return Err(ProjectError::new("invalid-project-agent-set"));
     }
-    if let Some(JsonValue::Array(values)) = entries.get("allowed_capabilities") {
+    let allowed_capabilities = if let Some(JsonValue::Array(values)) =
+        entries.get("allowed_capabilities")
+    {
+        let mut capabilities = BTreeSet::new();
         for value in values {
-            if !matches!(value, JsonValue::String(_)) {
+            let capability = match value {
+                JsonValue::String(value) => value,
+                _ => return Err(ProjectError::new("invalid-project-allowed-capability")),
+            };
+            if !valid_capability_reference(capability) || !capabilities.insert(capability.clone()) {
                 return Err(ProjectError::new("invalid-project-allowed-capability"));
             }
         }
+        capabilities
     } else if entries.contains_key("allowed_capabilities") {
         return Err(ProjectError::new("invalid-project-allowed-capabilities"));
-    }
-    if let Some(value) = entries.get("resources")
-        && !matches!(value, JsonValue::Array(_))
-    {
-        return Err(ProjectError::new("invalid-project-resource-set"));
-    }
+    } else {
+        BTreeSet::new()
+    };
+    let resources = entries
+        .get("resources")
+        .map(|value| parse_resources(*value))
+        .transpose()?
+        .unwrap_or_default();
     let modules = array(&entries, "modules")?
         .iter()
         .map(parse_project_module)
@@ -1491,7 +1608,37 @@ fn parse_project_manifest(
             .get("package_manifest")
             .ok_or_else(|| ProjectError::new("missing-project-package-manifest"))?,
     )?;
-    Ok((modules, package))
+    Ok((modules, package, allowed_capabilities, resources))
+}
+
+fn parse_resources(value: &JsonValue) -> Result<Vec<NativeResource>, ProjectError> {
+    let JsonValue::Array(values) = value else {
+        return Err(ProjectError::new("invalid-project-resource-set"));
+    };
+    let mut resources = Vec::new();
+    let mut aliases = BTreeSet::new();
+    let mut keys = BTreeSet::new();
+    let mut uids = BTreeSet::new();
+    for value in values {
+        let entries = exact_object(value, &["alias", "key", "uid"])?;
+        let resource = NativeResource {
+            alias: string(&entries, "alias")?.to_owned(),
+            key: string(&entries, "key")?.to_owned(),
+            uid: string(&entries, "uid")?.to_owned(),
+        };
+        if !valid_binding(&resource.alias)
+            || !valid_binding(&resource.key)
+            || !valid_module_uid(&resource.uid)
+            || !aliases.insert(resource.alias.clone())
+            || !keys.insert(resource.key.clone())
+            || !uids.insert(resource.uid.clone())
+        {
+            return Err(ProjectError::new("invalid-project-resource"));
+        }
+        resources.push(resource);
+    }
+    resources.sort_by(|left, right| left.alias.as_bytes().cmp(right.alias.as_bytes()));
+    Ok(resources)
 }
 
 fn parse_project_module(value: &JsonValue) -> Result<NativeProjectModule, ProjectError> {
@@ -1828,6 +1975,8 @@ fn project_graph_json(
     package: &NativePackage,
     modules: &[NativeProjectModuleLoaded],
     package_digest: &str,
+    allowed_capabilities: &BTreeSet<String>,
+    resources: &[NativeResource],
 ) -> JsonValue {
     object(vec![
         (
@@ -1862,10 +2011,24 @@ fn project_graph_json(
                     .collect(),
             ),
         ),
+        (
+            "allowed_capabilities",
+            JsonValue::Array(
+                allowed_capabilities
+                    .iter()
+                    .cloned()
+                    .map(JsonValue::String)
+                    .collect(),
+            ),
+        ),
         ("package", JsonValue::String(package.package.clone())),
         (
             "package_digest",
             JsonValue::String(package_digest.to_owned()),
+        ),
+        (
+            "resources",
+            JsonValue::Array(resources.iter().map(resource_json).collect()),
         ),
         ("schema", JsonValue::String(PROJECT_GRAPH_SCHEMA.to_owned())),
     ])
@@ -1875,6 +2038,8 @@ fn project_identity_json(
     package: &NativePackage,
     modules: &[NativeProjectModuleLoaded],
     package_digest: &str,
+    allowed_capabilities: &BTreeSet<String>,
+    resources: &[NativeResource],
 ) -> JsonValue {
     object(vec![
         (
@@ -1899,11 +2064,33 @@ fn project_identity_json(
                     .collect(),
             ),
         ),
+        (
+            "allowed_capabilities",
+            JsonValue::Array(
+                allowed_capabilities
+                    .iter()
+                    .cloned()
+                    .map(JsonValue::String)
+                    .collect(),
+            ),
+        ),
         ("package", JsonValue::String(package.package.clone())),
         (
             "package_digest",
             JsonValue::String(package_digest.to_owned()),
         ),
+        (
+            "resources",
+            JsonValue::Array(resources.iter().map(resource_json).collect()),
+        ),
+    ])
+}
+
+fn resource_json(resource: &NativeResource) -> JsonValue {
+    object(vec![
+        ("alias", JsonValue::String(resource.alias.clone())),
+        ("key", JsonValue::String(resource.key.clone())),
+        ("uid", JsonValue::String(resource.uid.clone())),
     ])
 }
 
