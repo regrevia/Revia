@@ -12,7 +12,7 @@ tests.
 
 The latest published candidate is `v1.0.0-rc.2.2.1`, with separately verified
 native Linux x64 and Windows x64 assets. Its tag points to `35ae4ed`. The
-current-main code-validation snapshot below is `b479fea`; later source or
+current-main code-validation snapshot below is `a57a8bb`; later source or
 documentation commits do not alter the existing tag or its downloadable assets.
 
 公开仓库现已包含按 MPL-2.0 发布、经过筛选的 RE 源码。当前源码包括 Node 参考工具链、
@@ -20,7 +20,7 @@ Rust native 翻译器/VM 切片、项目与模块检查、确定性语义产物�
 接口投影以及一致性测试。
 
 最新已发布候选为 `v1.0.0-rc.2.2.1`，包含分别验证的 Linux x64 与 Windows x64 原生资产。
-该 tag 指向 `35ae4ed`。下方 main 代码验证快照为 `b479fea`；后续源码或文档提交不会改变
+该 tag 指向 `35ae4ed`。下方 main 代码验证快照为 `a57a8bb`；后续源码或文档提交不会改变
 既有 tag 或其可下载资产。
 
 ## Verified Scope
@@ -34,8 +34,8 @@ Rust native 翻译器/VM 切片、项目与模块检查、确定性语义产物�
 | Historical RC1 | Existing Darwin arm64 archive, checksums, manifest, and RC license remain unchanged |
 | RC2.2.1 Linux x64 asset | Native evidence and public-download checksum recorded in `runtime/rc2.2.1/` |
 | RC2.2.1 Windows x64 asset | Native evidence and public-download checksum recorded in `runtime/rc2.2.1/` |
-| Current main source, `b479fea` | Source validation, Linux x64 native conformance, and Windows x64 native conformance passed in GitHub Actions; bound Windows runner verified the downloaded executable digest before launch |
-| Project template on current main | Manifest/source binding and native project workflow passed in Linux x64 and Windows x64 CI |
+| Current main source, `a57a8bb` | Source validation, Linux x64 native conformance, and Windows x64 native conformance passed in GitHub Actions; bound Windows runner verified the downloaded executable digest before launch |
+| Project template on current main | Source and native `project-check` gates passed; native build/run remain versioned-candidate scope |
 | Production readiness | Not claimed |
 | Complete A2A/MCP interoperability | Not claimed |
 | Stable V1.0 | Blocked by [stable-release-gate.md](stable-release-gate.md) |
@@ -62,23 +62,23 @@ complete production feature is implemented.
 ## Main-Branch Evidence / Main 分支证据
 
 The following checks passed at public main commit
-[`b479fea`](https://github.com/regrevia/Revia/commit/b479fea10fd79afcc43ad0cdd0923ec0fa6d2a17):
+[`a57a8bb`](https://github.com/regrevia/Revia/commit/a57a8bb7180cfd595dffe4db0fc85a62a2ba078c):
 
-- [Source and release validation](https://github.com/regrevia/Revia/actions/runs/41073166938)
-- [Linux x64 native conformance](https://github.com/regrevia/Revia/actions/runs/41073340798)
-- [Windows x64 native conformance](https://github.com/regrevia/Revia/actions/runs/41073353022)
+- [Source and release validation](https://github.com/regrevia/Revia/actions/runs/41095449928)
+- [Linux x64 native conformance](https://github.com/regrevia/Revia/actions/runs/41095449876)
+- [Windows x64 native conformance](https://github.com/regrevia/Revia/actions/runs/41095449997)
 
 These runs exercise current source, including the checked-in runnable project
 template. They do not replace a versioned candidate or prove the older
 `v1.0.0-rc.2.2.1` binary assets contain those later changes.
 
 以下检查在公开 main commit
-[`b479fea`](https://github.com/regrevia/Revia/commit/b479fea10fd79afcc43ad0cdd0923ec0fa6d2a17)
+[`a57a8bb`](https://github.com/regrevia/Revia/commit/a57a8bb7180cfd595dffe4db0fc85a62a2ba078c)
 通过：
 
-- [Source and release validation](https://github.com/regrevia/Revia/actions/runs/41073166938)
-- [Linux x64 native conformance](https://github.com/regrevia/Revia/actions/runs/41073340798)
-- [Windows x64 native conformance](https://github.com/regrevia/Revia/actions/runs/41073353022)
+- [Source and release validation](https://github.com/regrevia/Revia/actions/runs/41095449928)
+- [Linux x64 native conformance](https://github.com/regrevia/Revia/actions/runs/41095449876)
+- [Windows x64 native conformance](https://github.com/regrevia/Revia/actions/runs/41095449997)
 
 这些工作流测试当前源码，包括仓库内可运行的项目模板；它们不等同于新的版本化候选，
 也不能证明较早的 `v1.0.0-rc.2.2.1` 二进制包含之后的源码变更。

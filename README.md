@@ -30,8 +30,8 @@ checks do not silently change the tagged binaries. See
 [development status](docs/development-status.md) and
 [compatibility](docs/compatibility.md) for the version-specific evidence.
 
-At main commit `b479fea`, source validation and native Linux x64 and Windows x64
-workflows pass, including the runnable project-template workflow and the bound
+At main commit `a57a8bb`, source validation and native Linux x64 and Windows x64
+workflows pass, including the checked project-template gate and the bound
 Windows x64 runner artifact-integrity check. This is current-source evidence,
 not a new release asset.
 
