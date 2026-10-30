@@ -51,10 +51,15 @@ The first command checks module pins, source digests, capabilities, resources,
 tasks, adapters, run cases and graph identity. The second command produces
 human-review facts while preserving the same graph revision and semantic fact
 digest across locales and output media.
+The native surface check verifies authority linkage and required declaration
+shape; it does not prove complete function typing, control-flow validity,
+runtime enforcement or successful execution.
 
 请在仓库根目录运行。第一个命令检查模块 pin、源码摘要、能力、资源、任务、adapter、
 run case 与图身份；第二个命令生成面向人类审阅的事实，同时保持不同 locale 和输出介质
 共享同一 graph revision 与 semantic fact digest。
+Native surface check 只验证 authority 绑定与声明的必要结构，不证明完整函数类型、
+控制流有效性、运行时强制或程序成功执行。
 
 第三个命令生成确定性的 `types.ts`、`client.ts` 和 `projection.json`。route manifest
 固定 graph revision、checked operation、adapter 契约、错误 variant、幂等要求和 HTTP
