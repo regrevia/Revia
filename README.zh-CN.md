@@ -22,8 +22,9 @@ fixture。
 main 分支检查不会静默改变已打 tag 的二进制。按版本区分的证据见
 [开发状态](docs/development-status.md)和[兼容性](docs/compatibility.md)。
 
-在 main commit `7c242e1` 上，Source validation、Linux x64 与 Windows x64 原生工作流均通过，
-包含可运行项目模板流程。这是当前源码证据，不是新的发行资产。
+在 main commit `b479fea` 上，Source validation、Linux x64 与 Windows x64 原生工作流均通过，
+包含可运行项目模板流程和 Windows x64 绑定 runner 的发行产物完整性校验。这是当前源码证据，
+不是新的发行资产。
 
 这些内容是有边界的实现证据，不代表 production backend、完整语言实现、跨平台
 等价、完整 A2A/MCP 互操作或 Stable V1.0。详见

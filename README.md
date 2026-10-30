@@ -30,9 +30,10 @@ checks do not silently change the tagged binaries. See
 [development status](docs/development-status.md) and
 [compatibility](docs/compatibility.md) for the version-specific evidence.
 
-At main commit `7c242e1`, source validation and native Linux x64 and Windows x64
-workflows pass, including the runnable project-template workflow. This is
-current-source evidence, not a new release asset.
+At main commit `b479fea`, source validation and native Linux x64 and Windows x64
+workflows pass, including the runnable project-template workflow and the bound
+Windows x64 runner artifact-integrity check. This is current-source evidence,
+not a new release asset.
 
 These capabilities are bounded evidence, not claims of a production backend,
 complete language implementation, cross-platform equivalence, full A2A/MCP

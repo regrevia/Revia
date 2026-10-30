@@ -60,7 +60,7 @@ The latest published candidate is `v1.0.0-rc.2.2.1`. Its target matrix records
 native Linux x64 and Windows x64 evidence; the other four
 desktop targets remain pending. The tag points to `35ae4ed`.
 
-The latest code-validation snapshot is public main commit `7c242e1`. Source
+The latest code-validation snapshot is public main commit `b479fea`. Source
 validation and native Linux/Windows CI pass on that commit, including the
 checked-in project template workflow. These source checks do not change the
 published RC2.2.1 binaries. A new versioned candidate must carry the project
@@ -72,10 +72,10 @@ license or from the source MPL-2.0 license. The RC2.2.1 binary license scope
 needs version-specific clarification. Signed tags/checksums, immutable
 releases, SBOM, and artifact attestation also remain pending for Stable V1.0.
 
-最新已发布候选为 `v1.0.0-rc.2.2.1`。其不可变目标矩阵记录 Linux x64 与 Windows x64
+最新已发布候选为 `v1.0.0-rc.2.2.1`。其目标矩阵记录 Linux x64 与 Windows x64
 原生证据，其余四个桌面目标仍为 pending；该 tag 指向 `35ae4ed`。
 
-最新代码验证快照为公开 main commit `7c242e1`。该 commit 上的 source validation 与 Linux/Windows
+最新代码验证快照为公开 main commit `b479fea`。该 commit 上的 source validation 与 Linux/Windows
 native CI 通过，包含仓库内项目模板流程；这些源码检查不会
 改变已发布的 RC2.2.1 二进制。新版本候选必须带上项目模板、重新运行发行门禁，并将证据绑定到新 tag。
 

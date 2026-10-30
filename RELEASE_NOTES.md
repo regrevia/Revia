@@ -8,7 +8,8 @@ Windows x64 assets with target-specific evidence in
 candidate, not Stable V1.0 or a production-readiness claim.
 
 The current main source later passed Source validation and native Linux x64 and
-Windows x64 CI at `7c242e1`, including the runnable project-template workflow.
+Windows x64 CI at `b479fea`, including the runnable project-template workflow
+and the bound Windows x64 artifact-integrity check.
 Those checks are not part of the existing published RC2.2.1 assets.
 
 The RC2.2.1 export includes `LICENSE-RC.md`, whose text applies only to RC1.
@@ -20,8 +21,9 @@ clarification.
 [`runtime/rc2.2.1/`](runtime/rc2.2.1/)。该 tag 指向 `35ae4ed`；它是候选版本，不是 Stable V1.0，
 也不代表生产就绪。
 
-当前 main 源码随后在 `7c242e1` 通过 Source validation、Linux x64 与 Windows x64 native CI，
-包括可运行项目模板流程。这些检查不属于现有已发布的 RC2.2.1 资产。
+当前 main 源码随后在 `b479fea` 通过 Source validation、Linux x64 与 Windows x64 native CI，
+包括可运行项目模板流程和 Windows x64 绑定 runner 的发行产物完整性校验。这些检查不属于现有
+已发布的 RC2.2.1 资产。
 
 RC2.2.1 导出包包含一份文本适用范围仅为 RC1 的 `LICENSE-RC.md`。不得从 RC1 许可或源码
 MPL-2.0 推断 RC2.2.1 二进制的使用/再分发条款；二进制的版本专属条款仍需澄清。
