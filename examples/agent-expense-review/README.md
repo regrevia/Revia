@@ -35,6 +35,18 @@ node src/cli/re.js project-projection \
   examples/agent-expense-review
 ```
 
+For the native surface-only check, use the versioned native candidate:
+
+```bash
+revia project-surface-check examples/agent-expense-review
+```
+
+native surface-only 检查使用版本化 native 候选：
+
+```bash
+revia project-surface-check examples/agent-expense-review
+```
+
 The first command checks module pins, source digests, capabilities, resources,
 tasks, adapters, run cases and graph identity. The second command produces
 human-review facts while preserving the same graph revision and semantic fact

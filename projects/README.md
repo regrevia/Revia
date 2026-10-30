@@ -48,6 +48,7 @@ the same project schema.
 | `node src/cli/re.js project-check` | Checked project graph and source authority |
 | `node src/cli/re.js project-translate` | Human-review projection for projects with Agent/business facts |
 | native `revia project-check` | Native project-manifest and module-surface check |
+| native `revia project-surface-check` | Native `re 1.0` module-surface authority check without translation |
 | native `revia project-test/build/run` | `project-test` reports an explicit module-surface boundary; build/run require versioned candidate contracts |
 
 命令证据边界：
@@ -57,6 +58,7 @@ the same project schema.
 | `node src/cli/re.js project-check` | 检查项目图与源码 authority |
 | `node src/cli/re.js project-translate` | 面向含 Agent/业务事实项目的人类审阅投影 |
 | native `revia project-check` | native 项目 manifest 与 module surface 检查 |
+| native `revia project-surface-check` | native `re 1.0` module surface authority 检查，不执行 translation |
 | native `revia project-test/build/run` | `project-test` 会明确报告 module-surface 边界；build/run 需要版本化候选契约 |
 
 Every independent experiment gets a new directory.

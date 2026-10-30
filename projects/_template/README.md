@@ -18,6 +18,18 @@ INPUT=sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
 node src/cli/re.js project-check --format json "$PROJECT"
 ```
 
+The native candidate also exposes a surface-only authority check:
+
+```bash
+revia project-surface-check "$PROJECT"
+```
+
+native 候选还提供只检查 module-surface authority 的命令：
+
+```bash
+revia project-surface-check "$PROJECT"
+```
+
 The current public source workflow exposes `project-check` for this minimal
 template. `project-translate` requires a project with translatable Agent or
 business facts. Native `project-build` and
