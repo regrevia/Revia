@@ -801,7 +801,9 @@ fn validate_module_surface_declaration(
             let (name, json) = rest.split_once(' ').ok_or_else(|| {
                 ProjectError::new("native-project-module-surface-declaration-invalid")
             })?;
-            if !name.starts_with(&format!("{module}.")) || !valid_name(name) || json.is_empty() {
+            let name_belongs_to_module = name.starts_with(&format!("{module}."))
+                || (prefix == "agent-declaration " && name == module);
+            if !name_belongs_to_module || !valid_name(name) || json.is_empty() {
                 return Err(ProjectError::new(
                     "native-project-module-surface-declaration-invalid",
                 ));
