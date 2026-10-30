@@ -218,6 +218,16 @@ fn native_project_surface_check_rejects_detached_function_capability_calls() {
             "\"access\":\"write\"",
             "native-project-module-surface-resource-mismatch",
         ),
+        (
+            "\"effect_edges\":[{\"access\":\"read\"",
+            "\"effect_edges\":[{\"access\":\"write\"",
+            "native-project-module-surface-function-effect-edge-mismatch",
+        ),
+        (
+            "\"effect_edges\":[{\"access\":\"read\",\"call\":\"expense_db_read\",\"from\":\"request\",\"resource\":\"expense_db\",\"to\":\"expense_db_read\"}]",
+            "\"effect_edges\":[]",
+            "native-project-module-surface-function-capability-call-missing-effect-edge",
+        ),
     ] {
         let project = mutated_expense_project("function-declaration ", old_field, new_field);
         let output = Command::new(env!("CARGO_BIN_EXE_revia"))

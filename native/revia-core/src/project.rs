@@ -998,6 +998,7 @@ fn validate_function_capability_calls(
         body,
         &["calls", "capability_calls", "control_flow", "effect_edges"],
     )?;
+    let mut call_authorities = BTreeMap::new();
     for call in array(&body_fields, "capability_calls")? {
         let call_fields = exact_object(
             call,
@@ -1026,6 +1027,57 @@ fn validate_function_capability_calls(
             resources,
             declared_capabilities,
         )?;
+        let call_id = string(&call_fields, "id")?;
+        let resource_fields = exact_object(resource, &["access", "constructor"])?;
+        if call_authorities
+            .insert(
+                call_id.to_owned(),
+                (
+                    string(&resource_fields, "constructor")?.to_owned(),
+                    string(&resource_fields, "access")?.to_owned(),
+                ),
+            )
+            .is_some()
+        {
+            return Err(ProjectError::new(
+                "native-project-module-surface-function-capability-call-duplicate",
+            ));
+        }
+    }
+    let mut seen_effect_calls = BTreeSet::new();
+    for edge in array(&body_fields, "effect_edges")? {
+        let edge_fields = exact_object(edge, &["access", "call", "from", "resource", "to"])?;
+        let call = string(&edge_fields, "call")?;
+        let from = string(&edge_fields, "from")?;
+        let to = string(&edge_fields, "to")?;
+        if !valid_binding(call) || from.is_empty() || to.is_empty() {
+            return Err(ProjectError::new(
+                "native-project-module-surface-function-effect-edge-invalid",
+            ));
+        }
+        let (expected_resource, expected_access) = call_authorities.get(call).ok_or_else(|| {
+            ProjectError::new("native-project-module-surface-function-effect-edge-call-unknown")
+        })?;
+        if string(&edge_fields, "resource")? != expected_resource
+            || string(&edge_fields, "access")? != expected_access
+            || to != call
+        {
+            return Err(ProjectError::new(
+                "native-project-module-surface-function-effect-edge-mismatch",
+            ));
+        }
+        if !seen_effect_calls.insert(call.to_owned()) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-function-effect-edge-duplicate",
+            ));
+        }
+    }
+    for call in call_authorities.keys() {
+        if !seen_effect_calls.contains(call) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-function-capability-call-missing-effect-edge",
+            ));
+        }
     }
     Ok(())
 }
