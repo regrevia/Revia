@@ -2132,7 +2132,10 @@ fn first_unlisted_file(
 }
 
 fn is_project_metadata(relative: &str) -> bool {
-    matches!(relative, "HANDOFF.md" | "README.md" | "interface-routes.json")
+    matches!(
+        relative,
+        "HANDOFF.md" | "README.md" | "interface-routes.json"
+    )
 }
 
 fn unique_nonce() -> u128 {
