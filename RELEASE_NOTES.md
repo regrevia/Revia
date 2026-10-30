@@ -8,7 +8,7 @@ Windows x64 assets with target-specific evidence in
 candidate, not Stable V1.0 or a production-readiness claim.
 
 The current main source later passed Source validation and native Linux x64 and
-Windows x64 CI at `e4e7198`, including the native project-surface-check gate
+Windows x64 CI at `ca268c4`, including the native project-surface-check gate
 and the bound Windows x64 artifact-integrity check.
 Those checks are not part of the existing published RC2.2.1 assets.
 
@@ -21,7 +21,7 @@ clarification.
 [`runtime/rc2.2.1/`](runtime/rc2.2.1/)。该 tag 指向 `35ae4ed`；它是候选版本，不是 Stable V1.0，
 也不代表生产就绪。
 
-当前 main 源码随后在 `e4e7198` 通过 Source validation、Linux x64 与 Windows x64 native CI，
+当前 main 源码随后在 `ca268c4` 通过 Source validation、Linux x64 与 Windows x64 native CI，
 包括 native project-surface-check 门禁和 Windows x64 绑定 runner 的发行产物完整性校验。这些检查不属于现有
 已发布的 RC2.2.1 资产。
 

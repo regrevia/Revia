@@ -30,7 +30,7 @@ checks do not silently change the tagged binaries. See
 [development status](docs/development-status.md) and
 [compatibility](docs/compatibility.md) for the version-specific evidence.
 
-At main commit `e4e7198`, source validation and native Linux x64 and Windows x64
+At main commit `ca268c4`, source validation and native Linux x64 and Windows x64
 workflows pass, including the native `project-surface-check` gate and the
 bound Windows x64 runner artifact-integrity check. This is current-source
 evidence, not a new release asset.
