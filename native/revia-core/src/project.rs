@@ -1978,7 +1978,7 @@ fn project_graph_json(
     allowed_capabilities: &BTreeSet<String>,
     resources: &[NativeResource],
 ) -> JsonValue {
-    object(vec![
+    let mut entries = vec![
         (
             "modules",
             JsonValue::Array(
@@ -2011,7 +2011,15 @@ fn project_graph_json(
                     .collect(),
             ),
         ),
+        ("package", JsonValue::String(package.package.clone())),
         (
+            "package_digest",
+            JsonValue::String(package_digest.to_owned()),
+        ),
+        ("schema", JsonValue::String(PROJECT_GRAPH_SCHEMA.to_owned())),
+    ];
+    if !allowed_capabilities.is_empty() {
+        entries.push((
             "allowed_capabilities",
             JsonValue::Array(
                 allowed_capabilities
@@ -2020,18 +2028,15 @@ fn project_graph_json(
                     .map(JsonValue::String)
                     .collect(),
             ),
-        ),
-        ("package", JsonValue::String(package.package.clone())),
-        (
-            "package_digest",
-            JsonValue::String(package_digest.to_owned()),
-        ),
-        (
+        ));
+    }
+    if !resources.is_empty() {
+        entries.push((
             "resources",
             JsonValue::Array(resources.iter().map(resource_json).collect()),
-        ),
-        ("schema", JsonValue::String(PROJECT_GRAPH_SCHEMA.to_owned())),
-    ])
+        ));
+    }
+    object(entries)
 }
 
 fn project_identity_json(
@@ -2041,7 +2046,7 @@ fn project_identity_json(
     allowed_capabilities: &BTreeSet<String>,
     resources: &[NativeResource],
 ) -> JsonValue {
-    object(vec![
+    let mut entries = vec![
         (
             "modules",
             JsonValue::Array(
@@ -2064,7 +2069,14 @@ fn project_identity_json(
                     .collect(),
             ),
         ),
+        ("package", JsonValue::String(package.package.clone())),
         (
+            "package_digest",
+            JsonValue::String(package_digest.to_owned()),
+        ),
+    ];
+    if !allowed_capabilities.is_empty() {
+        entries.push((
             "allowed_capabilities",
             JsonValue::Array(
                 allowed_capabilities
@@ -2073,17 +2085,15 @@ fn project_identity_json(
                     .map(JsonValue::String)
                     .collect(),
             ),
-        ),
-        ("package", JsonValue::String(package.package.clone())),
-        (
-            "package_digest",
-            JsonValue::String(package_digest.to_owned()),
-        ),
-        (
+        ));
+    }
+    if !resources.is_empty() {
+        entries.push((
             "resources",
             JsonValue::Array(resources.iter().map(resource_json).collect()),
-        ),
-    ])
+        ));
+    }
+    object(entries)
 }
 
 fn resource_json(resource: &NativeResource) -> JsonValue {
