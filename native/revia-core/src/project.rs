@@ -569,23 +569,24 @@ fn validate_module_surface(
     module: &NativeProjectModuleLoaded,
     package: &NativePackage,
 ) -> Result<(), ProjectError> {
+    let mut lines = source.lines();
+    if lines.next() != Some("re 1.0 compact") {
+        return Err(ProjectError::new(
+            "native-project-module-surface-header-unsupported",
+        ));
+    }
     let mut saw_module = false;
+    let mut imports = BTreeSet::new();
+    let mut exports = BTreeSet::new();
+    let mut review_uids = BTreeSet::new();
     let package_module = package
         .modules
         .iter()
         .find(|candidate| candidate.name == module.name)
         .ok_or_else(|| ProjectError::new("project-module-not-in-package-manifest"))?;
-    for (index, raw) in source.lines().enumerate() {
+    for raw in lines {
         let line = raw.trim();
         if line.is_empty() || line.starts_with("//") {
-            continue;
-        }
-        if index == 0 {
-            if line != "re 1.0 compact" {
-                return Err(ProjectError::new(
-                    "native-project-module-surface-header-unsupported",
-                ));
-            }
             continue;
         }
         if let Some(name) = line.strip_prefix("module ") {
@@ -597,6 +598,11 @@ fn validate_module_surface(
             saw_module = true;
             continue;
         }
+        if !saw_module {
+            return Err(ProjectError::new(
+                "native-project-module-surface-module-order-invalid",
+            ));
+        }
         if let Some(rest) = line.strip_prefix("import ") {
             let (dependency, binding) = rest
                 .rsplit_once(" as ")
@@ -604,6 +610,11 @@ fn validate_module_surface(
             let (dependency_module, digest) = dependency
                 .split_once('@')
                 .ok_or_else(|| ProjectError::new("native-project-module-surface-import-invalid"))?;
+            if !valid_name(dependency_module) || !valid_binding(binding) || !valid_digest(digest) {
+                return Err(ProjectError::new(
+                    "native-project-module-surface-import-invalid",
+                ));
+            }
             let expected = package_module
                 .interface
                 .dependencies
@@ -617,9 +628,19 @@ fn validate_module_surface(
                     "native-project-module-surface-import-pin-mismatch",
                 ));
             }
+            if !imports.insert(binding.to_owned()) {
+                return Err(ProjectError::new(
+                    "native-project-module-surface-import-duplicate",
+                ));
+            }
             continue;
         }
         if let Some(name) = line.strip_prefix("export ") {
+            if !valid_binding(name) {
+                return Err(ProjectError::new(
+                    "native-project-module-surface-export-invalid",
+                ));
+            }
             if !package_module
                 .interface
                 .exports
@@ -630,33 +651,211 @@ fn validate_module_surface(
                     "native-project-module-surface-export-unlisted",
                 ));
             }
+            if !exports.insert(name.to_owned()) {
+                return Err(ProjectError::new(
+                    "native-project-module-surface-export-duplicate",
+                ));
+            }
             continue;
         }
-        let known = [
-            "capability ",
-            "error ",
-            "state ",
-            "task ",
-            "edge ",
-            "type-declaration ",
-            "function-declaration ",
-            "agent-declaration ",
-            "task-contract ",
-            "adapter-contract ",
-            "run-case ",
-        ];
-        if !known.iter().any(|prefix| line.starts_with(prefix)) {
-            return Err(ProjectError::new(
-                "native-project-module-surface-construct-unsupported",
-            ));
-        }
+        validate_module_surface_declaration(line, &module.name, &mut review_uids)?;
     }
     if !saw_module {
         return Err(ProjectError::new(
             "native-project-module-surface-module-missing",
         ));
     }
+    let expected_imports = package_module
+        .interface
+        .dependencies
+        .iter()
+        .map(|dependency| dependency.binding.clone())
+        .collect::<BTreeSet<_>>();
+    if imports != expected_imports {
+        return Err(ProjectError::new(
+            "native-project-module-surface-import-missing",
+        ));
+    }
+    let expected_exports = package_module
+        .interface
+        .exports
+        .iter()
+        .map(|export| export.name.clone())
+        .collect::<BTreeSet<_>>();
+    if exports != expected_exports {
+        return Err(ProjectError::new(
+            "native-project-module-surface-export-missing",
+        ));
+    }
     Ok(())
+}
+
+fn validate_module_surface_declaration(
+    line: &str,
+    module: &str,
+    review_uids: &mut BTreeSet<String>,
+) -> Result<(), ProjectError> {
+    if let Some(rest) = line.strip_prefix("capability ") {
+        let fields = rest.split_whitespace().collect::<Vec<_>>();
+        if fields.len() != 5
+            || !fields[0].starts_with(&format!("{module}."))
+            || !valid_name(fields[0])
+            || !valid_binding(fields[1])
+            || !valid_capability_reference(fields[2])
+            || fields[3] != "uid"
+            || !valid_module_uid(fields[4])
+        {
+            return Err(ProjectError::new(
+                "native-project-module-surface-capability-invalid",
+            ));
+        }
+        if !review_uids.insert(fields[4].to_owned()) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-review-uid-duplicate",
+            ));
+        }
+        return Ok(());
+    }
+    if let Some(rest) = line.strip_prefix("error ") {
+        let fields = rest.split_whitespace().collect::<Vec<_>>();
+        if fields.len() != 3
+            || !fields[0].starts_with(&format!("{module}."))
+            || !valid_name(fields[0])
+            || fields[1] != "uid"
+            || !valid_module_uid(fields[2])
+        {
+            return Err(ProjectError::new(
+                "native-project-module-surface-error-invalid",
+            ));
+        }
+        if !review_uids.insert(fields[2].to_owned()) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-review-uid-duplicate",
+            ));
+        }
+        return Ok(());
+    }
+    if let Some(rest) = line.strip_prefix("state ") {
+        let fields = rest.split_whitespace().collect::<Vec<_>>();
+        if fields.len() != 3
+            || !valid_binding(fields[0])
+            || fields[1] != "uid"
+            || !valid_module_uid(fields[2])
+        {
+            return Err(ProjectError::new(
+                "native-project-module-surface-state-invalid",
+            ));
+        }
+        if !review_uids.insert(fields[2].to_owned()) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-review-uid-duplicate",
+            ));
+        }
+        return Ok(());
+    }
+    if let Some(rest) = line.strip_prefix("task ") {
+        let fields = rest.split_whitespace().collect::<Vec<_>>();
+        if fields.len() != 3
+            || !fields[0].starts_with(&format!("{module}."))
+            || !valid_name(fields[0])
+            || fields[1] != "id"
+            || !valid_digest(fields[2])
+        {
+            return Err(ProjectError::new(
+                "native-project-module-surface-task-invalid",
+            ));
+        }
+        return Ok(());
+    }
+    if let Some(rest) = line.strip_prefix("edge ") {
+        let fields = rest.split_whitespace().collect::<Vec<_>>();
+        if fields.len() != 5
+            || !fields[0].starts_with(&format!("{module}."))
+            || !valid_name(fields[0])
+            || fields[1] != "->"
+            || !fields[2].starts_with(&format!("{module}."))
+            || !valid_name(fields[2])
+            || fields[3] != "uid"
+            || !valid_module_uid(fields[4])
+        {
+            return Err(ProjectError::new(
+                "native-project-module-surface-edge-invalid",
+            ));
+        }
+        if !review_uids.insert(fields[4].to_owned()) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-review-uid-duplicate",
+            ));
+        }
+        return Ok(());
+    }
+    for prefix in [
+        "type-declaration ",
+        "function-declaration ",
+        "agent-declaration ",
+        "task-contract ",
+        "adapter-contract ",
+        "run-case ",
+    ] {
+        if let Some(rest) = line.strip_prefix(prefix) {
+            let (name, json) = rest.split_once(' ').ok_or_else(|| {
+                ProjectError::new("native-project-module-surface-declaration-invalid")
+            })?;
+            if !name.starts_with(&format!("{module}.")) || !valid_name(name) || json.is_empty() {
+                return Err(ProjectError::new(
+                    "native-project-module-surface-declaration-invalid",
+                ));
+            }
+            let value = parse_json(json).map_err(|_| {
+                ProjectError::new("native-project-module-surface-declaration-invalid")
+            })?;
+            if canonicalize(&value) != json {
+                return Err(ProjectError::new(
+                    "native-project-module-surface-declaration-noncanonical",
+                ));
+            }
+            let has_module_owner = matches!(
+                &value,
+                JsonValue::Object(fields)
+                    if fields.iter().any(|(key, value)| {
+                        key == "module" && value == &JsonValue::String(module.to_owned())
+                    })
+            );
+            if !has_module_owner {
+                return Err(ProjectError::new(
+                    "native-project-module-surface-declaration-module-mismatch",
+                ));
+            }
+            return Ok(());
+        }
+    }
+    Err(ProjectError::new(
+        "native-project-module-surface-construct-unsupported",
+    ))
+}
+
+fn valid_capability_reference(value: &str) -> bool {
+    let Some((name, version)) = value.rsplit_once('@') else {
+        return false;
+    };
+    let parts = version.split('.').collect::<Vec<_>>();
+    valid_name(name)
+        && parts.len() == 3
+        && parts
+            .iter()
+            .all(|part| !part.is_empty() && part.bytes().all(|byte| byte.is_ascii_digit()))
+}
+
+fn valid_module_uid(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    bytes.len() == 26
+        && bytes[..25]
+            .iter()
+            .all(|byte| byte.is_ascii_lowercase() || (b'2'..=b'7').contains(byte))
+        && matches!(
+            bytes[25],
+            b'a' | b'e' | b'i' | b'm' | b'q' | b'u' | b'y' | b'4'
+        )
 }
 
 pub fn plan_project_recheck(
