@@ -35,3 +35,20 @@ fn checked_in_projection_routes_are_project_metadata() {
         String::from_utf8_lossy(&output.stderr)
     );
 }
+
+#[test]
+fn native_project_test_reports_module_surface_boundary_explicitly() {
+    let project = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../projects/_template")
+        .canonicalize()
+        .unwrap();
+    let output = Command::new(env!("CARGO_BIN_EXE_revia"))
+        .args(["project-test", project.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(!output.status.success());
+    assert!(
+        String::from_utf8_lossy(&output.stdout)
+            .contains("native-project-module-surface-unsupported")
+    );
+}

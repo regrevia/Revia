@@ -6016,6 +6016,17 @@ fn project_test(path: &str) -> Result<(), i32> {
         print_project_error(&error.code);
         65
     })?;
+    for module in &project.modules {
+        let source_path = Path::new(path).join(&module.path);
+        let source = fs::read_to_string(&source_path).map_err(|_| {
+            print_project_error("native-project-source-unreadable");
+            65
+        })?;
+        if source.starts_with("re 1.0 compact\n") {
+            print_project_error("native-project-module-surface-unsupported");
+            return Err(65);
+        }
+    }
     let workspace = temporary_project_workspace("test")?;
     let result = (|| {
         let mut modules = Vec::with_capacity(project.modules.len());
