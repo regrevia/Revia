@@ -12,7 +12,7 @@ close these gates.
 | Stable-use license and redistribution terms / 稳定使用与再分发许可证条款 | Pending |
 | Reachable private security channel / 可访问的私密安全渠道 | Enabled; verified through GitHub API on 2026-10-30 / 已启用；2026-10-30 经 GitHub API 核验 |
 | CLI help, version, subcommand help and exit-code matrix / CLI 帮助、版本、子命令帮助与退出码矩阵 | Pending release candidate |
-| Runnable project template and project workflow / 可运行项目模板与项目流程 | Source/native `project-check` passed at `a57a8bb`; native build/run pending a versioned release candidate / `a57a8bb` 源码/native `project-check` 已通过；native build/run 等待版本化候选 |
+| Runnable project template and project workflow / 可运行项目模板与项目流程 | Source/native `project-check` and `project-surface-check` passed at `e4e7198`; native build/run pending a versioned release candidate / `e4e7198` 源码/native `project-check` 与 `project-surface-check` 已通过；native build/run 等待版本化候选 |
 | Symlink launcher and PowerShell verification / 软链接启动器与 PowerShell 验证 | Pending release candidate |
 | Six independent platform runners / 六个独立平台 runner | Pending release candidate |
 | Pre-publication release smoke / 发布前 release smoke | Enforced by workflow |
@@ -29,7 +29,7 @@ not reclassified.
 在每项都有可从 Release 记录追溯的机器可读证据前，仓库保持 Candidate/Preview 状态。
 既有预览 tag 和资产不会被重新归类。
 
-The project-template source/native check and bound Windows artifact-integrity check passed on main commit `a57a8bb` in source
+The project-template source/native check and bound Windows artifact-integrity check passed on main commit `e4e7198` in source
 validation and native Linux x64/Windows x64 jobs. The gate remains pending
 until a new versioned candidate includes that workflow and binds its evidence
 to the candidate tag.
@@ -39,7 +39,7 @@ applies only to RC1. RC2.2.1 binary license applicability must be clarified
 before another binary candidate is presented as having settled evaluation or
 redistribution terms.
 
-项目模板源码/native 检查和 Windows 绑定 runner 的产物完整性校验已在 main commit `a57a8bb` 的源码验证、
+项目模板源码/native 检查和 Windows 绑定 runner 的产物完整性校验已在 main commit `e4e7198` 的源码验证、
 Linux x64 与 Windows x64 原生工作流中通过。
 但必须等新版本候选包含此流程并将证据绑定到候选 tag 后，门禁才能关闭。
 
