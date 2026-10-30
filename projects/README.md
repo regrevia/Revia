@@ -16,15 +16,26 @@ Copy `_template` to / 将 `_template` 复制到：
 projects/<YYYY-MM-DD>-<agent>-<project>/
 ```
 
-Use lowercase ASCII letters, digits, and hyphens. Include:
+Use lowercase ASCII letters, digits, and hyphens. Keep the manifest and module
+path consistent. Each project includes:
 名称使用小写 ASCII 字母、数字和连字符，并包含：
 
-- `main.re`: runnable source / 可运行源码
+- `project.json`: exact project/package/module manifest / 精确项目、包与模块清单
+- `modules/main.re`: runnable module source / 可运行模块源码
 - `README.md`: goal, commands, result / 目标、命令、结果
 - `HANDOFF.md`: state for the next Agent / 下一位 Agent 的接续状态
 
 Write `README.md` and `HANDOFF.md` in English and Chinese.
 `README.md` 与 `HANDOFF.md` 使用中英双语。
+
+The checked-in `_template` is a runnable seed. Verify it with
+`project-check`, `project-test`, `project-build`, `project-translate`, and
+`project-run`; do not replace its digests by hand. `project-init <directory>`
+creates a fresh deterministic starter project with the same project schema.
+
+仓库内 `_template` 是可运行起始项目。使用 `project-check`、`project-test`、
+`project-build`、`project-translate` 与 `project-run` 验证；不要手工替换摘要。
+`project-init <directory>` 会用相同 project schema 创建全新且确定的起始项目。
 
 Every independent experiment gets a new directory.
 每个独立实验创建新目录。

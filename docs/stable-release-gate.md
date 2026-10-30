@@ -10,7 +10,7 @@ close these gates.
 | Gate / 门禁 | Status / 状态 |
 |---|---|
 | Stable-use license and redistribution terms / 稳定使用与再分发许可证条款 | Pending |
-| Reachable private security channel / 可访问的私密安全渠道 | Pending |
+| Reachable private security channel / 可访问的私密安全渠道 | Enabled; verified through GitHub API on 2026-10-30 / 已启用；2026-10-30 经 GitHub API 核验 |
 | CLI help, version, subcommand help and exit-code matrix / CLI 帮助、版本、子命令帮助与退出码矩阵 | Pending release candidate |
 | Runnable project template and project workflow / 可运行项目模板与项目流程 | Pending release candidate |
 | Symlink launcher and PowerShell verification / 软链接启动器与 PowerShell 验证 | Pending release candidate |

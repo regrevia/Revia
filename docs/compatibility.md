@@ -1,36 +1,34 @@
 # Compatibility / 兼容性
 
-## V1 RC1 Distribution / V1 RC1 发行
+## Current RC2.2.1 Candidate / 当前 RC2.2.1 候选
 
-| Target / 目标 | RC1 state / RC1 状态 | Public behavior / 公开行为 |
+| Target / 目标 | RC2.2.1 state / 状态 | Evidence / 证据 |
 |---|---|---|
-| macOS `arm64` | `measured-native` | Verified native archive and seven bounded trials |
-| macOS `x86_64` | `pending` | No RC binary; launcher exits `69` |
-| Linux `arm64` | `pending` | No RC binary; launcher exits `69` |
-| Linux `x86_64` | `pending` | No RC binary; launcher exits `69` |
-| Windows `arm64` | `pending` | No RC binary; launcher exits `69` |
-| Windows `x86_64` | `pending` | No RC binary; launcher exits `69` |
+| macOS `arm64` | `pending` | No RC2.2.1 evidence |
+| macOS `x86_64` | `pending` | No RC2.2.1 evidence |
+| Linux `arm64` | `pending` | No RC2.2.1 evidence |
+| Linux `x86_64` | `measured-native` | `runtime/rc2.2.1/linux-native-evidence.json` |
+| Windows `arm64` | `pending` | No RC2.2.1 evidence |
+| Windows `x86_64` | `measured-native` | `runtime/rc2.2.1/windows-native-evidence.json` |
 
-`v1.0.0-rc.1` is measured-native only on macOS arm64. The archive and binary
-SHA-256 are in [runtime/checksums.txt](../runtime/checksums.txt); the exact
-target matrix and evidence bindings are in [`runtime/rc1/`](../runtime/rc1/).
-`measured-native` means a sealed candidate was accepted and run on the declared
-native target. It is not a claim of Stable V1.0 or complete language-output
-byte determinism.
+The latest candidate is `v1.0.0-rc.2.2.1`. Its Linux x64 and Windows x64
+targets have separate native evidence. `measured-native` is limited to the
+named target and recorded candidate; it does not establish Stable V1.0 or
+complete language-output byte determinism.
 
-`v1.0.0-rc.1` 仅在 macOS arm64 为 `measured-native`。归档和二进制 SHA-256 见
-[runtime/checksums.txt](../runtime/checksums.txt)，精确目标矩阵及证据绑定见
-[`runtime/rc1/`](../runtime/rc1/)。`measured-native` 表示密封候选已在声明的原生目标上
-通过验收与执行，不表示 Stable V1.0 或完整语言产物逐字节确定性。
+当前候选为 `v1.0.0-rc.2.2.1`，Linux x64 与 Windows x64 各自有独立原生证据。
+`measured-native` 仅适用于所列目标与记录中的候选，不证明 Stable V1.0 或所有语言产物均逐字节确定。
 
-## RC2.2 Native Targets / RC2.2 原生目标
+## Historical RC1 Distribution / 历史 RC1 发行
 
-`v1.0.0-rc.2.2.1` publishes and measures `linux-x64` and `windows-x64`.
-macOS and Windows arm64 remain pending. The RC2.2 target evidence does not
-upgrade Stable V1.0 or claim all language output surfaces are byte-identical.
+`v1.0.0-rc.1` is measured-native only on macOS arm64. Its archive and binary
+SHA-256 values remain in [runtime/checksums.txt](../runtime/checksums.txt);
+the immutable target evidence is in [`runtime/rc1/`](../runtime/rc1/).
+Historical RC1 target status must not be substituted for the current matrix.
 
-`v1.0.0-rc.2.2.1` 发布并实测 `linux-x64` 与 `windows-x64`；macOS 与 Windows arm64
-仍为 pending。RC2.2 目标证据不会升级 Stable V1.0，也不声明所有语言产物面均已逐字节一致。
+`v1.0.0-rc.1` 仅 macOS arm64 为 `measured-native`。其归档与二进制 SHA-256 仍见
+[runtime/checksums.txt](../runtime/checksums.txt)，不可变目标证据在 [`runtime/rc1/`](../runtime/rc1/)。
+不得用历史 RC1 状态替代当前矩阵。
 
 ## Runtime And Integration Surface / 运行时与集成范围
 
