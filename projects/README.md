@@ -28,13 +28,17 @@ path consistent. Each project includes:
 Write `README.md` and `HANDOFF.md` in English and Chinese.
 `README.md` 与 `HANDOFF.md` 使用中英双语。
 
-The checked-in `_template` is a runnable seed. Verify it with
-`project-check`, `project-test`, `project-build`, `project-translate`, and
-`project-run`; do not replace its digests by hand. `project-init <directory>`
-creates a fresh deterministic starter project with the same project schema.
+The checked-in `_template` is a checked project seed. Verify it with the
+source CLI's `project-check`; projects with Agent or business facts can also
+use `project-translate`. Native
+`project-build`/`project-run` require the versioned candidate contract and
+target evidence. Do not replace its digests by hand.
+`project-init <directory>` creates a fresh deterministic starter project with
+the same project schema.
 
-仓库内 `_template` 是可运行起始项目。使用 `project-check`、`project-test`、
-`project-build`、`project-translate` 与 `project-run` 验证；不要手工替换摘要。
+仓库内 `_template` 是可检查的项目起始项目。使用源码 CLI 的 `project-check` 验证；
+包含 Agent 或业务事实的项目还可以使用 `project-translate`。native
+`project-build`/`project-run` 需要版本化候选契约与目标证据。不要手工替换摘要。
 `project-init <directory>` 会用相同 project schema 创建全新且确定的起始项目。
 
 Every independent experiment gets a new directory.

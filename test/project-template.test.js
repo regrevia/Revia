@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
@@ -33,4 +34,18 @@ test('public project template manifest is canonical and bound to its source', ()
   assert.equal(packageModule.implementation_digest, sha256(sourceBytes))
   assert.equal(packageModule.interface_digest, sha256(Buffer.from(canonical(packageModule.interface))))
   assert.equal(manifestBytes.toString('utf8'), `${canonical(manifest)}\n`)
+})
+
+test('public project template passes the source CLI project workflow', () => {
+  const root = new URL('../', import.meta.url).pathname
+  for (const args of [
+    ['project-check', '--format', 'json', 'projects/_template'],
+  ]) {
+    const result = spawnSync(process.execPath, ['src/cli/re.js', ...args], {
+      cwd: root,
+      encoding: 'utf8',
+    })
+    assert.equal(result.status, 0, `${args.join(' ')}: ${result.stderr}`)
+    assert.match(result.stdout, /"ok":true/u)
+  }
 })

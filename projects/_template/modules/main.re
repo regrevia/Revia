@@ -1,14 +1,8 @@
-re 0.1 compact
-// Smallest runnable Revia project module.
-
-unit @hello
-
-cap @stdout: process.stdout@0.1.0
-
-fn @main() -> process.status {
-  %printed = @stdout.write("Hello, World!\n")
-  return match %printed {
-    ok(_) => process.exit(0)
-    err(_) => process.exit(1)
-  }
-}
+re 1.0 compact
+module revia.app.main
+export main
+capability revia.app.main.stdout write process.stdout@0.1.0 uid aaaaaaaaaaaaaaaaaaaaaaaaa4
+error revia.app.main.error uid abcdefghijklmnopqrstuvwxye
+state ready uid zyxwvutsrqponmlkjihgfedcbe
+task revia.app.main.task id sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+edge revia.app.main.input -> revia.app.main.output uid eeeeeeeeeeeeeeeeeeeeeeeeee

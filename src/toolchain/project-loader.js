@@ -59,7 +59,11 @@ export async function loadProjectDirectory(rootDirectory) {
   if (diagnostics.length > 0) return rejectedMany(diagnostics)
 
   const loaded = []
-  const declaredFiles = new Set(['project.json'])
+  const declaredFiles = new Set([
+    'project.json',
+    'README.md',
+    'HANDOFF.md',
+  ])
   for (const entry of manifest.modules) {
     const filePath = resolve(root, entry.path)
     if (!withinRoot(root, filePath)) {

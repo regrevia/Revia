@@ -15,20 +15,20 @@ PROFILE=sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 TOOLCHAIN=sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 INPUT=sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
 
-./bin/revia project-check "$PROJECT"
-./bin/revia project-test "$PROJECT"
-./bin/revia project-build "$PROJECT" "$CACHE" "$BUILD" "$PROFILE" "$TOOLCHAIN"
-./bin/revia project-translate "$PROJECT" "$CACHE" "$BUILD" "$PROFILE" "$TOOLCHAIN" revia.app.main
-./bin/revia project-run "$PROJECT" "$CACHE" "$BUILD" "$PROFILE" "$TOOLCHAIN" revia.app.main "$INPUT"
+node src/cli/re.js project-check --format json "$PROJECT"
 ```
 
-The profile, toolchain, and input digests above are deterministic starter
-identifiers for this bounded native workflow, not production deployment
-credentials or performance claims. Keep cache and build output outside the
-project directory.
+The current public source workflow exposes `project-check` for this minimal
+template. `project-translate` requires a project with translatable Agent or
+business facts. Native `project-build` and
+`project-run` require the versioned native candidate contracts documented in
+the release trial kit; do not substitute the Node reference toolchain for
+native release evidence.
 
-上述 profile、toolchain 与 input digest 是此有界 native 工作流的确定性起始标识，
-不是生产部署凭据或性能结论。缓存和构建产物应放在项目目录之外。
+当前公开源码流程为这个最小模板提供 `project-check`。
+`project-translate` 需要包含可翻译 Agent 或业务事实的项目。native `project-build`
+和 `project-run` 需要版本化 native 候选契约，详见发行试用包；不要把 Node 参考
+工具链结果替代 native 发行证据。
 
 ## Result / 结果
 
