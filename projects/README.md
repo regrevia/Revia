@@ -41,6 +41,24 @@ the same project schema.
 `project-build`/`project-run` 需要版本化候选契约与目标证据。不要手工替换摘要。
 `project-init <directory>` 会用相同 project schema 创建全新且确定的起始项目。
 
+## Command Evidence / 命令证据边界
+
+| Command | Public source status |
+|---|---|
+| `node src/cli/re.js project-check` | Checked project graph and source authority |
+| `node src/cli/re.js project-translate` | Human-review projection for projects with Agent/business facts |
+| native `revia project-check` | Native project-manifest and module-surface check |
+| native `revia project-test/build/run` | Versioned candidate contract; do not infer support from source-only checks |
+
+命令证据边界：
+
+| 命令 | 公开源码状态 |
+|---|---|
+| `node src/cli/re.js project-check` | 检查项目图与源码 authority |
+| `node src/cli/re.js project-translate` | 面向含 Agent/业务事实项目的人类审阅投影 |
+| native `revia project-check` | native 项目 manifest 与 module surface 检查 |
+| native `revia project-test/build/run` | 需要版本化候选契约，不能从源码检查推断已支持 |
+
 Every independent experiment gets a new directory.
 每个独立实验创建新目录。
 
