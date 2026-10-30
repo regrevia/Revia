@@ -303,15 +303,49 @@ fn native_project_surface_check_rejects_unsupported_resource_access_modes() {
 }
 
 #[test]
-fn native_project_surface_check_accepts_a_distinct_declared_agent_identity() {
-    let project = expense_project_with_agent_identity("agent.expense.intake.worker");
+fn native_project_surface_check_rejects_project_agent_authority_drift() {
+    let project = expense_project_with_manifest_agent_identity("agent.expense.orphan");
     let output = Command::new(env!("CARGO_BIN_EXE_revia"))
         .args(["project-surface-check", project.to_str().unwrap()])
         .output()
         .unwrap();
     assert!(
-        output.status.success(),
-        "project-surface-check rejected a distinct declared Agent:\n{}",
+        !output.status.success(),
+        "project-surface-check accepted an Agent not present in source declarations:\n{}",
+        String::from_utf8_lossy(&output.stdout)
+    );
+    assert!(String::from_utf8_lossy(&output.stdout).contains("project-agent-authority-mismatch"));
+    fs::remove_dir_all(project).unwrap();
+}
+
+#[test]
+fn native_project_surface_check_rejects_agent_contract_content_drift() {
+    let project = expense_project_with_agent_contract_event("forged_event");
+    let output = Command::new(env!("CARGO_BIN_EXE_revia"))
+        .args(["project-surface-check", project.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stdout).contains("project-agent-authority-mismatch"));
+    fs::remove_dir_all(project).unwrap();
+}
+
+#[test]
+fn native_project_surface_check_rejects_detached_task_contract_agent() {
+    let project = mutated_expense_project(
+        "task-contract ",
+        "\"agent\":\"agent.expense.intake\"",
+        "\"agent\":\"agent.expense.approval\"",
+    );
+    let output = Command::new(env!("CARGO_BIN_EXE_revia"))
+        .args(["project-surface-check", project.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(!output.status.success());
+    assert!(
+        String::from_utf8_lossy(&output.stdout)
+            .contains("native-project-module-surface-task-identity-mismatch"),
+        "unexpected result:\n{}",
         String::from_utf8_lossy(&output.stdout)
     );
     fs::remove_dir_all(project).unwrap();
@@ -410,24 +444,8 @@ fn mutated_expense_project_with_replacements(replacements: &[(&str, &str)]) -> P
     root
 }
 
-fn expense_project_with_agent_identity(agent: &str) -> PathBuf {
+fn expense_project_with_manifest_agent_identity(agent: &str) -> PathBuf {
     let root = copy_expense_project();
-    let module_path = root.join("modules/intake.re");
-    let original_source = fs::read_to_string(&module_path).unwrap();
-    let old_agent_declaration = "agent-declaration agent.expense.intake ";
-    assert!(original_source.contains(old_agent_declaration));
-    let updated_source = original_source
-        .replacen(
-            old_agent_declaration,
-            &format!("agent-declaration {agent} "),
-            1,
-        )
-        .replace(
-            "\"agent\":\"agent.expense.intake\"",
-            &format!("\"agent\":\"{agent}\""),
-        );
-    persist_expense_project_module(&root, &module_path, &original_source, &updated_source);
-
     let manifest_path = root.join("project.json");
     let manifest = fs::read_to_string(&manifest_path).unwrap();
     let updated_manifest = manifest.replacen(
@@ -451,6 +469,17 @@ fn copy_expense_project() -> PathBuf {
         std::process::id()
     ));
     copy_directory(&source_root, &root);
+    root
+}
+
+fn expense_project_with_agent_contract_event(event: &str) -> PathBuf {
+    let root = copy_expense_project();
+    let manifest_path = root.join("project.json");
+    let manifest = fs::read_to_string(&manifest_path).unwrap();
+    let anchor = "        \"shutdown\"\n      ],";
+    assert_eq!(manifest.matches(anchor).count(), 1);
+    let updated = manifest.replacen(anchor, &format!("        \"{event}\",\n{anchor}"), 1);
+    fs::write(manifest_path, updated).unwrap();
     root
 }
 

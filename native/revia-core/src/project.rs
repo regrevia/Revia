@@ -192,7 +192,7 @@ impl NativeProjectModule {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NativeProject {
-    pub agents: BTreeMap<String, String>,
+    pub agents: BTreeMap<String, (String, String)>,
     pub allowed_capabilities: BTreeSet<String>,
     pub graph_revision: String,
     pub modules: Vec<NativeProjectModuleLoaded>,
@@ -213,7 +213,7 @@ pub struct NativeResource {
 type ProjectManifestParts = (
     Vec<NativeProjectModule>,
     NativePackage,
-    BTreeMap<String, String>,
+    BTreeMap<String, (String, String)>,
     BTreeSet<String>,
     Vec<NativeResource>,
 );
@@ -500,7 +500,7 @@ pub fn load_project_directory(
         .collect::<BTreeSet<_>>();
     if agents
         .values()
-        .any(|module| !module_names.contains(module.as_str()))
+        .any(|(module, _)| !module_names.contains(module.as_str()))
     {
         return Err(ProjectError::new("project-agent-module-not-found"));
     }
@@ -642,7 +642,7 @@ fn validate_module_surface(
     source: &str,
     module: &NativeProjectModuleLoaded,
     package: &NativePackage,
-    agents: &BTreeMap<String, String>,
+    agents: &BTreeMap<String, (String, String)>,
     allowed_capabilities: &BTreeSet<String>,
     resources: &[NativeResource],
 ) -> Result<(), ProjectError> {
@@ -802,7 +802,7 @@ fn validate_module_surface(
 fn module_agent_identities(
     source: &str,
     module: &str,
-) -> Result<BTreeMap<String, String>, ProjectError> {
+) -> Result<BTreeMap<String, (String, String)>, ProjectError> {
     let mut agents = BTreeMap::new();
     for line in source.lines().map(str::trim) {
         let Some(rest) = line.strip_prefix("agent-declaration ") else {
@@ -819,7 +819,10 @@ fn module_agent_identities(
             ));
         }
         let agent = validate_agent_declaration(&value, module, declaration_name)?;
-        if agents.insert(agent, module.to_owned()).is_some() {
+        if agents
+            .insert(agent, (module.to_owned(), digest_value(&value)))
+            .is_some()
+        {
             return Err(ProjectError::new(
                 "native-project-module-surface-agent-duplicate",
             ));
@@ -890,10 +893,55 @@ fn validate_agent_declaration(
     Ok(agent.to_owned())
 }
 
+fn validate_task_contract_identity(value: &JsonValue, module: &str) -> Result<(), ProjectError> {
+    let fields = exact_object(
+        value,
+        &[
+            "agent",
+            "backoff_ms",
+            "checkpoint",
+            "error_type",
+            "input_type",
+            "max_attempts",
+            "module",
+            "node_uid",
+            "output_type",
+            "retryable_errors",
+            "schema",
+        ],
+    )?;
+    require_object_fields(
+        &fields,
+        &[
+            "agent",
+            "backoff_ms",
+            "checkpoint",
+            "error_type",
+            "input_type",
+            "max_attempts",
+            "module",
+            "node_uid",
+            "output_type",
+            "retryable_errors",
+            "schema",
+        ],
+        "native-project-module-surface-task-invalid",
+    )?;
+    if string(&fields, "schema")? != "re.task-contract@0.1.0"
+        || string(&fields, "agent")? != module
+        || string(&fields, "module")? != module
+    {
+        return Err(ProjectError::new(
+            "native-project-module-surface-task-identity-mismatch",
+        ));
+    }
+    Ok(())
+}
+
 fn validate_module_surface_declaration(
     line: &str,
     module: &str,
-    agents: &BTreeMap<String, String>,
+    agents: &BTreeMap<String, (String, String)>,
     allowed_capabilities: &BTreeSet<String>,
     resources: &[NativeResource],
     declared_capabilities: &BTreeSet<(String, String, String)>,
@@ -1034,13 +1082,12 @@ fn validate_module_surface_declaration(
                     resources,
                     declared_capabilities,
                 )?;
+            } else if prefix == "task-contract " {
+                validate_task_contract_identity(&value, module)?;
             } else if prefix == "agent-declaration " {
                 let agent = validate_agent_declaration(&value, module, name)?;
-                if agents
-                    .get(&agent)
-                    .is_some_and(|declared_module| declared_module != module)
-                    || (!agents.is_empty() && !agents.contains_key(&agent))
-                {
+                let expected = (module.to_owned(), digest_value(&value));
+                if agents.get(&agent) != Some(&expected) {
                     return Err(ProjectError::new(
                         "native-project-module-surface-agent-identity-mismatch",
                     ));
@@ -1079,7 +1126,7 @@ fn validate_module_surface_declaration(
 fn validate_adapter_authority(
     value: &JsonValue,
     module: &str,
-    agents: &BTreeMap<String, String>,
+    agents: &BTreeMap<String, (String, String)>,
     allowed_capabilities: &BTreeSet<String>,
     resources: &[NativeResource],
     declared_capabilities: &BTreeSet<(String, String, String)>,
@@ -1131,7 +1178,12 @@ fn validate_adapter_authority(
         ));
     }
     let agent = string(&fields, "agent")?;
-    if string(&fields, "module")? != module || agents.get(agent).map(String::as_str) != Some(module)
+    if agent != module
+        || string(&fields, "module")? != module
+        || agents
+            .get(agent)
+            .map(|(declared_module, _)| declared_module.as_str())
+            != Some(module)
     {
         return Err(ProjectError::new(
             "native-project-module-surface-adapter-owner-mismatch",
@@ -2084,7 +2136,9 @@ fn parse_project_manifest(value: &JsonValue) -> Result<ProjectManifestParts, Pro
     Ok((modules, package, agents, allowed_capabilities, resources))
 }
 
-fn parse_project_agents(value: &JsonValue) -> Result<BTreeMap<String, String>, ProjectError> {
+fn parse_project_agents(
+    value: &JsonValue,
+) -> Result<BTreeMap<String, (String, String)>, ProjectError> {
     let JsonValue::Array(values) = value else {
         return Err(ProjectError::new("invalid-project-agent-set"));
     };
@@ -2137,7 +2191,9 @@ fn parse_project_agents(value: &JsonValue) -> Result<BTreeMap<String, String>, P
         let module = string(&fields, "module")?;
         if !valid_name(agent)
             || !valid_name(module)
-            || agents.insert(agent.to_owned(), module.to_owned()).is_some()
+            || agents
+                .insert(agent.to_owned(), (module.to_owned(), digest_value(value)))
+                .is_some()
         {
             return Err(ProjectError::new("invalid-project-agent-set"));
         }
