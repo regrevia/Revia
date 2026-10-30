@@ -1,10 +1,15 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import test from 'node:test'
+import { fileURLToPath } from 'node:url'
 
 import {
   runTrackedTests,
   selectTrackedTests,
 } from '../src/toolchain/tracked-test-runner.js'
+
+const ROOT = fileURLToPath(new URL('../', import.meta.url))
 
 test('tracked test selection is sorted and ignores non-test files', () => {
   const calls = []
@@ -95,4 +100,35 @@ test('tracked test runner invokes Node without a shell and returns stable status
       stdio: 'inherit',
     },
   })
+})
+
+test('bound Windows runner verifies the exact source-built executable before launch', () => {
+  const workflow = readFileSync(
+    join(ROOT, '.github/workflows/windows-native.yml'),
+    'utf8',
+  )
+  assert.match(
+    workflow,
+    /windows-x64-build:[\s\S]*?outputs:\s*\n\s+executable_sha256:\s+\$\{\{\s*steps\.verify-executable\.outputs\.sha256\s*\}\}/u,
+  )
+  assert.match(
+    workflow,
+    /- name: Verify build target and record executable digest\s*\n\s+id: verify-executable/u,
+  )
+  assert.match(
+    workflow,
+    /Get-FileHash[\s\S]*?\$env:GITHUB_OUTPUT[\s\S]*?sha256=\$hash/u,
+  )
+  assert.match(
+    workflow,
+    /windows-x64-bound-runner:[\s\S]*?EXPECTED_EXE_SHA256:\s+\$\{\{\s*needs\.windows-x64-build\.outputs\.executable_sha256\s*\}\}/u,
+  )
+
+  const verifyDownloaded = workflow.indexOf(
+    'if ($hash -ne $env:EXPECTED_EXE_SHA256)',
+  )
+  const launchDownloaded = workflow.indexOf('& $exe --version', verifyDownloaded)
+  assert.notEqual(verifyDownloaded, -1)
+  assert.notEqual(launchDownloaded, -1)
+  assert.ok(verifyDownloaded < launchDownloaded)
 })
