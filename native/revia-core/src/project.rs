@@ -552,6 +552,113 @@ pub fn load_project_directory(
     })
 }
 
+pub fn validate_project_module_surfaces(
+    root_directory: impl AsRef<Path>,
+    project: &NativeProject,
+) -> Result<(), ProjectError> {
+    for module in &project.modules {
+        let source = fs::read_to_string(root_directory.as_ref().join(&module.path))
+            .map_err(|_| ProjectError::new("native-project-source-unreadable"))?;
+        validate_module_surface(&source, module, &project.package_manifest)?;
+    }
+    Ok(())
+}
+
+fn validate_module_surface(
+    source: &str,
+    module: &NativeProjectModuleLoaded,
+    package: &NativePackage,
+) -> Result<(), ProjectError> {
+    let mut saw_module = false;
+    let package_module = package
+        .modules
+        .iter()
+        .find(|candidate| candidate.name == module.name)
+        .ok_or_else(|| ProjectError::new("project-module-not-in-package-manifest"))?;
+    for (index, raw) in source.lines().enumerate() {
+        let line = raw.trim();
+        if line.is_empty() || line.starts_with("//") {
+            continue;
+        }
+        if index == 0 {
+            if line != "re 1.0 compact" {
+                return Err(ProjectError::new(
+                    "native-project-module-surface-header-unsupported",
+                ));
+            }
+            continue;
+        }
+        if let Some(name) = line.strip_prefix("module ") {
+            if saw_module || name != module.name {
+                return Err(ProjectError::new(
+                    "native-project-module-surface-module-mismatch",
+                ));
+            }
+            saw_module = true;
+            continue;
+        }
+        if let Some(rest) = line.strip_prefix("import ") {
+            let (dependency, binding) = rest
+                .rsplit_once(" as ")
+                .ok_or_else(|| ProjectError::new("native-project-module-surface-import-invalid"))?;
+            let (dependency_module, digest) = dependency
+                .split_once('@')
+                .ok_or_else(|| ProjectError::new("native-project-module-surface-import-invalid"))?;
+            let expected = package_module
+                .interface
+                .dependencies
+                .iter()
+                .find(|candidate| candidate.binding == binding)
+                .ok_or_else(|| {
+                    ProjectError::new("native-project-module-surface-import-unlisted")
+                })?;
+            if expected.module != dependency_module || expected.interface_digest != digest {
+                return Err(ProjectError::new(
+                    "native-project-module-surface-import-pin-mismatch",
+                ));
+            }
+            continue;
+        }
+        if let Some(name) = line.strip_prefix("export ") {
+            if !package_module
+                .interface
+                .exports
+                .iter()
+                .any(|export| export.name == name)
+            {
+                return Err(ProjectError::new(
+                    "native-project-module-surface-export-unlisted",
+                ));
+            }
+            continue;
+        }
+        let known = [
+            "capability ",
+            "error ",
+            "state ",
+            "task ",
+            "edge ",
+            "type-declaration ",
+            "function-declaration ",
+            "agent-declaration ",
+            "task-contract ",
+            "adapter-contract ",
+            "run-case ",
+        ];
+        if !known.iter().any(|prefix| line.starts_with(prefix)) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-construct-unsupported",
+            ));
+        }
+    }
+    if !saw_module {
+        return Err(ProjectError::new(
+            "native-project-module-surface-module-missing",
+        ));
+    }
+    Ok(())
+}
+
 pub fn plan_project_recheck(
     project: &NativeProject,
     implementation_changed: &[String],

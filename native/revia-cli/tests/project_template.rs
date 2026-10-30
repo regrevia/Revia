@@ -52,3 +52,30 @@ fn native_project_test_reports_module_surface_boundary_explicitly() {
             .contains("native-project-module-surface-unsupported")
     );
 }
+
+#[test]
+fn native_project_surface_check_accepts_public_module_projects() {
+    for relative in [
+        "../../projects/_template",
+        "../../examples/agent-expense-review",
+    ] {
+        let project = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join(relative)
+            .canonicalize()
+            .unwrap();
+        let output = Command::new(env!("CARGO_BIN_EXE_revia"))
+            .args(["project-surface-check", project.to_str().unwrap()])
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{relative} failed:\nstdout: {}\nstderr: {}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert!(
+            String::from_utf8_lossy(&output.stdout)
+                .contains("re.native-project-surface-result@0.1.0")
+        );
+    }
+}

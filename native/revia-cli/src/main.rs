@@ -201,6 +201,7 @@ Commands:
   run <graph> <artifact> <input-digest>
   project-init <directory>
   project-check <project>
+  project-surface-check <project>
   project-test <project>
   project-scale <project>
   project-build <project> <cache> <build> <profile-digest> <toolchain-digest>
@@ -321,6 +322,9 @@ fn main() {
             run(graph_path, artifact_path, input_digest)
         }
         [command, project_path] if command == "project-check" => project_check(project_path),
+        [command, project_path] if command == "project-surface-check" => {
+            project_surface_check(project_path)
+        }
         [command, project_path] if command == "project-init" => project_init(project_path),
         [command, project_path] if command == "project-test" => project_test(project_path),
         [command, project_path] if command == "project-scale" => project_scale(project_path),
@@ -5909,6 +5913,25 @@ fn project_check(path: &str) -> Result<(), i32> {
         65
     })?;
     print!("{graph}");
+    Ok(())
+}
+
+fn project_surface_check(path: &str) -> Result<(), i32> {
+    let project = load_project_directory(path).map_err(|error| {
+        print_project_error(&error.code);
+        65
+    })?;
+    revia_core::project::validate_project_module_surfaces(path, &project).map_err(|error| {
+        print_project_error(&error.code);
+        65
+    })?;
+    println!(
+        "{{\"graph_revision\":{},\"module_count\":{},\"ok\":true,\"project_digest\":{},\"schema\":{}}}",
+        quote(&project.graph_revision),
+        project.modules.len(),
+        quote(&project.project_digest),
+        quote("re.native-project-surface-result@0.1.0"),
+    );
     Ok(())
 }
 
