@@ -608,12 +608,36 @@ fn validate_module_surface(
     allowed_capabilities: &BTreeSet<String>,
     resources: &[NativeResource],
 ) -> Result<(), ProjectError> {
-    let mut lines = source.lines();
-    if lines.next() != Some("re 1.0 compact") {
+    let lines = source.lines().collect::<Vec<_>>();
+    let mut lines_iter = lines.iter().copied();
+    if lines_iter.next() != Some("re 1.0 compact") {
         return Err(ProjectError::new(
             "native-project-module-surface-header-unsupported",
         ));
     }
+    let declared_capabilities = lines
+        .iter()
+        .filter_map(|raw| {
+            let fields = raw
+                .trim()
+                .strip_prefix("capability ")?
+                .split_whitespace()
+                .collect::<Vec<_>>();
+            if fields.len() == 5
+                && fields[3] == "uid"
+                && valid_capability_reference(fields[2])
+                && valid_module_uid(fields[4])
+            {
+                Some((
+                    fields[4].to_owned(),
+                    fields[1].to_owned(),
+                    fields[2].to_owned(),
+                ))
+            } else {
+                None
+            }
+        })
+        .collect::<BTreeSet<_>>();
     let mut saw_module = false;
     let mut imports = BTreeSet::new();
     let mut exports = BTreeSet::new();
@@ -623,7 +647,7 @@ fn validate_module_surface(
         .iter()
         .find(|candidate| candidate.name == module.name)
         .ok_or_else(|| ProjectError::new("project-module-not-in-package-manifest"))?;
-    for raw in lines {
+    for raw in lines_iter {
         let line = raw.trim();
         if line.is_empty() || line.starts_with("//") {
             continue;
@@ -702,6 +726,7 @@ fn validate_module_surface(
             &module.name,
             allowed_capabilities,
             resources,
+            &declared_capabilities,
             &mut review_uids,
         )?;
     }
@@ -740,6 +765,7 @@ fn validate_module_surface_declaration(
     module: &str,
     allowed_capabilities: &BTreeSet<String>,
     resources: &[NativeResource],
+    declared_capabilities: &BTreeSet<(String, String, String)>,
     review_uids: &mut BTreeSet<String>,
 ) -> Result<(), ProjectError> {
     if let Some(rest) = line.strip_prefix("capability ") {
@@ -869,7 +895,12 @@ fn validate_module_surface_declaration(
                 ));
             }
             if prefix == "adapter-contract " {
-                validate_adapter_authority(&value, allowed_capabilities, resources)?;
+                validate_adapter_authority(
+                    &value,
+                    allowed_capabilities,
+                    resources,
+                    declared_capabilities,
+                )?;
             }
             let has_module_owner = matches!(
                 &value,
@@ -896,6 +927,7 @@ fn validate_adapter_authority(
     value: &JsonValue,
     allowed_capabilities: &BTreeSet<String>,
     resources: &[NativeResource],
+    declared_capabilities: &BTreeSet<(String, String, String)>,
 ) -> Result<(), ProjectError> {
     let fields = exact_object(
         value,
@@ -921,23 +953,45 @@ fn validate_adapter_authority(
         .get("capability")
         .ok_or_else(|| ProjectError::new("native-project-module-surface-adapter-invalid"))?;
     let capability_fields = exact_object(capability, &["instance", "member", "reference"])?;
+    let instance = string(&capability_fields, "instance")?;
+    let member = string(&capability_fields, "member")?;
     let reference = string(&capability_fields, "reference")?;
     if !allowed_capabilities.contains(reference) {
         return Err(ProjectError::new(
             "native-project-module-surface-capability-not-allowed",
         ));
     }
+    let node_uid = string(&fields, "node_uid")?;
+    if !declared_capabilities.contains(&(
+        node_uid.to_owned(),
+        member.to_owned(),
+        reference.to_owned(),
+    )) {
+        return Err(ProjectError::new(
+            "native-project-module-surface-adapter-capability-detached",
+        ));
+    }
     let resource = fields
         .get("resource")
         .ok_or_else(|| ProjectError::new("native-project-module-surface-adapter-invalid"))?;
     let resource_fields = exact_object(resource, &["access", "constructor"])?;
+    let access = string(&resource_fields, "access")?;
     let constructor = string(&resource_fields, "constructor")?;
-    if !resources
+    let declared_resource = resources
         .iter()
-        .any(|resource| resource.alias == constructor || resource.key == constructor)
-    {
+        .find(|resource| resource.alias == constructor || resource.key == constructor);
+    let Some(declared_resource) = declared_resource else {
         return Err(ProjectError::new(
             "native-project-module-surface-resource-not-declared",
+        ));
+    };
+    let instance_resource = instance.strip_prefix('@');
+    if (instance_resource != Some(declared_resource.alias.as_str())
+        && instance_resource != Some(declared_resource.key.as_str()))
+        || access != member
+    {
+        return Err(ProjectError::new(
+            "native-project-module-surface-resource-mismatch",
         ));
     }
     Ok(())

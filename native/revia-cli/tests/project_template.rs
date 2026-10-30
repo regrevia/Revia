@@ -129,6 +129,62 @@ fn native_project_surface_check_rejects_duplicate_review_uids() {
     );
 }
 
+#[test]
+fn native_project_surface_check_rejects_detached_adapter_authority() {
+    for (old_field, new_field, expected_code) in [
+        (
+            "\"instance\":\"@expense_db\"",
+            "\"instance\":\"@other_db\"",
+            "native-project-module-surface-resource-mismatch",
+        ),
+        (
+            "\"member\":\"read\"",
+            "\"member\":\"write\"",
+            "native-project-module-surface-adapter-capability-detached",
+        ),
+        (
+            "\"reference\":\"db.read@0.1.0\"",
+            "\"reference\":\"db.write@0.1.0\"",
+            "native-project-module-surface-adapter-capability-detached",
+        ),
+        (
+            "\"node_uid\":\"ddddddddddddddddddddddddde\"",
+            "\"node_uid\":\"eeeeeeeeeeeeeeeeeeeeeeeeee\"",
+            "native-project-module-surface-adapter-capability-detached",
+        ),
+        (
+            "\"constructor\":\"expense_db\"",
+            "\"constructor\":\"other_db\"",
+            "native-project-module-surface-resource-not-declared",
+        ),
+        (
+            "\"access\":\"read\"",
+            "\"access\":\"write\"",
+            "native-project-module-surface-resource-mismatch",
+        ),
+    ] {
+        let project = mutated_expense_project(old_field, new_field);
+        let output = Command::new(env!("CARGO_BIN_EXE_revia"))
+            .args(["project-surface-check", project.to_str().unwrap()])
+            .output()
+            .unwrap();
+        assert!(
+            !output.status.success(),
+            "adapter mutation unexpectedly passed: {old_field} -> {new_field}"
+        );
+        assert!(
+            String::from_utf8_lossy(&output.stdout).contains(expected_code),
+            "expected {expected_code} for {old_field} -> {new_field}, got:\n{}",
+            String::from_utf8_lossy(&output.stdout)
+        );
+        assert!(
+            String::from_utf8_lossy(&output.stdout)
+                .contains("\"schema\":\"re.native-project-surface-result@0.1.0\"")
+        );
+        fs::remove_dir_all(project).unwrap();
+    }
+}
+
 fn assert_surface_rejected(source: &str, expected_code: &str) {
     let root = temp_project(source);
     let output = Command::new(env!("CARGO_BIN_EXE_revia"))
@@ -185,4 +241,61 @@ fn temp_project(source: &str) -> PathBuf {
     .unwrap();
     fs::write(root.join("project.json"), manifest).unwrap();
     root
+}
+
+fn mutated_expense_project(old_field: &str, new_field: &str) -> PathBuf {
+    let source_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../examples/agent-expense-review")
+        .canonicalize()
+        .unwrap();
+    let id = PROJECT_COUNTER.fetch_add(1, Ordering::Relaxed);
+    let root = std::env::temp_dir().join(format!(
+        "revia-native-expense-surface-{}-{id}",
+        std::process::id()
+    ));
+    copy_directory(&source_root, &root);
+
+    let module_path = root.join("modules/intake.re");
+    let original_source = fs::read_to_string(&module_path).unwrap();
+    let adapter_line = original_source
+        .lines()
+        .find(|line| line.starts_with("adapter-contract "))
+        .unwrap()
+        .to_owned();
+    assert!(
+        adapter_line.contains(old_field),
+        "adapter contract does not contain mutation target: {old_field}"
+    );
+    let updated_line = adapter_line.replacen(old_field, new_field, 1);
+    let updated_source = original_source.replacen(&adapter_line, &updated_line, 1);
+    let previous_digest = format!(
+        "sha256:{}",
+        sha256_hex(fs::read(&module_path).unwrap().as_slice())
+    );
+    let updated_digest = format!("sha256:{}", sha256_hex(updated_source.as_bytes()));
+    fs::write(&module_path, updated_source).unwrap();
+
+    let manifest_path = root.join("project.json");
+    let manifest = fs::read_to_string(&manifest_path).unwrap();
+    assert_eq!(manifest.matches(&previous_digest).count(), 2);
+    fs::write(
+        manifest_path,
+        manifest.replace(&previous_digest, &updated_digest),
+    )
+    .unwrap();
+    root
+}
+
+fn copy_directory(source: &std::path::Path, destination: &std::path::Path) {
+    fs::create_dir_all(destination).unwrap();
+    for entry in fs::read_dir(source).unwrap() {
+        let entry = entry.unwrap();
+        let source_path = entry.path();
+        let destination_path = destination.join(entry.file_name());
+        if source_path.is_dir() {
+            copy_directory(&source_path, &destination_path);
+        } else {
+            fs::copy(source_path, destination_path).unwrap();
+        }
+    }
 }
