@@ -209,6 +209,13 @@ pub struct NativeResource {
     pub uid: String,
 }
 
+type ProjectManifestParts = (
+    Vec<NativeProjectModule>,
+    NativePackage,
+    BTreeSet<String>,
+    Vec<NativeResource>,
+);
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NativeProjectModuleLoaded {
     pub dependencies: Vec<NativeDependency>,
@@ -1535,17 +1542,7 @@ fn validate_artifact(
     Ok(())
 }
 
-fn parse_project_manifest(
-    value: &JsonValue,
-) -> Result<
-    (
-        Vec<NativeProjectModule>,
-        NativePackage,
-        BTreeSet<String>,
-        Vec<NativeResource>,
-    ),
-    ProjectError,
-> {
+fn parse_project_manifest(value: &JsonValue) -> Result<ProjectManifestParts, ProjectError> {
     let entries = exact_object(
         value,
         &[
@@ -1593,7 +1590,7 @@ fn parse_project_manifest(
     };
     let resources = entries
         .get("resources")
-        .map(|value| parse_resources(*value))
+        .map(|value| parse_resources(value))
         .transpose()?
         .unwrap_or_default();
     let modules = array(&entries, "modules")?
