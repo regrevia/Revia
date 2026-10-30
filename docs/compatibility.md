@@ -37,8 +37,10 @@ Historical RC1 target status must not be substituted for the current matrix.
 - Explicit capability, project workflow, multi-module, and bounded
   HTTP/JSON/SQLite trial fixtures / 显式能力、项目流程、多模块与有界
   HTTP/JSON/SQLite 试用 fixtures。
-- Generated frontend contract: design surface, not a complete generator /
-  generated frontend contract：设计面，尚非完整生成器。
+- Generated frontend contract: bounded TypeScript projection from checked
+  interfaces; not a complete generator or production SDK /
+  generated frontend contract：从 checked interface 生成的有界 TypeScript projection，
+  尚非完整生成器或生产 SDK。
 - HTTP adapter: bounded trial only; A2A and MCP adapters: pending /
   HTTP adapter：仅有界试验；A2A 与 MCP adapter：pending。
 - Trial outputs are bound by recorded SHA-256 values / 试用输出由记录的 SHA-256 绑定。

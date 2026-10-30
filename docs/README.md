@@ -19,6 +19,7 @@ under [`doc/`](../doc/).
 | Inspect historical RC1 evidence / 查看历史 RC1 证据 | [`evidence.md`](evidence.md), [`../experiments/rc1/`](../experiments/rc1/) |
 | Understand release requirements / 了解发行要求 | [`release-policy.md`](release-policy.md), [`stable-release-gate.md`](stable-release-gate.md) |
 | Integrate a host or protocol / 集成宿主或协议 | [`integration.md`](integration.md), [`server-conformance.md`](server-conformance.md) |
+| Try the checked project projection / 试用项目接口 projection | [`examples/agent-expense-review/`](../examples/agent-expense-review/) |
 | Contribute a project or report / 提交项目或报告 | [`../projects/README.md`](../projects/README.md), [`feedback-loop.md`](feedback-loop.md) |
 
 ## Document Groups / 文档分组
