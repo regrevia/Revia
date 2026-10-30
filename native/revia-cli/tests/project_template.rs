@@ -302,6 +302,21 @@ fn native_project_surface_check_rejects_unsupported_resource_access_modes() {
     fs::remove_dir_all(project).unwrap();
 }
 
+#[test]
+fn native_project_surface_check_accepts_a_distinct_declared_agent_identity() {
+    let project = expense_project_with_agent_identity("agent.expense.intake.worker");
+    let output = Command::new(env!("CARGO_BIN_EXE_revia"))
+        .args(["project-surface-check", project.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "project-surface-check rejected a distinct declared Agent:\n{}",
+        String::from_utf8_lossy(&output.stdout)
+    );
+    fs::remove_dir_all(project).unwrap();
+}
+
 fn assert_surface_rejected(source: &str, expected_code: &str) {
     let root = temp_project(source);
     let output = Command::new(env!("CARGO_BIN_EXE_revia"))
@@ -392,6 +407,36 @@ fn mutated_expense_project_with_replacements(replacements: &[(&str, &str)]) -> P
         updated_source = updated_source.replace(old_field, new_field);
     }
     persist_expense_project_module(&root, &module_path, &original_source, &updated_source);
+    root
+}
+
+fn expense_project_with_agent_identity(agent: &str) -> PathBuf {
+    let root = copy_expense_project();
+    let module_path = root.join("modules/intake.re");
+    let original_source = fs::read_to_string(&module_path).unwrap();
+    let old_agent_declaration = "agent-declaration agent.expense.intake ";
+    assert!(original_source.contains(old_agent_declaration));
+    let updated_source = original_source
+        .replacen(
+            old_agent_declaration,
+            &format!("agent-declaration {agent} "),
+            1,
+        )
+        .replace(
+            "\"agent\":\"agent.expense.intake\"",
+            &format!("\"agent\":\"{agent}\""),
+        );
+    persist_expense_project_module(&root, &module_path, &original_source, &updated_source);
+
+    let manifest_path = root.join("project.json");
+    let manifest = fs::read_to_string(&manifest_path).unwrap();
+    let updated_manifest = manifest.replacen(
+        "\"agent\": \"agent.expense.intake\"",
+        &format!("\"agent\": \"{agent}\""),
+        1,
+    );
+    assert_ne!(manifest, updated_manifest);
+    fs::write(manifest_path, updated_manifest).unwrap();
     root
 }
 
