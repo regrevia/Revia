@@ -1,6 +1,8 @@
 # Revia
 
-> 面向 Agent 编写与人类语义治理的、以语义图为核心的开源研究实现。
+> 面向 Agent 编写与人类语义治理的、以语义图为核心的开源语言实现。
+>
+> 源码：MPL-2.0 · 研究/预览阶段 · 尚非 Stable V1.0 或生产就绪
 
 Revia 将已检查的程序结构转换为确定性的机器契约和面向人类的语义投影。
 本仓库包含参考工具链、Rust 原生实现、一致性测试、语言文档以及有界对比实验
@@ -12,13 +14,25 @@ fixture。
 
 ## 当前状态
 
-开源开发线仍处于研究与预览阶段，包含有界 native 翻译器/VM、项目与模块检查、
-确定性语义产物、受限 Server profile、接口投影以及一致性和实验基础设施。
+开源开发线仍处于研究与预览阶段，包含有界 native 翻译器/VM、可运行项目模板、
+项目与模块检查、确定性语义产物、受限 Server profile、接口投影以及一致性和实验基础设施。
+
+最新已发布候选 `v1.0.0-rc.2.2.1` 分别具有 Linux x64 与 Windows x64 原生证据。
+当前 `main` 源码在该 tag 之后又通过 Source validation 及 Linux/Windows native CI；
+main 分支检查不会静默改变已打 tag 的二进制。按版本区分的证据见
+[开发状态](docs/development-status.md)和[兼容性](docs/compatibility.md)。
+
+在 main commit `7c242e1` 上，Source validation、Linux x64 与 Windows x64 原生工作流均通过，
+包含可运行项目模板流程。这是当前源码证据，不是新的发行资产。
 
 这些内容是有边界的实现证据，不代表 production backend、完整语言实现、跨平台
 等价、完整 A2A/MCP 互操作或 Stable V1.0。详见
 [开发状态](docs/development-status.md) 和
 [Stable V1.0 门禁](docs/stable-release-gate.md)。
+
+> **发行许可说明：** `v1.0.0-rc.2.2.1` 导出包内含 `LICENSE-RC.md`，但该文件文本说明
+> 仅适用于 `v1.0.0-rc.1`。RC2.2.1 二进制的版本专属条款仍待澄清；不能从源码 MPL-2.0
+> 或 RC1 许可推断其许可范围。
 
 ## 快速开始
 
@@ -72,8 +86,8 @@ scripts/         开发、一致性与证据脚本
 runtime/         历史打包运行时与发行证据
 ```
 
-公开仓库是开源开发线的源码和测试真源。`runtime/` 与 `experiments/rc1/`
-记录历史评估资产，与当前源码工具链分开理解。
+公开仓库是开源开发线的源码和测试真源。`runtime/` 与 `experiments/` 将证据绑定到
+具体版本候选；历史评估条款不定义当前源码许可。
 
 ## 设计方向
 

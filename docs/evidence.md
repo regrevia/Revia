@@ -5,8 +5,8 @@ transition is documented separately in
 [development-status.md](development-status.md); this page remains scoped to the
 sealed RC1 binary, its trial fixtures, hashes, and measured evidence.
 
-本页记录 `v1.0.0-rc.1` 的公开、可复现证据。源码实现不在本仓库；公开内容仅为密封导出、
-试用 fixtures、摘要与证据记录。
+本页仅记录历史 `v1.0.0-rc.1` 二进制的公开、可复现证据。该 RC1 资产未包含源码；
+当前公开源码及其 MPL-2.0 范围见[开发状态](development-status.md)。
 
 ## RC1 Release Evidence / RC1 发行证据
 

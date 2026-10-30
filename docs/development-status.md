@@ -1,6 +1,6 @@
 # Development Status / 开发进展
 
-Updated 2026-10-29.
+Updated 2026-10-30.
 
 ## Source And Runtime
 
@@ -10,16 +10,18 @@ translator/VM slice, project and module checking, deterministic semantic
 artifacts, a bounded Server profile, interface projection, and conformance
 tests.
 
-The historical `v1.0.0-rc.1` and `v1.0.0-rc.2.1` releases remain unchanged. The
-`v1.0.0-rc.2.2.1` candidate adds separately verified native targets for Linux x64
-and Windows x64.
+The latest published candidate is `v1.0.0-rc.2.2.1`, with separately verified
+native Linux x64 and Windows x64 assets. Its tag points to `35ae4ed`. The
+current-main code-validation snapshot below is `7c242e1`; later source or
+documentation commits do not alter the existing tag or its downloadable assets.
 
 公开仓库现已包含按 MPL-2.0 发布、经过筛选的 RE 源码。当前源码包括 Node 参考工具链、
 Rust native 翻译器/VM 切片、项目与模块检查、确定性语义产物、有界 Server profile、
 接口投影以及一致性测试。
 
-历史版本 `v1.0.0-rc.1` 与 `v1.0.0-rc.2.1` 保持不变。`v1.0.0-rc.2.2.1`
-候选新增 Linux x64 与 Windows x64 两个独立验证的原生目标。
+最新已发布候选为 `v1.0.0-rc.2.2.1`，包含分别验证的 Linux x64 与 Windows x64 原生资产。
+该 tag 指向 `35ae4ed`。下方 main 代码验证快照为 `7c242e1`；后续源码或文档提交不会改变
+既有 tag 或其可下载资产。
 
 ## Verified Scope
 
@@ -30,9 +32,10 @@ Rust native 翻译器/VM 切片、项目与模块检查、确定性语义产物�
 | Rust native toolchain | Workspace tests, formatting, and clippy are required in CI |
 | Runtime target support | Only targets with published native evidence are measured |
 | Historical RC1 | Existing Darwin arm64 archive, checksums, manifest, and RC license remain unchanged |
-| RC2.1 Windows x64 | Published ZIP, source build, native conformance, bound-runner smoke, and public-download checksum verified |
-| RC2.2 Linux x64 | Native build, tests, fresh-process manifest/translate comparison, archive checksum, and public-download smoke candidate |
-| RC2.2 Windows x64 | Native build, tests, bound-runner smoke, archive checksum, and public-download smoke candidate |
+| RC2.2.1 Linux x64 asset | Native evidence and public-download checksum recorded in `runtime/rc2.2.1/` |
+| RC2.2.1 Windows x64 asset | Native evidence and public-download checksum recorded in `runtime/rc2.2.1/` |
+| Current main source, `7c242e1` | Source validation, Linux x64 native conformance, and Windows x64 native conformance passed in GitHub Actions |
+| Project template on current main | Manifest/source binding and native project workflow passed in Linux x64 and Windows x64 CI |
 | Production readiness | Not claimed |
 | Complete A2A/MCP interoperability | Not claimed |
 | Stable V1.0 | Blocked by [stable-release-gate.md](stable-release-gate.md) |
@@ -45,9 +48,37 @@ complete production feature is implemented.
 
 - New source files are licensed under MPL-2.0 from the source-transition
   commit.
-- The historical preview and RC binary lines retain their original license
+- Historical preview and RC1 binary assets retain their original license
   files and published checksums.
+- The `v1.0.0-rc.2.2.1` export includes `LICENSE-RC.md`, whose text scopes that
+  license to `v1.0.0-rc.1` only. RC2.2.1 binary terms therefore require
+  version-specific clarification; neither the source MPL-2.0 nor the RC1 text
+  should be treated as silently resolving that scope.
 - Future releases must be built from a public source commit and publish target,
   license, artifact, and test evidence together.
 - A green source CI run is not cross-platform runtime evidence unless the
   specific target was executed on its native runner.
+
+## Main-Branch Evidence / Main 分支证据
+
+The following checks passed at public main commit
+[`7c242e1`](https://github.com/regrevia/Revia/commit/7c242e142a6fc80c9b02319804b06048034a40f4):
+
+- [Source and release validation](https://github.com/regrevia/Revia/actions/runs/41016410971)
+- [Linux x64 native conformance](https://github.com/regrevia/Revia/actions/runs/41016411017)
+- [Windows x64 native conformance](https://github.com/regrevia/Revia/actions/runs/41016410953)
+
+These runs exercise current source, including the checked-in runnable project
+template. They do not replace a versioned candidate or prove the older
+`v1.0.0-rc.2.2.1` binary assets contain those later changes.
+
+以下检查在公开 main commit
+[`7c242e1`](https://github.com/regrevia/Revia/commit/7c242e142a6fc80c9b02319804b06048034a40f4)
+通过：
+
+- [Source and release validation](https://github.com/regrevia/Revia/actions/runs/41016410971)
+- [Linux x64 native conformance](https://github.com/regrevia/Revia/actions/runs/41016411017)
+- [Windows x64 native conformance](https://github.com/regrevia/Revia/actions/runs/41016410953)
+
+这些工作流测试当前源码，包括仓库内可运行的项目模板；它们不等同于新的版本化候选，
+也不能证明较早的 `v1.0.0-rc.2.2.1` 二进制包含之后的源码变更。

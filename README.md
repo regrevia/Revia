@@ -1,7 +1,9 @@
 # Revia
 
-> An open-source research implementation of a graph-first language for
-> Agent-authored work and human semantic governance.
+> An open-source, graph-first language implementation for Agent-authored work
+> and human semantic governance.
+>
+> Source: MPL-2.0 · Research/preview maturity · Not Stable V1.0 or production-ready
 
 Revia turns checked program structure into deterministic machine contracts and
 human-readable projections. The repository contains the reference toolchain,
@@ -16,16 +18,32 @@ retroactively by publishing the source.
 
 ## Current Status
 
-The open development line is a research and preview implementation. It
-includes a bounded native translator/VM, project and module checking,
-deterministic semantic artifacts, a bounded Server profile, interface
-projection, and conformance/experiment infrastructure.
+The open development line is a research and preview implementation. Current
+source includes a bounded native translator/VM, a runnable project template,
+project and module checks, deterministic semantic artifacts, a bounded Server
+profile, interface projection, and conformance/experiment infrastructure.
+
+The latest published candidate, `v1.0.0-rc.2.2.1`, has separate native evidence
+for Linux x64 and Windows x64. The current `main` source has additional,
+passing source-validation and Linux/Windows native CI after that tag; main-branch
+checks do not silently change the tagged binaries. See
+[development status](docs/development-status.md) and
+[compatibility](docs/compatibility.md) for the version-specific evidence.
+
+At main commit `7c242e1`, source validation and native Linux x64 and Windows x64
+workflows pass, including the runnable project-template workflow. This is
+current-source evidence, not a new release asset.
 
 These capabilities are bounded evidence, not claims of a production backend,
 complete language implementation, cross-platform equivalence, full A2A/MCP
 interoperability, or Stable V1.0. See
 [docs/development-status.md](docs/development-status.md) and
 [docs/stable-release-gate.md](docs/stable-release-gate.md).
+
+> **Release-license note:** The `v1.0.0-rc.2.2.1` export includes
+> `LICENSE-RC.md`, whose text says it applies only to `v1.0.0-rc.1`.
+> Version-specific terms for the RC2.2.1 binaries are unresolved; do not infer
+> their license from either the source MPL-2.0 or the RC1 license.
 
 ## Start Here
 
@@ -82,8 +100,9 @@ runtime/         historical packaged runtimes and release evidence
 ```
 
 The public repository is the source and test authority for the open
-development line. `runtime/` and `experiments/rc1/` describe historical
-evaluation assets; they are separate from the current source toolchain.
+development line. `runtime/` and `experiments/` bind evidence to specific
+versioned candidates; historical evaluation terms do not define the source
+license.
 
 ## Design Direction
 

@@ -23,6 +23,20 @@ Publishing source does not retroactively relicense historical assets, and
 historical asset terms do not restrict newly published source that is covered
 by MPL-2.0.
 
+## RC2.2.1 Binary Scope Requires Clarification
+
+The published `v1.0.0-rc.2.2.1` export manifest includes `LICENSE-RC.md`, but
+the text of that file expressly applies only to `v1.0.0-rc.1`. This document
+does not extend the RC1 license to RC2.2.1 or create replacement terms.
+Version-specific usage and redistribution terms for the RC2.2.1 binaries need
+explicit clarification before they can be described as settled.
+
+## RC2.2.1 二进制许可范围待澄清
+
+已发布的 `v1.0.0-rc.2.2.1` 导出 manifest 包含 `LICENSE-RC.md`，但该文件文本明确只适用于
+`v1.0.0-rc.1`。本文件不会将 RC1 许可扩展到 RC2.2.1，也不会创建替代条款。
+在将 RC2.2.1 二进制使用和再分发条款描述为已明确之前，仍需取得按版本适用的正式澄清。
+
 ## Contributions
 
 Contributions to the public source repository are accepted under the project
