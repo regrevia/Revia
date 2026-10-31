@@ -46,6 +46,9 @@ test('project translation emits one fact-preserving receipt for all media', () =
   assert.equal(result.value.renderings.text.match(/fact:/gu).length >= result.value.facts.length, true)
   assert.equal((result.value.renderings.html.match(/data-fact-id=/gu) ?? []).length, result.value.facts.length)
   assert.equal((result.value.renderings.svg.match(/data-fact-id=/gu) ?? []).length, result.value.facts.length)
+  assert.match(result.value.renderings.html, /class="summary"/u)
+  assert.match(result.value.renderings.html, /<details class="fact-group" data-kind="capability"/u)
+  assert.match(result.value.renderings.svg, /<rect width="1280"/u)
   assert.deepEqual(result.value.receipt.fact_ids, result.value.facts.map(({ fact_id: id }) => id))
 })
 
@@ -57,6 +60,26 @@ test('locale changes wording but not semantic identity or translation digest', (
   assert.equal(chinese.value.semantic_fact_digest, english.value.semantic_fact_digest)
   assert.equal(chinese.value.receipt.translation_digest, english.value.receipt.translation_digest)
   assert.notEqual(chinese.value.renderings.text, english.value.renderings.text)
+})
+
+test('large project rendering stays grouped and keeps deterministic fact order', () => {
+  const baseline = project()
+  const large = {
+    ...baseline,
+    modules: Array.from({ length: 120 }, (_, index) => ({
+      ...baseline.modules[0],
+      name: `module-${String(index).padStart(3, '0')}`,
+      source_sha256: digest('abcdef'[index % 6]),
+    })),
+  }
+  const first = translateProject(large, { locale: 'en-US' })
+  const second = translateProject(large, { locale: 'en-US' })
+  assert.equal(first.ok, true)
+  assert.equal(second.ok, true)
+  assert.equal(first.value.receipt.translation_digest, second.value.receipt.translation_digest)
+  assert.equal(first.value.renderings.html, second.value.renderings.html)
+  assert.equal((first.value.renderings.html.match(/data-fact-id=/gu) ?? []).length, first.value.facts.length)
+  assert.equal((first.value.renderings.svg.match(/data-fact-id=/gu) ?? []).length, first.value.facts.length)
 })
 
 test('project translation fails closed on incomplete, invalid, or mismatched input', () => {

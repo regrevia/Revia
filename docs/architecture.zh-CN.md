@@ -62,3 +62,7 @@ Revia 将 Agent 编写的程序与人类审阅界面连接在同一条确定性�
 
 `manifest` 记录能力、效果、错误路径、当前生成的标识和图 revision；`view`
 将这些事实呈现为简洁语义图。两者都不是另写的一份程序描述。
+
+面向大型项目时，HTML 与 SVG 投影会按事实类型分组，保留每条事实的 evidence anchor，
+并将次要类别折叠到按需展开。详见[翻译与审阅渲染](translation-rendering.md)中的可读性
+与效率边界。

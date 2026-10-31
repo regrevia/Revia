@@ -73,3 +73,12 @@ Neither is a second hand-written description of the program.
 
 `manifest` 记录能力、效果、错误路径、当前生成的标识和图 revision；`view`
 将这些事实呈现为简洁语义图。两者都不是另写的一份程序描述。
+
+For project-scale review, HTML and SVG projections group facts by kind,
+preserve fact-level evidence anchors, and keep secondary sections collapsed
+until requested. See [Translation and Review Rendering](translation-rendering.md)
+for the readability and efficiency boundary.
+
+面向项目级审阅时，HTML 与 SVG 投影会按事实类型分组，保留每条事实的 evidence anchor，
+并将次要类别折叠到按需展开。详见[翻译与审阅渲染](translation-rendering.md)中的可读性
+与效率边界。
