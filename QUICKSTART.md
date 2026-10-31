@@ -15,7 +15,7 @@ npm run re -- check examples/hello.re
 npm run re -- run examples/hello.re
 ```
 
-The Node reference toolchain requires Node.js 22 or newer and uses only the
+The Node reference toolchain requires Node.js 22.16.0 or newer and uses only the
 standard library. No credentials or network service are required for the
 source test suite.
 

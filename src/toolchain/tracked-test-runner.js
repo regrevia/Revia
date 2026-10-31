@@ -2,6 +2,8 @@ import { spawnSync } from 'node:child_process'
 import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
+export const MINIMUM_NODE_VERSION = '22.16.0'
+
 export function selectTrackedTests({
   cwd,
   requested = [],
@@ -36,6 +38,7 @@ export function selectTrackedTests({
 export function runTrackedTests({
   cwd,
   execPath = process.execPath,
+  nodeVersion = process.versions.node,
   requested = [],
   spawnSyncImpl,
   readdirSyncImpl = readdirSync,
@@ -43,6 +46,7 @@ export function runTrackedTests({
   if (typeof execPath !== 'string' || execPath.length === 0) {
     fail('tracked test execution failed')
   }
+  requireSupportedNodeVersion(nodeVersion)
   const tests = selectTrackedTests({ cwd, requested, readdirSyncImpl })
   const runner = spawnSyncImpl ?? spawnSync
   const result = runner(execPath, [
@@ -63,6 +67,27 @@ export function runTrackedTests({
     signal: result.signal,
     status: result.status,
     tests: tests.length,
+  }
+}
+
+function requireSupportedNodeVersion(version) {
+  const match = typeof version === 'string'
+    ? /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/u.exec(version)
+    : null
+  const actual = match === null
+    ? null
+    : match.slice(1, 4).map(Number)
+  const minimum = MINIMUM_NODE_VERSION.split('.').map(Number)
+  const difference = actual?.findIndex((part, index) => part !== minimum[index]) ?? -1
+  const belowMinimum = actual === null
+    || (difference !== -1 && actual[difference] < minimum[difference])
+    || (difference === -1 && match[4] !== undefined)
+
+  if (belowMinimum) {
+    throw Object.assign(
+      new TypeError(`requires Node.js >=${MINIMUM_NODE_VERSION}, found ${version ?? 'unknown'}`),
+      { code: 'unsupported-node-version' },
+    )
   }
 }
 

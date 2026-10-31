@@ -5,11 +5,17 @@ import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 import {
+  MINIMUM_NODE_VERSION,
   runTrackedTests,
   selectTrackedTests,
 } from '../src/toolchain/tracked-test-runner.js'
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url))
+
+test('tracked test runner floor matches the declared package engine', () => {
+  const packageJson = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
+  assert.equal(packageJson.engines.node, `>=${MINIMUM_NODE_VERSION}`)
+})
 
 test('tracked test selection is sorted and ignores non-test files', () => {
   const calls = []
@@ -75,6 +81,7 @@ test('tracked test runner invokes Node without a shell and returns stable status
   const result = runTrackedTests({
     cwd: '/repo',
     execPath: '/node',
+    nodeVersion: '22.16.0',
     requested: ['test/a.test.js'],
     spawnSyncImpl(command, args, options) {
       calls.push({ args, command, options })
@@ -100,6 +107,67 @@ test('tracked test runner invokes Node without a shell and returns stable status
       stdio: 'inherit',
     },
   })
+})
+
+test('tracked test runner rejects Node versions below the full-suite runtime floor before discovery or spawn', () => {
+  for (const nodeVersion of ['22.0.0', '22.7.1', '22.15.1', '21.9.9']) {
+    let discovered = false
+    let spawned = false
+
+    assert.throws(
+      () => runTrackedTests({
+        cwd: '/repo',
+        execPath: '/node',
+        nodeVersion,
+        requested: ['test/a.test.js'],
+        readdirSyncImpl() {
+          discovered = true
+          return [
+            {
+              name: 'a.test.js',
+              isDirectory: () => false,
+              isFile: () => true,
+              isSymbolicLink: () => false,
+            },
+          ]
+        },
+        spawnSyncImpl() {
+          spawned = true
+          return { signal: null, status: 0 }
+        },
+      }),
+      (error) => error.code === 'unsupported-node-version'
+        && error.message.includes('requires Node.js >=22.16.0')
+        && error.message.includes(`found ${nodeVersion}`),
+    )
+
+    assert.equal(discovered, false)
+    assert.equal(spawned, false)
+  }
+})
+
+test('tracked test runner accepts the declared Node floor and subsequent major versions', () => {
+  for (const nodeVersion of ['22.16.0', '22.16.1', '23.0.0']) {
+    const result = runTrackedTests({
+      cwd: '/repo',
+      execPath: '/node',
+      nodeVersion,
+      requested: ['test/a.test.js'],
+      spawnSyncImpl() {
+        return { signal: null, status: 0 }
+      },
+      readdirSyncImpl: () => [
+        {
+          name: 'a.test.js',
+          isDirectory: () => false,
+          isFile: () => true,
+          isSymbolicLink: () => false,
+        },
+      ],
+    })
+
+    assert.deepEqual(result, { signal: null, status: 0, tests: 1 })
+  }
 })
 
 test('bound Windows runner verifies the exact source-built executable before launch', () => {
