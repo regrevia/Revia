@@ -31,6 +31,7 @@ import {
   reviewIndexSource,
   reviewSource,
   runSource,
+  runSourceWithRuntimeEffectReceipt,
   translateSource,
   viewSource,
 } from '../toolchain/demo-toolchain.js'
@@ -55,7 +56,7 @@ async function main(arguments_) {
   const parsed = parseArguments(arguments_)
   if (!parsed.ok) {
     process.stderr.write(
-      'Usage: re check [--format json | --write] <file.re>\n       re audit --format json <file.re>\n       re build --out <dir> <file.re>\n       re manifest <file.re>\n       re patch --patch <patch.json> <file.re>\n       re profile <file.re>\n       re project-check --format json <project-dir>\n       re project-run --fixture <fixture.json> <project-dir>\n       re project-projection --routes <routes.json> --out <dir> <project-dir>\n       re module-surface --manifest <manifest.json> <file.re>\n       re review-index [--changed-since <revision>] [--cursor <cursor>] [--limit <n>] [--fact-id <id> --index-revision <revision>] <file.re>\n       re run [--format json] <file.re> [-- <args>...]\n       re translate --format json <file.re>\n       re view [--locale zh-CN|en-US] [--format html|svg] <file.re>\n',
+      'Usage: re check [--format json | --write] <file.re>\n       re audit --format json <file.re>\n       re build --out <dir> <file.re>\n       re manifest <file.re>\n       re patch --patch <patch.json> <file.re>\n       re profile <file.re>\n       re project-check --format json <project-dir>\n       re project-run --fixture <fixture.json> <project-dir>\n       re project-projection --routes <routes.json> --out <dir> <project-dir>\n       re module-surface --manifest <manifest.json> <file.re>\n       re review-index [--changed-since <revision>] [--cursor <cursor>] [--limit <n>] [--fact-id <id> --index-revision <revision>] <file.re>\n       re run [--format json] [--runtime-receipt] <file.re> [-- <args>...]\n       re translate --format json <file.re>\n       re view [--locale zh-CN|en-US] [--format html|svg] <file.re>\n',
     )
     process.exitCode = EXIT_USAGE
     return
@@ -76,6 +77,7 @@ async function main(arguments_) {
     patchFile,
     programArguments,
     routesFile,
+    runtimeReceipt,
     write,
   } = parsed
 
@@ -156,6 +158,7 @@ async function main(arguments_) {
             }],
             kind: 'check-failure',
           },
+          ...(runtimeReceipt ? { runtimeEffectReceipt: null } : {}),
         }),
       )
       process.exitCode = EXIT_CHECK_FAILURE
@@ -551,7 +554,9 @@ async function main(arguments_) {
     return
   }
 
-  const result = runSource(source, {
+  const result = (runtimeReceipt
+    ? runSourceWithRuntimeEffectReceipt
+    : runSource)(source, {
     argv: programArguments,
     file,
     fileSandboxRoot: dirname(resolve(file)),
@@ -560,6 +565,9 @@ async function main(arguments_) {
     if (format === 'json') {
       process.stdout.write(serializeRunResult({
         outcome: result.outcome,
+        ...(runtimeReceipt
+          ? { runtimeEffectReceipt: result.runtime_effect_receipt }
+          : {}),
       }))
     } else {
       writeDiagnostics(result.outcome.diagnostics)
@@ -571,6 +579,9 @@ async function main(arguments_) {
     if (format === 'json') {
       process.stdout.write(serializeRunResult({
         outcome: result.outcome,
+        ...(runtimeReceipt
+          ? { runtimeEffectReceipt: result.runtime_effect_receipt }
+          : {}),
       }))
     } else {
       process.stderr.write(`HOST_FAULT ${result.outcome.fault.code}\n`)
@@ -579,7 +590,12 @@ async function main(arguments_) {
     return
   }
   if (format === 'json') {
-    process.stdout.write(serializeRunResult(result))
+    process.stdout.write(serializeRunResult({
+      ...result,
+      ...(runtimeReceipt
+        ? { runtimeEffectReceipt: result.runtime_effect_receipt }
+        : {}),
+    }))
   } else {
     process.stdout.write(result.programStdout)
   }
@@ -798,10 +814,19 @@ function parseArguments(arguments_) {
 
   let format = 'text'
   let write = false
-  if (command === 'run' && rest[0] === '--format') {
-    if (rest[1] !== 'json') return { ok: false }
-    format = 'json'
-    rest.splice(0, 2)
+  let runtimeReceipt = false
+  if (command === 'run') {
+    while (rest[0]?.startsWith('--')) {
+      const option = rest.shift()
+      if (option === '--format' && rest.shift() === 'json') {
+        format = 'json'
+      } else if (option === '--runtime-receipt') {
+        runtimeReceipt = true
+      } else {
+        return { ok: false }
+      }
+    }
+    if (runtimeReceipt && format !== 'json') return { ok: false }
   } else if (command === 'audit') {
     if (rest[0] !== '--format' || rest[1] !== 'json') return { ok: false }
     format = 'json'
@@ -847,10 +872,26 @@ function parseArguments(arguments_) {
     return { command, file, format, ok: true, programArguments: [], write }
   }
   if (rest.length === 0) {
-    return { command, file, format, ok: true, programArguments: [], write }
+    return {
+      command,
+      file,
+      format,
+      ok: true,
+      programArguments: [],
+      runtimeReceipt,
+      write,
+    }
   }
   if (rest.shift() !== '--') return { ok: false }
-  return { command, file, format, ok: true, programArguments: rest, write }
+  return {
+    command,
+    file,
+    format,
+    ok: true,
+    programArguments: rest,
+    runtimeReceipt,
+    write,
+  }
 }
 
 async function writeCanonicalFile(file, canonical) {

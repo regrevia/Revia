@@ -102,7 +102,7 @@ effect @fs.read_file on fs.read {
 re check <file.re>
 re check --format json <file.re>
 re check --write <file.re>
-re run [--format json] <file.re> [-- <args>...]
+re run [--format json] [--runtime-receipt] <file.re> [-- <args>...]
 re manifest <file.re>
 re patch --patch <patch.json> <file.re>
 re audit --format json <file.re>
@@ -118,7 +118,7 @@ re project-translate [--locale zh-CN|en-US] [--format json|text|html|svg] <proje
 - `re check`：解析、类型检查、能力检查、错误消费检查、schema 检查；
 - `re check --format json`：输出确定的机器结果；成功和失败都只写 runner stdout，失败仍返回非零退出码；
 - `re check --write`：检查通过后写回 canonical；
-- `re run`：先执行 `check`，失败则不运行；本地 CLI 以输入 `.re` 文件所在目录的 real path 作为 file sandbox root，只把 `fs.read`/`fs.write` capability 绑定到 file adapter，process args/stdout 使用独立 adapter；`--format json` 输出稳定的 `re.run-result@0.1.0` envelope，统一承载 process status、check failure、host fault 和程序 stdout，默认文本模式不变；
+- `re run`：先执行 `check`，失败则不运行；本地 CLI 以输入 `.re` 文件所在目录的 real path 作为 file sandbox root，只把 `fs.read`/`fs.write` capability 绑定到 file adapter，process args/stdout 使用独立 adapter；`--format json` 输出稳定的 `re.run-result@0.1.0` envelope，统一承载 process status、check failure、host fault 和程序 stdout，默认文本模式不变。显式增加 `--runtime-receipt` 时输出 `re.run-result@0.2.0` 和独立 HostEnvironment invocation receipt；receipt 只证明 validated adapter response，不是外部副作用证明，并可能包含敏感实参/响应；
 - `re manifest`：输出绑定 graph revision 的机器 Review manifest；
 - `re patch`：只对 canonical 输入应用 revision-pinned structured patch，失败原子回滚；
 - `re audit --format json`：静态输出 capability、effect、错误路径和 status code 摘要，不调用 adapter；

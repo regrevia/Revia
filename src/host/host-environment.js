@@ -1,11 +1,43 @@
 export class HostEnvironment {
   #instances
+  #invocationObserver
+  #invocationSequence
 
-  constructor(instances) {
+  constructor(instances, invocationObserver = null) {
     this.#instances = instances
+    this.#invocationObserver = invocationObserver
+    this.#invocationSequence = 0
   }
 
-  static bind({ bindings, capabilities, registry }) {
+  static bind({ bindings, capabilities, onInvocation = null, registry }) {
+    let invocationObserver = null
+    if (onInvocation !== null) {
+      let beginInvocation
+      let completeInvocation
+      let invalidate
+      try {
+        beginInvocation = onInvocation.beginInvocation
+        completeInvocation = onInvocation.completeInvocation
+        invalidate = onInvocation.invalidate
+        if (
+          typeof beginInvocation !== 'function'
+          || typeof completeInvocation !== 'function'
+          || typeof invalidate !== 'function'
+        ) {
+          throw new TypeError()
+        }
+        invocationObserver = Object.freeze({
+          beginInvocation: Function.prototype.bind.call(beginInvocation, onInvocation),
+          completeInvocation: Function.prototype.bind.call(completeInvocation, onInvocation),
+          invalidate: Function.prototype.bind.call(invalidate, onInvocation),
+        })
+      } catch {
+        return {
+          diagnostics: [{ code: 'invalid-host-invocation-observer' }],
+          ok: false,
+        }
+      }
+    }
     const instances = new Map()
     const diagnostics = []
     const declaredInstances = new Map()
@@ -78,17 +110,34 @@ export class HostEnvironment {
       diagnostics.sort(compareDiagnostics)
       return { ok: false, diagnostics }
     }
-    return { ok: true, value: new HostEnvironment(instances) }
+    return {
+      ok: true,
+      value: new HostEnvironment(instances, invocationObserver),
+    }
   }
 
-  invoke(instance, member, typedArguments, invocationId) {
+  invoke(
+    instance,
+    member,
+    typedArguments,
+    invocationId,
+    effectUid = invocationId,
+  ) {
     const prepared = this.#prepareInvocation(
       instance,
       member,
       typedArguments,
     )
     if (!prepared.ok) return prepared.result
+    const observation = this.#beginInvocation(
+      prepared.bound,
+      instance,
+      member,
+      prepared.expandedArguments,
+      effectUid,
+    )
     let adapterOutcome
+    let response
     try {
       adapterOutcome = prepared.bound.adapter.invoke(
         { interface: prepared.bound.reference, member },
@@ -96,7 +145,7 @@ export class HostEnvironment {
         invocationId,
       )
     } catch {
-      return hostContractViolation({
+      response = hostContractViolation({
         instance,
         invocationId,
         member,
@@ -104,24 +153,42 @@ export class HostEnvironment {
         reference: prepared.bound.reference,
       })
     }
-    return this.#validateAdapterOutcome({
-      adapterOutcome,
-      bound: prepared.bound,
-      instance,
-      invocationId,
-      member,
-      operationSchema: prepared.operationSchema,
-    })
+    if (response === undefined) {
+      response = this.#validateAdapterOutcome({
+        adapterOutcome,
+        bound: prepared.bound,
+        instance,
+        invocationId,
+        member,
+        operationSchema: prepared.operationSchema,
+      })
+    }
+    this.#completeInvocation(observation, response)
+    return response
   }
 
-  async invokeAsync(instance, member, typedArguments, invocationId) {
+  async invokeAsync(
+    instance,
+    member,
+    typedArguments,
+    invocationId,
+    effectUid = invocationId,
+  ) {
     const prepared = this.#prepareInvocation(
       instance,
       member,
       typedArguments,
     )
     if (!prepared.ok) return prepared.result
+    const observation = this.#beginInvocation(
+      prepared.bound,
+      instance,
+      member,
+      prepared.expandedArguments,
+      effectUid,
+    )
     let adapterOutcome
+    let response
     try {
       adapterOutcome = await prepared.bound.adapter.invoke(
         { interface: prepared.bound.reference, member },
@@ -129,7 +196,7 @@ export class HostEnvironment {
         invocationId,
       )
     } catch {
-      return hostContractViolation({
+      response = hostContractViolation({
         instance,
         invocationId,
         member,
@@ -137,14 +204,63 @@ export class HostEnvironment {
         reference: prepared.bound.reference,
       })
     }
-    return this.#validateAdapterOutcome({
-      adapterOutcome,
-      bound: prepared.bound,
-      instance,
-      invocationId,
-      member,
-      operationSchema: prepared.operationSchema,
-    })
+    if (response === undefined) {
+      response = this.#validateAdapterOutcome({
+        adapterOutcome,
+        bound: prepared.bound,
+        instance,
+        invocationId,
+        member,
+        operationSchema: prepared.operationSchema,
+      })
+    }
+    this.#completeInvocation(observation, response)
+    return response
+  }
+
+  #beginInvocation(bound, instance, member, arguments_, invocationId) {
+    if (this.#invocationObserver === null) return null
+    const sequence = this.#invocationSequence
+    this.#invocationSequence += 1
+    try {
+      return {
+        token: this.#invocationObserver.beginInvocation({
+          arguments: arguments_,
+          effect_uid: invocationId,
+          instance,
+          member,
+          reference: bound.reference,
+          sequence,
+        }),
+      }
+    } catch {
+      try {
+        this.#invocationObserver.invalidate()
+      } catch {
+        // Receipt capture is diagnostic and cannot replace a host result.
+      }
+      return null
+    }
+  }
+
+  #completeInvocation(observation, response) {
+    if (observation === null) return
+    try {
+      this.#invocationObserver.completeInvocation(
+        observation.token,
+        response,
+      )
+    } catch {
+      this.#invalidateInvocationReceipt()
+    }
+  }
+
+  #invalidateInvocationReceipt() {
+    try {
+      this.#invocationObserver.invalidate()
+    } catch {
+      // Receipt capture is diagnostic and cannot replace a host result.
+    }
   }
 
   #prepareInvocation(instance, member, typedArguments) {

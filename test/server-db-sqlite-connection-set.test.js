@@ -7,6 +7,8 @@ import { join } from 'node:path'
 import { createInterface } from 'node:readline'
 import test from 'node:test'
 
+import { executeConcurrencyPlan } from '../src/toolchain/concurrency-runtime.js'
+import { lowerConcurrency } from '../src/toolchain/concurrency-contract.js'
 import { invokeAgentCapability } from '../src/host/agent-adapter-contract.js'
 import {
   createServerDbSqliteFileHandle,
@@ -20,6 +22,7 @@ const profile = {
   id: 'server-minimum@0.1.0',
   schema: 're.server-profile@0.1.0',
 }
+const concurrencyDigest = (letter) => `sha256:${letter.repeat(64)}`
 
 test('SQLite connection set bounds leases and runs two serial text-boundary reads', async (t) => {
   const root = await mkdtemp(join(tmpdir(), 're-sqlite-set-'))
@@ -86,9 +89,13 @@ test('SQLite connection set bounds leases and runs two serial text-boundary read
   assert.equal(reused.ok, true)
   assert.deepEqual(Object.keys(reused.value), ['release'])
   assert.deepEqual(set.release({}), { error: 'invalid lease', ok: false })
+  assert.deepEqual(set.acquire(), { error: 'capacity', ok: false })
+  assert.deepEqual(set.release(first.value), { error: 'released', ok: false })
+  assert.deepEqual(set.acquire(), { error: 'capacity', ok: false })
+  assert.deepEqual(second.value.release(), { ok: true })
+  assert.deepEqual(reused.value.release(), { ok: true })
   assert.deepEqual(set.close(), { ok: true })
   assert.deepEqual(set.acquire(), { error: 'closed', ok: false })
-  assert.deepEqual(second.value.release(), { error: 'closed', ok: false })
   assert.deepEqual(file.close(), { error: 'closed', ok: false })
 })
 
@@ -576,6 +583,118 @@ test('SQLite connection wait cancellation never consumes or later receives a lea
   queued.abort()
   assert.deepEqual(await waiting, { error: 'cancelled', ok: false })
   assert.equal(clock.pending(), 0)
+  assert.deepEqual(active.value.release(), { ok: true })
+  const next = set.acquire()
+  assert.equal(next.ok, true)
+  assert.deepEqual(next.value.release(), { ok: true })
+})
+
+test('parent cancellation of a queued SQLite lease cannot grant it after release', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 're-sqlite-set-parent-cancel-'))
+  t.after(() => rm(root, { force: true, recursive: true }))
+  const file = createServerDbSqliteFileHandle({
+    database_path: join(root, 'expense.sqlite'),
+    root,
+  })
+  const set = createServerDbSqliteConnectionSet({
+    connection_count: 1,
+    file_handle: file,
+    wait_queue_limit: 1,
+  })
+  t.after(() => set.close())
+  const active = set.acquire()
+  assert.equal(active.ok, true)
+
+  const plan = lowerConcurrency({
+    kind: 'par',
+    region: {
+      branches: [
+        {
+          effects: [{
+            after: [],
+            cancellation: 'cooperative',
+            footprint: [{
+              handle: null,
+              mode: 'read',
+              resource: {
+                domain_digest: concurrencyDigest('a'),
+                segments: [{
+                  canonical_hex: 'aa',
+                  type_digest: concurrencyDigest('b'),
+                }],
+              },
+            }],
+            id: 'acquire',
+            operation_digest: concurrencyDigest('c'),
+          }],
+          id: 'reader',
+          output_type: 'unit',
+        },
+        {
+          effects: [],
+          id: 'sibling',
+          output_type: 'unit',
+        },
+      ],
+      cancel_reason_type: {
+        arguments: [],
+        declaration_digest: concurrencyDigest('d'),
+        kind: 'declared',
+      },
+      deadline: null,
+      handles: [],
+      id: 'sqlite_lease',
+      join_type: {
+        arguments: [],
+        declaration_digest: concurrencyDigest('e'),
+        kind: 'declared',
+      },
+      task_outcome_digest: concurrencyDigest('f'),
+    },
+    schema: 're.concurrency-contract@0.1.0',
+  })
+  assert.equal(plan.ok, true)
+
+  const parent = new AbortController()
+  let markQueued
+  let markSiblingStarted
+  const waiterQueued = new Promise((resolve) => { markQueued = resolve })
+  const siblingStarted = new Promise((resolve) => { markSiblingStarted = resolve })
+  let acquiredAfterCancel = false
+  const execution = executeConcurrencyPlan(plan.plan, {
+    branches: new Map([
+      ['reader', async ({ runEffect }) => runEffect('acquire', async ({ signal }) => {
+        const result = set.acquireWait({ signal, timeout_ms: 5000 })
+        markQueued()
+        const lease = await result
+        if (lease.ok) {
+          acquiredAfterCancel = true
+          lease.value.release()
+        }
+        return lease.error ?? 'acquired'
+      })],
+      ['sibling', async ({ signal }) => {
+        markSiblingStarted()
+        await new Promise((resolve) => {
+          signal.addEventListener('abort', resolve, { once: true })
+        })
+      }],
+    ]),
+    parentSignal: parent.signal,
+  })
+
+  await Promise.all([waiterQueued, siblingStarted])
+  parent.abort()
+  const result = await execution
+  assert.equal(result.ok, true)
+  assert.equal(result.branches.reader, undefined)
+  assert.equal(result.trace.events.some((event) => (
+    event.kind === 'effect-cancelled'
+    && event.branch === 'reader'
+    && event.effect === 'acquire'
+  )), true)
+  assert.equal(acquiredAfterCancel, false)
+
   assert.deepEqual(active.value.release(), { ok: true })
   const next = set.acquire()
   assert.equal(next.ok, true)

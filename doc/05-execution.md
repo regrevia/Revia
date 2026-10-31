@@ -147,6 +147,29 @@ core，并由差分 conformance 锁定 stdout、status、invocation identity 与
 分支。这只建立将来原生 VM/AOT 后端可复用的语义 seam，不是独立二进制、
 生产 backend、完整函数/loop/par 执行器或 Stable V1.0 证据。
 
+`re run --format json --runtime-receipt` 是独立的 opt-in HostEnvironment 观测，
+输出 `re.run-result@0.2.0`，其中 `runtime_effect_receipt` 可为 `null`（无 capability
+adapter 被调用，或在调用前拒绝）。非空 `re.runtime-effect-receipt@0.1.0`
+记录 capability reference/instance/member、规范化实参、HostEnvironment 验证后的
+adapter response、source effect call 的 `effect_uid` anchor、调用开始 sequence，
+以及不依赖 node UID 的 `demand_id` / `receipt_id`。`demand_id` 由 capability identity、
+实参和相同 demand occurrence 序号派生；`effect_uid` 只回链，不作为 demand identity
+输入。顶层 `receipt_digest` 与每项 ID 用于检测单边/非协调篡改，
+`verifyRuntimeEffectReceipt` 会重新计算 canonical bytes；这不是签名或真实性证明。
+`bytes` 以 tagged lowercase hex 保存。`process.exit` 是 pure operation，不进入回执。
+
+回执证明 Node reference 路径发起了哪个 adapter invocation 及其返回内容；它不签名、
+不提供外部信任根，也不单独证明外部副作用已持久化。文件 write 还需读取目标文件逐字节
+核对，HTTP 还需服务端 transcript/响应对照。由于实参或响应可能含有 secret/个人数据，
+该选项默认关闭，分享回执前必须先检查并脱敏。当前 Demo source slice 的执行能力是有界的；
+回执里的 sequence 表示 HostEnvironment invocation 开始顺序，不证明未执行的图路径，也不
+替代 `par` scheduler 的并发/取消证据。
+
+并发 reference runtime 已有父取消后保留先完成 branch、取消 branch 不会伪造 completion
+的 trace 回归；SQLite connection-set 集成测试还验证等待中的 lease request 在 branch
+取消后不会于连接释放时迟到获批。它们是调度/lease lifecycle 证据，不扩展上述单线程
+HostEnvironment receipt 的证明范围。
+
 `re.portable-conformance-bundle@0.1.0` 是该 seam 的 backend-neutral
 机器 oracle。每个 tracked case 固定 canonical graph 路径、Graph revision、
 无额外 caller input 的 input digest、完整 capability invocation

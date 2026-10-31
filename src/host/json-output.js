@@ -1,9 +1,19 @@
-export function serializeRunResult({ outcome, programStdout = '' }) {
-  return canonicalJson({
+export function serializeRunResult({
+  outcome,
+  programStdout = '',
+  runtimeEffectReceipt,
+}) {
+  const result = {
     outcome: normalizeRunOutcome(outcome),
     program_stdout: programStdout,
-    schema: 're.run-result@0.1.0',
-  })
+    schema: runtimeEffectReceipt === undefined
+      ? 're.run-result@0.1.0'
+      : 're.run-result@0.2.0',
+  }
+  if (runtimeEffectReceipt !== undefined) {
+    result.runtime_effect_receipt = runtimeEffectReceipt
+  }
+  return canonicalJson(result)
 }
 
 export function serializeTranslationResult({ file, result }) {

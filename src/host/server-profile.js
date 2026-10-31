@@ -504,6 +504,7 @@ export function bindServerProfile({
   httpClientAdapter,
   dbSqlAdapter,
   httpServerAdapter,
+  onInvocation = null,
 } = {}) {
   const profile = buildServerProfile(definitions)
   if (!profile.ok) return profile
@@ -597,6 +598,7 @@ export function bindServerProfile({
       instance,
       reference,
     })),
+    onInvocation,
     registry: registry.value,
   })
 }

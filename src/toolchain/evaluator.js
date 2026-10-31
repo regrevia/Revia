@@ -2,6 +2,7 @@ import { demoSchemaDefinitions } from '../host/demo-schema.js'
 import { FileSandboxAdapter } from '../host/file-sandbox-adapter.js'
 import { HostEnvironment } from '../host/host-environment.js'
 import { MemoryAdapter } from '../host/memory-adapter.js'
+import { createRuntimeEffectReceiptRecorder } from '../host/runtime-effect-receipt.js'
 import { SchemaRegistry } from '../host/schema-registry.js'
 import { executePortableProgram } from './portable-executor.js'
 import {
@@ -13,7 +14,27 @@ import { graphRevision } from './structured-patch.js'
 
 export function evaluateProgram(
   program,
+  options = {},
+) {
+  return evaluateProgramInternal(program, options)
+}
+
+export function evaluateProgramWithRuntimeEffectReceipt(
+  program,
+  options = {},
+) {
+  const recorder = createRuntimeEffectReceiptRecorder(graphRevision(program))
+  const outcome = evaluateProgramInternal(program, options, recorder)
+  return {
+    outcome,
+    runtime_effect_receipt: recorder.toReceipt(),
+  }
+}
+
+function evaluateProgramInternal(
+  program,
   { argv = [], fileSandboxRoot, host = {}, stdout = [] } = {},
+  recorder = null,
 ) {
   const memoryAdapter = new MemoryAdapter({ argv, stdout, ...host })
   const fileAdapter = fileSandboxRoot === undefined
@@ -30,6 +51,7 @@ export function evaluateProgram(
     })),
     capabilities: program.capabilities,
     registry,
+    onInvocation: recorder,
   })
   if (!bound.ok) {
     return {
@@ -43,8 +65,14 @@ export function evaluateProgram(
   }
 
   return executePortableProgram(program, {
-    invokeCapability(instance, member, arguments_, invocationId) {
-      return bound.value.invoke(instance, member, arguments_, invocationId)
+    invokeCapability(instance, member, arguments_, invocationId, effectUid) {
+      return bound.value.invoke(
+        instance,
+        member,
+        arguments_,
+        invocationId,
+        effectUid,
+      )
     },
     invokePureOperation(operation, parameters) {
       const executed = executeMinimalStdOperation({

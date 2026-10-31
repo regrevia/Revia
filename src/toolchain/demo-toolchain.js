@@ -6,7 +6,10 @@ import { SchemaRegistry } from '../host/schema-registry.js'
 import { serializeCanonicalGraph } from './canonical.js'
 import { checkProgram } from './checker.js'
 import { commit, createGraph } from './creation-transaction.js'
-import { evaluateProgram } from './evaluator.js'
+import {
+  evaluateProgram,
+  evaluateProgramWithRuntimeEffectReceipt,
+} from './evaluator.js'
 import { EXECUTABLE_GRAMMAR_PROFILE } from './executable-grammar-profile.js'
 import { parseExecutableSource } from './executable-source.js'
 import {
@@ -147,21 +150,54 @@ export function checkSource(source, { file = '<input>', uidFactory } = {}) {
 
 export function runSource(
   source,
-  { argv = [], file = '<input>', fileSandboxRoot, host = {} } = {},
+  options = {},
 ) {
-  const checked = checkSource(source, { file })
+  return runSourceInternal(source, options, false)
+}
+
+export function runSourceWithRuntimeEffectReceipt(
+  source,
+  options = {},
+) {
+  return runSourceInternal(source, options, true)
+}
+
+function runSourceInternal(
+  source,
+  { argv = [], file = '<input>', fileSandboxRoot, host = {}, uidFactory } = {},
+  includeRuntimeEffectReceipt,
+) {
+  const checked = checkSource(source, { file, uidFactory })
   const stdout = []
-  return runProgram({
+  let runtimeEffectReceipt = null
+  const result = runProgram({
     check: () => checked,
-    execute: () =>
-      evaluateProgram(checked.program, {
+    execute: () => {
+      if (includeRuntimeEffectReceipt) {
+        const observed = evaluateProgramWithRuntimeEffectReceipt(
+          checked.program,
+          {
+            argv,
+            fileSandboxRoot,
+            host,
+            stdout,
+          },
+        )
+        runtimeEffectReceipt = observed.runtime_effect_receipt
+        return observed.outcome
+      }
+      return evaluateProgram(checked.program, {
         argv,
         fileSandboxRoot,
         host,
         stdout,
-      }),
+      })
+    },
     readProgramStdout: () => stdout.join(''),
   })
+  return includeRuntimeEffectReceipt
+    ? { ...result, runtime_effect_receipt: runtimeEffectReceipt }
+    : result
 }
 
 export function patchSource(source, patch, { file = '<input>' } = {}) {
