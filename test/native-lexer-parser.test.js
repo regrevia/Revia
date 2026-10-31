@@ -265,6 +265,14 @@ test('native dependency scan skips only the Darwin target header', () => {
   )
   assert.equal(
     dependencyLinesForScan(
+      '/TMP/Node-Build/Revia:\n\t/usr/lib/libSystem.B.dylib\n',
+      'darwin',
+      '/tmp/node-build/revia',
+    ),
+    '\t/usr/lib/libSystem.B.dylib',
+  )
+  assert.equal(
+    dependencyLinesForScan(
       '/tmp/revia (architecture x86_64):\n\t/usr/lib/libSystem.B.dylib\n/tmp/revia (architecture arm64):\n\t/usr/lib/libSystem.B.dylib\n',
       'darwin',
       '/tmp/revia',
@@ -274,6 +282,14 @@ test('native dependency scan skips only the Darwin target header', () => {
   assert.throws(
     () => dependencyLinesForScan(
       '/tmp/other (architecture arm64):\n\t/usr/lib/libSystem.B.dylib\n',
+      'darwin',
+      '/tmp/revia',
+    ),
+    /native dependency scan header invalid/u,
+  )
+  assert.throws(
+    () => dependencyLinesForScan(
+      '/tmp/revia:\n\t/usr/lib/libSystem.B.dylib\n/tmp/other (architecture arm64):\n\t/usr/lib/libSystem.B.dylib\n',
       'darwin',
       '/tmp/revia',
     ),
@@ -315,6 +331,8 @@ function dependencyLinesForScan(output, platform, binaryPath) {
       sawHeader = true
     } else if (line.trim().length === 0) {
       continue
+    } else if (looksLikeDarwinDependencyHeader(line)) {
+      throw new Error('native dependency scan header invalid')
     } else if (!sawHeader) {
       throw new Error('native dependency scan header invalid')
     } else {
@@ -326,11 +344,17 @@ function dependencyLinesForScan(output, platform, binaryPath) {
   return dependencies.join('\n')
 }
 
+function looksLikeDarwinDependencyHeader(line) {
+  return line.trimEnd().endsWith(':')
+}
+
 function isDarwinDependencyHeader(line, binaryPath) {
-  if (line === `${binaryPath}:`) return true
-  const prefix = `${binaryPath} (architecture `
-  if (!line.startsWith(prefix) || !line.endsWith('):')) return false
-  const architecture = line.slice(prefix.length, -2)
+  const normalizedLine = line.toLowerCase()
+  const normalizedPath = binaryPath.toLowerCase()
+  if (normalizedLine === `${normalizedPath}:`) return true
+  const prefix = `${normalizedPath} (architecture `
+  if (!normalizedLine.startsWith(prefix) || !normalizedLine.endsWith('):')) return false
+  const architecture = normalizedLine.slice(prefix.length, -2)
   return architecture.length > 0 && !architecture.includes(')')
 }
 

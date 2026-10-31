@@ -5594,7 +5594,7 @@ fn dependency_scan_lines<'a>(
                     saw_header = true;
                 } else if line.trim().is_empty() {
                     continue;
-                } else if !saw_header {
+                } else if looks_like_darwin_dependency_header(line) || !saw_header {
                     return Err("node-free-dependency-scan-header-invalid".to_owned());
                 } else {
                     dependencies.push(line);
@@ -5613,6 +5613,8 @@ fn dependency_scan_lines<'a>(
 
 #[cfg(target_os = "macos")]
 fn darwin_dependency_header_matches(line: &str, expected_header: &str) -> bool {
+    let line = line.to_ascii_lowercase();
+    let expected_header = expected_header.to_ascii_lowercase();
     if line == expected_header {
         return true;
     }
@@ -5627,6 +5629,11 @@ fn darwin_dependency_header_matches(line: &str, expected_header: &str) -> bool {
         return false;
     };
     !architecture.is_empty() && !architecture.contains(')')
+}
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+fn looks_like_darwin_dependency_header(line: &str) -> bool {
+    line.trim_end().ends_with(':')
 }
 
 fn current_rss_bytes() -> Result<u64, String> {
@@ -7849,6 +7856,14 @@ mod tests {
         );
         assert_eq!(
             dependency_scan_lines(
+                "/TMP/Node-Build/Revia:\n\t/usr/lib/libSystem.B.dylib\n",
+                Some("/tmp/node-build/revia:"),
+            )
+            .unwrap(),
+            vec!["\t/usr/lib/libSystem.B.dylib"]
+        );
+        assert_eq!(
+            dependency_scan_lines(
                 "/tmp/revia:\n\t/usr/lib/libnode.dylib\n",
                 Some("/tmp/revia:"),
             )
@@ -7878,6 +7893,11 @@ mod tests {
             )
             .is_err()
         );
+        assert!(dependency_scan_lines(
+            "/tmp/revia:\n\t/usr/lib/libSystem.B.dylib\n/tmp/other (architecture arm64):\n\t/usr/lib/libSystem.B.dylib\n",
+            Some("/tmp/revia:")
+        )
+        .is_err());
         assert!(
             dependency_scan_lines(
                 "/tmp/revia:\n\t/usr/lib/libSystem.B.dylib\n",
