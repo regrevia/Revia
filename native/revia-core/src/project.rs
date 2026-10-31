@@ -908,7 +908,147 @@ fn validate_agent_declaration(
             "native-project-module-surface-agent-identity-mismatch",
         ));
     }
+    validate_agent_lifecycle(&fields)?;
     Ok(agent.to_owned())
+}
+
+fn validate_agent_lifecycle(fields: &BTreeMap<String, &JsonValue>) -> Result<(), ProjectError> {
+    let events = array(fields, "events")?;
+    let states = array(fields, "states")?;
+    let retryable_states = array(fields, "retryable_states")?;
+    let terminal_states = array(fields, "terminal_states")?;
+    let transitions = array(fields, "transitions")?;
+    let initial_state = string(fields, "initial_state")?;
+
+    let mut event_names = BTreeSet::new();
+    for event in events {
+        let JsonValue::String(event) = event else {
+            return Err(ProjectError::new(
+                "native-project-module-surface-agent-invalid",
+            ));
+        };
+        if !event_names.insert(event.clone()) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-agent-duplicate-event",
+            ));
+        }
+    }
+
+    let mut state_names = BTreeSet::new();
+    for state in states {
+        let JsonValue::String(state) = state else {
+            return Err(ProjectError::new(
+                "native-project-module-surface-agent-invalid",
+            ));
+        };
+        if !state_names.insert(state.clone()) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-agent-duplicate-state",
+            ));
+        }
+    }
+    if !state_names.contains(initial_state) {
+        return Err(ProjectError::new(
+            "native-project-module-surface-agent-invalid",
+        ));
+    }
+
+    let mut terminal_names = BTreeSet::new();
+    for terminal in terminal_states {
+        let terminal_fields = exact_object(terminal, &["outcome", "state"])?;
+        require_object_fields(
+            &terminal_fields,
+            &["outcome", "state"],
+            "native-project-module-surface-agent-invalid",
+        )?;
+        let state = string(&terminal_fields, "state")?;
+        if !state_names.contains(state) || !terminal_names.insert(state.to_owned()) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-agent-invalid",
+            ));
+        }
+    }
+
+    let mut retryable_names = BTreeSet::new();
+    for retryable in retryable_states {
+        let JsonValue::String(state) = retryable else {
+            return Err(ProjectError::new(
+                "native-project-module-surface-agent-invalid",
+            ));
+        };
+        if !state_names.contains(state) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-agent-invalid",
+            ));
+        }
+        if terminal_names.contains(state) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-agent-retryable-terminal-state",
+            ));
+        }
+        retryable_names.insert(state.clone());
+    }
+
+    let mut outgoing = BTreeMap::<String, BTreeSet<String>>::new();
+    let mut transition_keys = BTreeSet::new();
+    for transition in transitions {
+        let transition_fields = exact_object(transition, &["event", "from", "to"])?;
+        require_object_fields(
+            &transition_fields,
+            &["event", "from", "to"],
+            "native-project-module-surface-agent-invalid",
+        )?;
+        let event = string(&transition_fields, "event")?;
+        let from = string(&transition_fields, "from")?;
+        let to = string(&transition_fields, "to")?;
+        if !event_names.contains(event) || !state_names.contains(from) || !state_names.contains(to)
+        {
+            return Err(ProjectError::new(
+                "native-project-module-surface-agent-invalid",
+            ));
+        }
+        if terminal_names.contains(from) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-agent-terminal-transition",
+            ));
+        }
+        let key = format!("{event}\0{from}");
+        if !transition_keys.insert(key) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-agent-duplicate-transition",
+            ));
+        }
+        outgoing
+            .entry(from.to_owned())
+            .or_default()
+            .insert(to.to_owned());
+    }
+
+    let mut reachable = BTreeSet::from([initial_state.to_owned()]);
+    let mut frontier = vec![initial_state.to_owned()];
+    while let Some(state) = frontier.pop() {
+        for next in outgoing.get(&state).into_iter().flatten() {
+            if reachable.insert(next.clone()) {
+                frontier.push(next.clone());
+            }
+        }
+    }
+    for state in &reachable {
+        if !terminal_names.contains(state) && !outgoing.contains_key(state) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-agent-missing-outgoing-transition",
+            ));
+        }
+    }
+
+    if reachable.len() != state_names.len() {
+        return Err(ProjectError::new(
+            "native-project-module-surface-agent-unreachable-state",
+        ));
+    }
+
+    let _ = retryable_names;
+    Ok(())
 }
 
 fn validate_task_contract_identity(value: &JsonValue, module: &str) -> Result<(), ProjectError> {
