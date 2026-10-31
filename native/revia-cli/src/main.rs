@@ -5611,7 +5611,7 @@ fn dependency_scan_lines<'a>(
     }
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 fn darwin_dependency_header_matches(line: &str, expected_header: &str) -> bool {
     let line = line.to_ascii_lowercase();
     let expected_header = expected_header.to_ascii_lowercase();
