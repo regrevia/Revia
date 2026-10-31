@@ -7,7 +7,7 @@
     "re": "./src/cli/re.js"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.16.0"
   },
   "scripts": {
     "g6:ollama": "node ./src/toolchain/cold-start-runner.js",

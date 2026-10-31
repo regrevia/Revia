@@ -12,6 +12,9 @@ try {
   const code = typeof error?.code === 'string'
     ? error.code
     : 'tracked test runner failed'
-  process.stderr.write(`${code}\n`)
+  const message = error instanceof Error && error.message
+    ? error.message
+    : code
+  process.stderr.write(`${message}\n`)
   process.exitCode = 1
 }
