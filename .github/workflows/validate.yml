@@ -37,11 +37,13 @@ jobs:
         shell: bash
         run: |
           set +e
-          : > node-test-runner.error
-          node scripts/run-tracked-tests.js > node-test-population.json 2> node-test-execution.log
+          evidence_dir="$RUNNER_TEMP/revia-node-test-population"
+          mkdir -p "$evidence_dir"
+          : > "$evidence_dir/node-test-runner.error"
+          node scripts/run-tracked-tests.js > "$evidence_dir/node-test-population.json" 2> "$evidence_dir/node-test-execution.log"
           status=$?
-          if [ "$status" -ne 0 ] && [ ! -s node-test-population.json ]; then
-            printf '%s\n' "node-test-runner exited with status $status" > node-test-runner.error
+          if [ "$status" -ne 0 ] && [ ! -s "$evidence_dir/node-test-population.json" ]; then
+            printf '%s\n' "node-test-runner exited with status $status" > "$evidence_dir/node-test-runner.error"
           fi
           exit "$status"
       - name: Upload Node population evidence
@@ -51,9 +53,9 @@ jobs:
           name: node-test-population-${{ matrix.node-version }}
           if-no-files-found: error
           path: |
-            node-test-population.json
-            node-test-execution.log
-            node-test-runner.error
+            ${{ runner.temp }}/revia-node-test-population/node-test-population.json
+            ${{ runner.temp }}/revia-node-test-population/node-test-execution.log
+            ${{ runner.temp }}/revia-node-test-population/node-test-runner.error
 
   native:
     name: Native Rust conformance

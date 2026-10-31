@@ -72,11 +72,12 @@ test('tracked test runner floor matches the declared package engine', () => {
 
 test('Node validation uploads machine population and execution evidence', () => {
   const workflow = readFileSync(join(ROOT, '.github/workflows/validate.yml'), 'utf8')
-  assert.match(workflow, /node scripts\/run-tracked-tests\.js > node-test-population\.json 2> node-test-execution\.log/u)
+  assert.match(workflow, /evidence_dir="\$RUNNER_TEMP\/revia-node-test-population"/u)
+  assert.match(workflow, /node scripts\/run-tracked-tests\.js > "\$evidence_dir\/node-test-population\.json" 2> "\$evidence_dir\/node-test-execution\.log"/u)
   assert.match(workflow, /name: Upload Node population evidence/u)
   assert.match(workflow, /if: always\(\)/u)
   assert.match(workflow, /node-test-population-\$\{\{ matrix\.node-version \}\}/u)
-  assert.match(workflow, /node-test-population\.json[\s\S]*?node-test-execution\.log[\s\S]*?node-test-runner\.error/u)
+  assert.match(workflow, /\$\{\{\s*runner\.temp\s*\}\}\/revia-node-test-population\/node-test-population\.json[\s\S]*?\$\{\{\s*runner\.temp\s*\}\}\/revia-node-test-population\/node-test-execution\.log[\s\S]*?\$\{\{\s*runner\.temp\s*\}\}\/revia-node-test-population\/node-test-runner\.error/u)
 })
 
 test('population evidence corpus fixes clean, truncated, missing-report, and subset controls', () => {
