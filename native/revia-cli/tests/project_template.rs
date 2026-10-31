@@ -333,7 +333,7 @@ fn native_project_surface_check_rejects_agent_contract_content_drift() {
 #[test]
 fn native_project_check_binds_agent_contracts_to_project_identity() {
     let baseline = copy_expense_project();
-    let drifted = expense_project_with_agent_contract_event("forged_event");
+    let drifted = expense_project_with_synchronized_agent_contract_event("audit_ping");
     let baseline_output = Command::new(env!("CARGO_BIN_EXE_revia"))
         .args(["project-check", baseline.to_str().unwrap()])
         .output()
@@ -571,6 +571,42 @@ fn expense_project_with_agent_contract_event(event: &str) -> PathBuf {
     assert_eq!(manifest.matches(anchor).count(), 1);
     let updated = manifest.replacen(anchor, &format!("        \"{event}\",\n{anchor}"), 1);
     fs::write(manifest_path, updated).unwrap();
+    root
+}
+
+fn expense_project_with_synchronized_agent_contract_event(event: &str) -> PathBuf {
+    let root = copy_expense_project();
+    let module_path = root.join("modules/intake.re");
+    let original_source = fs::read_to_string(&module_path).unwrap();
+    let agent_line = original_source
+        .lines()
+        .find(|line| line.starts_with("agent-declaration "))
+        .unwrap()
+        .to_owned();
+    let events_start = agent_line.find("\"events\":[").unwrap() + "\"events\":[".len();
+    let events_end = agent_line[events_start..]
+        .find(']')
+        .map(|offset| events_start + offset)
+        .unwrap();
+    let updated_agent_line = format!(
+        "{}{},\"{event}\"{}",
+        &agent_line[..events_start],
+        &agent_line[events_start..events_end],
+        &agent_line[events_end..]
+    );
+    let updated_source = original_source.replacen(&agent_line, &updated_agent_line, 1);
+    persist_expense_project_module(&root, &module_path, &original_source, &updated_source);
+
+    let manifest_path = root.join("project.json");
+    let manifest = fs::read_to_string(&manifest_path).unwrap();
+    let anchor = "        \"shutdown\"\n      ],\n      \"identity_type\"";
+    assert_eq!(manifest.matches(anchor).count(), 1);
+    let updated_manifest = manifest.replacen(
+        anchor,
+        &format!("        \"shutdown\",\n        \"{event}\"\n      ],\n      \"identity_type\""),
+        1,
+    );
+    fs::write(manifest_path, updated_manifest).unwrap();
     root
 }
 
