@@ -108,7 +108,6 @@ export function runTrackedTests({
   const failedChild = executions.find(({ status: value }) => value !== 0)
   const childStatus = failedChild === undefined ? 0 : failedChild.status ?? 1
   const executionStatus = signal !== null
-    || childStatus === null
     || executionEvidence.some(({ outcome }) => outcome === 'no-report')
     ? 1
     : childStatus

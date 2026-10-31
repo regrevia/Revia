@@ -353,10 +353,13 @@ test('CLI refuses a green child run when discovered population differs from inte
     execFileSync('git', ['init', '--quiet'], { cwd: root })
     execFileSync('git', ['add', 'test/a.test.js'], { cwd: root })
     writeFileSync(join(testRoot, 'probe.test.js'), "import test from 'node:test'; test('probe', () => {})\n")
+    const environment = { ...process.env }
+    delete environment.NODE_TEST_CONTEXT
 
     const result = spawnSync(process.execPath, [RUNNER], {
       cwd: root,
       encoding: 'utf8',
+      env: environment,
     })
     const report = JSON.parse(result.stdout)
 
