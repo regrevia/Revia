@@ -124,7 +124,7 @@ test('tracked test runner invokes Node without a shell and returns stable status
       if (command === 'git') {
         return { status: 0, stdout: Buffer.from('test/a.test.js\0') }
       }
-      return { signal: null, status: 7, stdout: '<testsuites/>' }
+      return { signal: null, status: 7, stdout: '<testsuites><!-- tests 1 --></testsuites>' }
     },
     readdirSyncImpl: () => [
       { name: 'b.test.js', isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
@@ -162,7 +162,7 @@ test('tracked test population excludes untracked probes and binds executed files
       if (command === 'git') {
         return { status: 0, stdout: Buffer.from('test/a.test.js\0') }
       }
-      return { signal: null, status: 0, stdout: '<testsuites/>' }
+      return { signal: null, status: 0, stdout: '<testsuites><!-- tests 1 --></testsuites>' }
     },
     readdirSyncImpl(path) {
       if (path !== '/repo/test') return []
@@ -177,7 +177,27 @@ test('tracked test population excludes untracked probes and binds executed files
   assert.deepEqual(report.population.discovered, ['test/a.test.js', 'test/probe.test.js'])
   assert.deepEqual(report.population.selected, ['test/a.test.js'])
   assert.deepEqual(report.population.executed, ['test/a.test.js'])
-  assert.equal(report.population.complete, true)
+  assert.equal(report.population.complete, false)
+})
+
+test('tracked test runner does not count an empty test report as executed', () => {
+  const report = runTrackedTests({
+    cwd: '/repo',
+    execPath: '/node',
+    nodeVersion: '22.16.0',
+    spawnSyncImpl(command) {
+      if (command === 'git') {
+        return { status: 0, stdout: Buffer.from('test/a.test.js\0') }
+      }
+      return { signal: null, status: 0, stdout: '<testsuites/>' }
+    },
+    readdirSyncImpl: () => [
+      { name: 'a.test.js', isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
+    ],
+  })
+
+  assert.deepEqual(report.population.executed, [])
+  assert.equal(report.population.complete, false)
 })
 
 test('JUnit execution evidence rejects files outside the selected population', () => {
@@ -241,7 +261,7 @@ test('tracked test runner accepts the declared Node floor and subsequent major v
         return {
           signal: null,
           status: 0,
-          stdout: '<testsuites><testcase file="/repo/test/a.test.js"/></testsuites>',
+          stdout: '<testsuites><!-- tests 1 --><testcase file="/repo/test/a.test.js"/></testsuites>',
         }
       },
       readdirSyncImpl: () => [

@@ -85,7 +85,9 @@ export function runTrackedTests({
     }
   })
   const selected = [...tests].sort()
-  const executed = executions.map(({ file }) => file)
+  const executed = executions
+    .filter(({ output }) => parseExecutedTestCount(output) > 0)
+    .map(({ file }) => file)
   const status = executions.find(({ status: value }) => value !== 0)?.status ?? 0
   const signal = executions.find(({ signal: value }) => value !== null)?.signal ?? null
   const executedSet = new Set(executed)
@@ -104,8 +106,9 @@ export function runTrackedTests({
       signal,
       complete: status === 0
         && signal === null
-        && selected.length === executedSet.size
-        && selected.every((path) => executedSet.has(path)),
+        && samePopulation(population.intended, population.discovered)
+        && samePopulation(population.intended, selected)
+        && samePopulation(selected, executed)
     },
     output: executions.map(({ output }) => output).join(''),
     signal,
@@ -133,6 +136,17 @@ export function parseExecutedTestFiles(source, { cwd, selected } = {}) {
     executed.add(value)
   }
   return [...executed].sort()
+}
+
+function parseExecutedTestCount(source) {
+  if (typeof source !== 'string') return 0
+  const match = /<!--\s*tests\s+([1-9][0-9]*)\s*-->/u.exec(source)
+  return match === null ? 0 : Number(match[1])
+}
+
+function samePopulation(left, right) {
+  return left.length === right.length
+    && left.every((value, index) => value === right[index])
 }
 
 function discoverTestPopulation({ cwd, spawnSyncImpl, readdirSyncImpl }) {
