@@ -1,28 +1,34 @@
 import { spawnSync } from 'node:child_process'
 import { readdirSync } from 'node:fs'
-import { join } from 'node:path'
+import { isAbsolute, join, relative, resolve, sep } from 'node:path'
 
 export const MINIMUM_NODE_VERSION = '22.16.0'
+export const TRACKED_TEST_RUNNER_SCHEMA = 'revia.test-population@0.1.0'
+const DISCOVERY_ARGS = ['ls-files', '-z', '--', 'test/*.test.js']
+const MAX_GIT_OUTPUT = 16 * 1024 * 1024
 
 export function selectTrackedTests({
   cwd,
   requested = [],
+  spawnSyncImpl = spawnSync,
   readdirSyncImpl = readdirSync,
 } = {}) {
   if (typeof cwd !== 'string'
     || cwd.length === 0
     || !Array.isArray(requested)
+    || typeof spawnSyncImpl !== 'function'
     || typeof readdirSyncImpl !== 'function') {
     fail('tracked test discovery failed')
   }
-  let entries
-  try {
-    entries = collectTests(join(cwd, 'test'), 'test', readdirSyncImpl)
-  } catch {
+  const { intended, discovered } = discoverTestPopulation({
+    cwd,
+    spawnSyncImpl,
+    readdirSyncImpl,
+  })
+  const tracked = new Set(intended)
+  if (tracked.size === 0 || discovered.length === 0) {
     fail('tracked test discovery failed')
   }
-  const tracked = new Set(entries)
-  if (tracked.size === 0) fail('tracked test discovery failed')
   if (requested.length === 0) return [...tracked].sort()
 
   const selected = new Set()
@@ -47,27 +53,142 @@ export function runTrackedTests({
     fail('tracked test execution failed')
   }
   requireSupportedNodeVersion(nodeVersion)
-  const tests = selectTrackedTests({ cwd, requested, readdirSyncImpl })
   const runner = spawnSyncImpl ?? spawnSync
-  const result = runner(execPath, [
-    '--test',
-    '--experimental-test-isolation=none',
-    ...tests,
-  ], {
+  const population = discoverTestPopulation({
     cwd,
-    shell: false,
-    stdio: 'inherit',
+    spawnSyncImpl: runner,
+    readdirSyncImpl,
   })
-  if (result?.error !== undefined
-    || !(result?.status === null || Number.isInteger(result?.status))
-    || !(result?.signal === null || typeof result?.signal === 'string')) {
-    fail('tracked test execution failed')
-  }
+  const tests = selectFromIntended(population.intended, requested)
+  const executions = tests.map((test) => {
+    const result = runner(execPath, [
+      '--test',
+      '--experimental-test-isolation=none',
+      '--test-reporter=junit',
+      test,
+    ], {
+      cwd,
+      shell: false,
+      encoding: 'utf8',
+      stdio: 'pipe',
+    })
+    if (result?.error !== undefined
+      || !(result?.status === null || Number.isInteger(result?.status))
+      || !(result?.signal === null || typeof result?.signal === 'string')) {
+      fail('tracked test execution failed')
+    }
+    return {
+      file: test,
+      status: result.status,
+      signal: result.signal,
+      output: result.stdout ?? '',
+    }
+  })
+  const selected = [...tests].sort()
+  const executed = executions.map(({ file }) => file)
+  const status = executions.find(({ status: value }) => value !== 0)?.status ?? 0
+  const signal = executions.find(({ signal: value }) => value !== null)?.signal ?? null
+  const executedSet = new Set(executed)
   return {
-    signal: result.signal,
-    status: result.status,
+    population: {
+      schema: TRACKED_TEST_RUNNER_SCHEMA,
+      node: {
+        minimum: MINIMUM_NODE_VERSION,
+        version: nodeVersion,
+      },
+      intended: population.intended,
+      discovered: population.discovered,
+      selected,
+      executed,
+      status,
+      signal,
+      complete: status === 0
+        && signal === null
+        && selected.length === executedSet.size
+        && selected.every((path) => executedSet.has(path)),
+    },
+    output: executions.map(({ output }) => output).join(''),
+    signal,
+    status,
     tests: tests.length,
   }
+}
+
+export function parseExecutedTestFiles(source, { cwd, selected } = {}) {
+  if (Buffer.isBuffer(source)) source = source.toString('utf8')
+  if (typeof source !== 'string'
+    || typeof cwd !== 'string'
+    || !Array.isArray(selected)) {
+    fail('tracked test execution evidence invalid')
+  }
+  const selectedSet = new Set(selected)
+  const executed = new Set()
+  for (const match of source.matchAll(/\btestcase\b[^>]*\bfile="([^"]+)"/gu)) {
+    const file = decodeXml(match[1])
+    const absolute = isAbsolute(file) ? file : resolve(cwd, file)
+    const value = normalizeRelativePath(relative(cwd, absolute))
+    if (!validTestPath(value) || !selectedSet.has(value)) {
+      fail('tracked test execution evidence invalid')
+    }
+    executed.add(value)
+  }
+  return [...executed].sort()
+}
+
+function discoverTestPopulation({ cwd, spawnSyncImpl, readdirSyncImpl }) {
+  const result = spawnSyncImpl('git', DISCOVERY_ARGS, {
+    cwd,
+    encoding: null,
+    maxBuffer: MAX_GIT_OUTPUT,
+    shell: false,
+  })
+  if (result?.error !== undefined
+    || result?.status !== 0
+    || !Buffer.isBuffer(result.stdout)) {
+    fail('tracked test discovery failed')
+  }
+  let text
+  try {
+    text = new TextDecoder('utf-8', { fatal: true }).decode(result.stdout)
+  } catch {
+    fail('tracked test discovery failed')
+  }
+  const intended = text.length === 0
+    ? []
+    : text.split('\0').filter((entry) => entry !== '')
+  if (intended.some((entry) => !validTestPath(entry))
+    || new Set(intended).size !== intended.length) {
+    fail('tracked test discovery failed')
+  }
+  let discovered
+  try {
+    discovered = collectTests(join(cwd, 'test'), 'test', readdirSyncImpl)
+  } catch {
+    fail('tracked test discovery failed')
+  }
+  if (new Set(discovered).size !== discovered.length) {
+    fail('tracked test discovery failed')
+  }
+  return {
+    intended: [...new Set(intended)].sort(),
+    discovered: [...new Set(discovered)].sort(),
+  }
+}
+
+function selectFromIntended(intended, requested) {
+  const tracked = new Set(intended)
+  if (tracked.size === 0) fail('tracked test discovery failed')
+  if (!Array.isArray(requested) || requested.length === 0) {
+    return [...tracked].sort()
+  }
+  const selected = new Set()
+  for (const entry of requested) {
+    if (!validTestPath(entry) || !tracked.has(entry) || selected.has(entry)) {
+      fail('invalid tracked test selection')
+    }
+    selected.add(entry)
+  }
+  return [...selected].sort()
 }
 
 function requireSupportedNodeVersion(version) {
@@ -117,6 +238,19 @@ function validTestPath(value) {
     && segments.every((segment) => (
       segment.length > 0 && segment !== '.' && segment !== '..'
     ))
+}
+
+function normalizeRelativePath(value) {
+  return value.split(sep).join('/').replace(/^\.\/+/u, '')
+}
+
+function decodeXml(value) {
+  return value
+    .replaceAll('&quot;', '"')
+    .replaceAll('&apos;', "'")
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .replaceAll('&amp;', '&')
 }
 
 function fail(code) {

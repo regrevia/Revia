@@ -34,7 +34,26 @@ jobs:
           sh scripts/validate-public-tree.sh
           gitleaks dir --redact .
       - name: Run Node conformance suite
-        run: npm test
+        shell: bash
+        run: |
+          set +e
+          : > node-test-runner.error
+          node scripts/run-tracked-tests.js > node-test-population.json 2> node-test-execution.log
+          status=$?
+          if [ "$status" -ne 0 ] && [ ! -s node-test-population.json ]; then
+            printf '%s\n' "node-test-runner exited with status $status" > node-test-runner.error
+          fi
+          exit "$status"
+      - name: Upload Node population evidence
+        if: always()
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4
+        with:
+          name: node-test-population-${{ matrix.node-version }}
+          if-no-files-found: error
+          path: |
+            node-test-population.json
+            node-test-execution.log
+            node-test-runner.error
 
   native:
     name: Native Rust conformance
