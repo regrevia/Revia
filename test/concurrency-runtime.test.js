@@ -1313,6 +1313,54 @@ test('parent cancellation waits cleanup and does not fake cooperative completion
   assert.equal(result.verification.ok, true)
 })
 
+test('branch completion before parent cancellation remains complete', async () => {
+  const plan = planFor([
+    { id: 'fast', effects: [{ id: 'run' }] },
+    { id: 'slow', effects: [{ id: 'run' }] },
+  ])
+  const parent = new AbortController()
+  let finishFast
+  let markSlowStarted
+  const fastCompleted = new Promise((resolve) => { finishFast = resolve })
+  const slowStarted = new Promise((resolve) => { markSlowStarted = resolve })
+  const resultPromise = executeConcurrencyPlan(plan, {
+    branches: new Map([
+      ['fast', async ({ runEffect }) => {
+        const value = await runEffect('run', async () => 'fast-result')
+        finishFast()
+        return value
+      }],
+      ['slow', async ({ signal, runEffect }) => runEffect('run', async () => {
+        markSlowStarted()
+        await new Promise((resolve) => {
+          signal.addEventListener('abort', resolve, { once: true })
+        })
+        return 'cancelled-result'
+      })],
+    ]),
+    parentSignal: parent.signal,
+  })
+
+  await Promise.all([fastCompleted, slowStarted])
+  parent.abort()
+  const result = await resultPromise
+
+  assert.equal(result.ok, true)
+  assert.equal(result.outcome, 'joined')
+  assert.equal(result.branches.fast, 'fast-result')
+  assert.equal(Object.hasOwn(result.branches, 'slow'), false)
+  assert.equal(result.trace.events.some((event) => (
+    event.kind === 'branch-complete' && event.branch === 'fast'
+  )), true)
+  assert.equal(result.trace.events.some((event) => (
+    event.kind === 'branch-cancelled' && event.branch === 'slow'
+  )), true)
+  assert.deepEqual(eventKinds(result).filter((kind) => (
+    kind === 'effect-complete' || kind === 'effect-cancelled'
+  )), ['effect-complete', 'effect-cancelled'])
+  assert.equal(result.verification.ok, true)
+})
+
 test('complete-before-join records non-negative cancellation latency', async () => {
   const plan = planFor([
     { id: 'fast', effects: [{ id: 'run', cancellation: 'complete-before-join' }] },

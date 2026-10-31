@@ -100,6 +100,13 @@ desugar 的每一步都不引入非确定性：
 - **身份图谱等价即 canonical 相同**：两张图若节点/边/类型/UID 一致，canonical byte-identical；只忽略 UID 的结构语义等价不要求文本相同。
 - **round-trip**：canonical → 图 → canonical 幂等（见 03-serial §7）。
 
+命令间的 authority 方向保持单向：source 经 checker 得到的 graph 是本次
+`check`、`manifest`、`translate`、`view` 的共同输入；manifest 和 view 是该 graph
+的 review projections，translate 的 canonical/bytecode 是面向执行的 materialized
+表示，不得被反过来当作 source 语义真源。跨命令 conformance 应以 graph revision、
+effect call UID、capability reference/member 与 source anchor 对齐，不要求不同输出
+介质字节相同，也不得只凭 translate 的 lowering 文本推断原始语义。
+
 ---
 
 ## 2. re view：图谱 → 直观人类视图
