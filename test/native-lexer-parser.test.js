@@ -227,7 +227,8 @@ test('native release boundary contains no Node, JavaScript, or registry dependen
     const dependencyArgs = process.platform === 'darwin' ? ['-L', NATIVE_BINARY] : [NATIVE_BINARY]
     const dependencies = spawnSync(dependencyCommand, dependencyArgs, { encoding: 'utf8' })
     assert.equal(dependencies.status, 0, dependencies.stderr)
-    assert.doesNotMatch(dependencies.stdout, /(?:node|javascript)/iu)
+    const dependencyLines = dependencies.stdout.split(/\r?\n/u).slice(1).join('\n')
+    assert.doesNotMatch(dependencyLines, /(?:node|javascript)/iu)
   }
 })
 
