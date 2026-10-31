@@ -33,7 +33,7 @@ export function translateProject(project, {
     }
     const ledger = buildFactLedger(project)
     if (!ledger.ok) fail(ledger.diagnostics[0].code)
-    const irResult = buildSemanticViewIR(project, { locale })
+    const irResult = buildSemanticViewIR(project, { ledger, locale })
     if (!irResult.ok) fail(irResult.diagnostics[0].code)
     const ir = irResult.value
     if (semanticView !== null) validateSemanticView(semanticView, ir)
