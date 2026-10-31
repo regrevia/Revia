@@ -192,6 +192,7 @@ impl NativeProjectModule {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NativeProject {
+    pub agents: BTreeMap<String, (String, String)>,
     pub allowed_capabilities: BTreeSet<String>,
     pub graph_revision: String,
     pub modules: Vec<NativeProjectModuleLoaded>,
@@ -212,6 +213,7 @@ pub struct NativeResource {
 type ProjectManifestParts = (
     Vec<NativeProjectModule>,
     NativePackage,
+    BTreeMap<String, (String, String)>,
     BTreeSet<String>,
     Vec<NativeResource>,
 );
@@ -488,13 +490,24 @@ pub fn load_project_directory(
     let manifest_source = fs::read_to_string(&manifest_path)
         .map_err(|_| ProjectError::new("project-manifest-unreadable"))?;
     let document = parse_json(&manifest_source)?;
-    let (project_modules, package, allowed_capabilities, resources) =
+    let (project_modules, package, agents, allowed_capabilities, resources) =
         parse_project_manifest(&document)?;
     validate_package(&package)?;
     validate_project_package_alignment(&project_modules, &package)?;
+    let module_names = project_modules
+        .iter()
+        .map(|module| module.name.as_str())
+        .collect::<BTreeSet<_>>();
+    if agents
+        .values()
+        .any(|(module, _)| !module_names.contains(module.as_str()))
+    {
+        return Err(ProjectError::new("project-agent-module-not-found"));
+    }
 
     let mut declared = BTreeSet::from(["project.json".to_owned()]);
     let mut loaded = Vec::with_capacity(project_modules.len());
+    let mut source_agents = BTreeMap::new();
     for module in &project_modules {
         validate_relative_path(&module.path)?;
         let source_path = root.join(&module.path);
@@ -510,6 +523,13 @@ pub fn load_project_directory(
         }
         let bytes = fs::read(&real_source)
             .map_err(|_| ProjectError::new("project-module-source-unreadable"))?;
+        let source = std::str::from_utf8(&bytes)
+            .map_err(|_| ProjectError::new("project-module-source-invalid-utf8"))?;
+        for (agent, authority) in module_agent_identities(source, &module.name)? {
+            if source_agents.insert(agent, authority).is_some() {
+                return Err(ProjectError::new("duplicate-project-agent"));
+            }
+        }
         let actual = sha256_digest(&bytes);
         if actual != module.source_sha256 {
             return Err(ProjectError::new("project-module-source-digest-mismatch"));
@@ -540,6 +560,14 @@ pub fn load_project_directory(
             path.to_string_lossy().as_ref(),
         ));
     }
+    if !source_agents.is_empty() && !agents.is_empty() && source_agents != agents {
+        return Err(ProjectError::new("project-agent-authority-mismatch"));
+    }
+    let agents = if agents.is_empty() {
+        source_agents
+    } else {
+        agents
+    };
 
     let order = topological_module_order(&package.modules)?;
     let by_name = loaded
@@ -560,6 +588,7 @@ pub fn load_project_directory(
         &package,
         &modules,
         &package_digest,
+        &agents,
         &allowed_capabilities,
         &resources,
     );
@@ -568,10 +597,12 @@ pub fn load_project_directory(
         &package,
         &modules,
         &package_digest,
+        &agents,
         &allowed_capabilities,
         &resources,
     ));
     Ok(NativeProject {
+        agents,
         allowed_capabilities,
         graph_revision,
         modules,
@@ -587,13 +618,37 @@ pub fn validate_project_module_surfaces(
     root_directory: impl AsRef<Path>,
     project: &NativeProject,
 ) -> Result<(), ProjectError> {
-    for module in &project.modules {
-        let source = fs::read_to_string(root_directory.as_ref().join(&module.path))
-            .map_err(|_| ProjectError::new("native-project-source-unreadable"))?;
+    let sources = project
+        .modules
+        .iter()
+        .map(|module| {
+            let source = fs::read_to_string(root_directory.as_ref().join(&module.path))
+                .map_err(|_| ProjectError::new("native-project-source-unreadable"))?;
+            Ok((module, source))
+        })
+        .collect::<Result<Vec<_>, ProjectError>>()?;
+    let mut source_agents = BTreeMap::new();
+    for (module, source) in &sources {
+        for (agent, agent_module) in module_agent_identities(source, &module.name)? {
+            if source_agents.insert(agent, agent_module).is_some() {
+                return Err(ProjectError::new("duplicate-project-agent"));
+            }
+        }
+    }
+    if !source_agents.is_empty() && !project.agents.is_empty() && source_agents != project.agents {
+        return Err(ProjectError::new("project-agent-authority-mismatch"));
+    }
+    let agents = if project.agents.is_empty() {
+        &source_agents
+    } else {
+        &project.agents
+    };
+    for (module, source) in sources {
         validate_module_surface(
             &source,
             module,
             &project.package_manifest,
+            agents,
             &project.allowed_capabilities,
             &project.resources,
         )?;
@@ -605,15 +660,40 @@ fn validate_module_surface(
     source: &str,
     module: &NativeProjectModuleLoaded,
     package: &NativePackage,
+    agents: &BTreeMap<String, (String, String)>,
     allowed_capabilities: &BTreeSet<String>,
     resources: &[NativeResource],
 ) -> Result<(), ProjectError> {
-    let mut lines = source.lines();
-    if lines.next() != Some("re 1.0 compact") {
+    let lines = source.lines().collect::<Vec<_>>();
+    let mut lines_iter = lines.iter().copied();
+    if lines_iter.next() != Some("re 1.0 compact") {
         return Err(ProjectError::new(
             "native-project-module-surface-header-unsupported",
         ));
     }
+    let declared_capabilities = lines
+        .iter()
+        .filter_map(|raw| {
+            let fields = raw
+                .trim()
+                .strip_prefix("capability ")?
+                .split_whitespace()
+                .collect::<Vec<_>>();
+            if fields.len() == 5
+                && fields[3] == "uid"
+                && valid_capability_reference(fields[2])
+                && valid_module_uid(fields[4])
+            {
+                Some((
+                    fields[4].to_owned(),
+                    fields[1].to_owned(),
+                    fields[2].to_owned(),
+                ))
+            } else {
+                None
+            }
+        })
+        .collect::<BTreeSet<_>>();
     let mut saw_module = false;
     let mut imports = BTreeSet::new();
     let mut exports = BTreeSet::new();
@@ -623,7 +703,7 @@ fn validate_module_surface(
         .iter()
         .find(|candidate| candidate.name == module.name)
         .ok_or_else(|| ProjectError::new("project-module-not-in-package-manifest"))?;
-    for raw in lines {
+    for raw in lines_iter {
         let line = raw.trim();
         if line.is_empty() || line.starts_with("//") {
             continue;
@@ -700,8 +780,10 @@ fn validate_module_surface(
         validate_module_surface_declaration(
             line,
             &module.name,
+            agents,
             allowed_capabilities,
             resources,
+            &declared_capabilities,
             &mut review_uids,
         )?;
     }
@@ -735,11 +817,292 @@ fn validate_module_surface(
     Ok(())
 }
 
+fn module_agent_identities(
+    source: &str,
+    module: &str,
+) -> Result<BTreeMap<String, (String, String)>, ProjectError> {
+    let mut agents = BTreeMap::new();
+    for line in source.lines().map(str::trim) {
+        let Some(rest) = line.strip_prefix("agent-declaration ") else {
+            continue;
+        };
+        let (declaration_name, json) = rest
+            .split_once(' ')
+            .ok_or_else(|| ProjectError::new("native-project-module-surface-agent-invalid"))?;
+        let value = parse_json(json)
+            .map_err(|_| ProjectError::new("native-project-module-surface-agent-invalid"))?;
+        if canonicalize(&value) != json {
+            return Err(ProjectError::new(
+                "native-project-module-surface-declaration-noncanonical",
+            ));
+        }
+        let agent = validate_agent_declaration(&value, module, declaration_name)?;
+        if agents
+            .insert(agent, (module.to_owned(), digest_value(&value)))
+            .is_some()
+        {
+            return Err(ProjectError::new(
+                "native-project-module-surface-agent-duplicate",
+            ));
+        }
+    }
+    Ok(agents)
+}
+
+fn validate_agent_declaration(
+    value: &JsonValue,
+    module: &str,
+    declaration_name: &str,
+) -> Result<String, ProjectError> {
+    let fields = exact_object(
+        value,
+        &[
+            "agent",
+            "error_type",
+            "events",
+            "identity_type",
+            "initial_state",
+            "input_type",
+            "module",
+            "output_type",
+            "retryable_states",
+            "schema",
+            "states",
+            "terminal_states",
+            "transitions",
+        ],
+    )?;
+    require_object_fields(
+        &fields,
+        &[
+            "agent",
+            "error_type",
+            "events",
+            "identity_type",
+            "initial_state",
+            "input_type",
+            "module",
+            "output_type",
+            "retryable_states",
+            "schema",
+            "states",
+            "terminal_states",
+            "transitions",
+        ],
+        "native-project-module-surface-agent-invalid",
+    )?;
+    if string(&fields, "schema")? != "re.agent-contract@0.1.0" {
+        return Err(ProjectError::new(
+            "native-project-module-surface-agent-invalid",
+        ));
+    }
+    let agent = string(&fields, "agent")?;
+    let declared_module = string(&fields, "module")?;
+    if !valid_name(agent) || !valid_name(declared_module) {
+        return Err(ProjectError::new(
+            "native-project-module-surface-agent-invalid",
+        ));
+    }
+    if declared_module != module || declaration_name != agent {
+        return Err(ProjectError::new(
+            "native-project-module-surface-agent-identity-mismatch",
+        ));
+    }
+    validate_agent_lifecycle(&fields)?;
+    Ok(agent.to_owned())
+}
+
+fn validate_agent_lifecycle(fields: &BTreeMap<String, &JsonValue>) -> Result<(), ProjectError> {
+    let events = array(fields, "events")?;
+    let states = array(fields, "states")?;
+    let retryable_states = array(fields, "retryable_states")?;
+    let terminal_states = array(fields, "terminal_states")?;
+    let transitions = array(fields, "transitions")?;
+    let initial_state = string(fields, "initial_state")?;
+
+    let mut event_names = BTreeSet::new();
+    for event in events {
+        let JsonValue::String(event) = event else {
+            return Err(ProjectError::new(
+                "native-project-module-surface-agent-invalid",
+            ));
+        };
+        if !event_names.insert(event.clone()) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-agent-duplicate-event",
+            ));
+        }
+    }
+
+    let mut state_names = BTreeSet::new();
+    for state in states {
+        let JsonValue::String(state) = state else {
+            return Err(ProjectError::new(
+                "native-project-module-surface-agent-invalid",
+            ));
+        };
+        if !state_names.insert(state.clone()) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-agent-duplicate-state",
+            ));
+        }
+    }
+    if !state_names.contains(initial_state) {
+        return Err(ProjectError::new(
+            "native-project-module-surface-agent-invalid",
+        ));
+    }
+
+    let mut terminal_names = BTreeSet::new();
+    for terminal in terminal_states {
+        let terminal_fields = exact_object(terminal, &["outcome", "state"])?;
+        require_object_fields(
+            &terminal_fields,
+            &["outcome", "state"],
+            "native-project-module-surface-agent-invalid",
+        )?;
+        let state = string(&terminal_fields, "state")?;
+        if !state_names.contains(state) || !terminal_names.insert(state.to_owned()) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-agent-invalid",
+            ));
+        }
+    }
+
+    let mut retryable_names = BTreeSet::new();
+    for retryable in retryable_states {
+        let JsonValue::String(state) = retryable else {
+            return Err(ProjectError::new(
+                "native-project-module-surface-agent-invalid",
+            ));
+        };
+        if !state_names.contains(state) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-agent-invalid",
+            ));
+        }
+        if terminal_names.contains(state) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-agent-retryable-terminal-state",
+            ));
+        }
+        retryable_names.insert(state.clone());
+    }
+
+    let mut outgoing = BTreeMap::<String, BTreeSet<String>>::new();
+    let mut transition_keys = BTreeSet::new();
+    for transition in transitions {
+        let transition_fields = exact_object(transition, &["event", "from", "to"])?;
+        require_object_fields(
+            &transition_fields,
+            &["event", "from", "to"],
+            "native-project-module-surface-agent-invalid",
+        )?;
+        let event = string(&transition_fields, "event")?;
+        let from = string(&transition_fields, "from")?;
+        let to = string(&transition_fields, "to")?;
+        if !event_names.contains(event) || !state_names.contains(from) || !state_names.contains(to)
+        {
+            return Err(ProjectError::new(
+                "native-project-module-surface-agent-invalid",
+            ));
+        }
+        if terminal_names.contains(from) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-agent-terminal-transition",
+            ));
+        }
+        let key = format!("{event}\0{from}");
+        if !transition_keys.insert(key) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-agent-duplicate-transition",
+            ));
+        }
+        outgoing
+            .entry(from.to_owned())
+            .or_default()
+            .insert(to.to_owned());
+    }
+
+    let mut reachable = BTreeSet::from([initial_state.to_owned()]);
+    let mut frontier = vec![initial_state.to_owned()];
+    while let Some(state) = frontier.pop() {
+        for next in outgoing.get(&state).into_iter().flatten() {
+            if reachable.insert(next.clone()) {
+                frontier.push(next.clone());
+            }
+        }
+    }
+    for state in &reachable {
+        if !terminal_names.contains(state) && !outgoing.contains_key(state) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-agent-missing-outgoing-transition",
+            ));
+        }
+    }
+
+    if reachable.len() != state_names.len() {
+        return Err(ProjectError::new(
+            "native-project-module-surface-agent-unreachable-state",
+        ));
+    }
+
+    let _ = retryable_names;
+    Ok(())
+}
+
+fn validate_task_contract_identity(value: &JsonValue, module: &str) -> Result<(), ProjectError> {
+    let fields = exact_object(
+        value,
+        &[
+            "agent",
+            "backoff_ms",
+            "checkpoint",
+            "error_type",
+            "input_type",
+            "max_attempts",
+            "module",
+            "node_uid",
+            "output_type",
+            "retryable_errors",
+            "schema",
+        ],
+    )?;
+    require_object_fields(
+        &fields,
+        &[
+            "agent",
+            "backoff_ms",
+            "checkpoint",
+            "error_type",
+            "input_type",
+            "max_attempts",
+            "module",
+            "node_uid",
+            "output_type",
+            "retryable_errors",
+            "schema",
+        ],
+        "native-project-module-surface-task-invalid",
+    )?;
+    if string(&fields, "schema")? != "re.task-contract@0.1.0"
+        || string(&fields, "agent")? != module
+        || string(&fields, "module")? != module
+    {
+        return Err(ProjectError::new(
+            "native-project-module-surface-task-identity-mismatch",
+        ));
+    }
+    Ok(())
+}
+
 fn validate_module_surface_declaration(
     line: &str,
     module: &str,
+    agents: &BTreeMap<String, (String, String)>,
     allowed_capabilities: &BTreeSet<String>,
     resources: &[NativeResource],
+    declared_capabilities: &BTreeSet<(String, String, String)>,
     review_uids: &mut BTreeSet<String>,
 ) -> Result<(), ProjectError> {
     if let Some(rest) = line.strip_prefix("capability ") {
@@ -853,8 +1216,8 @@ fn validate_module_surface_declaration(
             let (name, json) = rest.split_once(' ').ok_or_else(|| {
                 ProjectError::new("native-project-module-surface-declaration-invalid")
             })?;
-            let name_belongs_to_module = name.starts_with(&format!("{module}."))
-                || (prefix == "agent-declaration " && name == module);
+            let name_belongs_to_module =
+                name.starts_with(&format!("{module}.")) || prefix == "agent-declaration ";
             if !name_belongs_to_module || !valid_name(name) || json.is_empty() {
                 return Err(ProjectError::new(
                     "native-project-module-surface-declaration-invalid",
@@ -869,7 +1232,33 @@ fn validate_module_surface_declaration(
                 ));
             }
             if prefix == "adapter-contract " {
-                validate_adapter_authority(&value, allowed_capabilities, resources)?;
+                validate_adapter_authority(
+                    &value,
+                    module,
+                    agents,
+                    allowed_capabilities,
+                    resources,
+                    declared_capabilities,
+                )?;
+            } else if prefix == "task-contract " {
+                validate_task_contract_identity(&value, module)?;
+            } else if prefix == "agent-declaration " {
+                let agent = validate_agent_declaration(&value, module, name)?;
+                let expected = (module.to_owned(), digest_value(&value));
+                if agents.get(&agent) != Some(&expected) {
+                    return Err(ProjectError::new(
+                        "native-project-module-surface-agent-identity-mismatch",
+                    ));
+                }
+            } else if prefix == "function-declaration " {
+                validate_function_capability_calls(
+                    &value,
+                    module,
+                    name,
+                    allowed_capabilities,
+                    resources,
+                    declared_capabilities,
+                )?;
             }
             let has_module_owner = matches!(
                 &value,
@@ -894,8 +1283,11 @@ fn validate_module_surface_declaration(
 
 fn validate_adapter_authority(
     value: &JsonValue,
+    module: &str,
+    agents: &BTreeMap<String, (String, String)>,
     allowed_capabilities: &BTreeSet<String>,
     resources: &[NativeResource],
+    declared_capabilities: &BTreeSet<(String, String, String)>,
 ) -> Result<(), ProjectError> {
     let fields = exact_object(
         value,
@@ -917,27 +1309,321 @@ fn validate_adapter_authority(
             "schema",
         ],
     )?;
+    require_object_fields(
+        &fields,
+        &[
+            "agent",
+            "cancellation",
+            "capability",
+            "deadline",
+            "error_type",
+            "error_variants",
+            "features",
+            "input_type",
+            "module",
+            "node_uid",
+            "output_type",
+            "profile",
+            "request_type",
+            "resource",
+            "schema",
+        ],
+        "native-project-module-surface-adapter-invalid",
+    )?;
+    if string(&fields, "schema")? != "re.agent-adapter-contract@0.1.0" {
+        return Err(ProjectError::new(
+            "native-project-module-surface-adapter-invalid",
+        ));
+    }
+    let agent = string(&fields, "agent")?;
+    if agent != module
+        || string(&fields, "module")? != module
+        || agents
+            .get(agent)
+            .map(|(declared_module, _)| declared_module.as_str())
+            != Some(module)
+    {
+        return Err(ProjectError::new(
+            "native-project-module-surface-adapter-owner-mismatch",
+        ));
+    }
     let capability = fields
         .get("capability")
         .ok_or_else(|| ProjectError::new("native-project-module-surface-adapter-invalid"))?;
     let capability_fields = exact_object(capability, &["instance", "member", "reference"])?;
-    let reference = string(&capability_fields, "reference")?;
+    require_object_fields(
+        &capability_fields,
+        &["instance", "member", "reference"],
+        "native-project-module-surface-adapter-invalid",
+    )?;
+    let resource = fields
+        .get("resource")
+        .ok_or_else(|| ProjectError::new("native-project-module-surface-adapter-invalid"))?;
+    let resource_fields = exact_object(resource, &["access", "constructor"])?;
+    require_object_fields(
+        &resource_fields,
+        &["access", "constructor"],
+        "native-project-module-surface-adapter-invalid",
+    )?;
+    validate_capability_resource_authority(
+        &capability_fields,
+        string(&fields, "node_uid")?,
+        resource,
+        allowed_capabilities,
+        resources,
+        declared_capabilities,
+    )
+}
+
+fn validate_function_capability_calls(
+    value: &JsonValue,
+    module: &str,
+    declaration_name: &str,
+    allowed_capabilities: &BTreeSet<String>,
+    resources: &[NativeResource],
+    declared_capabilities: &BTreeSet<(String, String, String)>,
+) -> Result<(), ProjectError> {
+    let fields = exact_object(
+        value,
+        &[
+            "body",
+            "error_type",
+            "input_type",
+            "module",
+            "name",
+            "output_type",
+            "schema",
+        ],
+    )?;
+    require_object_fields(
+        &fields,
+        &[
+            "body",
+            "error_type",
+            "input_type",
+            "module",
+            "name",
+            "output_type",
+            "schema",
+        ],
+        "native-project-module-surface-function-invalid",
+    )?;
+    if string(&fields, "schema")? != "re.function-declaration@0.1.0" {
+        return Err(ProjectError::new(
+            "native-project-module-surface-function-invalid",
+        ));
+    }
+    let declared_module = string(&fields, "module")
+        .map_err(|_| ProjectError::new("native-project-module-surface-function-invalid"))?;
+    let function_name = string(&fields, "name")
+        .map_err(|_| ProjectError::new("native-project-module-surface-function-invalid"))?;
+    if !valid_binding(function_name) {
+        return Err(ProjectError::new(
+            "native-project-module-surface-function-invalid",
+        ));
+    }
+    if declared_module != module || declaration_name != format!("{module}.{function_name}") {
+        return Err(ProjectError::new(
+            "native-project-module-surface-function-identity-mismatch",
+        ));
+    }
+    for field in ["error_type", "input_type", "output_type"] {
+        if !matches!(fields.get(field), Some(JsonValue::Object(_))) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-function-invalid",
+            ));
+        }
+    }
+    let body = fields
+        .get("body")
+        .ok_or_else(|| ProjectError::new("native-project-module-surface-function-invalid"))?;
+    let body_fields = exact_object(
+        body,
+        &["calls", "capability_calls", "control_flow", "effect_edges"],
+    )?;
+    require_object_fields(
+        &body_fields,
+        &["calls", "capability_calls", "control_flow", "effect_edges"],
+        "native-project-module-surface-function-invalid",
+    )?;
+    array(&body_fields, "calls")?;
+    if !matches!(body_fields.get("control_flow"), Some(JsonValue::Object(_))) {
+        return Err(ProjectError::new(
+            "native-project-module-surface-function-invalid",
+        ));
+    }
+    let mut call_authorities = BTreeMap::new();
+    for call in array(&body_fields, "capability_calls")? {
+        let call_fields = exact_object(
+            call,
+            &[
+                "capability",
+                "error_type",
+                "id",
+                "input_type",
+                "node_uid",
+                "output_type",
+                "resource",
+            ],
+        )?;
+        require_object_fields(
+            &call_fields,
+            &[
+                "capability",
+                "error_type",
+                "id",
+                "input_type",
+                "node_uid",
+                "output_type",
+                "resource",
+            ],
+            "native-project-module-surface-function-call-invalid",
+        )?;
+        for field in ["error_type", "input_type", "output_type"] {
+            if !matches!(call_fields.get(field), Some(JsonValue::Object(_))) {
+                return Err(ProjectError::new(
+                    "native-project-module-surface-function-call-invalid",
+                ));
+            }
+        }
+        let capability = call_fields.get("capability").ok_or_else(|| {
+            ProjectError::new("native-project-module-surface-function-call-invalid")
+        })?;
+        let capability_fields = exact_object(capability, &["instance", "member", "reference"])?;
+        require_object_fields(
+            &capability_fields,
+            &["instance", "member", "reference"],
+            "native-project-module-surface-function-call-invalid",
+        )?;
+        let resource = call_fields.get("resource").ok_or_else(|| {
+            ProjectError::new("native-project-module-surface-function-call-invalid")
+        })?;
+        let resource_fields = exact_object(resource, &["access", "constructor"])?;
+        require_object_fields(
+            &resource_fields,
+            &["access", "constructor"],
+            "native-project-module-surface-function-call-invalid",
+        )?;
+        validate_capability_resource_authority(
+            &capability_fields,
+            string(&call_fields, "node_uid")?,
+            resource,
+            allowed_capabilities,
+            resources,
+            declared_capabilities,
+        )?;
+        let call_id = string(&call_fields, "id")?;
+        if !valid_binding(call_id) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-function-call-invalid",
+            ));
+        }
+        if call_authorities
+            .insert(
+                call_id.to_owned(),
+                (
+                    string(&resource_fields, "constructor")?.to_owned(),
+                    string(&resource_fields, "access")?.to_owned(),
+                ),
+            )
+            .is_some()
+        {
+            return Err(ProjectError::new(
+                "native-project-module-surface-function-capability-call-duplicate",
+            ));
+        }
+    }
+    let mut seen_effect_calls = BTreeSet::new();
+    for edge in array(&body_fields, "effect_edges")? {
+        let edge_fields = exact_object(edge, &["access", "call", "from", "resource", "to"])?;
+        require_object_fields(
+            &edge_fields,
+            &["access", "call", "from", "resource", "to"],
+            "native-project-module-surface-function-effect-edge-invalid",
+        )?;
+        let call = string(&edge_fields, "call")?;
+        let from = string(&edge_fields, "from")?;
+        let to = string(&edge_fields, "to")?;
+        if !valid_binding(call) || from.is_empty() || to.is_empty() {
+            return Err(ProjectError::new(
+                "native-project-module-surface-function-effect-edge-invalid",
+            ));
+        }
+        let (expected_resource, expected_access) = call_authorities.get(call).ok_or_else(|| {
+            ProjectError::new("native-project-module-surface-function-effect-edge-call-unknown")
+        })?;
+        if string(&edge_fields, "resource")? != expected_resource
+            || string(&edge_fields, "access")? != expected_access
+            || to != call
+        {
+            return Err(ProjectError::new(
+                "native-project-module-surface-function-effect-edge-mismatch",
+            ));
+        }
+        if !seen_effect_calls.insert(call.to_owned()) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-function-effect-edge-duplicate",
+            ));
+        }
+    }
+    for call in call_authorities.keys() {
+        if !seen_effect_calls.contains(call) {
+            return Err(ProjectError::new(
+                "native-project-module-surface-function-capability-call-missing-effect-edge",
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn validate_capability_resource_authority(
+    capability_fields: &BTreeMap<String, &JsonValue>,
+    node_uid: &str,
+    resource: &JsonValue,
+    allowed_capabilities: &BTreeSet<String>,
+    resources: &[NativeResource],
+    declared_capabilities: &BTreeSet<(String, String, String)>,
+) -> Result<(), ProjectError> {
+    let instance = string(capability_fields, "instance")?;
+    let member = string(capability_fields, "member")?;
+    let reference = string(capability_fields, "reference")?;
     if !allowed_capabilities.contains(reference) {
         return Err(ProjectError::new(
             "native-project-module-surface-capability-not-allowed",
         ));
     }
-    let resource = fields
-        .get("resource")
-        .ok_or_else(|| ProjectError::new("native-project-module-surface-adapter-invalid"))?;
+    if !declared_capabilities.contains(&(
+        node_uid.to_owned(),
+        member.to_owned(),
+        reference.to_owned(),
+    )) {
+        return Err(ProjectError::new(
+            "native-project-module-surface-capability-detached",
+        ));
+    }
     let resource_fields = exact_object(resource, &["access", "constructor"])?;
+    let access = string(&resource_fields, "access")?;
     let constructor = string(&resource_fields, "constructor")?;
-    if !resources
+    if !matches!(access, "read" | "write") {
+        return Err(ProjectError::new(
+            "native-project-module-surface-resource-access-invalid",
+        ));
+    }
+    let declared_resource = resources
         .iter()
-        .any(|resource| resource.alias == constructor || resource.key == constructor)
-    {
+        .find(|resource| resource.alias == constructor || resource.key == constructor);
+    let Some(declared_resource) = declared_resource else {
         return Err(ProjectError::new(
             "native-project-module-surface-resource-not-declared",
+        ));
+    };
+    let instance_resource = instance.strip_prefix('@');
+    if (instance_resource != Some(declared_resource.alias.as_str())
+        && instance_resource != Some(declared_resource.key.as_str()))
+        || access != member
+    {
+        return Err(ProjectError::new(
+            "native-project-module-surface-resource-mismatch",
         ));
     }
     Ok(())
@@ -1564,11 +2250,11 @@ fn parse_project_manifest(value: &JsonValue) -> Result<ProjectManifestParts, Pro
     if string(&entries, "schema")? != PROJECT_MANIFEST_SCHEMA {
         return Err(ProjectError::new("unsupported-project-manifest"));
     }
-    if let Some(value) = entries.get("agents")
-        && !matches!(value, JsonValue::Array(_))
-    {
-        return Err(ProjectError::new("invalid-project-agent-set"));
-    }
+    let agents = entries
+        .get("agents")
+        .map(|value| parse_project_agents(value))
+        .transpose()?
+        .unwrap_or_default();
     let allowed_capabilities = if let Some(JsonValue::Array(values)) =
         entries.get("allowed_capabilities")
     {
@@ -1605,7 +2291,72 @@ fn parse_project_manifest(value: &JsonValue) -> Result<ProjectManifestParts, Pro
             .get("package_manifest")
             .ok_or_else(|| ProjectError::new("missing-project-package-manifest"))?,
     )?;
-    Ok((modules, package, allowed_capabilities, resources))
+    Ok((modules, package, agents, allowed_capabilities, resources))
+}
+
+fn parse_project_agents(
+    value: &JsonValue,
+) -> Result<BTreeMap<String, (String, String)>, ProjectError> {
+    let JsonValue::Array(values) = value else {
+        return Err(ProjectError::new("invalid-project-agent-set"));
+    };
+    if values.is_empty() {
+        return Err(ProjectError::new("invalid-project-agent-set"));
+    }
+    let mut agents = BTreeMap::new();
+    for value in values {
+        let fields = exact_object(
+            value,
+            &[
+                "agent",
+                "error_type",
+                "events",
+                "identity_type",
+                "initial_state",
+                "input_type",
+                "module",
+                "output_type",
+                "retryable_states",
+                "schema",
+                "states",
+                "terminal_states",
+                "transitions",
+            ],
+        )?;
+        require_object_fields(
+            &fields,
+            &[
+                "agent",
+                "error_type",
+                "events",
+                "identity_type",
+                "initial_state",
+                "input_type",
+                "module",
+                "output_type",
+                "retryable_states",
+                "schema",
+                "states",
+                "terminal_states",
+                "transitions",
+            ],
+            "invalid-project-agent-set",
+        )?;
+        if string(&fields, "schema")? != "re.agent-contract@0.1.0" {
+            return Err(ProjectError::new("invalid-project-agent-set"));
+        }
+        let agent = string(&fields, "agent")?;
+        let module = string(&fields, "module")?;
+        if !valid_name(agent)
+            || !valid_name(module)
+            || agents
+                .insert(agent.to_owned(), (module.to_owned(), digest_value(value)))
+                .is_some()
+        {
+            return Err(ProjectError::new("invalid-project-agent-set"));
+        }
+    }
+    Ok(agents)
 }
 
 fn parse_resources(value: &JsonValue) -> Result<Vec<NativeResource>, ProjectError> {
@@ -1972,6 +2723,7 @@ fn project_graph_json(
     package: &NativePackage,
     modules: &[NativeProjectModuleLoaded],
     package_digest: &str,
+    agents: &BTreeMap<String, (String, String)>,
     allowed_capabilities: &BTreeSet<String>,
     resources: &[NativeResource],
 ) -> JsonValue {
@@ -2027,6 +2779,23 @@ fn project_graph_json(
             ),
         ));
     }
+    if !agents.is_empty() {
+        entries.push((
+            "agents",
+            JsonValue::Array(
+                agents
+                    .iter()
+                    .map(|(agent, (module, digest))| {
+                        object(vec![
+                            ("agent", JsonValue::String(agent.clone())),
+                            ("contract_digest", JsonValue::String(digest.clone())),
+                            ("module", JsonValue::String(module.clone())),
+                        ])
+                    })
+                    .collect(),
+            ),
+        ));
+    }
     if !resources.is_empty() {
         entries.push((
             "resources",
@@ -2040,6 +2809,7 @@ fn project_identity_json(
     package: &NativePackage,
     modules: &[NativeProjectModuleLoaded],
     package_digest: &str,
+    agents: &BTreeMap<String, (String, String)>,
     allowed_capabilities: &BTreeSet<String>,
     resources: &[NativeResource],
 ) -> JsonValue {
@@ -2080,6 +2850,23 @@ fn project_identity_json(
                     .iter()
                     .cloned()
                     .map(JsonValue::String)
+                    .collect(),
+            ),
+        ));
+    }
+    if !agents.is_empty() {
+        entries.push((
+            "agents",
+            JsonValue::Array(
+                agents
+                    .iter()
+                    .map(|(agent, (module, digest))| {
+                        object(vec![
+                            ("agent", JsonValue::String(agent.clone())),
+                            ("contract_digest", JsonValue::String(digest.clone())),
+                            ("module", JsonValue::String(module.clone())),
+                        ])
+                    })
                     .collect(),
             ),
         ));
@@ -2514,6 +3301,18 @@ pub(crate) fn exact_object<'a>(
         }
     }
     Ok(result)
+}
+
+fn require_object_fields(
+    entries: &BTreeMap<String, &JsonValue>,
+    required: &[&str],
+    error_code: &str,
+) -> Result<(), ProjectError> {
+    if required.iter().all(|field| entries.contains_key(*field)) {
+        Ok(())
+    } else {
+        Err(ProjectError::new(error_code))
+    }
 }
 
 pub(crate) fn string<'a>(

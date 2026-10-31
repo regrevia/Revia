@@ -51,10 +51,18 @@ The first command checks module pins, source digests, capabilities, resources,
 tasks, adapters, run cases and graph identity. The second command produces
 human-review facts while preserving the same graph revision and semantic fact
 digest across locales and output media.
+The native surface check verifies authority linkage and required declaration
+shape; it is not a replacement for the full Node normalizers or
+`project-check`. It does not prove complete type semantics, task/Agent state
+machine validity, adapter profile/configuration validity, control-flow
+validity, runtime enforcement or successful execution.
 
 请在仓库根目录运行。第一个命令检查模块 pin、源码摘要、能力、资源、任务、adapter、
 run case 与图身份；第二个命令生成面向人类审阅的事实，同时保持不同 locale 和输出介质
 共享同一 graph revision 与 semantic fact digest。
+Native surface check 只验证 authority 绑定与声明的必要结构，不替代完整 Node normalizer
+或 `project-check`；它不证明完整类型语义、task/Agent 状态机有效性、adapter profile/
+配置有效性、控制流有效性、运行时强制或程序成功执行。
 
 第三个命令生成确定性的 `types.ts`、`client.ts` 和 `projection.json`。route manifest
 固定 graph revision、checked operation、adapter 契约、错误 variant、幂等要求和 HTTP
@@ -63,17 +71,18 @@ run case 与图身份；第二个命令生成面向人类审阅的事实，同�
 ## What To Inspect / 审阅重点
 
 1. Change one module source and update only its declared source digest.
-2. Run `project-check` and record the first diagnostic.
-3. Mutate a capability reference, resource access, task identity or response
-   fixture and confirm the project fails closed.
+2. Run `project-surface-check` and record the first diagnostic.
+3. Mutate a function capability call, its effect edge, or adapter binding
+   (UID, reference, resource instance or access), update the source digests, and
+   confirm the native surface check fails closed.
 4. Compare `project-translate --locale zh-CN` and `--locale en-US`; wording may
    change, but semantic identity and fact IDs must not.
 5. Submit one focused project or reproducible report under `projects/` or
    `feedback/submissions/`.
 
 1. 修改一个模块源码，并只更新对应的源码摘要。
-2. 运行 `project-check`，记录第一个诊断。
-3. 修改能力引用、资源访问、任务身份或 response fixture，确认项目 fail closed。
+2. 运行 `project-surface-check`，记录第一个诊断。
+3. 修改函数 capability call、对应 effect edge 或 adapter 绑定（UID、引用、资源实例或访问方向），同步更新源码摘要，并确认 native surface check 会 fail closed。
 4. 对比 `zh-CN` 与 `en-US` 的 `project-translate`；文字可以变化，但语义身份和 fact ID
    不应变化。
 5. 在 `projects/` 或 `feedback/submissions/` 提交一个聚焦项目或可复现报告。
