@@ -359,6 +359,60 @@ fn native_project_check_binds_agent_contracts_to_project_identity() {
 }
 
 #[test]
+fn native_project_check_binds_source_only_agent_contracts_to_project_identity() {
+    let baseline = temp_project("re 1.0 compact\nmodule agent.surface.main\nexport main\n");
+    let with_agent = temp_project(
+        "re 1.0 compact\nmodule agent.surface.main\nexport main\nagent-declaration agent.surface.main {\"agent\":\"agent.surface.main\",\"error_type\":{\"kind\":\"primitive\",\"name\":\"text.utf8\"},\"events\":[\"ready\",\"shutdown\"],\"identity_type\":{\"kind\":\"primitive\",\"name\":\"text.utf8\"},\"initial_state\":\"created\",\"input_type\":{\"kind\":\"primitive\",\"name\":\"text.utf8\"},\"module\":\"agent.surface.main\",\"output_type\":{\"kind\":\"primitive\",\"name\":\"text.utf8\"},\"retryable_states\":[],\"schema\":\"re.agent-contract@0.1.0\",\"states\":[\"created\",\"stopped\"],\"terminal_states\":[{\"outcome\":\"stopped\",\"state\":\"stopped\"}],\"transitions\":[{\"event\":\"shutdown\",\"from\":\"created\",\"to\":\"stopped\"}]}\n",
+    );
+    let baseline_output = Command::new(env!("CARGO_BIN_EXE_revia"))
+        .args(["project-check", baseline.to_str().unwrap()])
+        .output()
+        .unwrap();
+    let agent_output = Command::new(env!("CARGO_BIN_EXE_revia"))
+        .args(["project-check", with_agent.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(baseline_output.status.success());
+    assert!(agent_output.status.success());
+    let baseline_stdout = String::from_utf8_lossy(&baseline_output.stdout);
+    let agent_stdout = String::from_utf8_lossy(&agent_output.stdout);
+    assert_ne!(
+        json_field(&baseline_stdout, "graph_revision"),
+        json_field(&agent_stdout, "graph_revision")
+    );
+    assert_ne!(
+        json_field(&baseline_stdout, "project_digest"),
+        json_field(&agent_stdout, "project_digest")
+    );
+    fs::remove_dir_all(baseline).unwrap();
+    fs::remove_dir_all(with_agent).unwrap();
+}
+
+#[test]
+fn native_project_surface_check_accepts_manifest_only_agent_authority() {
+    let root = copy_expense_project();
+    let module_path = root.join("modules/intake.re");
+    let original_source = fs::read_to_string(&module_path).unwrap();
+    let updated_source = original_source
+        .lines()
+        .filter(|line| !line.starts_with("agent-declaration "))
+        .collect::<Vec<_>>()
+        .join("\n");
+    persist_expense_project_module(&root, &module_path, &original_source, &updated_source);
+
+    let output = Command::new(env!("CARGO_BIN_EXE_revia"))
+        .args(["project-surface-check", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "surface check rejected Agent authority declared by project.json:\n{}",
+        String::from_utf8_lossy(&output.stdout)
+    );
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
 fn native_project_surface_check_rejects_detached_task_contract_agent() {
     let project = mutated_expense_project(
         "task-contract ",

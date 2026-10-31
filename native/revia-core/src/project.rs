@@ -507,6 +507,7 @@ pub fn load_project_directory(
 
     let mut declared = BTreeSet::from(["project.json".to_owned()]);
     let mut loaded = Vec::with_capacity(project_modules.len());
+    let mut source_agents = BTreeMap::new();
     for module in &project_modules {
         validate_relative_path(&module.path)?;
         let source_path = root.join(&module.path);
@@ -522,6 +523,13 @@ pub fn load_project_directory(
         }
         let bytes = fs::read(&real_source)
             .map_err(|_| ProjectError::new("project-module-source-unreadable"))?;
+        let source = std::str::from_utf8(&bytes)
+            .map_err(|_| ProjectError::new("project-module-source-invalid-utf8"))?;
+        for (agent, authority) in module_agent_identities(source, &module.name)? {
+            if source_agents.insert(agent, authority).is_some() {
+                return Err(ProjectError::new("duplicate-project-agent"));
+            }
+        }
         let actual = sha256_digest(&bytes);
         if actual != module.source_sha256 {
             return Err(ProjectError::new("project-module-source-digest-mismatch"));
@@ -552,6 +560,14 @@ pub fn load_project_directory(
             path.to_string_lossy().as_ref(),
         ));
     }
+    if !source_agents.is_empty() && !agents.is_empty() && source_agents != agents {
+        return Err(ProjectError::new("project-agent-authority-mismatch"));
+    }
+    let agents = if agents.is_empty() {
+        source_agents
+    } else {
+        agents
+    };
 
     let order = topological_module_order(&package.modules)?;
     let by_name = loaded
