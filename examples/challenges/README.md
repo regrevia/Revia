@@ -87,6 +87,20 @@ execution evidence.
 对于审阅校准提交，还要说明 fixture 是否含有故意缺陷，或是否为无缺陷对照。不得因缺少
 执行证据而推断为“已通过”。
 
+## 5. Approval and replay boundary / 审批与重放边界
+
+The current RC exposes a bounded reviewed-file-plan example, not a general
+approval service. Use it to look for false confidence: a refusal message must
+not become a capability, a stale approval must fail before a write, and a
+changed plan or sandbox root must not be silently treated as the approved one.
+Record the exact first differing field or byte. Do not reuse a one-shot approval
+as a permanent golden value, and do not call a missing execution step “passed”.
+
+当前 RC 只提供有界的 reviewed-file-plan 示例，不是通用审批服务。请用它寻找错误的安全感：
+拒绝消息不能变成能力，过期批准必须在写入前失败，修改后的 plan 或 sandbox 根不能被静默
+当作原批准对象。记录第一个不同字段或字节；不要把一次性批准长期复用为 golden，也不要把
+缺失的执行步骤称为“通过”。
+
 Use one independent project directory for a submission:
 
 ```text
