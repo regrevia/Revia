@@ -155,21 +155,25 @@ test('tracked test runner invokes Node without a shell and returns stable status
     tests: 1,
     outcome: 'failed',
   }])
-  assert.deepEqual(calls[1], {
-    args: [
-      '--test',
-      '--experimental-test-isolation=none',
-      '--test-reporter=junit',
-      'test/a.test.js',
-    ],
-    command: '/node',
-    options: {
-      cwd: '/repo',
-      shell: false,
-      encoding: 'utf8',
-      stdio: 'pipe',
-    },
+  assert.deepEqual(calls[1].args, [
+    '--test',
+    '--experimental-test-isolation=none',
+    '--test-reporter=junit',
+    'test/a.test.js',
+  ])
+  assert.equal(calls[1].command, '/node')
+  const { env: childEnvironment, ...childOptions } = calls[1].options
+  assert.deepEqual(childOptions, {
+    cwd: '/repo',
+    shell: false,
+    encoding: 'utf8',
+    stdio: 'pipe',
   })
+  assert.equal(calls[1].options.cwd, '/repo')
+  assert.equal(calls[1].options.shell, false)
+  assert.equal(calls[1].options.encoding, 'utf8')
+  assert.equal(calls[1].options.stdio, 'pipe')
+  assert.equal(childEnvironment.NODE_TEST_CONTEXT, undefined)
 })
 
 test('tracked test runner fails closed when a child has no exit status or signal', () => {
@@ -321,7 +325,39 @@ test('a passing explicit subset is not reported as a complete full population', 
     cwd: '/repo',
     execPath: '/node',
     nodeVersion: '22.16.0',
-    requested: ['test/a.test.js'],
+    requested: ['test/a.test.js', 'test/b.test.js'],
+    spawnSyncImpl(command) {
+      if (command === 'git') {
+        return {
+          status: 0,
+          stdout: Buffer.from('test/a.test.js\0test/b.test.js\0test/c.test.js\0'),
+        }
+      }
+      return {
+        signal: null,
+        status: 0,
+        stdout: '<testsuites><!-- tests 1 --></testsuites>',
+      }
+    },
+    readdirSyncImpl: () => [
+      { name: 'a.test.js', isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
+      { name: 'b.test.js', isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
+      { name: 'c.test.js', isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
+    ],
+  })
+
+  assert.equal(report.status, 0)
+  assert.equal(report.population.complete, false)
+  assert.deepEqual(report.population.selected, ['test/a.test.js', 'test/b.test.js'])
+  assert.deepEqual(report.population.executed, ['test/a.test.js', 'test/b.test.js'])
+})
+
+test('an explicit selection equal to the full intended population can be complete', () => {
+  const report = runTrackedTests({
+    cwd: '/repo',
+    execPath: '/node',
+    nodeVersion: '22.16.0',
+    requested: ['test/b.test.js', 'test/a.test.js'],
     spawnSyncImpl(command) {
       if (command === 'git') {
         return { status: 0, stdout: Buffer.from('test/a.test.js\0test/b.test.js\0') }
@@ -339,9 +375,9 @@ test('a passing explicit subset is not reported as a complete full population', 
   })
 
   assert.equal(report.status, 0)
-  assert.equal(report.population.complete, false)
-  assert.deepEqual(report.population.selected, ['test/a.test.js'])
-  assert.deepEqual(report.population.executed, ['test/a.test.js'])
+  assert.equal(report.population.complete, true)
+  assert.deepEqual(report.population.selected, ['test/a.test.js', 'test/b.test.js'])
+  assert.deepEqual(report.population.executed, ['test/a.test.js', 'test/b.test.js'])
 })
 
 test('CLI refuses a green child run when discovered population differs from intent', () => {
@@ -353,13 +389,9 @@ test('CLI refuses a green child run when discovered population differs from inte
     execFileSync('git', ['init', '--quiet'], { cwd: root })
     execFileSync('git', ['add', 'test/a.test.js'], { cwd: root })
     writeFileSync(join(testRoot, 'probe.test.js'), "import test from 'node:test'; test('probe', () => {})\n")
-    const environment = { ...process.env }
-    delete environment.NODE_TEST_CONTEXT
-
     const result = spawnSync(process.execPath, [RUNNER], {
       cwd: root,
       encoding: 'utf8',
-      env: environment,
     })
     const report = JSON.parse(result.stdout)
 

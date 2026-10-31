@@ -68,6 +68,7 @@ export function runTrackedTests({
       test,
     ], {
       cwd,
+      env: cleanChildEnvironment(),
       shell: false,
       encoding: 'utf8',
       stdio: 'pipe',
@@ -144,6 +145,12 @@ export function runTrackedTests({
     status,
     tests: tests.length,
   }
+}
+
+function cleanChildEnvironment() {
+  const environment = { ...process.env }
+  delete environment.NODE_TEST_CONTEXT
+  return environment
 }
 
 export function parseExecutedTestFiles(source, { cwd, selected } = {}) {
