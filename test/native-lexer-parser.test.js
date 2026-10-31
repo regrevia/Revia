@@ -227,7 +227,11 @@ test('native release boundary contains no Node, JavaScript, or registry dependen
     const dependencyArgs = process.platform === 'darwin' ? ['-L', NATIVE_BINARY] : [NATIVE_BINARY]
     const dependencies = spawnSync(dependencyCommand, dependencyArgs, { encoding: 'utf8' })
     assert.equal(dependencies.status, 0, dependencies.stderr)
-    const dependencyLines = dependencyLinesForScan(dependencies.stdout, process.platform)
+    const dependencyLines = dependencyLinesForScan(
+      dependencies.stdout,
+      process.platform,
+      NATIVE_BINARY,
+    )
     assert.doesNotMatch(dependencyLines, /(?:node|javascript)/iu)
   }
 })
@@ -238,12 +242,24 @@ test('native dependency scan skips only the Darwin target header', () => {
     'libnode.so.1 => /usr/lib/libnode.so.1\nlibc.so.6 => /lib/libc.so.6\n',
   )
   assert.equal(
-    dependencyLinesForScan('/tmp/node-build/revia:\n\t/usr/lib/libSystem.B.dylib\n', 'darwin'),
+    dependencyLinesForScan(
+      '/tmp/node-build/revia:\n\t/usr/lib/libSystem.B.dylib\n',
+      'darwin',
+      '/tmp/node-build/revia',
+    ),
     '\t/usr/lib/libSystem.B.dylib\n',
   )
   assert.equal(
-    dependencyLinesForScan('/tmp/revia:\n\t/usr/lib/libnode.dylib\n', 'darwin'),
+    dependencyLinesForScan(
+      '/tmp/revia:\n\t/usr/lib/libnode.dylib\n',
+      'darwin',
+      '/tmp/revia',
+    ),
     '\t/usr/lib/libnode.dylib\n',
+  )
+  assert.throws(
+    () => dependencyLinesForScan('\t/usr/lib/libSystem.B.dylib\n', 'darwin', '/tmp/revia'),
+    /native dependency scan header invalid/u,
   )
 })
 
@@ -252,9 +268,11 @@ function ensureNativeBinary() {
   execFileSync('cargo', ['build', '--workspace', '--offline'], { cwd: NATIVE_ROOT })
 }
 
-function dependencyLinesForScan(output, platform) {
+function dependencyLinesForScan(output, platform, binaryPath) {
   const lines = output.split(/\r?\n/u)
-  return (platform === 'darwin' ? lines.slice(1) : lines).join('\n')
+  if (platform !== 'darwin') return lines.join('\n')
+  if (lines[0] !== `${binaryPath}:`) throw new Error('native dependency scan header invalid')
+  return lines.slice(1).join('\n')
 }
 
 function ensureNativeConformanceBinary() {

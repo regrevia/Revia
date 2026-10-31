@@ -5542,7 +5542,15 @@ fn static_node_dependency_scan(binary: &Path) -> Result<String, String> {
         return Err("node-free-dependency-scan-failure".to_owned());
     }
     let text = String::from_utf8_lossy(&output.stdout).to_ascii_lowercase();
-    if text.lines().skip(1).any(|line| {
+    #[cfg(target_os = "macos")]
+    let target_header = format!("{}:", binary.to_string_lossy()).to_ascii_lowercase();
+    #[cfg(target_os = "macos")]
+    let dependency_lines = dependency_scan_lines(&text, Some(&target_header))?;
+    #[cfg(target_os = "linux")]
+    let dependency_lines = dependency_scan_lines(&text, None)?;
+    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
+    let dependency_lines: Vec<&str> = Vec::new();
+    if dependency_lines.iter().any(|line| {
         line.contains("node")
             || line.contains("npm")
             || line.contains(".js")
@@ -5551,6 +5559,26 @@ fn static_node_dependency_scan(binary: &Path) -> Result<String, String> {
         return Err("node-free-node-dependency-found".to_owned());
     }
     Ok(label.to_owned())
+}
+
+fn dependency_scan_lines<'a>(
+    output: &'a str,
+    target_header: Option<&str>,
+) -> Result<Vec<&'a str>, String> {
+    let mut lines = output.lines();
+    let first = lines
+        .next()
+        .ok_or_else(|| "node-free-dependency-scan-empty".to_owned())?;
+    if let Some(expected_header) = target_header {
+        if first != expected_header {
+            return Err("node-free-dependency-scan-header-invalid".to_owned());
+        }
+        Ok(lines.collect())
+    } else {
+        let mut dependencies = vec![first];
+        dependencies.extend(lines);
+        Ok(dependencies)
+    }
 }
 
 fn current_rss_bytes() -> Result<u64, String> {
@@ -7735,11 +7763,46 @@ fn token_json(token: &Token) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        PROJECT_CAPABILITY_ENTRY_RESULT, bind_loopback_listener, native_profile_digest,
-        native_project_capability_contract_digest, native_toolchain_digest, next_workspace_id,
-        server_smoke_failure_code, stable_diagnostic_code,
+        PROJECT_CAPABILITY_ENTRY_RESULT, bind_loopback_listener, dependency_scan_lines,
+        native_profile_digest, native_project_capability_contract_digest, native_toolchain_digest,
+        next_workspace_id, server_smoke_failure_code, stable_diagnostic_code,
     };
     use revia_core::{bytecode::NATIVE_BYTECODE_PROFILE, digest::sha256_hex};
+
+    #[test]
+    fn dependency_scan_keeps_the_first_linux_dependency_and_validates_macos_header() {
+        assert_eq!(
+            dependency_scan_lines(
+                "libnode.so.1 => /usr/lib/libnode.so.1\nlibc.so.6 => /lib/libc.so.6\n",
+                None,
+            )
+            .unwrap(),
+            vec![
+                "libnode.so.1 => /usr/lib/libnode.so.1",
+                "libc.so.6 => /lib/libc.so.6",
+            ]
+        );
+        assert_eq!(
+            dependency_scan_lines(
+                "/tmp/node-build/revia:\n\t/usr/lib/libSystem.B.dylib\n",
+                Some("/tmp/node-build/revia:"),
+            )
+            .unwrap(),
+            vec!["\t/usr/lib/libSystem.B.dylib"]
+        );
+        assert_eq!(
+            dependency_scan_lines(
+                "/tmp/revia:\n\t/usr/lib/libnode.dylib\n",
+                Some("/tmp/revia:"),
+            )
+            .unwrap(),
+            vec!["\t/usr/lib/libnode.dylib"]
+        );
+        assert!(
+            dependency_scan_lines("\t/usr/lib/libSystem.B.dylib\n", Some("/tmp/revia:")).is_err()
+        );
+        assert!(dependency_scan_lines("", None).is_err());
+    }
 
     #[test]
     fn project_capability_authority_digests_are_derived_from_native_contracts() {
