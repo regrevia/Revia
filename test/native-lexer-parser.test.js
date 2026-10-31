@@ -227,14 +227,34 @@ test('native release boundary contains no Node, JavaScript, or registry dependen
     const dependencyArgs = process.platform === 'darwin' ? ['-L', NATIVE_BINARY] : [NATIVE_BINARY]
     const dependencies = spawnSync(dependencyCommand, dependencyArgs, { encoding: 'utf8' })
     assert.equal(dependencies.status, 0, dependencies.stderr)
-    const dependencyLines = dependencies.stdout.split(/\r?\n/u).slice(1).join('\n')
+    const dependencyLines = dependencyLinesForScan(dependencies.stdout, process.platform)
     assert.doesNotMatch(dependencyLines, /(?:node|javascript)/iu)
   }
+})
+
+test('native dependency scan skips only the Darwin target header', () => {
+  assert.equal(
+    dependencyLinesForScan('libnode.so.1 => /usr/lib/libnode.so.1\nlibc.so.6 => /lib/libc.so.6\n', 'linux'),
+    'libnode.so.1 => /usr/lib/libnode.so.1\nlibc.so.6 => /lib/libc.so.6\n',
+  )
+  assert.equal(
+    dependencyLinesForScan('/tmp/node-build/revia:\n\t/usr/lib/libSystem.B.dylib\n', 'darwin'),
+    '\t/usr/lib/libSystem.B.dylib\n',
+  )
+  assert.equal(
+    dependencyLinesForScan('/tmp/revia:\n\t/usr/lib/libnode.dylib\n', 'darwin'),
+    '\t/usr/lib/libnode.dylib\n',
+  )
 })
 
 function ensureNativeBinary() {
   if (existsSync(NATIVE_BINARY)) return
   execFileSync('cargo', ['build', '--workspace', '--offline'], { cwd: NATIVE_ROOT })
+}
+
+function dependencyLinesForScan(output, platform) {
+  const lines = output.split(/\r?\n/u)
+  return (platform === 'darwin' ? lines.slice(1) : lines).join('\n')
 }
 
 function ensureNativeConformanceBinary() {
