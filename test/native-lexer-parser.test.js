@@ -237,9 +237,23 @@ test('native release boundary contains no Node, JavaScript, or registry dependen
 })
 
 test('native dependency scan skips only the Darwin target header', () => {
+  const linuxDependencies = 'libnode.so.1 => /usr/lib/libnode.so.1\nlibc.so.6 => /lib/libc.so.6\n'
   assert.equal(
-    dependencyLinesForScan('libnode.so.1 => /usr/lib/libnode.so.1\nlibc.so.6 => /lib/libc.so.6\n', 'linux'),
-    'libnode.so.1 => /usr/lib/libnode.so.1\nlibc.so.6 => /lib/libc.so.6\n',
+    dependencyLinesForScan(linuxDependencies, 'linux'),
+    linuxDependencies.trimEnd(),
+  )
+  assert.match(dependencyLinesForScan(linuxDependencies, 'linux'), /libnode/u)
+  assert.throws(
+    () => dependencyLinesForScan('', 'linux'),
+    /native dependency scan output empty/u,
+  )
+  assert.throws(
+    () => dependencyLinesForScan(' \t\n', 'linux'),
+    /native dependency scan output empty/u,
+  )
+  assert.equal(
+    dependencyLinesForScan(' \t\nlibc.so.6 => /lib/libc.so.6\n', 'linux'),
+    'libc.so.6 => /lib/libc.so.6',
   )
   assert.equal(
     dependencyLinesForScan(
@@ -247,7 +261,27 @@ test('native dependency scan skips only the Darwin target header', () => {
       'darwin',
       '/tmp/node-build/revia',
     ),
-    '\t/usr/lib/libSystem.B.dylib\n',
+    '\t/usr/lib/libSystem.B.dylib',
+  )
+  assert.equal(
+    dependencyLinesForScan(
+      '/tmp/revia (architecture x86_64):\n\t/usr/lib/libSystem.B.dylib\n/tmp/revia (architecture arm64):\n\t/usr/lib/libSystem.B.dylib\n',
+      'darwin',
+      '/tmp/revia',
+    ),
+    '\t/usr/lib/libSystem.B.dylib\n\t/usr/lib/libSystem.B.dylib',
+  )
+  assert.throws(
+    () => dependencyLinesForScan(
+      '/tmp/other (architecture arm64):\n\t/usr/lib/libSystem.B.dylib\n',
+      'darwin',
+      '/tmp/revia',
+    ),
+    /native dependency scan header invalid/u,
+  )
+  assert.throws(
+    () => dependencyLinesForScan('', 'darwin', '/tmp/revia'),
+    /native dependency scan header invalid/u,
   )
   assert.equal(
     dependencyLinesForScan(
@@ -255,7 +289,7 @@ test('native dependency scan skips only the Darwin target header', () => {
       'darwin',
       '/tmp/revia',
     ),
-    '\t/usr/lib/libnode.dylib\n',
+    '\t/usr/lib/libnode.dylib',
   )
   assert.throws(
     () => dependencyLinesForScan('\t/usr/lib/libSystem.B.dylib\n', 'darwin', '/tmp/revia'),
@@ -270,9 +304,34 @@ function ensureNativeBinary() {
 
 function dependencyLinesForScan(output, platform, binaryPath) {
   const lines = output.split(/\r?\n/u)
-  if (platform !== 'darwin') return lines.join('\n')
-  if (lines[0] !== `${binaryPath}:`) throw new Error('native dependency scan header invalid')
-  return lines.slice(1).join('\n')
+  if (platform !== 'darwin') {
+    if (output.trim().length === 0) throw new Error('native dependency scan output empty')
+    return lines.filter((line) => line.trim().length > 0).join('\n')
+  }
+  let sawHeader = false
+  const dependencies = []
+  for (const line of lines) {
+    if (isDarwinDependencyHeader(line, binaryPath)) {
+      sawHeader = true
+    } else if (line.trim().length === 0) {
+      continue
+    } else if (!sawHeader) {
+      throw new Error('native dependency scan header invalid')
+    } else {
+      dependencies.push(line)
+    }
+  }
+  if (!sawHeader) throw new Error('native dependency scan header invalid')
+  if (dependencies.length === 0) throw new Error('native dependency scan output empty')
+  return dependencies.join('\n')
+}
+
+function isDarwinDependencyHeader(line, binaryPath) {
+  if (line === `${binaryPath}:`) return true
+  const prefix = `${binaryPath} (architecture `
+  if (!line.startsWith(prefix) || !line.endsWith('):')) return false
+  const architecture = line.slice(prefix.length, -2)
+  return architecture.length > 0 && !architecture.includes(')')
 }
 
 function ensureNativeConformanceBinary() {

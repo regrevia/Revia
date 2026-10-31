@@ -5543,42 +5543,90 @@ fn static_node_dependency_scan(binary: &Path) -> Result<String, String> {
     }
     let text = String::from_utf8_lossy(&output.stdout).to_ascii_lowercase();
     #[cfg(target_os = "macos")]
-    let target_header = format!("{}:", binary.to_string_lossy()).to_ascii_lowercase();
-    #[cfg(target_os = "macos")]
-    let dependency_lines = dependency_scan_lines(&text, Some(&target_header))?;
+    let dependency_lines = {
+        let target_header = format!("{}:", binary.to_string_lossy()).to_ascii_lowercase();
+        dependency_scan_lines(&text, Some(&target_header))?
+    };
     #[cfg(target_os = "linux")]
     let dependency_lines = dependency_scan_lines(&text, None)?;
     #[cfg(not(any(target_os = "macos", target_os = "linux")))]
-    let dependency_lines: Vec<&str> = Vec::new();
-    if dependency_lines.iter().any(|line| {
-        line.contains("node")
-            || line.contains("npm")
-            || line.contains(".js")
-            || line.contains("libnode")
-    }) {
+    let dependency_lines: Vec<&str> = {
+        let _ = (&binary, &text);
+        Vec::new()
+    };
+    if contains_node_dependency(&dependency_lines) {
         return Err("node-free-node-dependency-found".to_owned());
     }
     Ok(label.to_owned())
 }
 
+fn contains_node_dependency(lines: &[&str]) -> bool {
+    lines.iter().any(|line| {
+        line.contains("node")
+            || line.contains("npm")
+            || line.contains(".js")
+            || line.contains("libnode")
+    })
+}
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 fn dependency_scan_lines<'a>(
     output: &'a str,
     target_header: Option<&str>,
 ) -> Result<Vec<&'a str>, String> {
-    let mut lines = output.lines();
-    let first = lines
-        .next()
-        .ok_or_else(|| "node-free-dependency-scan-empty".to_owned())?;
-    if let Some(expected_header) = target_header {
-        if first != expected_header {
-            return Err("node-free-dependency-scan-header-invalid".to_owned());
+    let lines = output.lines().collect::<Vec<_>>();
+    match target_header {
+        None => {
+            let dependencies = lines
+                .into_iter()
+                .filter(|line| !line.trim().is_empty())
+                .collect::<Vec<_>>();
+            if dependencies.is_empty() {
+                return Err("node-free-dependency-scan-empty".to_owned());
+            }
+            Ok(dependencies)
         }
-        Ok(lines.collect())
-    } else {
-        let mut dependencies = vec![first];
-        dependencies.extend(lines);
-        Ok(dependencies)
+        Some(expected_header) => {
+            let mut saw_header = false;
+            let mut dependencies = Vec::new();
+            for line in lines {
+                if darwin_dependency_header_matches(line, expected_header) {
+                    saw_header = true;
+                } else if line.trim().is_empty() {
+                    continue;
+                } else if !saw_header {
+                    return Err("node-free-dependency-scan-header-invalid".to_owned());
+                } else {
+                    dependencies.push(line);
+                }
+            }
+            if !saw_header {
+                return Err("node-free-dependency-scan-header-invalid".to_owned());
+            }
+            if dependencies.is_empty() {
+                return Err("node-free-dependency-scan-empty".to_owned());
+            }
+            Ok(dependencies)
+        }
     }
+}
+
+#[cfg(target_os = "macos")]
+fn darwin_dependency_header_matches(line: &str, expected_header: &str) -> bool {
+    if line == expected_header {
+        return true;
+    }
+    let Some(binary) = expected_header.strip_suffix(':') else {
+        return false;
+    };
+    let Some(architecture) = line
+        .strip_prefix(binary)
+        .and_then(|suffix| suffix.strip_prefix(" (architecture "))
+        .and_then(|suffix| suffix.strip_suffix("):"))
+    else {
+        return false;
+    };
+    !architecture.is_empty() && !architecture.contains(')')
 }
 
 fn current_rss_bytes() -> Result<u64, String> {
@@ -7763,12 +7811,15 @@ fn token_json(token: &Token) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        PROJECT_CAPABILITY_ENTRY_RESULT, bind_loopback_listener, dependency_scan_lines,
-        native_profile_digest, native_project_capability_contract_digest, native_toolchain_digest,
-        next_workspace_id, server_smoke_failure_code, stable_diagnostic_code,
+        PROJECT_CAPABILITY_ENTRY_RESULT, bind_loopback_listener, native_profile_digest,
+        native_project_capability_contract_digest, native_toolchain_digest, next_workspace_id,
+        server_smoke_failure_code, stable_diagnostic_code,
     };
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    use super::{contains_node_dependency, dependency_scan_lines};
     use revia_core::{bytecode::NATIVE_BYTECODE_PROFILE, digest::sha256_hex};
 
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
     #[test]
     fn dependency_scan_keeps_the_first_linux_dependency_and_validates_macos_header() {
         assert_eq!(
@@ -7782,6 +7833,12 @@ mod tests {
                 "libc.so.6 => /lib/libc.so.6",
             ]
         );
+        assert!(contains_node_dependency(&[
+            "libnode.so.1 => /usr/lib/libnode.so.1",
+            "libc.so.6 => /lib/libc.so.6",
+        ]));
+        assert!(contains_node_dependency(&["\t/usr/lib/libnode.dylib"]));
+        assert!(!contains_node_dependency(&["\t/usr/lib/libSystem.B.dylib"]));
         assert_eq!(
             dependency_scan_lines(
                 "/tmp/node-build/revia:\n\t/usr/lib/libSystem.B.dylib\n",
@@ -7798,10 +7855,40 @@ mod tests {
             .unwrap(),
             vec!["\t/usr/lib/libnode.dylib"]
         );
+        assert_eq!(
+            dependency_scan_lines(
+                "/tmp/revia (architecture x86_64):\n\t/usr/lib/libSystem.B.dylib\n/tmp/revia (architecture arm64):\n\t/usr/lib/libSystem.B.dylib\n",
+                Some("/tmp/revia:"),
+            )
+            .unwrap(),
+            vec![
+                "\t/usr/lib/libSystem.B.dylib",
+                "\t/usr/lib/libSystem.B.dylib",
+            ]
+        );
+        assert_eq!(
+            dependency_scan_lines(" \t\nlibc.so.6 => /lib/libc.so.6\n", None,).unwrap(),
+            vec!["libc.so.6 => /lib/libc.so.6"]
+        );
+        assert!(dependency_scan_lines(" \t\n", None).is_err());
+        assert!(
+            dependency_scan_lines(
+                "/tmp/other (architecture arm64):\n\t/usr/lib/libSystem.B.dylib\n",
+                Some("/tmp/revia:")
+            )
+            .is_err()
+        );
+        assert!(
+            dependency_scan_lines(
+                "/tmp/revia:\n\t/usr/lib/libSystem.B.dylib\n",
+                Some("/tmp/revia:")
+            )
+            .is_ok()
+        );
+        assert!(dependency_scan_lines("", Some("/tmp/revia:")).is_err());
         assert!(
             dependency_scan_lines("\t/usr/lib/libSystem.B.dylib\n", Some("/tmp/revia:")).is_err()
         );
-        assert!(dependency_scan_lines("", None).is_err());
     }
 
     #[test]
