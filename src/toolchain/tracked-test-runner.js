@@ -105,7 +105,8 @@ export function runTrackedTests({
     .filter(({ tests }) => tests > 0)
     .map(({ file }) => file)
   const signal = executions.find(({ signal: value }) => value !== null)?.signal ?? null
-  const childStatus = executions.find(({ status: value }) => value !== 0)?.status ?? 0
+  const failedChild = executions.find(({ status: value }) => value !== 0)
+  const childStatus = failedChild === undefined ? 0 : failedChild.status ?? 1
   const executionStatus = signal !== null
     || childStatus === null
     || executionEvidence.some(({ outcome }) => outcome === 'no-report')

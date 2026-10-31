@@ -43,18 +43,21 @@ true only when all four populations are exactly equal, every selected file
 emitted test evidence, and every child exited successfully without a signal.
 When the default full run has a population mismatch, `status` is non-zero even
 if every selected child passed. An explicit subset can pass with `status=0`,
-but `complete` remains false because it is not a full-population run.
+but `complete` remains false unless it covers the full intended population
+and meets the other completion conditions.
 
 `execution_status` 是子测试进程的汇总结果；`status` 是 runner 最终退出状态。
 `complete` 表示完整人口成功运行，仅在四类人口逐项相等、每个 selected 文件
 都有测试证据且子进程均成功退出、没有 signal 时为 true。默认全量运行若人口
 不一致，即使已选子进程全部通过，`status` 仍非零。显式子集可返回
-`status=0`，但因不是完整人口，`complete` 仍为 false。
+`status=0`；除非该子集恰好覆盖完整 intended 人口并满足其他完成条件，
+否则 `complete` 为 false。
 
 An empty intended or discovered population is invalid. A no-defect full run
 must pass; a must-fail control with an extra discovered file, missing execution
-report, non-zero child status, or signal must not produce `complete=true`.
+report, missing child exit status, non-zero child status, or signal must not
+produce `complete=true`.
 
 `intended` 或 `discovered` 为空都无效。无缺陷全量控制必须通过；若 must-fail
-控制中出现额外 discovered 文件、缺失执行报告、子进程非零退出或 signal，
-则不得产生 `complete=true`。
+控制中出现额外 discovered 文件、缺失执行报告、子进程缺少退出状态、非零退出
+或 signal，则不得产生 `complete=true`。

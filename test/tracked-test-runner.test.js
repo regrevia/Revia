@@ -172,6 +172,32 @@ test('tracked test runner invokes Node without a shell and returns stable status
   })
 })
 
+test('tracked test runner fails closed when a child has no exit status or signal', () => {
+  const report = runTrackedTests({
+    cwd: '/repo',
+    execPath: '/node',
+    nodeVersion: '22.16.0',
+    spawnSyncImpl(command) {
+      if (command === 'git') {
+        return { status: 0, stdout: Buffer.from('test/a.test.js\0') }
+      }
+      return {
+        signal: null,
+        status: null,
+        stdout: '<testsuites><!-- tests 1 --></testsuites>',
+      }
+    },
+    readdirSyncImpl: () => [
+      { name: 'a.test.js', isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
+    ],
+  })
+
+  assert.equal(report.population.execution_status, 1)
+  assert.equal(report.population.status, 1)
+  assert.equal(report.status, 1)
+  assert.equal(report.population.complete, false)
+})
+
 test('tracked test population excludes untracked probes and binds executed files to JUnit evidence', () => {
   const report = runTrackedTests({
     cwd: '/repo',
@@ -288,6 +314,34 @@ test('no-defect full population control keeps a complete successful run green', 
   assert.equal(report.population.status, 0)
   assert.equal(report.status, 0)
   assert.equal(report.population.complete, true)
+})
+
+test('a passing explicit subset is not reported as a complete full population', () => {
+  const report = runTrackedTests({
+    cwd: '/repo',
+    execPath: '/node',
+    nodeVersion: '22.16.0',
+    requested: ['test/a.test.js'],
+    spawnSyncImpl(command) {
+      if (command === 'git') {
+        return { status: 0, stdout: Buffer.from('test/a.test.js\0test/b.test.js\0') }
+      }
+      return {
+        signal: null,
+        status: 0,
+        stdout: '<testsuites><!-- tests 1 --></testsuites>',
+      }
+    },
+    readdirSyncImpl: () => [
+      { name: 'a.test.js', isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
+      { name: 'b.test.js', isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
+    ],
+  })
+
+  assert.equal(report.status, 0)
+  assert.equal(report.population.complete, false)
+  assert.deepEqual(report.population.selected, ['test/a.test.js'])
+  assert.deepEqual(report.population.executed, ['test/a.test.js'])
 })
 
 test('CLI refuses a green child run when discovered population differs from intent', () => {
