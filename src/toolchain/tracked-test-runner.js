@@ -85,8 +85,24 @@ export function runTrackedTests({
     }
   })
   const selected = [...tests].sort()
-  const executed = executions
-    .filter(({ output }) => parseExecutedTestCount(output) > 0)
+  const executionEvidence = executions.map(({ file, status: value, signal: termination, output }) => {
+    const testsRun = parseExecutedTestCount(output)
+    return {
+      file,
+      status: value,
+      signal: termination,
+      tests: testsRun,
+      outcome: termination !== null
+        ? 'signaled'
+        : testsRun === 0
+          ? 'no-report'
+          : value === 0
+            ? 'passed'
+            : 'failed',
+    }
+  })
+  const executed = executionEvidence
+    .filter(({ tests }) => tests > 0)
     .map(({ file }) => file)
   const status = executions.find(({ status: value }) => value !== 0)?.status ?? 0
   const signal = executions.find(({ signal: value }) => value !== null)?.signal ?? null
@@ -102,6 +118,7 @@ export function runTrackedTests({
       discovered: population.discovered,
       selected,
       executed,
+      executions: executionEvidence,
       status,
       signal,
       complete: status === 0

@@ -136,6 +136,13 @@ test('tracked test runner invokes Node without a shell and returns stable status
   assert.equal(result.status, 7)
   assert.equal(result.tests, 1)
   assert.equal(result.population.complete, false)
+  assert.deepEqual(result.population.executions, [{
+    file: 'test/a.test.js',
+    status: 7,
+    signal: null,
+    tests: 1,
+    outcome: 'failed',
+  }])
   assert.deepEqual(calls[1], {
     args: [
       '--test',
@@ -178,6 +185,13 @@ test('tracked test population excludes untracked probes and binds executed files
   assert.deepEqual(report.population.selected, ['test/a.test.js'])
   assert.deepEqual(report.population.executed, ['test/a.test.js'])
   assert.equal(report.population.complete, false)
+  assert.deepEqual(report.population.executions, [{
+    file: 'test/a.test.js',
+    status: 0,
+    signal: null,
+    tests: 1,
+    outcome: 'passed',
+  }])
 })
 
 test('tracked test runner does not count an empty test report as executed', () => {
@@ -198,6 +212,13 @@ test('tracked test runner does not count an empty test report as executed', () =
 
   assert.deepEqual(report.population.executed, [])
   assert.equal(report.population.complete, false)
+  assert.deepEqual(report.population.executions, [{
+    file: 'test/a.test.js',
+    status: 0,
+    signal: null,
+    tests: 0,
+    outcome: 'no-report',
+  }])
 })
 
 test('JUnit execution evidence rejects files outside the selected population', () => {
