@@ -7,6 +7,8 @@ try {
     cwd: process.cwd(),
     requested: process.argv.slice(2),
   })
+  if (result.output) process.stderr.write(result.output)
+  process.stdout.write(`${JSON.stringify(result.population)}\n`)
   process.exitCode = result.status === null ? 1 : result.status
 } catch (error) {
   const code = typeof error?.code === 'string'

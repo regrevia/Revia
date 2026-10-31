@@ -1,26 +1,55 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import {
+  execFileSync,
+  spawnSync,
+} from 'node:child_process'
+import {
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { join } from 'node:path'
+import { tmpdir } from 'node:os'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 import {
   MINIMUM_NODE_VERSION,
+  parseExecutedTestFiles,
   runTrackedTests,
   selectTrackedTests,
 } from '../src/toolchain/tracked-test-runner.js'
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url))
+const RUNNER = join(ROOT, 'scripts/run-tracked-tests.js')
 
 test('tracked test runner floor matches the declared package engine', () => {
   const packageJson = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
   assert.equal(packageJson.engines.node, `>=${MINIMUM_NODE_VERSION}`)
 })
 
+test('Node validation uploads machine population and execution evidence', () => {
+  const workflow = readFileSync(join(ROOT, '.github/workflows/validate.yml'), 'utf8')
+  assert.match(workflow, /node scripts\/run-tracked-tests\.js > node-test-population\.json 2> node-test-execution\.log/u)
+  assert.match(workflow, /name: Upload Node population evidence/u)
+  assert.match(workflow, /if: always\(\)/u)
+  assert.match(workflow, /node-test-population-\$\{\{ matrix\.node-version \}\}/u)
+  assert.match(workflow, /node-test-population\.json[\s\S]*?node-test-execution\.log[\s\S]*?node-test-runner\.error/u)
+})
+
 test('tracked test selection is sorted and ignores non-test files', () => {
   const calls = []
   const selected = selectTrackedTests({
     cwd: '/repo',
+    spawnSyncImpl(command, args, options) {
+      calls.push({ args, command, options })
+      return {
+        status: 0,
+        stdout: Buffer.from('test/z.test.js\0test/a.test.js\0'),
+      }
+    },
     readdirSyncImpl(path, options) {
       calls.push({ path, options })
       if (path === '/repo/test') {
@@ -35,10 +64,26 @@ test('tracked test selection is sorted and ignores non-test files', () => {
   })
 
   assert.deepEqual(selected, ['test/a.test.js', 'test/z.test.js'])
-  assert.deepEqual(calls, [{ path: '/repo/test', options: { withFileTypes: true } }])
+  assert.deepEqual(calls, [
+    {
+      args: ['ls-files', '-z', '--', 'test/*.test.js'],
+      command: 'git',
+      options: {
+        cwd: '/repo',
+        encoding: null,
+        maxBuffer: 16 * 1024 * 1024,
+        shell: false,
+      },
+    },
+    { path: '/repo/test', options: { withFileTypes: true } },
+  ])
 })
 
 test('requested test subset cannot select probes, escape test root, or repeat paths', () => {
+  const spawnSyncImpl = () => ({
+    status: 0,
+    stdout: Buffer.from('test/a.test.js\0test/b.test.js\0'),
+  })
   const readdirSyncImpl = () => [
     { name: 'a.test.js', isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
     { name: 'b.test.js', isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
@@ -50,26 +95,29 @@ test('requested test subset cannot select probes, escape test root, or repeat pa
     ['test/a.test.js', 'test/a.test.js'],
   ]) {
     assert.throws(
-      () => selectTrackedTests({ cwd: '/repo', requested, readdirSyncImpl }),
+      () => selectTrackedTests({ cwd: '/repo', requested, spawnSyncImpl, readdirSyncImpl }),
       /invalid tracked test selection/u,
     )
   }
   assert.deepEqual(selectTrackedTests({
     cwd: '/repo',
     requested: ['test/b.test.js'],
+    spawnSyncImpl,
     readdirSyncImpl,
   }), ['test/b.test.js'])
 })
 
 test('tracked test selection fails closed on git errors and empty output', () => {
-  for (const readdirSyncImpl of [
-    () => { throw new Error('private filesystem detail') },
-    () => [],
+  for (const spawnSyncImpl of [
+    () => ({ error: new Error('private git detail'), status: null, stdout: Buffer.alloc(0) }),
+    () => ({ status: 1, stdout: Buffer.alloc(0) }),
+    () => ({ status: 0, stdout: Buffer.alloc(0) }),
+    () => ({ status: 0, stdout: Buffer.from('scratch_probe.test.js\0') }),
   ]) {
     assert.throws(
       () => selectTrackedTests({
         cwd: '/repo',
-        readdirSyncImpl,
+        spawnSyncImpl,
       }),
       /tracked test discovery failed/u,
     )
@@ -85,7 +133,10 @@ test('tracked test runner invokes Node without a shell and returns stable status
     requested: ['test/a.test.js'],
     spawnSyncImpl(command, args, options) {
       calls.push({ args, command, options })
-      return { signal: null, status: 7 }
+      if (command === 'git') {
+        return { status: 0, stdout: Buffer.from('test/a.test.js\0') }
+      }
+      return { signal: null, status: 7, stdout: '<testsuites><!-- tests 1 --></testsuites>' }
     },
     readdirSyncImpl: () => [
       { name: 'b.test.js', isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
@@ -93,20 +144,279 @@ test('tracked test runner invokes Node without a shell and returns stable status
     ],
   })
 
-  assert.deepEqual(result, { signal: null, status: 7, tests: 1 })
-  assert.deepEqual(calls[0], {
-    args: [
-      '--test',
-      '--experimental-test-isolation=none',
-      'test/a.test.js',
+  assert.equal(result.signal, null)
+  assert.equal(result.status, 7)
+  assert.equal(result.tests, 1)
+  assert.equal(result.population.complete, false)
+  assert.deepEqual(result.population.executions, [{
+    file: 'test/a.test.js',
+    status: 7,
+    signal: null,
+    tests: 1,
+    outcome: 'failed',
+  }])
+  assert.deepEqual(calls[1].args, [
+    '--test',
+    '--experimental-test-isolation=none',
+    '--test-reporter=junit',
+    'test/a.test.js',
+  ])
+  assert.equal(calls[1].command, '/node')
+  const { env: childEnvironment, ...childOptions } = calls[1].options
+  assert.deepEqual(childOptions, {
+    cwd: '/repo',
+    shell: false,
+    encoding: 'utf8',
+    stdio: 'pipe',
+  })
+  assert.equal(calls[1].options.cwd, '/repo')
+  assert.equal(calls[1].options.shell, false)
+  assert.equal(calls[1].options.encoding, 'utf8')
+  assert.equal(calls[1].options.stdio, 'pipe')
+  assert.equal(childEnvironment.NODE_TEST_CONTEXT, undefined)
+})
+
+test('tracked test runner fails closed when a child has no exit status or signal', () => {
+  const report = runTrackedTests({
+    cwd: '/repo',
+    execPath: '/node',
+    nodeVersion: '22.16.0',
+    spawnSyncImpl(command) {
+      if (command === 'git') {
+        return { status: 0, stdout: Buffer.from('test/a.test.js\0') }
+      }
+      return {
+        signal: null,
+        status: null,
+        stdout: '<testsuites><!-- tests 1 --></testsuites>',
+      }
+    },
+    readdirSyncImpl: () => [
+      { name: 'a.test.js', isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
     ],
-    command: '/node',
-    options: {
-      cwd: '/repo',
-      shell: false,
-      stdio: 'inherit',
+  })
+
+  assert.equal(report.population.execution_status, 1)
+  assert.equal(report.population.status, 1)
+  assert.equal(report.status, 1)
+  assert.equal(report.population.complete, false)
+})
+
+test('tracked test population excludes untracked probes and binds executed files to JUnit evidence', () => {
+  const report = runTrackedTests({
+    cwd: '/repo',
+    execPath: '/node',
+    nodeVersion: '22.16.0',
+    spawnSyncImpl(command) {
+      if (command === 'git') {
+        return { status: 0, stdout: Buffer.from('test/a.test.js\0') }
+      }
+      return { signal: null, status: 0, stdout: '<testsuites><!-- tests 1 --></testsuites>' }
+    },
+    readdirSyncImpl(path) {
+      if (path !== '/repo/test') return []
+      return [
+        { name: 'a.test.js', isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
+        { name: 'probe.test.js', isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
+      ]
     },
   })
+
+  assert.deepEqual(report.population.intended, ['test/a.test.js'])
+  assert.deepEqual(report.population.discovered, ['test/a.test.js', 'test/probe.test.js'])
+  assert.deepEqual(report.population.selected, ['test/a.test.js'])
+  assert.deepEqual(report.population.executed, ['test/a.test.js'])
+  assert.equal(report.population.complete, false)
+  assert.deepEqual(report.population.executions, [{
+    file: 'test/a.test.js',
+    status: 0,
+    signal: null,
+    tests: 1,
+    outcome: 'passed',
+  }])
+})
+
+test('tracked test runner does not count an empty test report as executed', () => {
+  const report = runTrackedTests({
+    cwd: '/repo',
+    execPath: '/node',
+    nodeVersion: '22.16.0',
+    spawnSyncImpl(command) {
+      if (command === 'git') {
+        return { status: 0, stdout: Buffer.from('test/a.test.js\0') }
+      }
+      return { signal: null, status: 0, stdout: '<testsuites/>' }
+    },
+    readdirSyncImpl: () => [
+      { name: 'a.test.js', isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
+    ],
+  })
+
+  assert.deepEqual(report.population.executed, [])
+  assert.equal(report.population.execution_status, 1)
+  assert.equal(report.population.status, 1)
+  assert.equal(report.status, 1)
+  assert.equal(report.population.complete, false)
+  assert.deepEqual(report.population.executions, [{
+    file: 'test/a.test.js',
+    status: 0,
+    signal: null,
+    tests: 0,
+    outcome: 'no-report',
+  }])
+})
+
+test('full population gate fails when the discovered population differs from intent', () => {
+  const report = runTrackedTests({
+    cwd: '/repo',
+    execPath: '/node',
+    nodeVersion: '22.16.0',
+    spawnSyncImpl(command) {
+      if (command === 'git') {
+        return { status: 0, stdout: Buffer.from('test/a.test.js\0test/b.test.js\0') }
+      }
+      return {
+        signal: null,
+        status: 0,
+        stdout: '<testsuites><!-- tests 1 --></testsuites>',
+      }
+    },
+    readdirSyncImpl: () => [
+      { name: 'a.test.js', isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
+    ],
+  })
+
+  assert.deepEqual(report.population.intended, ['test/a.test.js', 'test/b.test.js'])
+  assert.deepEqual(report.population.discovered, ['test/a.test.js'])
+  assert.equal(report.population.execution_status, 0)
+  assert.equal(report.population.status, 1)
+  assert.equal(report.status, 1)
+  assert.equal(report.population.complete, false)
+})
+
+test('no-defect full population control keeps a complete successful run green', () => {
+  const report = runTrackedTests({
+    cwd: '/repo',
+    execPath: '/node',
+    nodeVersion: '22.16.0',
+    spawnSyncImpl(command) {
+      if (command === 'git') {
+        return { status: 0, stdout: Buffer.from('test/a.test.js\0') }
+      }
+      return {
+        signal: null,
+        status: 0,
+        stdout: '<testsuites><!-- tests 1 --></testsuites>',
+      }
+    },
+    readdirSyncImpl: () => [
+      { name: 'a.test.js', isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
+    ],
+  })
+
+  assert.equal(report.population.execution_status, 0)
+  assert.equal(report.population.status, 0)
+  assert.equal(report.status, 0)
+  assert.equal(report.population.complete, true)
+})
+
+test('a passing explicit subset is not reported as a complete full population', () => {
+  const report = runTrackedTests({
+    cwd: '/repo',
+    execPath: '/node',
+    nodeVersion: '22.16.0',
+    requested: ['test/a.test.js', 'test/b.test.js'],
+    spawnSyncImpl(command) {
+      if (command === 'git') {
+        return {
+          status: 0,
+          stdout: Buffer.from('test/a.test.js\0test/b.test.js\0test/c.test.js\0'),
+        }
+      }
+      return {
+        signal: null,
+        status: 0,
+        stdout: '<testsuites><!-- tests 1 --></testsuites>',
+      }
+    },
+    readdirSyncImpl: () => [
+      { name: 'a.test.js', isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
+      { name: 'b.test.js', isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
+      { name: 'c.test.js', isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
+    ],
+  })
+
+  assert.equal(report.status, 0)
+  assert.equal(report.population.complete, false)
+  assert.deepEqual(report.population.selected, ['test/a.test.js', 'test/b.test.js'])
+  assert.deepEqual(report.population.executed, ['test/a.test.js', 'test/b.test.js'])
+})
+
+test('an explicit selection equal to the full intended population can be complete', () => {
+  const report = runTrackedTests({
+    cwd: '/repo',
+    execPath: '/node',
+    nodeVersion: '22.16.0',
+    requested: ['test/b.test.js', 'test/a.test.js'],
+    spawnSyncImpl(command) {
+      if (command === 'git') {
+        return { status: 0, stdout: Buffer.from('test/a.test.js\0test/b.test.js\0') }
+      }
+      return {
+        signal: null,
+        status: 0,
+        stdout: '<testsuites><!-- tests 1 --></testsuites>',
+      }
+    },
+    readdirSyncImpl: () => [
+      { name: 'a.test.js', isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
+      { name: 'b.test.js', isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
+    ],
+  })
+
+  assert.equal(report.status, 0)
+  assert.equal(report.population.complete, true)
+  assert.deepEqual(report.population.selected, ['test/a.test.js', 'test/b.test.js'])
+  assert.deepEqual(report.population.executed, ['test/a.test.js', 'test/b.test.js'])
+})
+
+test('CLI refuses a green child run when discovered population differs from intent', () => {
+  const root = mkdtempSync(join(tmpdir(), 'revia-test-population-'))
+  try {
+    const testRoot = join(root, 'test')
+    mkdirSync(testRoot)
+    writeFileSync(join(testRoot, 'a.test.js'), "import test from 'node:test'; test('passes', () => {})\n")
+    execFileSync('git', ['init', '--quiet'], { cwd: root })
+    execFileSync('git', ['add', 'test/a.test.js'], { cwd: root })
+    writeFileSync(join(testRoot, 'probe.test.js'), "import test from 'node:test'; test('probe', () => {})\n")
+    const result = spawnSync(process.execPath, [RUNNER], {
+      cwd: root,
+      encoding: 'utf8',
+    })
+    const report = JSON.parse(result.stdout)
+
+    assert.equal(result.status, 1)
+    assert.deepEqual(report.intended, ['test/a.test.js'])
+    assert.deepEqual(report.discovered, ['test/a.test.js', 'test/probe.test.js'])
+    assert.deepEqual(report.selected, ['test/a.test.js'])
+    assert.deepEqual(report.executed, ['test/a.test.js'])
+    assert.equal(report.execution_status, 0)
+    assert.equal(report.status, 1)
+    assert.equal(report.complete, false)
+    assert.deepEqual(report.executions.map(({ outcome }) => outcome), ['passed'])
+  } finally {
+    rmSync(root, { force: true, recursive: true })
+  }
+})
+
+test('JUnit execution evidence rejects files outside the selected population', () => {
+  assert.throws(
+    () => parseExecutedTestFiles(
+      '<testsuites><testcase file="/repo/test/other.test.js"/></testsuites>',
+      { cwd: '/repo', selected: ['test/a.test.js'] },
+    ),
+    /tracked test execution evidence invalid/u,
+  )
 })
 
 test('tracked test runner rejects Node versions below the full-suite runtime floor before discovery or spawn', () => {
@@ -153,8 +463,15 @@ test('tracked test runner accepts the declared Node floor and subsequent major v
       execPath: '/node',
       nodeVersion,
       requested: ['test/a.test.js'],
-      spawnSyncImpl() {
-        return { signal: null, status: 0 }
+      spawnSyncImpl(command) {
+        if (command === 'git') {
+          return { status: 0, stdout: Buffer.from('test/a.test.js\0') }
+        }
+        return {
+          signal: null,
+          status: 0,
+          stdout: '<testsuites><!-- tests 1 --><testcase file="/repo/test/a.test.js"/></testsuites>',
+        }
       },
       readdirSyncImpl: () => [
         {
@@ -166,7 +483,8 @@ test('tracked test runner accepts the declared Node floor and subsequent major v
       ],
     })
 
-    assert.deepEqual(result, { signal: null, status: 0, tests: 1 })
+    assert.deepEqual(result.population.executed, ['test/a.test.js'])
+    assert.equal(result.population.complete, true)
   }
 })
 
