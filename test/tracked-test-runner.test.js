@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import {
   execFileSync,
   spawnSync,
@@ -20,10 +21,49 @@ import {
   parseExecutedTestFiles,
   runTrackedTests,
   selectTrackedTests,
+  validateTrackedTestPopulationReport,
 } from '../src/toolchain/tracked-test-runner.js'
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url))
 const RUNNER = join(ROOT, 'scripts/run-tracked-tests.js')
+const TEST_SOURCE_REVISION = 'a'.repeat(40)
+const POPULATION_CORPUS = JSON.parse(readFileSync(
+  join(ROOT, 'test/fixtures/tracked-test-population-evidence.json'),
+  'utf8',
+))
+
+function populationCase(id) {
+  const fixture = POPULATION_CORPUS.cases.find((entry) => entry.id === id)
+  assert.ok(fixture, `missing population corpus case: ${id}`)
+  return fixture
+}
+
+function runTrackedTestsWithFixture(
+  options,
+  revision = TEST_SOURCE_REVISION,
+  workingTreeStatus = '',
+) {
+  const spawnSyncImpl = options.spawnSyncImpl
+  return runTrackedTests({
+    ...options,
+    spawnSyncImpl(command, args, spawnOptions) {
+      if (command === 'git' && args[0] === 'rev-parse') {
+        return {
+          status: 0,
+          stdout: `${revision}\n`,
+        }
+      }
+      if (command === 'git' && args[0] === 'status') {
+        return { status: 0, stdout: workingTreeStatus }
+      }
+      return spawnSyncImpl(command, args, spawnOptions)
+    },
+  })
+}
+
+function sha256(value) {
+  return `sha256:${createHash('sha256').update(value).digest('hex')}`
+}
 
 test('tracked test runner floor matches the declared package engine', () => {
   const packageJson = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
@@ -37,6 +77,24 @@ test('Node validation uploads machine population and execution evidence', () => 
   assert.match(workflow, /if: always\(\)/u)
   assert.match(workflow, /node-test-population-\$\{\{ matrix\.node-version \}\}/u)
   assert.match(workflow, /node-test-population\.json[\s\S]*?node-test-execution\.log[\s\S]*?node-test-runner\.error/u)
+})
+
+test('population evidence corpus fixes clean, truncated, missing-report, and subset controls', () => {
+  assert.equal(
+    POPULATION_CORPUS.schema,
+    'revia.test-population-evidence-corpus@0.1.0',
+  )
+  assert.deepEqual(
+    POPULATION_CORPUS.cases.map(({ id }) => id),
+    [
+      'clean-full-population',
+      'discovery-truncated',
+      'incomplete-discovery',
+      'unexpected-discovery',
+      'missing-execution-report',
+      'explicit-subset',
+    ],
+  )
 })
 
 test('tracked test selection is sorted and ignores non-test files', () => {
@@ -124,9 +182,51 @@ test('tracked test selection fails closed on git errors and empty output', () =>
   }
 })
 
+test('tracked test runner fails closed when source revision or worktree status is unavailable', () => {
+  for (const provenanceFailure of ['revision', 'status']) {
+    let discovered = false
+    let executed = false
+    assert.throws(
+      () => runTrackedTests({
+        cwd: '/repo',
+        execPath: '/node',
+        nodeVersion: '22.16.0',
+        spawnSyncImpl(command, args) {
+          if (command === 'git' && args[0] === 'rev-parse') {
+            return provenanceFailure === 'revision'
+              ? { status: 128, stdout: '' }
+              : { status: 0, stdout: `${TEST_SOURCE_REVISION}\n` }
+          }
+          if (command === 'git' && args[0] === 'status') {
+            return { status: 1, stdout: '' }
+          }
+          if (command === 'git') {
+            return { status: 0, stdout: Buffer.from('test/a.test.js\0') }
+          }
+          executed = true
+          return {
+            signal: null,
+            status: 0,
+            stdout: '<testsuites><!-- tests 1 --></testsuites>',
+          }
+        },
+        readdirSyncImpl() {
+          discovered = true
+          return [
+            { name: 'a.test.js', isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
+          ]
+        },
+      }),
+      (error) => error.code === 'tracked test provenance failed',
+    )
+    assert.equal(discovered, false)
+    assert.equal(executed, false)
+  }
+})
+
 test('tracked test runner invokes Node without a shell and returns stable status', () => {
   const calls = []
-  const result = runTrackedTests({
+  const result = runTrackedTestsWithFixture({
     cwd: '/repo',
     execPath: '/node',
     nodeVersion: '22.16.0',
@@ -177,7 +277,7 @@ test('tracked test runner invokes Node without a shell and returns stable status
 })
 
 test('tracked test runner fails closed when a child has no exit status or signal', () => {
-  const report = runTrackedTests({
+  const report = runTrackedTestsWithFixture({
     cwd: '/repo',
     execPath: '/node',
     nodeVersion: '22.16.0',
@@ -203,7 +303,8 @@ test('tracked test runner fails closed when a child has no exit status or signal
 })
 
 test('tracked test population excludes untracked probes and binds executed files to JUnit evidence', () => {
-  const report = runTrackedTests({
+  const expected = populationCase('unexpected-discovery')
+  const report = runTrackedTestsWithFixture({
     cwd: '/repo',
     execPath: '/node',
     nodeVersion: '22.16.0',
@@ -222,11 +323,12 @@ test('tracked test population excludes untracked probes and binds executed files
     },
   })
 
-  assert.deepEqual(report.population.intended, ['test/a.test.js'])
-  assert.deepEqual(report.population.discovered, ['test/a.test.js', 'test/probe.test.js'])
-  assert.deepEqual(report.population.selected, ['test/a.test.js'])
-  assert.deepEqual(report.population.executed, ['test/a.test.js'])
-  assert.equal(report.population.complete, false)
+  assert.deepEqual(report.population.intended, expected.intended)
+  assert.deepEqual(report.population.discovered, expected.discovered)
+  assert.deepEqual(report.population.selected, expected.selected)
+  assert.deepEqual(report.population.executed, expected.executed)
+  assert.equal(report.population.status, expected.status)
+  assert.equal(report.population.complete, expected.complete)
   assert.deepEqual(report.population.executions, [{
     file: 'test/a.test.js',
     status: 0,
@@ -236,8 +338,42 @@ test('tracked test population excludes untracked probes and binds executed files
   }])
 })
 
+test('a successful child cannot hide truncated test discovery', () => {
+  const expected = populationCase('discovery-truncated')
+  const report = runTrackedTestsWithFixture({
+    cwd: '/repo',
+    execPath: '/node',
+    nodeVersion: '22.16.0',
+    spawnSyncImpl(command) {
+      if (command === 'git') {
+        return { status: 0, stdout: Buffer.from('test/a.test.js\0') }
+      }
+      return {
+        signal: null,
+        status: 0,
+        stdout: '<testsuites><!-- tests 1 --></testsuites>',
+      }
+    },
+    readdirSyncImpl: () => [],
+  })
+
+  assert.deepEqual(report.population.intended, expected.intended)
+  assert.deepEqual(report.population.discovered, expected.discovered)
+  assert.deepEqual(report.population.selected, expected.selected)
+  assert.deepEqual(report.population.executed, expected.executed)
+  assert.equal(report.population.execution_status, expected.execution_status)
+  assert.equal(report.population.status, expected.status)
+  assert.equal(report.population.complete, expected.complete)
+  assert.deepEqual(
+    validateTrackedTestPopulationReport(report.population, {
+      executionLog: report.output,
+    }),
+    { ok: true },
+  )
+})
+
 test('tracked test runner does not count an empty test report as executed', () => {
-  const report = runTrackedTests({
+  const report = runTrackedTestsWithFixture({
     cwd: '/repo',
     execPath: '/node',
     nodeVersion: '22.16.0',
@@ -267,7 +403,8 @@ test('tracked test runner does not count an empty test report as executed', () =
 })
 
 test('full population gate fails when the discovered population differs from intent', () => {
-  const report = runTrackedTests({
+  const expected = populationCase('incomplete-discovery')
+  const report = runTrackedTestsWithFixture({
     cwd: '/repo',
     execPath: '/node',
     nodeVersion: '22.16.0',
@@ -286,16 +423,18 @@ test('full population gate fails when the discovered population differs from int
     ],
   })
 
-  assert.deepEqual(report.population.intended, ['test/a.test.js', 'test/b.test.js'])
-  assert.deepEqual(report.population.discovered, ['test/a.test.js'])
-  assert.equal(report.population.execution_status, 0)
-  assert.equal(report.population.status, 1)
-  assert.equal(report.status, 1)
-  assert.equal(report.population.complete, false)
+  assert.deepEqual(report.population.intended, expected.intended)
+  assert.deepEqual(report.population.discovered, expected.discovered)
+  assert.deepEqual(report.population.selected, expected.selected)
+  assert.deepEqual(report.population.executed, expected.executed)
+  assert.equal(report.population.execution_status, expected.execution_status)
+  assert.equal(report.population.status, expected.status)
+  assert.equal(report.population.complete, expected.complete)
 })
 
 test('no-defect full population control keeps a complete successful run green', () => {
-  const report = runTrackedTests({
+  const expected = populationCase('clean-full-population')
+  const result = runTrackedTestsWithFixture({
     cwd: '/repo',
     execPath: '/node',
     nodeVersion: '22.16.0',
@@ -314,14 +453,86 @@ test('no-defect full population control keeps a complete successful run green', 
     ],
   })
 
-  assert.equal(report.population.execution_status, 0)
-  assert.equal(report.population.status, 0)
-  assert.equal(report.status, 0)
-  assert.equal(report.population.complete, true)
+  const { population: report } = result
+  assert.equal(report.execution_status, expected.execution_status)
+  assert.equal(report.schema, 'revia.test-population@0.2.0')
+  assert.equal(report.status, expected.status)
+  assert.equal(report.complete, expected.complete)
+  assert.equal(report.source_revision, TEST_SOURCE_REVISION)
+  assert.equal(report.working_tree_clean, true)
+  assert.equal(JSON.stringify(report).includes('/node'), false)
+  assert.match(report.worktree_status_digest, /^sha256:[0-9a-f]{64}$/u)
+  assert.match(report.fixture_digest, /^sha256:[0-9a-f]{64}$/u)
+  assert.match(report.command_digest, /^sha256:[0-9a-f]{64}$/u)
+  assert.match(report.execution_log_digest, /^sha256:[0-9a-f]{64}$/u)
+  assert.equal(report.execution_log_digest, sha256(result.output))
+  assert.match(report.evidence_digest, /^sha256:[0-9a-f]{64}$/u)
+  assert.deepEqual(
+    validateTrackedTestPopulationReport(report, { executionLog: result.output }),
+    { ok: true },
+  )
+
+  const alteredPopulation = structuredClone(report)
+  alteredPopulation.executed = []
+  assert.deepEqual(
+    validateTrackedTestPopulationReport(alteredPopulation, {
+      executionLog: result.output,
+    }),
+    { code: 'test-population-evidence-digest-mismatch', ok: false },
+  )
+})
+
+test('population provenance changes when fixture, command, or source revision changes', () => {
+  const makeReport = ({
+    execPath = '/node',
+    files = ['test/a.test.js'],
+    requested = [],
+    revision = TEST_SOURCE_REVISION,
+    worktreeStatus = '',
+  } = {}) => runTrackedTestsWithFixture({
+    cwd: '/repo',
+    execPath,
+    nodeVersion: '22.16.0',
+    requested,
+    spawnSyncImpl(command, args) {
+      if (command === 'git' && args[0] === 'ls-files') {
+        return { status: 0, stdout: Buffer.from(`${files.join('\0')}\0`) }
+      }
+      return {
+        signal: null,
+        status: 0,
+        stdout: '<testsuites><!-- tests 1 --></testsuites>',
+      }
+    },
+    readdirSyncImpl: () => files.map((file) => ({
+      name: file.slice('test/'.length),
+      isDirectory: () => false,
+      isFile: () => true,
+      isSymbolicLink: () => false,
+    })),
+  }, revision, worktreeStatus).population
+
+  const base = makeReport()
+  const changedCommand = makeReport({ execPath: '/alternate/node' })
+  const changedRevision = makeReport({ revision: 'b'.repeat(40) })
+  const changedFixture = makeReport({
+    files: ['test/a.test.js', 'test/b.test.js'],
+  })
+  const dirtyWorktree = makeReport({
+    worktreeStatus: ' M src/toolchain/tracked-test-runner.js\n',
+  })
+  assert.notEqual(base.fixture_digest, changedRevision.fixture_digest)
+  assert.notEqual(base.fixture_digest, changedFixture.fixture_digest)
+  assert.notEqual(base.command_digest, changedCommand.command_digest)
+  assert.notEqual(base.evidence_digest, changedCommand.evidence_digest)
+  assert.equal(base.working_tree_clean, true)
+  assert.equal(dirtyWorktree.working_tree_clean, false)
+  assert.notEqual(base.worktree_status_digest, dirtyWorktree.worktree_status_digest)
 })
 
 test('a passing explicit subset is not reported as a complete full population', () => {
-  const report = runTrackedTests({
+  const expected = populationCase('explicit-subset')
+  const report = runTrackedTestsWithFixture({
     cwd: '/repo',
     execPath: '/node',
     nodeVersion: '22.16.0',
@@ -346,14 +557,14 @@ test('a passing explicit subset is not reported as a complete full population', 
     ],
   })
 
-  assert.equal(report.status, 0)
-  assert.equal(report.population.complete, false)
+  assert.equal(report.status, expected.status)
+  assert.equal(report.population.complete, expected.complete)
   assert.deepEqual(report.population.selected, ['test/a.test.js', 'test/b.test.js'])
   assert.deepEqual(report.population.executed, ['test/a.test.js', 'test/b.test.js'])
 })
 
 test('an explicit selection equal to the full intended population can be complete', () => {
-  const report = runTrackedTests({
+  const report = runTrackedTestsWithFixture({
     cwd: '/repo',
     execPath: '/node',
     nodeVersion: '22.16.0',
@@ -388,6 +599,11 @@ test('CLI refuses a green child run when discovered population differs from inte
     writeFileSync(join(testRoot, 'a.test.js'), "import test from 'node:test'; test('passes', () => {})\n")
     execFileSync('git', ['init', '--quiet'], { cwd: root })
     execFileSync('git', ['add', 'test/a.test.js'], { cwd: root })
+    execFileSync('git', [
+      '-c', 'user.name=Revia Test',
+      '-c', 'user.email=revia-test@example.invalid',
+      'commit', '--quiet', '-m', 'population fixture',
+    ], { cwd: root })
     writeFileSync(join(testRoot, 'probe.test.js'), "import test from 'node:test'; test('probe', () => {})\n")
     const result = spawnSync(process.execPath, [RUNNER], {
       cwd: root,
@@ -404,6 +620,10 @@ test('CLI refuses a green child run when discovered population differs from inte
     assert.equal(report.status, 1)
     assert.equal(report.complete, false)
     assert.deepEqual(report.executions.map(({ outcome }) => outcome), ['passed'])
+    assert.deepEqual(
+      validateTrackedTestPopulationReport(report, { executionLog: result.stderr }),
+      { ok: true },
+    )
   } finally {
     rmSync(root, { force: true, recursive: true })
   }
@@ -458,7 +678,7 @@ test('tracked test runner rejects Node versions below the full-suite runtime flo
 
 test('tracked test runner accepts the declared Node floor and subsequent major versions', () => {
   for (const nodeVersion of ['22.16.0', '22.16.1', '23.0.0']) {
-    const result = runTrackedTests({
+    const result = runTrackedTestsWithFixture({
       cwd: '/repo',
       execPath: '/node',
       nodeVersion,

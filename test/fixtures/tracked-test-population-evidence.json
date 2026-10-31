@@ -1,0 +1,65 @@
+{
+  "cases": [
+    {
+      "complete": true,
+      "discovered": ["test/a.test.js"],
+      "executed": ["test/a.test.js"],
+      "execution_status": 0,
+      "id": "clean-full-population",
+      "intended": ["test/a.test.js"],
+      "selected": ["test/a.test.js"],
+      "status": 0
+    },
+    {
+      "complete": false,
+      "discovered": [],
+      "executed": ["test/a.test.js"],
+      "execution_status": 0,
+      "id": "discovery-truncated",
+      "intended": ["test/a.test.js"],
+      "selected": ["test/a.test.js"],
+      "status": 1
+    },
+    {
+      "complete": false,
+      "discovered": ["test/a.test.js"],
+      "executed": ["test/a.test.js", "test/b.test.js"],
+      "execution_status": 0,
+      "id": "incomplete-discovery",
+      "intended": ["test/a.test.js", "test/b.test.js"],
+      "selected": ["test/a.test.js", "test/b.test.js"],
+      "status": 1
+    },
+    {
+      "complete": false,
+      "discovered": ["test/a.test.js", "test/probe.test.js"],
+      "executed": ["test/a.test.js"],
+      "execution_status": 0,
+      "id": "unexpected-discovery",
+      "intended": ["test/a.test.js"],
+      "selected": ["test/a.test.js"],
+      "status": 1
+    },
+    {
+      "complete": false,
+      "discovered": ["test/a.test.js"],
+      "executed": [],
+      "execution_status": 1,
+      "id": "missing-execution-report",
+      "intended": ["test/a.test.js"],
+      "selected": ["test/a.test.js"],
+      "status": 1
+    },
+    {
+      "complete": false,
+      "discovered": ["test/a.test.js", "test/b.test.js"],
+      "executed": ["test/a.test.js"],
+      "execution_status": 0,
+      "id": "explicit-subset",
+      "intended": ["test/a.test.js", "test/b.test.js"],
+      "selected": ["test/a.test.js"],
+      "status": 0
+    }
+  ],
+  "schema": "revia.test-population-evidence-corpus@0.1.0"
+}
