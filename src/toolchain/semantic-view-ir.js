@@ -5,15 +5,12 @@ import { buildFactLedger } from './fact-ledger.js'
 const SCHEMA = 're.semantic-view-ir@0.2.0'
 const LOCALES = new Set(['zh-CN', 'en-US'])
 
-export function buildSemanticViewIR(project, {
-  locale = 'zh-CN',
-  ledger = null,
-} = {}) {
+export function buildSemanticViewIR(project, { locale = 'zh-CN' } = {}) {
   try {
     if (!LOCALES.has(locale)) fail('unsupported-semantic-view-locale', { locale })
-    const factLedger = ledger ?? buildFactLedger(project)
-    if (!factLedger.ok) fail(factLedger.diagnostics[0].code)
-    const facts = factLedger.value.facts.map((fact) => ({
+    const ledger = buildFactLedger(project)
+    if (!ledger.ok) fail(ledger.diagnostics[0].code)
+    const facts = ledger.value.facts.map((fact) => ({
       evidence: structuredClone(fact.evidence),
       fact_id: fact.fact_id,
       graph_revision: fact.graph_revision,

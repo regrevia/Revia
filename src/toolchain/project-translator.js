@@ -1,6 +1,5 @@
 import { createHash } from 'node:crypto'
 
-import { buildFactLedger } from './fact-ledger.js'
 import { buildSemanticViewIR } from './semantic-view-ir.js'
 import { renderProjectLocale } from './locale-renderer.js'
 
@@ -31,13 +30,11 @@ export function translateProject(project, {
     if (changedSince !== null && !DIGEST.test(changedSince)) {
       fail('invalid-project-translation-changed-since')
     }
-    const ledger = buildFactLedger(project)
-    if (!ledger.ok) fail(ledger.diagnostics[0].code)
-    const irResult = buildSemanticViewIR(project, { ledger, locale })
+    const irResult = buildSemanticViewIR(project, { locale })
     if (!irResult.ok) fail(irResult.diagnostics[0].code)
     const ir = irResult.value
     if (semanticView !== null) validateSemanticView(semanticView, ir)
-    const kinds = new Set(ledger.value.facts.map((fact) => fact.kind))
+    const kinds = new Set(ir.facts.map((fact) => fact.kind))
     for (const kind of REQUIRED_KINDS) {
       if (!kinds.has(kind)) fail('project-translation-incomplete', { kind })
     }
@@ -45,7 +42,7 @@ export function translateProject(project, {
       locale,
       media,
     })
-    const factIds = ledger.value.facts.map(({ fact_id: factId }) => factId)
+    const factIds = ir.facts.map(({ fact_id: factId }) => factId)
     const receipt = {
       changed_since: changedSince,
       fact_ids: factIds,
