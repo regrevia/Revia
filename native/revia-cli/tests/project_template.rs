@@ -5,9 +5,10 @@ use std::{
     sync::atomic::{AtomicU64, Ordering},
 };
 
+use revia_core::canonical_json::{JsonValue, canonicalize};
 use revia_core::digest::sha256_hex;
 use revia_core::project::{
-    NativeExport, NativeInterface, NativeModule, NativePackage, NativeProjectModule,
+    NativeExport, NativeInterface, NativeModule, NativePackage, NativeProjectModule, parse_json,
     serialize_project_manifest,
 };
 
@@ -331,6 +332,69 @@ fn native_project_surface_check_rejects_agent_contract_content_drift() {
 }
 
 #[test]
+fn native_project_surface_check_rejects_invalid_agent_state_machines() {
+    for (mutation, expected_code) in [
+        (
+            duplicate_agent_event as fn(&mut JsonValue),
+            "native-project-module-surface-agent-duplicate-event",
+        ),
+        (
+            terminal_agent_state_has_transition,
+            "native-project-module-surface-agent-terminal-transition",
+        ),
+        (
+            add_unreachable_agent_state,
+            "native-project-module-surface-agent-unreachable-state",
+        ),
+        (
+            remove_agent_state_outgoing_transition,
+            "native-project-module-surface-agent-missing-outgoing-transition",
+        ),
+        (
+            mark_terminal_agent_state_retryable,
+            "native-project-module-surface-agent-retryable-terminal-state",
+        ),
+    ] {
+        let project = mutated_expense_agent_contract(mutation);
+        let output = Command::new(env!("CARGO_BIN_EXE_revia"))
+            .args(["project-surface-check", project.to_str().unwrap()])
+            .output()
+            .unwrap();
+        assert!(
+            !output.status.success(),
+            "invalid Agent lifecycle mutation unexpectedly passed"
+        );
+        assert!(
+            String::from_utf8_lossy(&output.stdout).contains(expected_code),
+            "expected {expected_code}, got:\n{}",
+            String::from_utf8_lossy(&output.stdout)
+        );
+        fs::remove_dir_all(project).unwrap();
+    }
+}
+
+#[test]
+fn native_project_surface_check_accepts_agent_lifecycle_array_reordering() {
+    let project = mutated_expense_agent_contract(|contract| {
+        reverse_array_field(contract, "states");
+        reverse_array_field(contract, "events");
+        reverse_array_field(contract, "retryable_states");
+        reverse_array_field(contract, "terminal_states");
+        reverse_array_field(contract, "transitions");
+    });
+    let output = Command::new(env!("CARGO_BIN_EXE_revia"))
+        .args(["project-surface-check", project.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "reordered equivalent lifecycle contract was rejected:\n{}",
+        String::from_utf8_lossy(&output.stdout)
+    );
+    fs::remove_dir_all(project).unwrap();
+}
+
+#[test]
 fn native_project_check_binds_agent_contracts_to_project_identity() {
     let baseline = copy_expense_project();
     let drifted = expense_project_with_synchronized_agent_contract_event("audit_ping");
@@ -362,7 +426,7 @@ fn native_project_check_binds_agent_contracts_to_project_identity() {
 fn native_project_check_binds_source_only_agent_contracts_to_project_identity() {
     let baseline = temp_project("re 1.0 compact\nmodule agent.surface.main\nexport main\n");
     let with_agent = temp_project(
-        "re 1.0 compact\nmodule agent.surface.main\nexport main\nagent-declaration agent.surface.main {\"agent\":\"agent.surface.main\",\"error_type\":{\"kind\":\"primitive\",\"name\":\"text.utf8\"},\"events\":[\"ready\",\"shutdown\"],\"identity_type\":{\"kind\":\"primitive\",\"name\":\"text.utf8\"},\"initial_state\":\"created\",\"input_type\":{\"kind\":\"primitive\",\"name\":\"text.utf8\"},\"module\":\"agent.surface.main\",\"output_type\":{\"kind\":\"primitive\",\"name\":\"text.utf8\"},\"retryable_states\":[],\"schema\":\"re.agent-contract@0.1.0\",\"states\":[\"created\",\"stopped\"],\"terminal_states\":[{\"outcome\":\"stopped\",\"state\":\"stopped\"}],\"transitions\":[{\"event\":\"shutdown\",\"from\":\"created\",\"to\":\"stopped\"}]}\n",
+        "re 1.0 compact\nmodule agent.surface.main\nexport main\nagent-declaration agent.surface.main {\"agent\":\"agent.surface.main\",\"error_type\":{\"kind\":\"primitive\",\"name\":\"text.utf8\"},\"events\":[\"cancel\",\"fail\",\"stop\",\"succeed\"],\"identity_type\":{\"kind\":\"primitive\",\"name\":\"text.utf8\"},\"initial_state\":\"created\",\"input_type\":{\"kind\":\"primitive\",\"name\":\"text.utf8\"},\"module\":\"agent.surface.main\",\"output_type\":{\"kind\":\"primitive\",\"name\":\"text.utf8\"},\"retryable_states\":[],\"schema\":\"re.agent-contract@0.1.0\",\"states\":[\"cancelled\",\"created\",\"failed\",\"stopped\",\"succeeded\"],\"terminal_states\":[{\"outcome\":\"cancelled\",\"state\":\"cancelled\"},{\"outcome\":\"failed\",\"state\":\"failed\"},{\"outcome\":\"stopped\",\"state\":\"stopped\"},{\"outcome\":\"succeeded\",\"state\":\"succeeded\"}],\"transitions\":[{\"event\":\"cancel\",\"from\":\"created\",\"to\":\"cancelled\"},{\"event\":\"fail\",\"from\":\"created\",\"to\":\"failed\"},{\"event\":\"stop\",\"from\":\"created\",\"to\":\"stopped\"},{\"event\":\"succeed\",\"from\":\"created\",\"to\":\"succeeded\"}]}\n",
     );
     let baseline_output = Command::new(env!("CARGO_BIN_EXE_revia"))
         .args(["project-check", baseline.to_str().unwrap()])
@@ -608,6 +672,136 @@ fn expense_project_with_synchronized_agent_contract_event(event: &str) -> PathBu
     );
     fs::write(manifest_path, updated_manifest).unwrap();
     root
+}
+
+fn mutated_expense_agent_contract(mutate: impl Fn(&mut JsonValue)) -> PathBuf {
+    let root = copy_expense_project();
+    let module_path = root.join("modules/intake.re");
+    let original_source = fs::read_to_string(&module_path).unwrap();
+    let declaration_line = original_source
+        .lines()
+        .find(|line| line.starts_with("agent-declaration "))
+        .unwrap()
+        .to_owned();
+    let (declaration_name, json) = declaration_line
+        .strip_prefix("agent-declaration ")
+        .unwrap()
+        .split_once(' ')
+        .unwrap();
+    let mut source_contract = parse_json(json).unwrap();
+    mutate(&mut source_contract);
+    let updated_line = format!(
+        "agent-declaration {declaration_name} {}",
+        canonicalize(&source_contract)
+    );
+    let updated_source = original_source.replacen(&declaration_line, &updated_line, 1);
+    let previous_digest = format!("sha256:{}", sha256_hex(original_source.as_bytes()));
+    let updated_digest = format!("sha256:{}", sha256_hex(updated_source.as_bytes()));
+    fs::write(&module_path, &updated_source).unwrap();
+
+    let manifest_path = root.join("project.json");
+    let mut manifest = parse_json(&fs::read_to_string(&manifest_path).unwrap()).unwrap();
+    let agent = array_field_mut(&mut manifest, "agents")
+        .first_mut()
+        .unwrap();
+    mutate(agent);
+    replace_project_module_digest(&mut manifest, &previous_digest, &updated_digest);
+    fs::write(manifest_path, format!("{}\n", canonicalize(&manifest))).unwrap();
+    root
+}
+
+fn duplicate_agent_event(contract: &mut JsonValue) {
+    let events = array_field_mut(contract, "events");
+    events.push(events[0].clone());
+}
+
+fn terminal_agent_state_has_transition(contract: &mut JsonValue) {
+    array_field_mut(contract, "transitions").push(
+        parse_json("{\"event\":\"shutdown\",\"from\":\"succeeded\",\"to\":\"stopped\"}").unwrap(),
+    );
+}
+
+fn add_unreachable_agent_state(contract: &mut JsonValue) {
+    array_field_mut(contract, "states").push(JsonValue::String("orphaned".to_owned()));
+}
+
+fn remove_agent_state_outgoing_transition(contract: &mut JsonValue) {
+    array_field_mut(contract, "transitions")
+        .retain(|transition| string_field(transition, "from") != Some("ready"));
+}
+
+fn mark_terminal_agent_state_retryable(contract: &mut JsonValue) {
+    array_field_mut(contract, "retryable_states").push(JsonValue::String("succeeded".to_owned()));
+}
+
+fn reverse_array_field(value: &mut JsonValue, field: &str) {
+    array_field_mut(value, field).reverse();
+}
+
+fn array_field_mut<'a>(value: &'a mut JsonValue, field: &str) -> &'a mut Vec<JsonValue> {
+    match value {
+        JsonValue::Object(entries) => match entries
+            .iter_mut()
+            .find(|(name, _)| name == field)
+            .map(|(_, value)| value)
+        {
+            Some(JsonValue::Array(values)) => values,
+            _ => panic!("{field} is not an array"),
+        },
+        _ => panic!("value is not an object"),
+    }
+}
+
+fn string_field<'a>(value: &'a JsonValue, field: &str) -> Option<&'a str> {
+    let JsonValue::Object(entries) = value else {
+        return None;
+    };
+    entries.iter().find_map(|(name, value)| {
+        if name != field {
+            return None;
+        }
+        let JsonValue::String(value) = value else {
+            return None;
+        };
+        Some(value.as_str())
+    })
+}
+
+fn replace_project_module_digest(manifest: &mut JsonValue, old: &str, new: &str) {
+    for module in array_field_mut(manifest, "modules") {
+        if string_field(module, "name") == Some("agent.expense.intake") {
+            replace_string_field(module, "source_sha256", old, new);
+        }
+    }
+    let package = object_field_mut(manifest, "package_manifest");
+    for module in array_field_mut(package, "modules") {
+        if string_field(module, "name") == Some("agent.expense.intake") {
+            replace_string_field(module, "implementation_digest", old, new);
+        }
+    }
+}
+
+fn replace_string_field(value: &mut JsonValue, field: &str, expected: &str, replacement: &str) {
+    let JsonValue::Object(entries) = value else {
+        panic!("value is not an object");
+    };
+    let Some((_, JsonValue::String(current))) = entries.iter_mut().find(|(name, _)| name == field)
+    else {
+        panic!("missing string field {field}");
+    };
+    assert_eq!(current, expected);
+    *current = replacement.to_owned();
+}
+
+fn object_field_mut<'a>(value: &'a mut JsonValue, field: &str) -> &'a mut JsonValue {
+    let JsonValue::Object(entries) = value else {
+        panic!("value is not an object");
+    };
+    entries
+        .iter_mut()
+        .find(|(name, _)| name == field)
+        .map(|(_, value)| value)
+        .unwrap_or_else(|| panic!("missing field {field}"))
 }
 
 fn persist_expense_project_module(
