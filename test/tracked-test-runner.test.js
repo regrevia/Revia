@@ -1,6 +1,17 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import {
+  execFileSync,
+  spawnSync,
+} from 'node:child_process'
+import {
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { join } from 'node:path'
+import { tmpdir } from 'node:os'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
@@ -12,6 +23,7 @@ import {
 } from '../src/toolchain/tracked-test-runner.js'
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url))
+const RUNNER = join(ROOT, 'scripts/run-tracked-tests.js')
 
 test('tracked test runner floor matches the declared package engine', () => {
   const packageJson = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
@@ -211,6 +223,9 @@ test('tracked test runner does not count an empty test report as executed', () =
   })
 
   assert.deepEqual(report.population.executed, [])
+  assert.equal(report.population.execution_status, 1)
+  assert.equal(report.population.status, 1)
+  assert.equal(report.status, 1)
   assert.equal(report.population.complete, false)
   assert.deepEqual(report.population.executions, [{
     file: 'test/a.test.js',
@@ -219,6 +234,90 @@ test('tracked test runner does not count an empty test report as executed', () =
     tests: 0,
     outcome: 'no-report',
   }])
+})
+
+test('full population gate fails when the discovered population differs from intent', () => {
+  const report = runTrackedTests({
+    cwd: '/repo',
+    execPath: '/node',
+    nodeVersion: '22.16.0',
+    spawnSyncImpl(command) {
+      if (command === 'git') {
+        return { status: 0, stdout: Buffer.from('test/a.test.js\0test/b.test.js\0') }
+      }
+      return {
+        signal: null,
+        status: 0,
+        stdout: '<testsuites><!-- tests 1 --></testsuites>',
+      }
+    },
+    readdirSyncImpl: () => [
+      { name: 'a.test.js', isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
+    ],
+  })
+
+  assert.deepEqual(report.population.intended, ['test/a.test.js', 'test/b.test.js'])
+  assert.deepEqual(report.population.discovered, ['test/a.test.js'])
+  assert.equal(report.population.execution_status, 0)
+  assert.equal(report.population.status, 1)
+  assert.equal(report.status, 1)
+  assert.equal(report.population.complete, false)
+})
+
+test('no-defect full population control keeps a complete successful run green', () => {
+  const report = runTrackedTests({
+    cwd: '/repo',
+    execPath: '/node',
+    nodeVersion: '22.16.0',
+    spawnSyncImpl(command) {
+      if (command === 'git') {
+        return { status: 0, stdout: Buffer.from('test/a.test.js\0') }
+      }
+      return {
+        signal: null,
+        status: 0,
+        stdout: '<testsuites><!-- tests 1 --></testsuites>',
+      }
+    },
+    readdirSyncImpl: () => [
+      { name: 'a.test.js', isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
+    ],
+  })
+
+  assert.equal(report.population.execution_status, 0)
+  assert.equal(report.population.status, 0)
+  assert.equal(report.status, 0)
+  assert.equal(report.population.complete, true)
+})
+
+test('CLI refuses a green child run when discovered population differs from intent', () => {
+  const root = mkdtempSync(join(tmpdir(), 'revia-test-population-'))
+  try {
+    const testRoot = join(root, 'test')
+    mkdirSync(testRoot)
+    writeFileSync(join(testRoot, 'a.test.js'), "import test from 'node:test'; test('passes', () => {})\n")
+    execFileSync('git', ['init', '--quiet'], { cwd: root })
+    execFileSync('git', ['add', 'test/a.test.js'], { cwd: root })
+    writeFileSync(join(testRoot, 'probe.test.js'), "import test from 'node:test'; test('probe', () => {})\n")
+
+    const result = spawnSync(process.execPath, [RUNNER], {
+      cwd: root,
+      encoding: 'utf8',
+    })
+    const report = JSON.parse(result.stdout)
+
+    assert.equal(result.status, 1)
+    assert.deepEqual(report.intended, ['test/a.test.js'])
+    assert.deepEqual(report.discovered, ['test/a.test.js', 'test/probe.test.js'])
+    assert.deepEqual(report.selected, ['test/a.test.js'])
+    assert.deepEqual(report.executed, ['test/a.test.js'])
+    assert.equal(report.execution_status, 0)
+    assert.equal(report.status, 1)
+    assert.equal(report.complete, false)
+    assert.deepEqual(report.executions.map(({ outcome }) => outcome), ['passed'])
+  } finally {
+    rmSync(root, { force: true, recursive: true })
+  }
 })
 
 test('JUnit execution evidence rejects files outside the selected population', () => {

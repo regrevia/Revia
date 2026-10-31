@@ -104,9 +104,22 @@ export function runTrackedTests({
   const executed = executionEvidence
     .filter(({ tests }) => tests > 0)
     .map(({ file }) => file)
-  const status = executions.find(({ status: value }) => value !== 0)?.status ?? 0
   const signal = executions.find(({ signal: value }) => value !== null)?.signal ?? null
+  const childStatus = executions.find(({ status: value }) => value !== 0)?.status ?? 0
+  const executionStatus = signal !== null
+    || childStatus === null
+    || executionEvidence.some(({ outcome }) => outcome === 'no-report')
+    ? 1
+    : childStatus
   const executedSet = new Set(executed)
+  const fullPopulationComplete = samePopulation(population.intended, population.discovered)
+    && samePopulation(population.intended, selected)
+    && samePopulation(selected, executed)
+  const status = executionStatus === 0
+    && requested.length === 0
+    && !fullPopulationComplete
+    ? 1
+    : executionStatus
   return {
     population: {
       schema: TRACKED_TEST_RUNNER_SCHEMA,
@@ -119,13 +132,12 @@ export function runTrackedTests({
       selected,
       executed,
       executions: executionEvidence,
+      execution_status: executionStatus,
       status,
       signal,
-      complete: status === 0
+      complete: executionStatus === 0
         && signal === null
-        && samePopulation(population.intended, population.discovered)
-        && samePopulation(population.intended, selected)
-        && samePopulation(selected, executed)
+        && fullPopulationComplete,
     },
     output: executions.map(({ output }) => output).join(''),
     signal,
