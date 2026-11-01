@@ -3415,6 +3415,33 @@ fn collect_runtime_receipt_release_evidence(
     }
     let receipt = revia_core::runtime_receipt::parse_runtime_load_receipt(&receipt_source)
         .map_err(|error| error.code)?;
+    let verification_entries = parse_exact_json_object(
+        verification.as_bytes(),
+        &[
+            "loaded_bytes_digest",
+            "ok",
+            "receipt_digest",
+            "result_digest",
+            "schema",
+            "stdout_digest",
+        ],
+        "native-release-evidence-runtime-receipt-verification-invalid",
+    )?;
+    if required_json_string(&verification_entries, "schema")? != RUNTIME_RECEIPT_VERIFICATION_SCHEMA
+        || !matches!(
+            verification_entries.iter().find(|(key, _)| key == "ok"),
+            Some((_, JsonValue::Bool(true)))
+        )
+        || required_json_string(&verification_entries, "loaded_bytes_digest")?
+            != receipt.loaded_bytes_digest
+        || required_json_string(&verification_entries, "receipt_digest")? != receipt.receipt_digest
+        || required_json_string(&verification_entries, "result_digest")? != receipt.result_digest
+        || required_json_string(&verification_entries, "stdout_digest")? != receipt.stdout_digest
+    {
+        return Err(
+            "native-release-evidence-runtime-receipt-verification-authority-mismatch".to_owned(),
+        );
+    }
     Ok((
         receipt.schema,
         digest_bytes(receipt_source.as_bytes()),

@@ -510,7 +510,12 @@ gate 与签名；这些不写入私有 native 实现。
     `runtime_receipt_verification_digest` 纳入
     `re.native-release-evidence@0.5.0`。receipt 缺失、验证 drift、路径泄漏或同步重签均
     fail closed；未测量后端仍保持 `pending`。
-19. **WP-292 · project-run authority comparison（已完成内部验证）**：
+19. **WP-328 · release receipt verification semantic binding（当前工作包）**：
+    release evidence gate 现在解析并核对 receipt verification envelope 的 schema、`ok`、
+    loaded bytes、receipt、result 和 stdout digest，不能只凭 verification stdout 的摘要
+    标记 measured。verification envelope 与实际 receipt authority 不一致时，release
+    evidence 在写出前 fail closed；未测量后端仍保持 `pending`。
+20. **WP-292 · project-run authority comparison（已完成内部验证）**：
     修复 `project-workflow` comparison 不经过项目运行权威链路的问题。现在 gate 在空
     `PATH` 的 fresh native child process 中依次运行 `project-build`、`project-translate`
     和 `project-run`，将 project/module/build/translation/graph/artifact/input/

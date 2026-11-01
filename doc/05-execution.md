@@ -931,6 +931,10 @@ WP-327 将 runtime receipt verifier 接入 native `release-evidence-gate`。rele
 digest。receipt 缺失、verification drift、路径泄漏或同步重签均不能生成 measured release
 evidence；协议从 `re.native-release-evidence@0.4.0` 升级为
 `re.native-release-evidence@0.5.0`。
+gate 不只记录 verification stdout digest，还严格解析
+`re.native-runtime-load-receipt-verification@0.1.0`，核对其 schema、`ok`、loaded bytes、
+receipt、result 和 stdout digest 与实际 receipt 完全一致；只要 verification envelope
+语义错配，即使 stdout 自身有 digest，也拒绝 release evidence。
 
 当前证据覆盖 Darwin arm64 的 bounded single-Module/four-instruction slice。该 bundle
 是可移动、可离线验证的 native runtime artifact，不是发行仓库 release package，不等于
