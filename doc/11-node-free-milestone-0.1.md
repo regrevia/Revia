@@ -639,6 +639,11 @@ gate 与签名；这些不写入私有 native 实现。
     增加可选 `--project-receipt <receipt>`，默认 project-run 输出保持兼容；显式 receipt
     绑定 project/graph/module/input/translation/VM receipt/run digest，并使用 canonical
     self-digest。receipt 写失败 fail closed，当前仍不扩展为完整 trace/invocation 归档。
+26. **WP-333 · project-run receipt offline verification（当前工作包）**：
+    新增 `project-run-receipt-verify <receipt> <run>` 与
+    `re.native-project-run-receipt-verification@0.1.0`。入口只读取 receipt/run，核对
+    receipt self-digest 及 project/graph/run/VM receipt authority，不执行项目或产生 effect；
+    receipt/run drift 在 stdout 前 fail closed。
 
 ## 4. 执行纪律
 

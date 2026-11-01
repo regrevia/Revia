@@ -405,6 +405,11 @@ WP-332 增加可选的
 和 run digest，并使用 canonical self-digest。receipt 写入失败不伪装为成功，适合 AI 在不
 执行项目的情况下消费一次 project-run 的 authority 摘要。
 
+WP-333 增加 `project-run-receipt-verify <receipt> <run>` 与
+`re.native-project-run-receipt-verification@0.1.0`。该入口只读取 project receipt 与
+canonical project-run envelope，不执行项目；它核对 receipt self-digest，并比较
+project/graph/run/VM receipt authority，任一 receipt/run drift 均在 stdout 前 fail closed。
+
 WP-268 在该 authority 之上增加
 `re.native-project-execution-plan@0.1.0` 与
 `re.native-project-execution@0.1.0`。execution plan 必须显式给出 public root

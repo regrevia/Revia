@@ -197,6 +197,7 @@ Commands:
   runtime-authority-pin <bundle> <input-digest> <pin>
   runtime-receipt-verify <pin> <receipt> <result> <stdout>
   project-run-verify <run>
+  project-run-receipt-verify <receipt> <run>
   project-run [--project-receipt <receipt>] <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest>
   runtime-run [--authority-pin <pin> [--authority-receipt <receipt>]] <bundle> <input-digest> <sandbox>
   task-request <config.json> <request.json> <sandbox> <bundle.json> <review.json>
@@ -275,6 +276,9 @@ fn main() {
             runtime_receipt_verify(pin_path, receipt_path, result_path, stdout_path)
         }
         [command, run_path] if command == "project-run-verify" => project_run_verify(run_path),
+        [command, receipt_path, run_path] if command == "project-run-receipt-verify" => {
+            project_run_receipt_verify(receipt_path, run_path)
+        }
         [command, bundle_path, input_digest, sandbox_path] if command == "runtime-run" => {
             runtime_run(bundle_path, input_digest, sandbox_path, None, None)
         }
@@ -746,6 +750,9 @@ fn command_help(command: &str) -> Result<(), i32> {
         }
         "project-run-verify" => {
             "revia project-run-verify <run>\n  Verify a native project-run envelope offline without executing the project.\n"
+        }
+        "project-run-receipt-verify" => {
+            "revia project-run-receipt-verify <receipt> <run>\n  Verify a project-run authority receipt offline without executing the project.\n"
         }
         "task-request" => {
             "revia task-request <config.json> <request.json> <sandbox> <bundle.json> <review.json>\n  Reserved WP-313 reviewed-task entry; unavailable until approval-authority peer identity is verified.\n"
@@ -1232,6 +1239,54 @@ fn project_run_verify(run_path: &str) -> Result<(), i32> {
             (
                 "vm_receipt_digest".to_owned(),
                 JsonValue::String(verification.vm_receipt_digest),
+            ),
+        ])),
+    );
+    Ok(())
+}
+
+fn project_run_receipt_verify(receipt_path: &str, run_path: &str) -> Result<(), i32> {
+    let receipt_source = fs::read_to_string(receipt_path).map_err(|_| {
+        eprint_project_runtime_error("native-project-run-receipt-unreadable");
+        66
+    })?;
+    let run_source = fs::read_to_string(run_path).map_err(|_| {
+        eprint_project_runtime_error("native-project-run-unreadable");
+        66
+    })?;
+    let receipt = revia_core::project_receipt::parse_project_run_receipt(&receipt_source).map_err(
+        |code| {
+            eprint_project_runtime_error(&code);
+            65
+        },
+    )?;
+    let run = verify_project_run_serialized(&run_source).map_err(|error| {
+        eprint_project_runtime_error(&error.code);
+        65
+    })?;
+    if receipt.project_digest != run.project_digest
+        || receipt.graph_revision != run.graph_revision
+        || receipt.run_digest != run.run_digest
+        || receipt.vm_receipt_digest != run.vm_receipt_digest
+    {
+        eprint_project_runtime_error("DRIFTED");
+        return Err(65);
+    }
+    println!(
+        "{}",
+        canonicalize(&JsonValue::Object(vec![
+            ("ok".to_owned(), JsonValue::Bool(true)),
+            (
+                "receipt_digest".to_owned(),
+                JsonValue::String(receipt.receipt_digest),
+            ),
+            (
+                "run_digest".to_owned(),
+                JsonValue::String(receipt.run_digest),
+            ),
+            (
+                "schema".to_owned(),
+                JsonValue::String("re.native-project-run-receipt-verification@0.1.0".to_owned(),),
             ),
         ])),
     );
