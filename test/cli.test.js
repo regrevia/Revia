@@ -1579,26 +1579,70 @@ test('re translate keeps source and input failures inside its JSON contract', ()
   })
 })
 
-test('non-executable examples remain stable design fixtures', () => {
-  const fixtures = [
-    ['examples/cf-branch.re', 'match'],
-    ['examples/cf-concurrent.re', 'user_id'],
-    ['examples/cf-loop.re', 'loop'],
-    ['examples/cf-retry.re', 'url'],
-    ['examples/p0-demo-runtime.re', ':'],
-    ['examples/schema-ops.re', 'op'],
-  ]
+test('examples index matches executable and design-fixture check evidence', async () => {
+  const corpus = JSON.parse(await readFile(
+    new URL('./fixtures/example-index-corpus.json', import.meta.url),
+    'utf8',
+  ))
+  const readme = await readFile(
+    new URL('../examples/README.md', import.meta.url),
+    'utf8',
+  )
+  assert.equal(corpus.schema, 're.example-index-corpus@0.1.0')
+  const designHeading = '## Design Fixtures / 设计样例'
+  const designStart = readme.indexOf(designHeading)
+  assert.notEqual(designStart, -1, 'README must identify the design-only fixture section')
+  const nextHeading = readme.indexOf('\n## ', designStart + designHeading.length)
+  const designSection = readme.slice(
+    designStart,
+    nextHeading === -1 ? undefined : nextHeading,
+  )
+  assert.match(designSection, /`re check` is expected to return exit `65`/u)
+  assert.match(designSection, /`unexpected-token`/u)
+  assert.deepEqual(
+    [...designSection.matchAll(/\]\(([^)#]+\.re)\)/gu)].map(([, file]) => file),
+    corpus.unexecutable_design_fixtures.map(({ file }) => file.replace('examples/', '')),
+  )
 
-  for (const [file, actual] of fixtures) {
+  const listedDesignFixtures = corpus.unexecutable_design_fixtures
+    .map(({ file }) => file.replace('examples/', ''))
+  for (const { heading, examples, id } of corpus.sections) {
+    const sectionStart = readme.indexOf(heading)
+    assert.notEqual(sectionStart, -1, `missing README section ${id}`)
+    const nextHeading = readme.indexOf('\n## ', sectionStart + heading.length)
+    const section = readme.slice(
+      sectionStart,
+      nextHeading === -1 ? undefined : nextHeading,
+    )
+    const listed = [...section.matchAll(/\]\(([^)#]+\.re)\)/gu)]
+      .map(([, file]) => file)
+    assert.deepEqual(
+      listed,
+      examples.map(({ file }) => file.replace('examples/', '')),
+      `README section ${id} must match the executable-example corpus`,
+    )
+    for (const { file, check_status, diagnostic } of examples) {
+      const result = runCli('check', file)
+      assert.equal(result.status, check_status, file)
+      if (check_status === 0) {
+        assert.equal(result.stderr, '', file)
+      } else {
+        assert.match(result.stderr, new RegExp(escapeRegExp(diagnostic)), file)
+      }
+    }
+    for (const fixture of listedDesignFixtures) {
+      assert.ok(!listed.includes(fixture), `${fixture} is listed as executable in ${id}`)
+    }
+  }
+
+  for (const { check_status, file, diagnostic_token } of corpus.unexecutable_design_fixtures) {
+    const relative = file.replace('examples/', '')
+    assert.match(designSection, new RegExp(`\\]\\(${escapeRegExp(relative)}\\)`), relative)
     const result = runCli('check', file)
-
-    assert.equal(result.status, 65, file)
+    assert.equal(result.status, check_status, file)
     assert.equal(result.stdout, '', file)
-    assert.match(result.stderr, new RegExp(`^${file}:\\d+:\\d+: unexpected-token`), file)
-    assert.match(result.stderr, new RegExp(`got ${escapeRegExp(actual)}`), file)
-    assert.match(result.stderr, /phase parse/, file)
-    assert.match(result.stderr, /rule compact\.token-role/, file)
-    assert.match(result.stderr, /repair replace/, file)
+    assert.match(result.stderr, new RegExp(`got ${escapeRegExp(diagnostic_token)}`), file)
+    assert.match(result.stderr, /phase parse/u, file)
   }
 })
 

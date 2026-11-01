@@ -1,0 +1,59 @@
+{
+  "sections": [
+    {
+      "id": "first-run",
+      "heading": "## First Run / 第一次运行",
+      "examples": [
+        { "file": "examples/hello.re", "check_status": 0 },
+        {
+          "file": "examples/diagnostic-error.re",
+          "check_status": 65,
+          "diagnostic": "unexpected-argument"
+        }
+      ]
+    },
+    {
+      "id": "capabilities-and-control-flow",
+      "heading": "## Capabilities And Control Flow / 能力与控制流",
+      "examples": [
+        { "file": "examples/args-check.re", "check_status": 0 },
+        { "file": "examples/read-check.re", "check_status": 0 },
+        { "file": "examples/read-encoding.re", "check_status": 0 },
+        { "file": "examples/write-check.re", "check_status": 0 }
+      ]
+    }
+  ],
+  "schema": "re.example-index-corpus@0.1.0",
+  "unexecutable_design_fixtures": [
+    {
+      "check_status": 65,
+      "diagnostic_token": "match",
+      "file": "examples/cf-branch.re"
+    },
+    {
+      "check_status": 65,
+      "diagnostic_token": "loop",
+      "file": "examples/cf-loop.re"
+    },
+    {
+      "check_status": 65,
+      "diagnostic_token": "url",
+      "file": "examples/cf-retry.re"
+    },
+    {
+      "check_status": 65,
+      "diagnostic_token": "user_id",
+      "file": "examples/cf-concurrent.re"
+    },
+    {
+      "check_status": 65,
+      "diagnostic_token": ":",
+      "file": "examples/p0-demo-runtime.re"
+    },
+    {
+      "check_status": 65,
+      "diagnostic_token": "op",
+      "file": "examples/schema-ops.re"
+    }
+  ]
+}
