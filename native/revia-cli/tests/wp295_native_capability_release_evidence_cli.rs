@@ -33,10 +33,16 @@ fn release_evidence_gate_binds_fresh_project_capability_report() {
     assert!(text(&first.stdout).contains(
         "\"project_capability_schema\":\"re.native-capability-project-comparison-report@0.1.0\""
     ));
-    assert!(text(&first.stdout).contains("\"schema\":\"re.native-release-evidence@0.4.0\""));
+    assert!(text(&first.stdout).contains("\"schema\":\"re.native-release-evidence@0.5.0\""));
     assert!(text(&first.stdout).contains("\"project_capability_catalog_digest\":"));
     assert!(text(&first.stdout).contains("\"project_capability_project_digest\":"));
     assert!(text(&first.stdout).contains("\"project_capability_report_digest\":"));
+    assert!(
+        text(&first.stdout)
+            .contains("\"runtime_receipt_schema\":\"re.native-runtime-load-receipt@0.1.0\"")
+    );
+    assert!(text(&first.stdout).contains("\"runtime_receipt_digest\":"));
+    assert!(text(&first.stdout).contains("\"runtime_receipt_verification_digest\":"));
     assert!(!text(&first.stdout).contains(root.to_str().unwrap()));
 }
 

@@ -839,7 +839,7 @@ WP-295 将 project capability comparison 纳入同一 release gate。gate 在清
 `PATH` 和 fresh child processes 中重新构造固定 project capability catalog/project
 manifest，两次调用 `capability-project-comparison`，并逐项核对 project capability
 schema、catalog digest、project digest、report self-digest、stdout/file bytes 和重复
-输出。`re.native-release-evidence@0.4.0` 绑定
+输出。`re.native-release-evidence@0.5.0` 绑定
 `project_capability_schema`、`project_capability_catalog_digest`、
 `project_capability_project_digest` 与 `project_capability_report_digest`；debug binary、
 fixture/project/report drift、路径泄漏、非 canonical output、同步重签和 partial write
@@ -921,6 +921,16 @@ WP-325 增加 `runtime-receipt-verify <pin> <receipt> <result> <stdout>`。该�
 和 receipt digests；receipt、result 或 stdout 任一 drift 在输出前返回稳定失败。
 顶层 CLI usage、`help` 和命令 help inventory 同步列出该入口；未知顶层命令的 usage
 failure 也包含它，保证 AI/人类从失败提示可以发现离线验证路径。
+
+### Native release evidence receipt binding
+
+WP-327 将 runtime receipt verifier 接入 native `release-evidence-gate`。release evidence
+从同一 release binary、空 `PATH`、fresh child process 重新执行
+`runtime-package`、`runtime-authority-pin`、带 receipt 的 `runtime-run` 和
+`runtime-receipt-verify`，并绑定 receipt schema、receipt digest 与 verification-output
+digest。receipt 缺失、verification drift、路径泄漏或同步重签均不能生成 measured release
+evidence；协议从 `re.native-release-evidence@0.4.0` 升级为
+`re.native-release-evidence@0.5.0`。
 
 当前证据覆盖 Darwin arm64 的 bounded single-Module/four-instruction slice。该 bundle
 是可移动、可离线验证的 native runtime artifact，不是发行仓库 release package，不等于

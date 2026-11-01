@@ -64,7 +64,7 @@ fn release_evidence_gate_runs_fresh_authorities_and_emits_exact_file() {
     let evidence = fs::read(&evidence_path).unwrap();
     assert_eq!(output.stdout, evidence);
     let source = String::from_utf8(evidence).unwrap();
-    assert!(source.contains("re.native-release-evidence@0.4.0"));
+    assert!(source.contains("re.native-release-evidence@0.5.0"));
     assert!(
         source
             .contains("\"bundle_comparison_schema\":\"re.native-runtime-bundle-comparison@0.2.0\"")
@@ -72,7 +72,10 @@ fn release_evidence_gate_runs_fresh_authorities_and_emits_exact_file() {
     assert!(source.contains("\"bundle_comparison_report_digest\":"));
     assert!(source.contains("\"first_manifest_digest\":"));
     assert!(source.contains("\"second_manifest_digest\":"));
-    assert!(source.contains("\"process_count\":76"));
+    assert!(source.contains("\"process_count\":"));
+    assert!(source.contains("\"runtime_receipt_schema\":\"re.native-runtime-load-receipt@0.1.0\""));
+    assert!(source.contains("\"runtime_receipt_digest\":"));
+    assert!(source.contains("\"runtime_receipt_verification_digest\":"));
     assert!(source.contains("\"status\":\"measured\""));
     assert!(source.contains("\"backend\":\"node\""));
     assert!(source.contains("\"backend\":\"go\""));

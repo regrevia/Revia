@@ -7,6 +7,7 @@ const DIGEST_A: &str = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 const DIGEST_B: &str = "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 const DIGEST_C: &str = "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc";
 const DIGEST_D: &str = "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+const RECEIPT_SCHEMA: &str = "re.native-runtime-load-receipt@0.1.0";
 
 fn build() -> NativeReleaseEvidence {
     build_native_release_evidence(
@@ -28,6 +29,9 @@ fn build() -> NativeReleaseEvidence {
             NativeComparisonCandidate::pending("jvm", DIGEST_C, "not-measured"),
         ],
         DIGEST_D,
+        RECEIPT_SCHEMA,
+        DIGEST_A,
+        DIGEST_B,
         "re.native-capability-project-comparison-report@0.1.0",
         DIGEST_A,
         DIGEST_B,
@@ -41,7 +45,7 @@ fn build() -> NativeReleaseEvidence {
 fn release_evidence_binds_all_fresh_authorities_and_pending_backends() {
     let evidence = build();
     let source = serialize_native_release_evidence(&evidence).expect("canonical evidence");
-    assert!(source.contains("re.native-release-evidence@0.4.0"));
+    assert!(source.contains("re.native-release-evidence@0.5.0"));
     assert!(source.contains("\"empty_path\":true"));
     assert!(source.contains("\"release_build\":true"));
     assert!(source.contains("\"backend\":\"node\""));
@@ -75,7 +79,7 @@ fn release_evidence_rejects_promoted_or_resigned_comparison_authority() {
 #[test]
 fn release_evidence_declares_bundle_comparison_authority() {
     let evidence = build();
-    assert_eq!(evidence.schema, "re.native-release-evidence@0.4.0");
+    assert_eq!(evidence.schema, "re.native-release-evidence@0.5.0");
     let source = serialize_native_release_evidence(&evidence).unwrap();
     assert!(source.contains("\"bundle_comparison_report_digest\":"));
     assert!(
@@ -93,4 +97,19 @@ fn release_evidence_rejects_bundle_schema_or_report_drift() {
     let mut report_drift = build();
     report_drift.bundle_comparison_report_digest = DIGEST_A.to_owned();
     assert!(serialize_native_release_evidence(&report_drift).is_err());
+}
+
+#[test]
+fn release_evidence_rejects_runtime_receipt_authority_drift() {
+    let mut schema_drift = build();
+    schema_drift.runtime_receipt_schema = "re.other@9.9.9".to_owned();
+    assert!(serialize_native_release_evidence(&schema_drift).is_err());
+
+    let mut receipt_drift = build();
+    receipt_drift.runtime_receipt_digest = DIGEST_D.to_owned();
+    assert!(serialize_native_release_evidence(&receipt_drift).is_err());
+
+    let mut verification_drift = build();
+    verification_drift.runtime_receipt_verification_digest = DIGEST_D.to_owned();
+    assert!(serialize_native_release_evidence(&verification_drift).is_err());
 }

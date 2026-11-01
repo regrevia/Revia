@@ -3,7 +3,7 @@ use crate::{
     digest::sha256_hex,
 };
 
-pub const NATIVE_RELEASE_EVIDENCE_SCHEMA: &str = "re.native-release-evidence@0.4.0";
+pub const NATIVE_RELEASE_EVIDENCE_SCHEMA: &str = "re.native-release-evidence@0.5.0";
 pub const NATIVE_BUNDLE_COMPARISON_SCHEMA: &str = "re.native-runtime-bundle-comparison@0.2.0";
 pub const NATIVE_PROJECT_CAPABILITY_COMPARISON_SCHEMA: &str =
     "re.native-capability-project-comparison-report@0.1.0";
@@ -130,6 +130,9 @@ pub struct NativeReleaseEvidence {
     pub comparison: Vec<NativeComparisonCandidate>,
     pub bundle_comparison_schema: String,
     pub bundle_comparison_report_digest: String,
+    pub runtime_receipt_schema: String,
+    pub runtime_receipt_digest: String,
+    pub runtime_receipt_verification_digest: String,
     pub project_capability_schema: String,
     pub project_capability_catalog_digest: String,
     pub project_capability_project_digest: String,
@@ -160,6 +163,9 @@ pub fn build_native_release_evidence(
     comparison_fixture_digest: &str,
     comparison: Vec<NativeComparisonCandidate>,
     bundle_comparison_report_digest: &str,
+    runtime_receipt_schema: &str,
+    runtime_receipt_digest: &str,
+    runtime_receipt_verification_digest: &str,
     project_capability_schema: &str,
     project_capability_catalog_digest: &str,
     project_capability_project_digest: &str,
@@ -183,6 +189,9 @@ pub fn build_native_release_evidence(
         comparison,
         bundle_comparison_schema: NATIVE_BUNDLE_COMPARISON_SCHEMA.to_owned(),
         bundle_comparison_report_digest: bundle_comparison_report_digest.to_owned(),
+        runtime_receipt_schema: runtime_receipt_schema.to_owned(),
+        runtime_receipt_digest: runtime_receipt_digest.to_owned(),
+        runtime_receipt_verification_digest: runtime_receipt_verification_digest.to_owned(),
         project_capability_schema: project_capability_schema.to_owned(),
         project_capability_catalog_digest: project_capability_catalog_digest.to_owned(),
         project_capability_project_digest: project_capability_project_digest.to_owned(),
@@ -258,6 +267,8 @@ fn validate_content(evidence: &NativeReleaseEvidence) -> Result<(), NativeReleas
         &evidence.fault_evidence_stable_digest,
         &evidence.comparison_fixture_digest,
         &evidence.bundle_comparison_report_digest,
+        &evidence.runtime_receipt_digest,
+        &evidence.runtime_receipt_verification_digest,
     ] {
         if !is_digest(digest) {
             return Err(NativeReleaseEvidenceError::new(
@@ -268,6 +279,11 @@ fn validate_content(evidence: &NativeReleaseEvidence) -> Result<(), NativeReleas
     if evidence.bundle_comparison_schema != NATIVE_BUNDLE_COMPARISON_SCHEMA {
         return Err(NativeReleaseEvidenceError::new(
             "native-release-evidence-bundle-comparison-schema-invalid",
+        ));
+    }
+    if evidence.runtime_receipt_schema != "re.native-runtime-load-receipt@0.1.0" {
+        return Err(NativeReleaseEvidenceError::new(
+            "native-release-evidence-runtime-receipt-schema-invalid",
         ));
     }
     if evidence.project_capability_schema != NATIVE_PROJECT_CAPABILITY_COMPARISON_SCHEMA {
@@ -385,6 +401,18 @@ fn evidence_json(evidence: &NativeReleaseEvidence, include_evidence_digest: bool
         (
             "bundle_comparison_schema".to_owned(),
             JsonValue::String(evidence.bundle_comparison_schema.clone()),
+        ),
+        (
+            "runtime_receipt_digest".to_owned(),
+            JsonValue::String(evidence.runtime_receipt_digest.clone()),
+        ),
+        (
+            "runtime_receipt_schema".to_owned(),
+            JsonValue::String(evidence.runtime_receipt_schema.clone()),
+        ),
+        (
+            "runtime_receipt_verification_digest".to_owned(),
+            JsonValue::String(evidence.runtime_receipt_verification_digest.clone()),
         ),
         (
             "project_capability_catalog_digest".to_owned(),

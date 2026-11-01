@@ -171,6 +171,8 @@ const PROJECT_CAPABILITY_ENTRY_RESULT: &str = "process.status@0.1.0";
 const RUNTIME_BUNDLE_VERIFICATION_SCHEMA: &str = "re.native-runtime-bundle-verification@0.1.0";
 const RUNTIME_RECEIPT_VERIFICATION_SCHEMA: &str =
     "re.native-runtime-load-receipt-verification@0.1.0";
+const RUNTIME_RECEIPT_INPUT_DIGEST: &str =
+    "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
 const DEVELOPER_GATE_SCHEMA: &str = "re.native-developer-gate@0.1.0";
 const TOOLCHAIN_GATE_SCHEMA: &str = "re.native-toolchain-gate@0.1.0";
 static TEMP_WORKSPACE_COUNTER: AtomicU64 = AtomicU64::new(0);
@@ -3312,6 +3314,115 @@ fn collect_bundle_comparison_release_evidence(
     Ok((parsed.report_digest, process_count))
 }
 
+fn collect_runtime_receipt_release_evidence(
+    binary: &Path,
+    source_path: &Path,
+    empty_path: &Path,
+    workspace_root: &Path,
+) -> Result<(String, String, String, u32), String> {
+    let bundle_path = workspace_root.join("runtime-receipt.bundle");
+    let pin_path = workspace_root.join("runtime-receipt.pin.json");
+    let receipt_path = workspace_root.join("runtime-receipt.receipt.json");
+    let result_path = workspace_root.join("runtime-receipt.result.json");
+    let stdout_path = workspace_root.join("runtime-receipt.stdout");
+    let sandbox_path = workspace_root.join("runtime-receipt-sandbox");
+    fs::create_dir_all(&sandbox_path)
+        .map_err(|_| "native-release-evidence-runtime-receipt-sandbox-failure".to_owned())?;
+    let mut process_count = 0;
+    let package = run_native_command(
+        binary,
+        empty_path,
+        workspace_root,
+        &[
+            "runtime-package".to_owned(),
+            source_path.to_string_lossy().into_owned(),
+            bundle_path.to_string_lossy().into_owned(),
+        ],
+        &mut process_count,
+    )?;
+    require_success("runtime-package", &package)?;
+    let pin = run_native_command(
+        binary,
+        empty_path,
+        workspace_root,
+        &[
+            "runtime-authority-pin".to_owned(),
+            bundle_path.to_string_lossy().into_owned(),
+            RUNTIME_RECEIPT_INPUT_DIGEST.to_owned(),
+            pin_path.to_string_lossy().into_owned(),
+        ],
+        &mut process_count,
+    )?;
+    require_success("runtime-authority-pin", &pin)?;
+    let run = run_native_command(
+        binary,
+        empty_path,
+        workspace_root,
+        &[
+            "runtime-run".to_owned(),
+            "--authority-pin".to_owned(),
+            pin_path.to_string_lossy().into_owned(),
+            "--authority-receipt".to_owned(),
+            receipt_path.to_string_lossy().into_owned(),
+            bundle_path.to_string_lossy().into_owned(),
+            RUNTIME_RECEIPT_INPUT_DIGEST.to_owned(),
+            sandbox_path.to_string_lossy().into_owned(),
+        ],
+        &mut process_count,
+    )?;
+    require_success("runtime-run", &run)?;
+    write_atomic(&result_path, &run.stdout)
+        .map_err(|_| "native-release-evidence-runtime-receipt-result-write-failure".to_owned())?;
+    let result_source = std::str::from_utf8(&run.stdout)
+        .map_err(|_| "native-release-evidence-runtime-receipt-result-invalid".to_owned())?;
+    let result_value = parse_json(result_source)
+        .map_err(|_| "native-release-evidence-runtime-receipt-result-invalid".to_owned())?;
+    let program_stdout = match result_value {
+        JsonValue::Object(entries) => entries
+            .into_iter()
+            .find(|(key, _)| key == "program_stdout")
+            .and_then(|(_, value)| match value {
+                JsonValue::String(value) => Some(value.into_bytes()),
+                _ => None,
+            })
+            .ok_or_else(|| "native-release-evidence-runtime-receipt-stdout-invalid".to_owned())?,
+        _ => return Err("native-release-evidence-runtime-receipt-result-invalid".to_owned()),
+    };
+    write_atomic(&stdout_path, &program_stdout)
+        .map_err(|_| "native-release-evidence-runtime-receipt-stdout-write-failure".to_owned())?;
+    let verify = run_native_command(
+        binary,
+        empty_path,
+        workspace_root,
+        &[
+            "runtime-receipt-verify".to_owned(),
+            pin_path.to_string_lossy().into_owned(),
+            receipt_path.to_string_lossy().into_owned(),
+            result_path.to_string_lossy().into_owned(),
+            stdout_path.to_string_lossy().into_owned(),
+        ],
+        &mut process_count,
+    )?;
+    require_success("runtime-receipt-verify", &verify)?;
+    let receipt_source = fs::read_to_string(&receipt_path)
+        .map_err(|_| "native-release-evidence-runtime-receipt-unreadable".to_owned())?;
+    let verification = String::from_utf8(verify.stdout)
+        .map_err(|_| "native-release-evidence-runtime-receipt-verification-invalid".to_owned())?;
+    if verification.contains(workspace_root.to_string_lossy().as_ref())
+        || verification.contains(source_path.to_string_lossy().as_ref())
+    {
+        return Err("native-release-evidence-runtime-receipt-path-leak".to_owned());
+    }
+    let receipt = revia_core::runtime_receipt::parse_runtime_load_receipt(&receipt_source)
+        .map_err(|error| error.code)?;
+    Ok((
+        receipt.schema,
+        digest_bytes(receipt_source.as_bytes()),
+        digest_bytes(verification.as_bytes()),
+        process_count,
+    ))
+}
+
 fn collect_project_capability_release_evidence(
     binary: &Path,
     empty_path: &Path,
@@ -4273,6 +4384,17 @@ fn release_evidence_gate(
                 &workspace_root,
             )?;
         let (
+            runtime_receipt_schema,
+            runtime_receipt_digest,
+            runtime_receipt_verification_digest,
+            runtime_receipt_process_count,
+        ) = collect_runtime_receipt_release_evidence(
+            &binary,
+            &source_path,
+            &workspace,
+            &workspace_root,
+        )?;
+        let (
             project_capability_schema,
             project_capability_catalog_digest,
             project_capability_project_digest,
@@ -4315,6 +4437,9 @@ fn release_evidence_gate(
                 ),
             ],
             &bundle_comparison_report_digest,
+            &runtime_receipt_schema,
+            &runtime_receipt_digest,
+            &runtime_receipt_verification_digest,
             &project_capability_schema,
             &project_capability_catalog_digest,
             &project_capability_project_digest,
@@ -4328,6 +4453,7 @@ fn release_evidence_gate(
                     .saturating_add(deterministic_process_count)
                     .saturating_add(comparison_process_count)
                     .saturating_add(bundle_comparison_process_count)
+                    .saturating_add(runtime_receipt_process_count)
                     .saturating_add(project_capability_process_count),
                 node_process_count: node_report.node_process_count,
                 node_load_count: node_report.node_load_count,
@@ -4350,7 +4476,7 @@ fn release_evidence_gate(
             eprintln!(
                 "{{\"diagnostics\":[{{\"code\":{}}}],\"ok\":false,\"schema\":{}}}",
                 quote(&code),
-                quote("re.native-release-evidence@0.4.0"),
+                quote("re.native-release-evidence@0.5.0"),
             );
             Err(65)
         }

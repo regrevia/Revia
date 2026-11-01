@@ -8,6 +8,7 @@ const DIGEST_B: &str = "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 const DIGEST_C: &str = "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc";
 const DIGEST_D: &str = "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
 const PROJECT_CAPABILITY_SCHEMA: &str = "re.native-capability-project-comparison-report@0.1.0";
+const RECEIPT_SCHEMA: &str = "re.native-runtime-load-receipt@0.1.0";
 
 fn build() -> NativeReleaseEvidence {
     build_native_release_evidence(
@@ -29,6 +30,9 @@ fn build() -> NativeReleaseEvidence {
             NativeComparisonCandidate::pending("jvm", DIGEST_C, "not-measured"),
         ],
         DIGEST_D,
+        RECEIPT_SCHEMA,
+        DIGEST_A,
+        DIGEST_B,
         PROJECT_CAPABILITY_SCHEMA,
         DIGEST_A,
         DIGEST_B,
@@ -43,7 +47,7 @@ fn release_evidence_binds_project_capability_authority() {
     let evidence = build();
 
     let source = serialize_native_release_evidence(&evidence).expect("canonical evidence");
-    assert!(source.contains("re.native-release-evidence@0.4.0"));
+    assert!(source.contains("re.native-release-evidence@0.5.0"));
     assert!(source.contains(PROJECT_CAPABILITY_SCHEMA));
     assert!(source.contains("\"project_capability_catalog_digest\":"));
     assert!(source.contains("\"project_capability_project_digest\":"));

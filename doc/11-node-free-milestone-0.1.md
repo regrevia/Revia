@@ -503,7 +503,14 @@ gate 与签名；这些不写入私有 native 实现。
     修复顶层 fallback usage 与 native command help inventory 遗漏
     `runtime-receipt-verify` 的问题。未知顶层命令的 usage failure、`--help` 和
     `help <command>` 均能发现该离线验证入口，不改变运行语义或 authority。
-18. **WP-292 · project-run authority comparison（已完成内部验证）**：
+18. **WP-327 · native release evidence runtime receipt binding（当前工作包）**：
+    `release-evidence-gate` 由同一 release binary、空 `PATH` 和 fresh child process 重新执行
+    runtime package、authority pin、带 receipt 的 runtime run 与离线 receipt verify，
+    并把 `runtime_receipt_schema`、`runtime_receipt_digest` 和
+    `runtime_receipt_verification_digest` 纳入
+    `re.native-release-evidence@0.5.0`。receipt 缺失、验证 drift、路径泄漏或同步重签均
+    fail closed；未测量后端仍保持 `pending`。
+19. **WP-292 · project-run authority comparison（已完成内部验证）**：
     修复 `project-workflow` comparison 不经过项目运行权威链路的问题。现在 gate 在空
     `PATH` 的 fresh native child process 中依次运行 `project-build`、`project-translate`
     和 `project-run`，将 project/module/build/translation/graph/artifact/input/
@@ -517,7 +524,7 @@ gate 与签名；这些不写入私有 native 实现。
     `release-evidence-gate` 现在由同一 release binary 在清空环境、空 `PATH` 和 fresh
     child processes 中重新构造固定 project capability catalog/project manifest，两次
     调用 `capability-project-comparison`，并校验 report schema、catalog/project digest、
-    self-digest、stdout/file exact 和重复输出 exact。`re.native-release-evidence@0.4.0`
+    self-digest、stdout/file exact 和重复输出 exact。`re.native-release-evidence@0.5.0`
     绑定 project capability schema/catalog/project/report 四项 authority；debug binary、
     fixture/project/report drift、路径泄漏、非 canonical output、同步重签和部分写入均
     fail closed。因为新增字段是协议不兼容变更，不能继续使用 `0.3.0`。当前仍只覆盖
