@@ -485,9 +485,16 @@ gate 与签名；这些不写入私有 native 实现。
     前校验 reviewed source、graph、build artifact、bundle envelope、实际 loaded bytes、
     runtime/interpreter、command、environment input、hash/canonicalization/load-process。
     clean control 成功；bundle byte replacement、runtime/input drift 返回 `DRIFTED` 且没有
-    文件 effect。pin 是 consistency receipt，不是签名或 trust root；当前结果 receipt
-    的完整跨层绑定和未来 loader 的消费 byte guarantee 保留为 non-blocking gap。
-15. **WP-292 · project-run authority comparison（已完成内部验证）**：
+    文件 effect。pin 是 consistency receipt，不是签名或 trust root；post-run result receipt
+    由下一个工作包绑定，未来 loader 的消费 byte guarantee 保留为 non-blocking gap。
+15. **WP-324 · native runtime result authority receipt（当前工作包）**：
+    新增 `re.native-runtime-load-receipt@0.1.0` 与
+    `runtime-run --authority-pin <pin> --authority-receipt <receipt> <bundle>
+    <input-digest> <sandbox>`。receipt 绑定 pin、loaded bytes、runtime、command、input、
+    result digest、VM artifact digest、VM receipt digest 与真实 stdout digest；result、
+    stdout、receipt self-digest drift 均由重放验证返回 `DRIFTED`。当前仍是 native bounded
+    runtime bundle slice，不等于签名、独立 trust root 或完整跨平台 runtime attestation。
+16. **WP-292 · project-run authority comparison（已完成内部验证）**：
     修复 `project-workflow` comparison 不经过项目运行权威链路的问题。现在 gate 在空
     `PATH` 的 fresh native child process 中依次运行 `project-build`、`project-translate`
     和 `project-run`，将 project/module/build/translation/graph/artifact/input/

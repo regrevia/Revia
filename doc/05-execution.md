@@ -888,7 +888,29 @@ canonicalization 和 load process。`runtime-run` 先读取固定 bytes，再验
 或 trust root。
 实际 loader 若不保证传给 verifier 的 bytes 就是最终消费的 bytes，仍不能从该 schema 推导
 TOCTOU 防护；后续 loader 必须复用同一 byte snapshot。当前 CLI 只覆盖 native bounded
-runtime bundle slice，runtime result/receipt 的完整跨层绑定仍需后续工作包。
+runtime bundle slice；post-run result receipt 由 WP-324 单独绑定。
+
+### Native runtime result receipt
+
+WP-324 增加 `re.native-runtime-load-receipt@0.1.0`。使用
+`runtime-run --authority-pin <pin> --authority-receipt <receipt> <bundle>
+<input-digest> <sandbox>` 时，CLI 仍只消费 preflight 已验证的 loaded byte snapshot；成功
+执行后原子写出 receipt，绑定 pin digest、loaded bytes digest、runtime、command、input、
+result digest、VM artifact digest、VM receipt digest 和实际 stdout digest。receipt 的
+canonical self-digest 排除自身字段；重放验证会重新计算 result/stdout digest，并比较 graph、
+input 和所有 authority 字段，任一结果替换或 stdout 替换均返回 `DRIFTED`。receipt 是
+一致性/审计证据，不是签名或独立 runtime trust root；receipt 写失败不会伪装为成功。
+`loaded_bytes_digest` 来自一次读取的 bundle byte snapshot，验证、解析和执行都消费同一
+snapshot，不会按路径重新打开。`runtime`、`command` 和 input 在当前 bounded CLI slice
+是固定、严格校验的协议字段；result/receipt 使用 canonical JSON，未知字段、缺字段、
+非 canonical bytes、自摘要错误和 graph/input 不匹配均 fail closed；VM artifact identity
+由 result 中的 `vm_artifact_digest` 单独记录，bundle artifact authority 仍由 preflight
+验证。receipt
+目标使用独占临时文件、flush/sync 后 no-replace commit（Unix 使用 hard-link commit，
+其他平台使用平台 no-replace rename）；已存在或 symlink 目标拒绝，receipt 写在
+程序 stdout 已捕获且 result 已形成之后，且不包含时间戳或 nonce。
+目标父目录会先 canonicalize；当前 bounded CLI 假定该目录本身是受控、稳定的 host
+边界，不把普通路径 API 宣称为跨平台 dirfd/openat 级别的抗 parent-replacement 保证。
 
 当前证据覆盖 Darwin arm64 的 bounded single-Module/four-instruction slice。该 bundle
 是可移动、可离线验证的 native runtime artifact，不是发行仓库 release package，不等于

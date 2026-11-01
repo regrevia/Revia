@@ -18,7 +18,7 @@ pub struct RuntimeAuthorityError {
 }
 
 impl RuntimeAuthorityError {
-    fn new(code: &str) -> Self {
+    pub(crate) fn new(code: &str) -> Self {
         Self {
             code: code.to_owned(),
         }

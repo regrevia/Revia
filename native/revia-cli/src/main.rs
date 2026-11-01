@@ -142,6 +142,7 @@ use revia_core::{
         BUNDLE_COMPARISON_SCHEMA, BundleComparisonObservation, BundleComparisonReport,
         ProjectRunAuthority, parse_bundle_comparison_report, serialize_bundle_comparison_report,
     },
+    runtime_receipt::{build_runtime_load_receipt, serialize_runtime_load_receipt},
     server::{
         HttpHandler, HttpLimits, HttpRequest, HttpResponse, HttpRoute, HttpRouter, JsonKind,
         JsonSchema, JsonSchemaRegistry, ServerCancellation, ServerError, SqlStatement, SqlValue,
@@ -187,7 +188,7 @@ Commands:
   runtime-package <source> <bundle>
   runtime-verify <bundle>
   runtime-authority-pin <bundle> <input-digest> <pin>
-  runtime-run [--authority-pin <pin>] <bundle> <input-digest> <sandbox>
+  runtime-run [--authority-pin <pin> [--authority-receipt <receipt>]] <bundle> <input-digest> <sandbox>
   task-request <config.json> <request.json> <sandbox> <bundle.json> <review.json>
   approval-authority <socket> <state-dir> <policy.json>
   task-run <bundle.json> <approval-socket> <sandbox>
@@ -259,7 +260,28 @@ fn main() {
         }
         [command, bundle_path] if command == "runtime-verify" => runtime_verify(bundle_path),
         [command, bundle_path, input_digest, sandbox_path] if command == "runtime-run" => {
-            runtime_run(bundle_path, input_digest, sandbox_path, None)
+            runtime_run(bundle_path, input_digest, sandbox_path, None, None)
+        }
+        [
+            command,
+            flag,
+            authority_pin_path,
+            receipt_flag,
+            receipt_path,
+            bundle_path,
+            input_digest,
+            sandbox_path,
+        ] if command == "runtime-run"
+            && flag == "--authority-pin"
+            && receipt_flag == "--authority-receipt" =>
+        {
+            runtime_run(
+                bundle_path,
+                input_digest,
+                sandbox_path,
+                Some(authority_pin_path),
+                Some(receipt_path),
+            )
         }
         [
             command,
@@ -273,6 +295,7 @@ fn main() {
             input_digest,
             sandbox_path,
             Some(authority_pin_path),
+            None,
         ),
         [command, bundle_path, input_digest, pin_path] if command == "runtime-authority-pin" => {
             runtime_authority_pin(bundle_path, input_digest, pin_path)
@@ -675,7 +698,7 @@ fn command_help(command: &str) -> Result<(), i32> {
             "revia runtime-verify <bundle>\n  Verify a native runtime bundle offline without running program effects.\n"
         }
         "runtime-run" => {
-            "revia runtime-run [--authority-pin <pin>] <bundle> <input-digest> <sandbox>\n  Verify and execute a native runtime bundle in an explicit filesystem sandbox.\n"
+            "revia runtime-run [--authority-pin <pin> [--authority-receipt <receipt>]] <bundle> <input-digest> <sandbox>\n  Verify and execute a native runtime bundle in an explicit filesystem sandbox.\n"
         }
         "runtime-authority-pin" => {
             "revia runtime-authority-pin <bundle> <input-digest> <pin>\n  Emit a canonical load-time authority pin for runtime-run.\n"
@@ -1073,6 +1096,7 @@ fn runtime_run(
     input_digest: &str,
     sandbox_path: &str,
     authority_pin_path: Option<&str>,
+    authority_receipt_path: Option<&str>,
 ) -> Result<(), i32> {
     let bundle_bytes = fs::read(bundle_path).map_err(|_| {
         print_runtime_bundle_error("native-runtime-bundle-unreadable");
@@ -1082,23 +1106,31 @@ fn runtime_run(
         print_runtime_bundle_error("native-runtime-bundle-json-invalid");
         65
     })?;
-    if let Some(authority_pin_path) = authority_pin_path {
+    let authority_pin = if let Some(authority_pin_path) = authority_pin_path {
         let authority_pin_source = fs::read_to_string(authority_pin_path).map_err(|_| {
             print_runtime_authority_error("native-runtime-load-authority-pin-unreadable");
             66
         })?;
-        verify_runtime_load_authority(
-            &authority_pin_source,
-            &bundle_bytes,
-            "re.native-vm@0.1.0",
-            "runtime-run",
-            input_digest,
+        Some(
+            verify_runtime_load_authority(
+                &authority_pin_source,
+                &bundle_bytes,
+                "re.native-vm@0.1.0",
+                "runtime-run",
+                input_digest,
+            )
+            .map_err(|error| {
+                print_runtime_authority_error(&error.code);
+                65
+            })?,
         )
-        .map_err(|error| {
-            print_runtime_authority_error(&error.code);
-            65
-        })?;
-    }
+    } else {
+        if authority_receipt_path.is_some() {
+            print_runtime_authority_error("native-runtime-load-authority-pin-required");
+            return Err(64);
+        }
+        None
+    };
     let bundle = verify_runtime_bundle(bundle_source).map_err(|error| {
         print_runtime_bundle_error(&error.code);
         65
@@ -1150,10 +1182,30 @@ fn runtime_run(
         print_runtime_bundle_error(&error.code);
         65
     })?;
-    print_host_vm_result(&result, &program_stdout).map_err(|code| {
-        print_runtime_bundle_error(&code);
-        65
-    })?;
+    let (result_bytes, stdout_bytes) =
+        host_vm_result_bytes(&result, &program_stdout).map_err(|code| {
+            print_runtime_bundle_error(&code);
+            65
+        })?;
+    if let Some(receipt_path) = authority_receipt_path {
+        let pin = authority_pin.as_ref().ok_or(64)?;
+        let receipt =
+            build_runtime_load_receipt(pin, &result_bytes, &stdout_bytes).map_err(|error| {
+                print_runtime_authority_error(&error.code);
+                65
+            })?;
+        let receipt_source = serialize_runtime_load_receipt(&receipt).map_err(|error| {
+            print_runtime_authority_error(&error.code);
+            65
+        })?;
+        if write_authority_receipt_atomic(Path::new(receipt_path), receipt_source.as_bytes())
+            .is_err()
+        {
+            print_runtime_authority_error("native-runtime-load-receipt-write-failure");
+            return Err(74);
+        }
+    }
+    print!("{}", String::from_utf8(result_bytes).map_err(|_| 65)?);
     Ok(())
 }
 
@@ -5803,6 +5855,53 @@ fn write_atomic(path: &Path, bytes: &[u8]) -> Result<(), ()> {
     Ok(())
 }
 
+fn write_authority_receipt_atomic(path: &Path, bytes: &[u8]) -> Result<(), ()> {
+    let parent = path.parent().ok_or(())?;
+    fs::create_dir_all(parent).map_err(|_| ())?;
+    let parent = fs::canonicalize(parent).map_err(|_| ())?;
+    let file_name = path.file_name().ok_or(())?;
+    let target = parent.join(file_name);
+    if fs::symlink_metadata(&target).is_ok() {
+        return Err(());
+    }
+    let temporary = parent.join(format!(
+        ".{}.{}.{}.tmp",
+        file_name.to_string_lossy(),
+        process::id(),
+        TEMP_WORKSPACE_COUNTER.fetch_add(1, Ordering::Relaxed)
+    ));
+    let mut file = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&temporary)
+        .map_err(|_| ())?;
+    let result = (|| {
+        file.write_all(bytes).map_err(|_| ())?;
+        file.sync_all().map_err(|_| ())?;
+        #[cfg(unix)]
+        {
+            fs::hard_link(&temporary, &target).map_err(|_| ())?;
+            fs::remove_file(&temporary).map_err(|_| ())?;
+        }
+        #[cfg(not(unix))]
+        {
+            fs::rename(&temporary, &target).map_err(|_| ())?;
+        }
+        #[cfg(unix)]
+        {
+            fs::File::open(&parent)
+                .map_err(|_| ())?
+                .sync_all()
+                .map_err(|_| ())?;
+        }
+        Ok(())
+    })();
+    if result.is_err() {
+        fs::remove_file(&temporary).ok();
+    }
+    result
+}
+
 struct CliHealthHandler;
 
 impl HttpHandler for CliHealthHandler {
@@ -7594,10 +7693,22 @@ fn print_host_vm_result(
     result: &revia_core::vm::VmResult,
     program_stdout: &SharedProgramStdout,
 ) -> Result<(), String> {
-    let bytes = program_stdout.snapshot()?;
-    let text =
-        String::from_utf8(bytes).map_err(|_| "native-host-stdout-invalid-utf8".to_owned())?;
-    println!(
+    let (result_bytes, _) = host_vm_result_bytes(result, program_stdout)?;
+    print!(
+        "{}",
+        String::from_utf8(result_bytes).map_err(|_| "native-host-result-invalid-utf8".to_owned())?
+    );
+    Ok(())
+}
+
+fn host_vm_result_bytes(
+    result: &revia_core::vm::VmResult,
+    program_stdout: &SharedProgramStdout,
+) -> Result<(Vec<u8>, Vec<u8>), String> {
+    let stdout_bytes = program_stdout.snapshot()?;
+    let text = String::from_utf8(stdout_bytes.clone())
+        .map_err(|_| "native-host-stdout-invalid-utf8".to_owned())?;
+    let result = format!(
         "{{\"artifact_digest\":{},\"executor\":{},\"graph_revision\":{},\"host_profile\":{},\"input_digest\":{},\"invocations\":[{}],\"ok\":true,\"outcome\":{{\"code\":{},\"type\":{}}},\"profile\":{},\"program_stdout\":{},\"receipt_digest\":{},\"schema\":{},\"trace\":[{}]}}",
         quote(&result.artifact_digest),
         quote(&result.executor),
@@ -7635,7 +7746,7 @@ fn print_host_vm_result(
             .collect::<Vec<_>>()
             .join(","),
     );
-    Ok(())
+    Ok((format!("{result}\n").into_bytes(), stdout_bytes))
 }
 
 fn print_vm_result(result: &revia_core::vm::VmResult) {

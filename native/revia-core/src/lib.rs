@@ -31,6 +31,7 @@ pub mod replay_fault_catalog;
 pub mod runtime_authority;
 pub mod runtime_bundle;
 pub mod runtime_bundle_comparison;
+pub mod runtime_receipt;
 pub mod server;
 pub mod server_gate;
 pub mod source;
