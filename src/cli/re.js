@@ -31,6 +31,7 @@ import {
   reviewIndexSource,
   reviewSource,
   runSource,
+  runSourceFromLoadedBytesWithAuthority,
   runSourceWithRuntimeEffectReceipt,
   translateSource,
   viewSource,
@@ -78,6 +79,7 @@ async function main(arguments_) {
     programArguments,
     routesFile,
     runtimeReceipt,
+    authorityPinFile,
     write,
   } = parsed
 
@@ -303,7 +305,31 @@ async function main(arguments_) {
     return
   }
 
-  const decoded = decodeUtf8Source(sourceBytes, { file })
+  let authorityPin
+  if (authorityPinFile !== undefined) {
+    try {
+      authorityPin = JSON.parse(await readFile(authorityPinFile, 'utf8'))
+    } catch (error) {
+      process.stdout.write(serializeRunResult({
+        outcome: {
+          fault: {
+            code: error instanceof SyntaxError
+              ? 'load-time-authority-pin-json-invalid'
+              : 'load-time-authority-pin-unreadable',
+            phase: 'load-time-authority',
+          },
+          kind: 'host-fault',
+        },
+        programStdout: '',
+      }))
+      process.exitCode = EXIT_HOST_FAULT
+      return
+    }
+  }
+
+  const decoded = authorityPin === undefined
+    ? decodeUtf8Source(sourceBytes, { file })
+    : { ok: true, value: null }
   if (!decoded.ok) {
     writeSourceFailure({
       command,
@@ -551,6 +577,28 @@ async function main(arguments_) {
       return
     }
     process.stdout.write(`OK ${file}\n`)
+    return
+  }
+
+  if (authorityPin !== undefined) {
+    const result = runSourceFromLoadedBytesWithAuthority(sourceBytes, {
+      authorityPin,
+      argv: programArguments,
+      file,
+      fileSandboxRoot: dirname(resolve(file)),
+    })
+    if (format === 'json') {
+      process.stdout.write(serializeRunResult(result))
+    } else {
+      process.stderr.write('authority pin requires --format json\n')
+      process.exitCode = EXIT_USAGE
+      return
+    }
+    process.exitCode = result.outcome.kind === 'host-fault'
+      ? EXIT_HOST_FAULT
+      : result.outcome.kind === 'check-failure'
+        ? EXIT_CHECK_FAILURE
+        : result.outcome.status.code
     return
   }
 
@@ -815,6 +863,7 @@ function parseArguments(arguments_) {
   let format = 'text'
   let write = false
   let runtimeReceipt = false
+  let authorityPinFile
   if (command === 'run') {
     while (rest[0]?.startsWith('--')) {
       const option = rest.shift()
@@ -822,11 +871,17 @@ function parseArguments(arguments_) {
         format = 'json'
       } else if (option === '--runtime-receipt') {
         runtimeReceipt = true
+      } else if (option === '--authority-pin') {
+        authorityPinFile = rest.shift()
+        if (authorityPinFile === undefined) return { ok: false }
       } else {
         return { ok: false }
       }
     }
     if (runtimeReceipt && format !== 'json') return { ok: false }
+    if (authorityPinFile !== undefined && (format !== 'json' || runtimeReceipt)) {
+      return { ok: false }
+    }
   } else if (command === 'audit') {
     if (rest[0] !== '--format' || rest[1] !== 'json') return { ok: false }
     format = 'json'
@@ -879,6 +934,7 @@ function parseArguments(arguments_) {
       ok: true,
       programArguments: [],
       runtimeReceipt,
+      authorityPinFile,
       write,
     }
   }
