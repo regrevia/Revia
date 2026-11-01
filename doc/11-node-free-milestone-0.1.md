@@ -478,7 +478,16 @@ gate 与签名；这些不写入私有 native 实现。
     `re.native-runtime-bundle-verification@0.1.0` 的确定性 path-free 摘要。不需要 sandbox
     或 input digest，不创建 host bridge，不执行程序 effect；重复输出 exact，bundle drift
     在 stdout 前 fail closed。当前仍只覆盖 Darwin arm64 bounded native slice。
-14. **WP-292 · project-run authority comparison（已完成内部验证）**：
+14. **WP-323 · native runtime load-time authority pin（当前工作包）**：
+    新增 `re.native-runtime-load-authority@0.1.0` 与
+    `runtime-authority-pin <bundle> <input-digest> <pin>`；可选的
+    `runtime-run --authority-pin <pin> <bundle> <input-digest> <sandbox>` 在 host effect
+    前校验 reviewed source、graph、build artifact、bundle envelope、实际 loaded bytes、
+    runtime/interpreter、command、environment input、hash/canonicalization/load-process。
+    clean control 成功；bundle byte replacement、runtime/input drift 返回 `DRIFTED` 且没有
+    文件 effect。pin 是 consistency receipt，不是签名或 trust root；当前结果 receipt
+    的完整跨层绑定和未来 loader 的消费 byte guarantee 保留为 non-blocking gap。
+15. **WP-292 · project-run authority comparison（已完成内部验证）**：
     修复 `project-workflow` comparison 不经过项目运行权威链路的问题。现在 gate 在空
     `PATH` 的 fresh native child process 中依次运行 `project-build`、`project-translate`
     和 `project-run`，将 project/module/build/translation/graph/artifact/input/

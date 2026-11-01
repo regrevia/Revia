@@ -869,6 +869,27 @@ source + artifact `run` 逐字节相同，bundle 移动到其他目录不改变�
 input digest 或 sandbox，不创建 host bridge，不产生程序 stdout、文件写入或其他 effect；
 重复运行必须逐字节相同，损坏和同步重签 bundle 在输出前 fail closed。
 
+### Native runtime load-time authority
+
+WP-323 增加 `re.native-runtime-load-authority@0.1.0`、`runtime-authority-pin
+<bundle> <input-digest> <pin>` 和可选的
+`runtime-run --authority-pin <pin> <bundle> <input-digest> <sandbox>`。pin 绑定 reviewed
+canonical source、graph revision、build artifact、reviewed bundle digest、实际加载的
+bundle bytes digest、runtime/interpreter、命令、environment input、hash algorithm、
+canonicalization 和 load process。`runtime-run` 先读取固定 bytes，再验证 pin 和 bundle；
+任一 reviewed/loaded/runtime/command/input 不一致都返回 `DRIFTED`，不会创建 host bridge
+或产生程序 effect。
+
+`hash_algorithm` 与 `canonicalization` 不是 caller 可选择的提示，而是 verifier 固定的
+协议常量；未知或降级值在解析/验证时 fail closed。pin digest 的域是
+`canonical-json@1` 下除 `pin_digest` 外的全部固定字段，并使用
+`re.native-runtime-load-authority@0.1.0` 的字段集合；因此 self-digest 不是把自身递归
+写入 digest。该 pin 是可重放的 consistency receipt，不是签名、密钥证明、独立 custody
+或 trust root。
+实际 loader 若不保证传给 verifier 的 bytes 就是最终消费的 bytes，仍不能从该 schema 推导
+TOCTOU 防护；后续 loader 必须复用同一 byte snapshot。当前 CLI 只覆盖 native bounded
+runtime bundle slice，runtime result/receipt 的完整跨层绑定仍需后续工作包。
+
 当前证据覆盖 Darwin arm64 的 bounded single-Module/four-instruction slice。该 bundle
 是可移动、可离线验证的 native runtime artifact，不是发行仓库 release package，不等于
 完整多函数 lowering、独立 scheduler、签名/custody、公证、跨平台 runner、production

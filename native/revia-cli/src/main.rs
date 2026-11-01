@@ -130,6 +130,10 @@ use revia_core::{
         ReplayFaultKind, ReplayFaultResult, ReplayFaultWorkloadObservation,
         build_replay_fault_report, parse_replay_fault_catalog, serialize_replay_fault_report,
     },
+    runtime_authority::{
+        RUNTIME_LOAD_AUTHORITY_SCHEMA, build_runtime_load_authority_pin,
+        serialize_runtime_load_authority_pin, verify_runtime_load_authority,
+    },
     runtime_bundle::{
         RUNTIME_BUNDLE_SCHEMA, build_runtime_bundle, serialize_runtime_bundle,
         verify_runtime_bundle,
@@ -182,7 +186,8 @@ Commands:
   execute <source> <input-digest>
   runtime-package <source> <bundle>
   runtime-verify <bundle>
-  runtime-run <bundle> <input-digest> <sandbox>
+  runtime-authority-pin <bundle> <input-digest> <pin>
+  runtime-run [--authority-pin <pin>] <bundle> <input-digest> <sandbox>
   task-request <config.json> <request.json> <sandbox> <bundle.json> <review.json>
   approval-authority <socket> <state-dir> <policy.json>
   task-run <bundle.json> <approval-socket> <sandbox>
@@ -254,7 +259,23 @@ fn main() {
         }
         [command, bundle_path] if command == "runtime-verify" => runtime_verify(bundle_path),
         [command, bundle_path, input_digest, sandbox_path] if command == "runtime-run" => {
-            runtime_run(bundle_path, input_digest, sandbox_path)
+            runtime_run(bundle_path, input_digest, sandbox_path, None)
+        }
+        [
+            command,
+            flag,
+            authority_pin_path,
+            bundle_path,
+            input_digest,
+            sandbox_path,
+        ] if command == "runtime-run" && flag == "--authority-pin" => runtime_run(
+            bundle_path,
+            input_digest,
+            sandbox_path,
+            Some(authority_pin_path),
+        ),
+        [command, bundle_path, input_digest, pin_path] if command == "runtime-authority-pin" => {
+            runtime_authority_pin(bundle_path, input_digest, pin_path)
         }
         [command, catalog_path, output_path] if command == "capability-comparison" => {
             capability_comparison(catalog_path, output_path)
@@ -654,7 +675,10 @@ fn command_help(command: &str) -> Result<(), i32> {
             "revia runtime-verify <bundle>\n  Verify a native runtime bundle offline without running program effects.\n"
         }
         "runtime-run" => {
-            "revia runtime-run <bundle> <input-digest> <sandbox>\n  Verify and execute a native runtime bundle in an explicit filesystem sandbox.\n"
+            "revia runtime-run [--authority-pin <pin>] <bundle> <input-digest> <sandbox>\n  Verify and execute a native runtime bundle in an explicit filesystem sandbox.\n"
+        }
+        "runtime-authority-pin" => {
+            "revia runtime-authority-pin <bundle> <input-digest> <pin>\n  Emit a canonical load-time authority pin for runtime-run.\n"
         }
         "task-request" => {
             "revia task-request <config.json> <request.json> <sandbox> <bundle.json> <review.json>\n  Reserved WP-313 reviewed-task entry; unavailable until approval-authority peer identity is verified.\n"
@@ -1017,12 +1041,65 @@ fn runtime_verify(bundle_path: &str) -> Result<(), i32> {
     Ok(())
 }
 
-fn runtime_run(bundle_path: &str, input_digest: &str, sandbox_path: &str) -> Result<(), i32> {
+fn runtime_authority_pin(bundle_path: &str, input_digest: &str, pin_path: &str) -> Result<(), i32> {
     let bundle_source = fs::read_to_string(bundle_path).map_err(|_| {
+        print_runtime_authority_error("native-runtime-load-authority-bundle-unreadable");
+        66
+    })?;
+    let pin = build_runtime_load_authority_pin(
+        &bundle_source,
+        "re.native-vm@0.1.0",
+        "runtime-run",
+        input_digest,
+    )
+    .map_err(|error| {
+        print_runtime_authority_error(&error.code);
+        65
+    })?;
+    let output = serialize_runtime_load_authority_pin(&pin).map_err(|error| {
+        print_runtime_authority_error(&error.code);
+        65
+    })?;
+    if write_atomic(Path::new(pin_path), output.as_bytes()).is_err() {
+        print_runtime_authority_error("native-runtime-load-authority-write-failure");
+        return Err(74);
+    }
+    print!("{output}");
+    Ok(())
+}
+
+fn runtime_run(
+    bundle_path: &str,
+    input_digest: &str,
+    sandbox_path: &str,
+    authority_pin_path: Option<&str>,
+) -> Result<(), i32> {
+    let bundle_bytes = fs::read(bundle_path).map_err(|_| {
         print_runtime_bundle_error("native-runtime-bundle-unreadable");
         66
     })?;
-    let bundle = verify_runtime_bundle(&bundle_source).map_err(|error| {
+    let bundle_source = std::str::from_utf8(&bundle_bytes).map_err(|_| {
+        print_runtime_bundle_error("native-runtime-bundle-json-invalid");
+        65
+    })?;
+    if let Some(authority_pin_path) = authority_pin_path {
+        let authority_pin_source = fs::read_to_string(authority_pin_path).map_err(|_| {
+            print_runtime_authority_error("native-runtime-load-authority-pin-unreadable");
+            66
+        })?;
+        verify_runtime_load_authority(
+            &authority_pin_source,
+            &bundle_bytes,
+            "re.native-vm@0.1.0",
+            "runtime-run",
+            input_digest,
+        )
+        .map_err(|error| {
+            print_runtime_authority_error(&error.code);
+            65
+        })?;
+    }
+    let bundle = verify_runtime_bundle(bundle_source).map_err(|error| {
         print_runtime_bundle_error(&error.code);
         65
     })?;
@@ -7717,6 +7794,14 @@ fn print_runtime_bundle_error(code: &str) {
         "{{\"diagnostics\":[{{\"code\":{}}}],\"ok\":false,\"schema\":{}}}",
         quote(code),
         quote(RUNTIME_BUNDLE_SCHEMA),
+    );
+}
+
+fn print_runtime_authority_error(code: &str) {
+    eprintln!(
+        "{{\"diagnostics\":[{{\"code\":{}}}],\"ok\":false,\"schema\":{}}}",
+        quote(code),
+        quote(RUNTIME_LOAD_AUTHORITY_SCHEMA),
     );
 }
 
