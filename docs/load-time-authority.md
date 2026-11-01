@@ -6,16 +6,20 @@ build artifact, runtime/interpreter, command, environment input,
 canonicalization, hash algorithm, load process, expected loaded-byte origin,
 and an optional post-run runtime result.
 
-`verifyLoadTimeAuthority` compares an externally supplied reviewed pin with
-actual load-time observations. Source, graph, artifact, loaded-byte, runtime,
-command, environment, load-process, runtime-result, or canonicalization drift
-fails closed. `executeWithLoadTimeAuthority` performs the check before
-invoking its effect callback.
+`verifyLoadTimeAuthorityPreflight` compares the reviewed source and actual
+loaded bytes, runtime, command, environment, canonicalization, and load
+process before parsing or checking. `verifyLoadTimeAuthority` then completes
+the graph/artifact/result comparison. Source, graph, artifact, loaded-byte,
+runtime, command, environment, load-process, runtime-result, or
+canonicalization drift fails closed. `executeWithLoadTimeAuthority` performs
+the check before invoking its effect callback.
 
 The pin digest is a canonical consistency digest. It is not a signature,
-attestation, or independent trust root. The current slice is provider-neutral
-and is not yet wired into the public `re run` or native runtime entry points;
-that integration remains a separate evidence gap.
+attestation, or independent trust root. The loader-facing
+`runSourceFromLoadedBytesWithAuthority` path now uses one byte snapshot for
+preflight, parsing, checking, translation, and execution; mutated source is
+rejected as `DRIFTED` before parsing or effects. Public CLI flag and native
+runtime integration remain separate evidence gaps.
 
 The executable corpus is
 [`test/fixtures/load-time-authority.json`](../test/fixtures/load-time-authority.json),

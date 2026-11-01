@@ -8,6 +8,11 @@ import {
   executeWithLoadTimeAuthority,
   verifyLoadTimeAuthority,
 } from '../src/toolchain/load-time-authority.js'
+import {
+  checkSource,
+  runSourceFromLoadedBytesWithAuthority,
+} from '../src/toolchain/demo-toolchain.js'
+import { translateCheckedGraph } from '../src/toolchain/translation-artifact.js'
 
 const SOURCE = Buffer.from('re 0.1 canonical\nunit @main\n', 'utf8')
 const GRAPH = { graph_revision: `sha256:${'1'.repeat(64)}` }
@@ -201,4 +206,54 @@ test('authority pin digest is consistency evidence, not a runtime result claim',
     pin: reviewed.value,
     actual: actual({ runtimeResult: { status: 'failed' } }),
   }).field, 'runtime_result')
+})
+
+test('the loader snapshot reaches runtime only after authority verification', async () => {
+  const source = Buffer.from(
+    await (await import('node:fs/promises')).readFile(
+      new URL('../examples/hello.re', import.meta.url),
+    ),
+  )
+  const checked = checkSource(source.toString('utf8'), { file: 'hello.re' })
+  assert.equal(checked.ok, true)
+  const translated = translateCheckedGraph(checked.program)
+  assert.equal(translated.ok, true)
+  const authority = createLoadTimeAuthorityPin({
+    reviewedSource: source,
+    canonicalGraph: checked.program,
+    buildArtifact: Buffer.from(translated.value.canonical.bytes, 'utf8'),
+    runtime: {
+      interpreter: 're-node-reference',
+      version: process.version,
+    },
+    command: { argv: [], file: 'hello.re' },
+    environment: { argv: [] },
+    loadProcess: {
+      kind: 'source-to-interpreter',
+      loader: 're.loader@0.1.0',
+    },
+  })
+  assert.equal(authority.ok, true)
+
+  const clean = runSourceFromLoadedBytesWithAuthority(source, {
+    authorityPin: authority.value,
+    file: 'hello.re',
+  })
+  assert.equal(clean.outcome.kind, 'process-status')
+  assert.equal(clean.programStdout, 'Hello, World!\n')
+
+  const mutated = Buffer.from(`${source}mutated`, 'utf8')
+  const drifted = runSourceFromLoadedBytesWithAuthority(mutated, {
+    authorityPin: authority.value,
+    file: 'hello.re',
+  })
+  assert.deepEqual(drifted.outcome, {
+    fault: {
+      code: 'DRIFTED',
+      field: 'reviewed_source',
+      phase: 'load-time-authority',
+    },
+    kind: 'host-fault',
+  })
+  assert.equal(drifted.programStdout, '')
 })

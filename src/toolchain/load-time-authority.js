@@ -98,6 +98,35 @@ export function createLoadTimeAuthorityPin({
 
 export function verifyLoadTimeAuthority({ pin, actual } = {}) {
   try {
+    const preflight = verifyLoadTimeAuthorityPreflight({ pin, actual })
+    if (!preflight.ok) return preflight
+    if (actual.buildArtifact === undefined) {
+      return invalid('load-time-authority-actual-incomplete')
+    }
+    if (digestBytes(actual.buildArtifact) !== pin.build_artifact.digest) {
+      return drift('build_artifact')
+    }
+    if (actual.canonicalGraph === undefined
+      || digestCanonical(actual.canonicalGraph) !== pin.canonical_graph.digest) {
+      return drift('canonical_graph')
+    }
+    if (pin.runtime_result !== null
+      && (actual.runtimeResult === undefined
+        || canonicalJson(actual.runtimeResult)
+          !== canonicalJson(pin.runtime_result))) {
+      return drift('runtime_result')
+    }
+    return {
+      ok: true,
+      status: LOAD_TIME_VERIFIED_STATUS,
+    }
+  } catch {
+    return invalid('load-time-authority-actual-invalid')
+  }
+}
+
+export function verifyLoadTimeAuthorityPreflight({ pin, actual } = {}) {
+  try {
     const valid = validatePin(pin)
     if (!valid.ok) return valid
     if (actual === null || typeof actual !== 'object') {
@@ -109,28 +138,14 @@ export function verifyLoadTimeAuthority({ pin, actual } = {}) {
     if (actual.canonicalization !== pin.canonicalization) {
       return drift('canonicalization', 'load-time-canonicalization-drift')
     }
-    for (const [field, expected] of [
-      ['reviewed_source', pin.reviewed_source],
-      ['build_artifact', pin.build_artifact],
-      ['loaded_bytes', pin.load_process.loaded_bytes_digest],
+    for (const [field, value, expected] of [
+      ['reviewed_source', actual.reviewedSource, pin.reviewed_source.digest],
+      ['loaded_bytes', actual.loadedBytes, pin.load_process.loaded_bytes_digest],
     ]) {
-      const value = field === 'reviewed_source'
-        ? actual.reviewedSource
-        : field === 'build_artifact'
-          ? actual.buildArtifact
-          : actual.loadedBytes
       if (value === undefined) {
         return invalid('load-time-authority-actual-incomplete')
       }
-      const digest = digestBytes(value)
-      const expectedDigest = typeof expected === 'string'
-        ? expected
-        : expected.digest
-      if (digest !== expectedDigest) return drift(field)
-    }
-    if (actual.canonicalGraph === undefined
-      || digestCanonical(actual.canonicalGraph) !== pin.canonical_graph.digest) {
-      return drift('canonical_graph')
+      if (digestBytes(value) !== expected) return drift(field)
     }
     for (const [field, value, expected] of [
       ['runtime', actual.runtime, pin.runtime],
@@ -144,16 +159,7 @@ export function verifyLoadTimeAuthority({ pin, actual } = {}) {
     if (!sameLoadProcess(actual.loadProcess, pin.load_process)) {
       return drift('load_process')
     }
-    if (pin.runtime_result !== null
-      && (actual.runtimeResult === undefined
-        || canonicalJson(actual.runtimeResult)
-          !== canonicalJson(pin.runtime_result))) {
-      return drift('runtime_result')
-    }
-    return {
-      ok: true,
-      status: LOAD_TIME_VERIFIED_STATUS,
-    }
+    return { ok: true }
   } catch {
     return invalid('load-time-authority-actual-invalid')
   }

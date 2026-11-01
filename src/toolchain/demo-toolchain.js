@@ -24,6 +24,11 @@ import {
   buildReviewManifest,
   expandProjectReviewFact,
 } from './review-manifest.js'
+import {
+  verifyLoadTimeAuthorityPreflight,
+  verifyLoadTimeAuthority,
+} from './load-time-authority.js'
+import { decodeUtf8Source } from './source-text.js'
 
 const loadedRegistry = SchemaRegistry.load(demoSchemaDefinitions())
 if (!loadedRegistry.ok) {
@@ -160,6 +165,124 @@ export function runSourceWithRuntimeEffectReceipt(
   options = {},
 ) {
   return runSourceInternal(source, options, true)
+}
+
+export function runSourceFromLoadedBytesWithAuthority(
+  loadedBytes,
+  {
+    argv = [],
+    authorityPin,
+    file = '<input>',
+    fileSandboxRoot,
+    host = {},
+    uidFactory,
+  } = {},
+) {
+  const bytes = Buffer.from(loadedBytes ?? [])
+  const authorityPreflight = verifyLoadTimeAuthorityPreflight({
+    actual: {
+      canonicalization: authorityPin?.canonicalization,
+      command: { argv, file },
+      environment: { argv },
+      loadedBytes: bytes,
+      loadProcess: authorityPin?.load_process,
+      reviewedSource: bytes,
+      runtime: {
+        interpreter: 're-node-reference',
+        version: process.version,
+      },
+    },
+    pin: authorityPin,
+  })
+  if (!authorityPreflight.ok) {
+    return {
+      outcome: {
+        fault: {
+          code: authorityPreflight.code,
+          ...(authorityPreflight.field === undefined
+            ? {}
+            : { field: authorityPreflight.field }),
+          phase: 'load-time-authority',
+        },
+        kind: 'host-fault',
+      },
+      programStdout: '',
+    }
+  }
+  const decoded = decodeUtf8Source(bytes, { file })
+  if (!decoded.ok) {
+    return {
+      outcome: {
+        diagnostics: decoded.diagnostics,
+        kind: 'check-failure',
+      },
+      programStdout: '',
+    }
+  }
+  const checked = checkSource(decoded.value, { file, uidFactory })
+  if (!checked.ok) {
+    return {
+      outcome: {
+        diagnostics: checked.diagnostics,
+        kind: 'check-failure',
+      },
+      programStdout: '',
+    }
+  }
+  const translated = translateCheckedGraph(checked.program)
+  if (!translated.ok) {
+    return {
+      outcome: {
+        fault: {
+          code: 'load-time-authority-invalid',
+          phase: 'load-time-authority',
+        },
+        kind: 'host-fault',
+      },
+      programStdout: '',
+    }
+  }
+  const authority = verifyLoadTimeAuthority({
+    actual: {
+      buildArtifact: Buffer.from(translated.value.canonical.bytes, 'utf8'),
+      canonicalGraph: checked.program,
+      canonicalization: authorityPin?.canonicalization,
+      command: { argv, file },
+      environment: { argv },
+      loadedBytes: bytes,
+      loadProcess: authorityPin?.load_process,
+      reviewedSource: bytes,
+      runtime: {
+        interpreter: 're-node-reference',
+        version: process.version,
+      },
+    },
+    pin: authorityPin,
+  })
+  if (!authority.ok) {
+    return {
+      outcome: {
+        fault: {
+          code: authority.code,
+          ...(authority.field === undefined ? {} : { field: authority.field }),
+          phase: 'load-time-authority',
+        },
+        kind: 'host-fault',
+      },
+      programStdout: '',
+    }
+  }
+  const stdout = []
+  return runProgram({
+    check: () => checked,
+    execute: () => evaluateProgram(checked.program, {
+      argv,
+      fileSandboxRoot,
+      host,
+      stdout,
+    }),
+    readProgramStdout: () => stdout.join(''),
+  })
 }
 
 function runSourceInternal(
