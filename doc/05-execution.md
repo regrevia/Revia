@@ -409,6 +409,8 @@ WP-333 增加 `project-run-receipt-verify <receipt> <run>` 与
 `re.native-project-run-receipt-verification@0.1.0`。该入口只读取 project receipt 与
 canonical project-run envelope，不执行项目；它核对 receipt self-digest，并比较
 project/graph/run/VM receipt authority，任一 receipt/run drift 均在 stdout 前 fail closed。
+其比较域还严格包含 `module`、`input_digest` 和 `translation_digest`；receipt 自身
+self-digest 正确但这些字段与 run envelope 不一致时同样拒绝，避免只绑定较粗粒度 digest。
 
 WP-268 在该 authority 之上增加
 `re.native-project-execution-plan@0.1.0` 与

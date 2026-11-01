@@ -1266,6 +1266,9 @@ fn project_run_receipt_verify(receipt_path: &str, run_path: &str) -> Result<(), 
     })?;
     if receipt.project_digest != run.project_digest
         || receipt.graph_revision != run.graph_revision
+        || receipt.module != run.module
+        || receipt.input_digest != run.input_digest
+        || receipt.translation_digest != run.translation_digest
         || receipt.run_digest != run.run_digest
         || receipt.vm_receipt_digest != run.vm_receipt_digest
     {

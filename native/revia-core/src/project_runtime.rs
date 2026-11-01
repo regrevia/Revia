@@ -82,6 +82,9 @@ pub struct NativeProjectRun {
 pub struct NativeProjectRunVerification {
     pub graph_revision: String,
     pub project_digest: String,
+    pub module: String,
+    pub input_digest: String,
+    pub translation_digest: String,
     pub run_digest: String,
     pub vm_receipt_digest: String,
 }
@@ -800,6 +803,9 @@ pub fn verify_project_run_serialized(
     Ok(NativeProjectRunVerification {
         graph_revision: required_string(&entries, "graph_revision")?,
         project_digest: required_string(&entries, "project_digest")?,
+        module: required_string(&entries, "module")?,
+        input_digest: required_string(&entries, "input_digest")?,
+        translation_digest: required_string(&entries, "translation_digest")?,
         run_digest,
         vm_receipt_digest: required_string(&entries, "vm_receipt_digest")?,
     })
