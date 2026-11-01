@@ -27,6 +27,11 @@ fn native_cli_help_and_version_are_stable_without_input_or_path_dependencies() {
             .contains("experiment-kit <catalog> <project> <output>")
     );
     assert!(top_level.stdout.contains("runtime-verify <bundle>"));
+    assert!(
+        top_level
+            .stdout
+            .contains("runtime-receipt-verify <pin> <receipt> <result> <stdout>")
+    );
 
     let explicit = run(&root, &["help"]);
     assert_eq!(explicit.stdout, top_level.stdout);
@@ -58,6 +63,9 @@ fn native_cli_unknown_help_topic_keeps_usage_failure_contract() {
     assert_eq!(output.status.code(), Some(64));
     assert!(output.stdout.is_empty());
     assert!(output.stderr.contains("unknown-command"));
+    let usage = run(&root, &["unknown-command"]);
+    assert_eq!(usage.status.code(), Some(64));
+    assert!(usage.stderr.contains("runtime-receipt-verify"));
     assert!(fs::read_dir(&root).unwrap().next().is_none());
     cleanup(&root);
 }
@@ -78,6 +86,7 @@ fn every_supported_native_command_has_a_help_entry() {
         "runtime-package",
         "runtime-verify",
         "runtime-run",
+        "runtime-receipt-verify",
         "bundle-comparison",
         "conformance-run",
         "cross-language-matrix",

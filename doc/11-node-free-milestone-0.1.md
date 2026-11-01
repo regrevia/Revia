@@ -499,7 +499,11 @@ gate 与签名；这些不写入私有 native 实现。
     result 和 stdout，复用同一 receipt verifier，不加载 bundle、不创建 sandbox、不执行
     effect。成功输出 `re.native-runtime-load-receipt-verification@0.1.0`；receipt/result/
     stdout drift 在输出前 fail closed。当前仍是 native bounded runtime bundle slice。
-17. **WP-292 · project-run authority comparison（已完成内部验证）**：
+17. **WP-326 · native CLI receipt verification discoverability（当前工作包）**：
+    修复顶层 fallback usage 与 native command help inventory 遗漏
+    `runtime-receipt-verify` 的问题。未知顶层命令的 usage failure、`--help` 和
+    `help <command>` 均能发现该离线验证入口，不改变运行语义或 authority。
+18. **WP-292 · project-run authority comparison（已完成内部验证）**：
     修复 `project-workflow` comparison 不经过项目运行权威链路的问题。现在 gate 在空
     `PATH` 的 fresh native child process 中依次运行 `project-build`、`project-translate`
     和 `project-run`，将 project/module/build/translation/graph/artifact/input/

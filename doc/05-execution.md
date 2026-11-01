@@ -919,6 +919,8 @@ WP-325 增加 `runtime-receipt-verify <pin> <receipt> <result> <stdout>`。该�
 任何 effect。成功输出 path-free
 `re.native-runtime-load-receipt-verification@0.1.0`，包含 loaded bytes、result、stdout
 和 receipt digests；receipt、result 或 stdout 任一 drift 在输出前返回稳定失败。
+顶层 CLI usage、`help` 和命令 help inventory 同步列出该入口；未知顶层命令的 usage
+failure 也包含它，保证 AI/人类从失败提示可以发现离线验证路径。
 
 当前证据覆盖 Darwin arm64 的 bounded single-Module/four-instruction slice。该 bundle
 是可移动、可离线验证的 native runtime artifact，不是发行仓库 release package，不等于
