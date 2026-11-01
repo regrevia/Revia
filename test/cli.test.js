@@ -203,6 +203,58 @@ test('re run --authority-pin verifies the loader snapshot before execution', asy
   })
 })
 
+test('re run --authority-pin keeps pin loading failures in the host-fault envelope', async (context) => {
+  const directory = await mkdtemp(join(tmpdir(), 're-authority-pin-failure-'))
+  context.after(() => rm(directory, { force: true, recursive: true }))
+  const sourcePath = join(directory, 'hello.re')
+  await writeFile(
+    sourcePath,
+    await readFile(new URL('../examples/hello.re', import.meta.url)),
+  )
+
+  for (const [pinName, pinContent, code] of [
+    ['invalid.json', '{', 'load-time-authority-pin-json-invalid'],
+    ['wrong.json', JSON.stringify({ schema: 'wrong' }), 'load-time-authority-pin-invalid'],
+  ]) {
+    const pinPath = join(directory, pinName)
+    await writeFile(pinPath, pinContent)
+    const result = runCli(
+      'run',
+      '--format',
+      'json',
+      '--authority-pin',
+      pinPath,
+      sourcePath,
+    )
+    assert.equal(result.status, 70)
+    assert.deepEqual(JSON.parse(result.stdout), {
+      outcome: {
+        fault: {
+          code,
+          phase: 'load-time-authority',
+        },
+        kind: 'host-fault',
+      },
+      program_stdout: '',
+      schema: 're.run-result@0.1.0',
+    })
+  }
+
+  const missing = runCli(
+    'run',
+    '--format',
+    'json',
+    '--authority-pin',
+    join(directory, 'missing.json'),
+    sourcePath,
+  )
+  assert.equal(missing.status, 70)
+  assert.equal(
+    JSON.parse(missing.stdout).outcome.fault.code,
+    'load-time-authority-pin-unreadable',
+  )
+})
+
 test('re run --format json keeps check failures and unreadable input in the run envelope', () => {
   const failed = runCli(
     'run',

@@ -61,4 +61,5 @@ schemas are documented separately in [Language](language.md) and
 When a reviewed load-time authority pin is available, use
 `re run --format json --authority-pin <pin.json> <file.re>`. This opt-in path
 validates the loader-provided source bytes before parsing or effects and does
-not replace the ordinary `run` contract.
+not replace the ordinary `run` contract. It is JSON-only and cannot be
+combined with `--runtime-receipt`.
