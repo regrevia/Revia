@@ -57,3 +57,8 @@ review set. A change to the source should be checked against all four views.
 The release package is the runnable entry point. Language rules and output
 schemas are documented separately in [Language](language.md) and
 [Protocol](protocol.md).
+
+When a reviewed load-time authority pin is available, use
+`re run --format json --authority-pin <pin.json> <file.re>`. This opt-in path
+validates the loader-provided source bytes before parsing or effects and does
+not replace the ordinary `run` contract.

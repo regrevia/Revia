@@ -23,6 +23,9 @@ import {
   packageManifestDigest,
 } from '../src/toolchain/module-contract.js'
 import { graphRevision } from '../src/toolchain/structured-patch.js'
+import { checkSource } from '../src/toolchain/demo-toolchain.js'
+import { translateCheckedGraph } from '../src/toolchain/translation-artifact.js'
+import { createLoadTimeAuthorityPin } from '../src/toolchain/load-time-authority.js'
 
 const repositoryRoot = fileURLToPath(new URL('../', import.meta.url))
 const cli = fileURLToPath(new URL('../src/cli/re.js', import.meta.url))
@@ -131,6 +134,73 @@ test('re run --format json emits the versioned process-status envelope', () => {
     result.stdout,
     '{"outcome":{"kind":"process-status","status":{"code":0}},"program_stdout":"Hello, World!\\n","schema":"re.run-result@0.1.0"}\n',
   )
+})
+
+test('re run --authority-pin verifies the loader snapshot before execution', async (context) => {
+  const directory = await mkdtemp(join(tmpdir(), 're-authority-cli-'))
+  context.after(() => rm(directory, { force: true, recursive: true }))
+  const sourcePath = join(directory, 'hello.re')
+  const pinPath = join(directory, 'authority.json')
+  const source = await readFile(new URL('../examples/hello.re', import.meta.url))
+  await writeFile(sourcePath, source)
+  const checked = checkSource(source.toString('utf8'), { file: sourcePath })
+  assert.equal(checked.ok, true)
+  const translated = translateCheckedGraph(checked.program)
+  assert.equal(translated.ok, true)
+  const pin = createLoadTimeAuthorityPin({
+    reviewedSource: source,
+    canonicalGraph: checked.program,
+    buildArtifact: Buffer.from(translated.value.canonical.bytes, 'utf8'),
+    runtime: {
+      interpreter: 're-node-reference',
+      version: process.version,
+    },
+    command: {
+      argv: [],
+      file: sourcePath,
+    },
+    environment: { argv: [] },
+    loadProcess: {
+      kind: 'source-to-interpreter',
+      loader: 're.loader@0.1.0',
+    },
+  })
+  assert.equal(pin.ok, true)
+  await writeFile(pinPath, JSON.stringify(pin.value))
+
+  const clean = runCli(
+    'run',
+    '--format',
+    'json',
+    '--authority-pin',
+    pinPath,
+    sourcePath,
+  )
+  assert.equal(clean.status, 0)
+  assert.equal(JSON.parse(clean.stdout).program_stdout, 'Hello, World!\n')
+
+  await writeFile(sourcePath, Buffer.from(`${source}mutated`, 'utf8'))
+  const drifted = runCli(
+    'run',
+    '--format',
+    'json',
+    '--authority-pin',
+    pinPath,
+    sourcePath,
+  )
+  assert.equal(drifted.status, 70)
+  assert.deepEqual(JSON.parse(drifted.stdout), {
+    outcome: {
+      fault: {
+        code: 'DRIFTED',
+        field: 'reviewed_source',
+        phase: 'load-time-authority',
+      },
+      kind: 'host-fault',
+    },
+    program_stdout: '',
+    schema: 're.run-result@0.1.0',
+  })
 })
 
 test('re run --format json keeps check failures and unreadable input in the run envelope', () => {

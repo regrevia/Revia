@@ -19,7 +19,9 @@ attestation, or independent trust root. The loader-facing
 `runSourceFromLoadedBytesWithAuthority` path now uses one byte snapshot for
 preflight, parsing, checking, translation, and execution; mutated source is
 rejected as `DRIFTED` before parsing or effects. Public CLI flag and native
-runtime integration remain separate evidence gaps.
+runtime integration remain separate evidence gaps. The Node CLI exposes this
+slice as `re run --format json --authority-pin <pin.json> <file.re>`;
+`--authority-pin` is opt-in and cannot be combined with `--runtime-receipt`.
 
 The executable corpus is
 [`test/fixtures/load-time-authority.json`](../test/fixtures/load-time-authority.json),
