@@ -521,6 +521,7 @@ test('re view localizes SVG without changing fact anchors', () => {
   assert.match(english.stdout, /Readable view; not an audit conclusion\./)
   assert.match(english.stdout, />Kind<\/text>/)
   assert.match(english.stdout, />Capability<\/text>/)
+  assert.match(english.stdout, /calls @stdout\.write; access write process\.stdout/)
   assert.doesNotMatch(english.stdout, /语义视图|图修订|摘要|能力|效果|错误路径|退出码|可读翻译/u)
   assert.deepEqual(
     [...chinese.stdout.matchAll(/data-(?:fact-id|evidence-uid|revision)="([^"]+)"/gu)].map(([, value]) => value),

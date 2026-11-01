@@ -1406,7 +1406,7 @@ function svgFactSummary(fact, locale) {
     return `${fact.subject} -> ${fact.reference} (${fact.binding_kind})`
   }
   if (fact.kind === 'effect') {
-    return `${fact.subject} calls ${fact.capability_instance}.${fact.member}; ${fact.access.join(', ')}`
+    return `${fact.subject} calls ${fact.capability_instance}.${fact.member}; access ${fact.access.join(', ')}`
   }
   if (fact.kind === 'error_path') {
     return `${fact.producer_uid} ${fact.error_type} consumed by ${fact.consumer_uid}`
