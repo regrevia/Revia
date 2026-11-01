@@ -101,10 +101,32 @@ fn native_cli_project_translate_and_run_are_path_free_and_deterministic() {
         .output()
         .unwrap();
     assert!(run.status.success());
-    let run_stdout = String::from_utf8(run.stdout).unwrap();
+    let run_bytes = run.stdout.clone();
+    let run_stdout = String::from_utf8(run_bytes.clone()).unwrap();
     assert!(run_stdout.contains("\"outcome_code\":0"));
     assert!(run_stdout.contains("\"schema\":\"re.native-project-run@0.1.0\""));
     assert!(!run_stdout.contains(root.to_str().unwrap()));
+    let run_file = root.join("run.json");
+    fs::write(&run_file, &run_bytes).unwrap();
+    let verified = Command::new(env!("CARGO_BIN_EXE_revia"))
+        .args(["project-run-verify", run_file.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(verified.status.success());
+    assert!(
+        String::from_utf8_lossy(&verified.stdout)
+            .contains("re.native-project-run-verification@0.1.0")
+    );
+    let mut tampered = run_bytes;
+    let index = tampered.iter().position(|byte| *byte == b'0').unwrap();
+    tampered[index] = b'1';
+    fs::write(&run_file, tampered).unwrap();
+    let rejected = Command::new(env!("CARGO_BIN_EXE_revia"))
+        .args(["project-run-verify", run_file.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert_eq!(rejected.status.code(), Some(65));
+    assert!(rejected.stdout.is_empty());
 
     fs::remove_dir_all(root).unwrap();
     let _ = fs::remove_dir_all(cache);

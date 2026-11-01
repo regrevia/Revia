@@ -25,6 +25,7 @@ use crate::{
 
 pub const PROJECT_TRANSLATION_SCHEMA: &str = "re.native-project-translation@0.1.0";
 pub const PROJECT_RUN_SCHEMA: &str = "re.native-project-run@0.1.0";
+pub const PROJECT_RUN_VERIFICATION_SCHEMA: &str = "re.native-project-run-verification@0.1.0";
 pub const PROJECT_EXECUTION_PLAN_SCHEMA: &str = "re.native-project-execution-plan@0.1.0";
 pub const PROJECT_EXECUTION_SCHEMA: &str = "re.native-project-execution@0.1.0";
 pub const PROJECT_EXECUTION_ARTIFACT_CACHE_SCHEMA: &str =
@@ -75,6 +76,14 @@ pub struct NativeProjectRun {
     pub schema: String,
     pub translation: NativeProjectTranslation,
     pub vm: VmResult,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NativeProjectRunVerification {
+    pub graph_revision: String,
+    pub project_digest: String,
+    pub run_digest: String,
+    pub vm_receipt_digest: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -704,6 +713,95 @@ pub fn serialize_project_run(run: &NativeProjectRun) -> Result<String, ProjectRu
         ));
     }
     Ok(format!("{}\n", canonicalize(&run_json(run))))
+}
+
+pub fn verify_project_run_serialized(
+    source: &str,
+) -> Result<NativeProjectRunVerification, ProjectRuntimeError> {
+    let value = parse_json(source).map_err(|error| ProjectRuntimeError::new(&error.code))?;
+    if format!("{}\n", canonicalize(&value)) != source {
+        return Err(ProjectRuntimeError::new(
+            "native-project-run-non-canonical-source",
+        ));
+    }
+    let fields = match &value {
+        JsonValue::Object(fields) => fields.clone(),
+        _ => {
+            return Err(ProjectRuntimeError::new("native-project-run-json-invalid"));
+        }
+    };
+    let entries = exact_object(
+        &value,
+        &[
+            "artifact_digest",
+            "build_key",
+            "build_manifest_digest",
+            "graph_revision",
+            "input_digest",
+            "module",
+            "module_artifact_digest",
+            "module_cache_key",
+            "outcome_code",
+            "outcome_type",
+            "project_digest",
+            "project_graph_revision",
+            "profile",
+            "profile_digest",
+            "run_digest",
+            "schema",
+            "toolchain_digest",
+            "translation_digest",
+            "vm_receipt_digest",
+        ],
+    )
+    .map_err(|error| ProjectRuntimeError::new(&error.code))?;
+    if required_string(&entries, "schema")? != PROJECT_RUN_SCHEMA {
+        return Err(ProjectRuntimeError::new(
+            "native-project-run-schema-mismatch",
+        ));
+    }
+    for name in [
+        "artifact_digest",
+        "build_manifest_digest",
+        "graph_revision",
+        "input_digest",
+        "module_artifact_digest",
+        "module_cache_key",
+        "profile_digest",
+        "project_digest",
+        "project_graph_revision",
+        "toolchain_digest",
+        "translation_digest",
+        "vm_receipt_digest",
+        "run_digest",
+    ] {
+        validate_digest(
+            &required_string(&entries, name)?,
+            "native-project-run-digest-invalid",
+        )?;
+    }
+    let without_run_digest = JsonValue::Object(
+        fields
+            .into_iter()
+            .filter(|(key, _)| key != "run_digest")
+            .collect(),
+    );
+    let expected = format!(
+        "sha256:{}",
+        sha256_hex(canonicalize(&without_run_digest).as_bytes())
+    );
+    let run_digest = required_string(&entries, "run_digest")?;
+    if run_digest != expected {
+        return Err(ProjectRuntimeError::new(
+            "native-project-run-digest-mismatch",
+        ));
+    }
+    Ok(NativeProjectRunVerification {
+        graph_revision: required_string(&entries, "graph_revision")?,
+        project_digest: required_string(&entries, "project_digest")?,
+        run_digest,
+        vm_receipt_digest: required_string(&entries, "vm_receipt_digest")?,
+    })
 }
 
 pub fn serialize_project_execution_plan(

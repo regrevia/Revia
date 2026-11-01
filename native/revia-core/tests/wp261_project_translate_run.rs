@@ -16,6 +16,7 @@ use revia_core::{
         NativeProjectExecutionPlan, NativeProjectExecutionStep, execute_project_execution_plan,
         execute_project_module, project_translation_digest, serialize_project_execution,
         serialize_project_execution_plan, serialize_project_run, translate_project_module,
+        verify_project_run_serialized,
     },
     vm::{CapabilityBridge, CapabilityResponse, VmLimits, VmValue},
 };
@@ -96,6 +97,18 @@ fn native_project_translation_and_run_are_deterministic_and_authority_bound() {
     assert_eq!(
         serialize_project_run(&run).unwrap(),
         serialize_project_run(&run).unwrap()
+    );
+    let serialized = serialize_project_run(&run).unwrap();
+    assert_eq!(
+        verify_project_run_serialized(&serialized)
+            .unwrap()
+            .run_digest,
+        run.run_digest
+    );
+    let tampered = serialized.replace("\"outcome_code\":0", "\"outcome_code\":1");
+    assert_eq!(
+        verify_project_run_serialized(&tampered).unwrap_err().code,
+        "native-project-run-digest-mismatch"
     );
 
     let mut error_bridge = Bridge {

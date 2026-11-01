@@ -32,6 +32,7 @@ fn native_cli_help_and_version_are_stable_without_input_or_path_dependencies() {
             .stdout
             .contains("runtime-receipt-verify <pin> <receipt> <result> <stdout>")
     );
+    assert!(top_level.stdout.contains("project-run-verify <run>"));
 
     let explicit = run(&root, &["help"]);
     assert_eq!(explicit.stdout, top_level.stdout);
@@ -87,6 +88,7 @@ fn every_supported_native_command_has_a_help_entry() {
         "runtime-verify",
         "runtime-run",
         "runtime-receipt-verify",
+        "project-run-verify",
         "bundle-comparison",
         "conformance-run",
         "cross-language-matrix",

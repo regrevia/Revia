@@ -110,7 +110,7 @@ use revia_core::{
         execute_project_execution_plan_cached, execute_project_execution_plan_direct,
         execute_project_module, parse_project_execution_plan, serialize_project_execution,
         serialize_project_execution_plan, serialize_project_run, serialize_project_translation,
-        translate_project_module,
+        translate_project_module, verify_project_run_serialized,
     },
     release::{
         build_release_candidate, install_release_candidate, rollback_release,
@@ -171,6 +171,7 @@ const PROJECT_CAPABILITY_ENTRY_RESULT: &str = "process.status@0.1.0";
 const RUNTIME_BUNDLE_VERIFICATION_SCHEMA: &str = "re.native-runtime-bundle-verification@0.1.0";
 const RUNTIME_RECEIPT_VERIFICATION_SCHEMA: &str =
     "re.native-runtime-load-receipt-verification@0.1.0";
+const PROJECT_RUN_VERIFICATION_SCHEMA: &str = "re.native-project-run-verification@0.1.0";
 const RUNTIME_RECEIPT_INPUT_DIGEST: &str =
     "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
 const DEVELOPER_GATE_SCHEMA: &str = "re.native-developer-gate@0.1.0";
@@ -194,6 +195,7 @@ Commands:
   runtime-verify <bundle>
   runtime-authority-pin <bundle> <input-digest> <pin>
   runtime-receipt-verify <pin> <receipt> <result> <stdout>
+  project-run-verify <run>
   runtime-run [--authority-pin <pin> [--authority-receipt <receipt>]] <bundle> <input-digest> <sandbox>
   task-request <config.json> <request.json> <sandbox> <bundle.json> <review.json>
   approval-authority <socket> <state-dir> <policy.json>
@@ -270,6 +272,7 @@ fn main() {
         {
             runtime_receipt_verify(pin_path, receipt_path, result_path, stdout_path)
         }
+        [command, run_path] if command == "project-run-verify" => project_run_verify(run_path),
         [command, bundle_path, input_digest, sandbox_path] if command == "runtime-run" => {
             runtime_run(bundle_path, input_digest, sandbox_path, None, None)
         }
@@ -673,7 +676,7 @@ fn main() {
         }
         _ => {
             eprintln!(
-                "Usage: revia <check|lex|digest|canonical|manifest|translate> <file> | compile <source> <artifact> | execute <source> <input-digest> | runtime-package <source> <bundle> | runtime-verify <bundle> | runtime-authority-pin <bundle> <input-digest> <pin> | runtime-receipt-verify <pin> <receipt> <result> <stdout> | runtime-run <bundle> <input-digest> <sandbox> | capability-comparison <catalog> <output> | capability-project-comparison <catalog> <project> <cache> <build> <profile-digest> <toolchain-digest> <output> | conformance-run <source> <input-digest> <transcript> | cross-language-matrix <source> <input-digest> <transcript> <node-result> <output> | replay-catalog <catalog> <output> | comparison-catalog <catalog> <project> <output> | experiment-kit <catalog> <project> <output> | replay-fault-catalog <catalog> <output> | replay-fault-corpus <corpus> <output> | replay-fault-corpus-gate <corpus> <evidence> | verify <graph> <artifact> | run <graph> <artifact> <input-digest> | project-init <directory> | project-check <project> | project-test <project> | project-scale <project> | project-execute-plan <project> <plan> <profile-digest> <toolchain-digest> <input-digest> | project-execute-plan-direct <project> <plan> <profile-digest> <toolchain-digest> <input-digest> | project-execute-plan-cached <project> <plan> <execution-cache> <profile-digest> <toolchain-digest> <input-digest> | project-execute <project> <module> <profile-digest> <toolchain-digest> <input-digest> | project-benchmark <project> <module> <profile-digest> <toolchain-digest> <input-digest> <report> | project-translate <project> <cache> <build> <profile-digest> <toolchain-digest> <module> | project-run <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest> | project-run-sandbox <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest> <sandbox> | project-build <project> <cache> <build> <profile-digest> <toolchain-digest> | server-smoke | project-server-smoke <project> <module> <profile-digest> <toolchain-digest> <input-digest> | release-package <binary> <candidate> <target> <source-digest> <toolchain-digest> | release-verify <candidate> <target> <source-digest> <toolchain-digest> | release-install <candidate> <target> <source-digest> <toolchain-digest> | release-rollback <install> <target> <source-digest> <toolchain-digest> | release-matrix <target> <output> | node-free-gate <source> <project> <module> <report> | developer-gate <project> <module> <input-digest> <report> | toolchain-gate <source> <project> <module> <input-digest> <report> | release-evidence-gate <source> <project> <module> <fault-corpus> <evidence>"
+                "Usage: revia <check|lex|digest|canonical|manifest|translate> <file> | compile <source> <artifact> | execute <source> <input-digest> | runtime-package <source> <bundle> | runtime-verify <bundle> | runtime-authority-pin <bundle> <input-digest> <pin> | runtime-receipt-verify <pin> <receipt> <result> <stdout> | project-run-verify <run> | runtime-run <bundle> <input-digest> <sandbox> | capability-comparison <catalog> <output> | capability-project-comparison <catalog> <project> <cache> <build> <profile-digest> <toolchain-digest> <output> | conformance-run <source> <input-digest> <transcript> | cross-language-matrix <source> <input-digest> <transcript> <node-result> <output> | replay-catalog <catalog> <output> | comparison-catalog <catalog> <project> <output> | experiment-kit <catalog> <project> <output> | replay-fault-catalog <catalog> <output> | replay-fault-corpus <corpus> <output> | replay-fault-corpus-gate <corpus> <evidence> | verify <graph> <artifact> | run <graph> <artifact> <input-digest> | project-init <directory> | project-check <project> | project-test <project> | project-scale <project> | project-execute-plan <project> <plan> <profile-digest> <toolchain-digest> <input-digest> | project-execute-plan-direct <project> <plan> <profile-digest> <toolchain-digest> <input-digest> | project-execute-plan-cached <project> <plan> <execution-cache> <profile-digest> <toolchain-digest> <input-digest> | project-execute <project> <module> <profile-digest> <toolchain-digest> <input-digest> | project-benchmark <project> <module> <profile-digest> <toolchain-digest> <input-digest> <report> | project-translate <project> <cache> <build> <profile-digest> <toolchain-digest> <module> | project-run <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest> | project-run-sandbox <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest> <sandbox> | project-build <project> <cache> <build> <profile-digest> <toolchain-digest> | server-smoke | project-server-smoke <project> <module> <profile-digest> <toolchain-digest> <input-digest> | release-package <binary> <candidate> <target> <source-digest> <toolchain-digest> | release-verify <candidate> <target> <source-digest> <toolchain-digest> | release-install <candidate> <target> <source-digest> <toolchain-digest> | release-rollback <install> <target> <source-digest> <toolchain-digest> | release-matrix <target> <output> | node-free-gate <source> <project> <module> <report> | developer-gate <project> <module> <input-digest> <report> | toolchain-gate <source> <project> <module> <input-digest> <report> | release-evidence-gate <source> <project> <module> <fault-corpus> <evidence>"
             );
             Err(64)
         }
@@ -716,6 +719,9 @@ fn command_help(command: &str) -> Result<(), i32> {
         }
         "runtime-receipt-verify" => {
             "revia runtime-receipt-verify <pin> <receipt> <result> <stdout>\n  Verify a runtime result receipt offline without executing the bundle.\n"
+        }
+        "project-run-verify" => {
+            "revia project-run-verify <run>\n  Verify a native project-run envelope offline without executing the project.\n"
         }
         "task-request" => {
             "revia task-request <config.json> <request.json> <sandbox> <bundle.json> <review.json>\n  Reserved WP-313 reviewed-task entry; unavailable until approval-authority peer identity is verified.\n"
@@ -1164,6 +1170,44 @@ fn runtime_receipt_verify(
             (
                 "stdout_digest".to_owned(),
                 JsonValue::String(receipt.stdout_digest),
+            ),
+        ])),
+    );
+    Ok(())
+}
+
+fn project_run_verify(run_path: &str) -> Result<(), i32> {
+    let source = fs::read_to_string(run_path).map_err(|_| {
+        eprint_project_runtime_error("native-project-run-unreadable");
+        66
+    })?;
+    let verification = verify_project_run_serialized(&source).map_err(|error| {
+        eprint_project_runtime_error(&error.code);
+        65
+    })?;
+    println!(
+        "{}",
+        canonicalize(&JsonValue::Object(vec![
+            (
+                "graph_revision".to_owned(),
+                JsonValue::String(verification.graph_revision),
+            ),
+            ("ok".to_owned(), JsonValue::Bool(true)),
+            (
+                "project_digest".to_owned(),
+                JsonValue::String(verification.project_digest),
+            ),
+            (
+                "run_digest".to_owned(),
+                JsonValue::String(verification.run_digest),
+            ),
+            (
+                "schema".to_owned(),
+                JsonValue::String(PROJECT_RUN_VERIFICATION_SCHEMA.to_owned()),
+            ),
+            (
+                "vm_receipt_digest".to_owned(),
+                JsonValue::String(verification.vm_receipt_digest),
             ),
         ])),
     );

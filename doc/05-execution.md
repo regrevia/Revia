@@ -380,6 +380,13 @@ path-free 字段。当前仍是单 Module/四指令 executable slice，不是完
 lowering、真实 Server request dispatcher、structured scheduler、production backend
 或 Stable V1.0。
 
+WP-329 增加 `project-run-verify <run>` 与
+`re.native-project-run-verification@0.1.0`。该入口只读取并严格解析一个 canonical
+`re.native-project-run@0.1.0` envelope，重算其 `run_digest`，核对 schema、全部固定字段
+和 VM receipt digest，不重新执行项目或创建 host effect。result drift、未知/缺失字段、
+非 canonical bytes 和同步重签均在 stdout 前 fail closed；它是 project-run envelope 的
+离线完整性验证，不替代从当前 project/build 重建完整语义 authority。
+
 WP-268 在该 authority 之上增加
 `re.native-project-execution-plan@0.1.0` 与
 `re.native-project-execution@0.1.0`。execution plan 必须显式给出 public root

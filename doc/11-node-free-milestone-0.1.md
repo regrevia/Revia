@@ -618,6 +618,13 @@ gate 与签名；这些不写入私有 native 实现。
     双次 fresh empty-PATH CLI 输出逐字节一致且 path-free。证据仍只覆盖 Darwin arm64
     bounded native comparison harness，不代表跨语言性能、公平 benchmark、其他平台、
     production backend、签名/custody 或 Stable V1.0。
+22. **WP-329 · native project-run offline verification（当前工作包）**：
+    新增 `project-run-verify <run>` 与
+    `re.native-project-run-verification@0.1.0`。入口只读取 canonical
+    `re.native-project-run@0.1.0`，重算 `run_digest`，核对固定字段和 VM receipt digest，
+    不重新执行项目或创建 host effect；result drift、未知字段、非 canonical bytes 和同步
+    重签均 fail closed。该包只证明 envelope 完整性，不替代当前 project/build authority
+    的重新构建。
 
 ## 4. 执行纪律
 
