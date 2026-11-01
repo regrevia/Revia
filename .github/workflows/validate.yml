@@ -34,7 +34,28 @@ jobs:
           sh scripts/validate-public-tree.sh
           gitleaks dir --redact .
       - name: Run Node conformance suite
-        run: npm test
+        shell: bash
+        run: |
+          set +e
+          evidence_dir="$RUNNER_TEMP/revia-node-test-population"
+          mkdir -p "$evidence_dir"
+          : > "$evidence_dir/node-test-runner.error"
+          node scripts/run-tracked-tests.js > "$evidence_dir/node-test-population.json" 2> "$evidence_dir/node-test-execution.log"
+          status=$?
+          if [ "$status" -ne 0 ] && [ ! -s "$evidence_dir/node-test-population.json" ]; then
+            printf '%s\n' "node-test-runner exited with status $status" > "$evidence_dir/node-test-runner.error"
+          fi
+          exit "$status"
+      - name: Upload Node population evidence
+        if: always()
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4
+        with:
+          name: node-test-population-${{ matrix.node-version }}
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/revia-node-test-population/node-test-population.json
+            ${{ runner.temp }}/revia-node-test-population/node-test-execution.log
+            ${{ runner.temp }}/revia-node-test-population/node-test-runner.error
 
   native:
     name: Native Rust conformance

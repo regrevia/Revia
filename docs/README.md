@@ -16,6 +16,7 @@ under [`doc/`](../doc/).
 | Check current claims and limits / 查看当前能力边界 | [`development-status.md`](development-status.md) |
 | Compare target support / 查看目标兼容性 | [`compatibility.md`](compatibility.md) |
 | Read the execution and CLI contracts / 阅读执行与 CLI 契约 | [`execution-contract.md`](execution-contract.md), [`protocol.md`](protocol.md) |
+| Interpret Node test population evidence / 解读 Node 测试人口证据 | [`test-population-evidence.md`](test-population-evidence.md) |
 | Inspect historical RC1 evidence / 查看历史 RC1 证据 | [`evidence.md`](evidence.md), [`../experiments/rc1/`](../experiments/rc1/) |
 | Understand release requirements / 了解发行要求 | [`release-policy.md`](release-policy.md), [`stable-release-gate.md`](stable-release-gate.md) |
 | Integrate a host or protocol / 集成宿主或协议 | [`integration.md`](integration.md), [`server-conformance.md`](server-conformance.md) |
