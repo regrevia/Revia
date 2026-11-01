@@ -387,6 +387,11 @@ WP-329 增加 `project-run-verify <run>` 与
 非 canonical bytes 和同步重签均在 stdout 前 fail closed；它是 project-run envelope 的
 离线完整性验证，不替代从当前 project/build 重建完整语义 authority。
 
+WP-330 将该 verifier 接入 `bundle-comparison` 与 project-workflow comparison 的
+`project_run` authority 解析路径。comparison 不再只检查字段形状和 caller 提供的
+`run_digest`，而是先按同一 canonical `re.native-project-run@0.1.0` 规则重算 digest；
+同步重签的 project-run 即使字段自洽，也会在 comparison report 写出前拒绝。
+
 WP-268 在该 authority 之上增加
 `re.native-project-execution-plan@0.1.0` 与
 `re.native-project-execution@0.1.0`。execution plan 必须显式给出 public root

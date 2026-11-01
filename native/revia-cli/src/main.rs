@@ -2480,6 +2480,9 @@ fn parse_project_translation_facts(source: &[u8]) -> Result<ProjectTranslationFa
 }
 
 fn parse_project_run_authority(source: &[u8]) -> Result<ProjectRunAuthority, String> {
+    let source_text = std::str::from_utf8(source)
+        .map_err(|_| "native-runtime-bundle-comparison-project-run-invalid".to_owned())?;
+    verify_project_run_serialized(source_text).map_err(|error| error.code.to_owned())?;
     let entries = parse_exact_json_object(
         source,
         &[

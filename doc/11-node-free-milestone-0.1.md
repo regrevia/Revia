@@ -625,6 +625,11 @@ gate 与签名；这些不写入私有 native 实现。
     不重新执行项目或创建 host effect；result drift、未知字段、非 canonical bytes 和同步
     重签均 fail closed。该包只证明 envelope 完整性，不替代当前 project/build authority
     的重新构建。
+23. **WP-330 · project-run authority reuse in comparisons（当前工作包）**：
+    `bundle-comparison` 与 project-workflow comparison 在解析 `project_run` authority
+    时复用 `verify_project_run_serialized`，先重算 canonical `run_digest`，再进入
+    artifact/graph/input/receipt/outcome 对齐；project-run 同步重签或非 canonical bytes
+    在 comparison report 写出前 fail closed。
 
 ## 4. 执行纪律
 
