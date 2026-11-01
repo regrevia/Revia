@@ -72,6 +72,7 @@ test('tracked test runner floor matches the declared package engine', () => {
 
 test('Node validation uploads machine population and execution evidence', () => {
   const workflow = readFileSync(join(ROOT, '.github/workflows/validate.yml'), 'utf8')
+  assert.match(workflow, /concurrency:\s*\n\s+group: source-validation-\$\{\{\s*github\.workflow\s*\}\}-\$\{\{\s*github\.ref\s*\}\}\s*\n\s+cancel-in-progress: true/u)
   assert.match(workflow, /evidence_dir="\$RUNNER_TEMP\/revia-node-test-population"/u)
   assert.match(workflow, /node scripts\/run-tracked-tests\.js > "\$evidence_dir\/node-test-population\.json" 2> "\$evidence_dir\/node-test-execution\.log"/u)
   assert.match(workflow, /name: Upload Node population evidence/u)
