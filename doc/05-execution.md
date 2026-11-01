@@ -337,7 +337,11 @@ verifier 后，才写入 build-key 目录的临时目录并 rename 发布。prev
 当前 native CLI 提供 `project-check <project>`、
 `project-init <directory>`、`project-test <project>` 与
 `project-build <project> <cache> <build> <profile-digest> <toolchain-digest>`；这些命令
-只输出稳定、无本地路径的 JSON。`project-init` 只接受不存在或空目录，生成固定的
+只输出稳定 JSON，错误诊断不得包含本机绝对路径。`project-check` 与
+`project-surface-check` 对 `unlisted-project-file` 附加 root-relative、正斜杠分隔的
+`diagnostics[].path`；所有未列文件按完整相对路径的 UTF-8 字节序排序，native 报告首项，
+使 Node/native 修复线索一致且可复现。其他诊断没有位置证据时仍只输出稳定 `code`。
+`project-init` 只接受不存在或空目录，生成固定的
 `revia.app` 单 Module starter（`modules/main.re` + canonical `project.json`），写入
 失败会清理本轮创建的文件，不覆盖非空目录。`project-test` 重新加载 project authority，
 按拓扑序对每个 Module 运行 native translation/check gate，输出

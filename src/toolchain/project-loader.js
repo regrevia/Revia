@@ -124,10 +124,11 @@ export async function loadProjectDirectory(rootDirectory) {
     loaded.push({ entry, path: filePath, source })
   }
 
-  for (const file of await declaredFilesUnderRoot(root)) {
-    if (!declaredFiles.has(file)) {
+  const unlistedFiles = (await declaredFilesUnderRoot(root))
+    .filter((file) => !declaredFiles.has(file))
+    .sort(compareText)
+  for (const file of unlistedFiles) {
       diagnostics.push({ code: 'unlisted-project-file', path: file })
-    }
   }
 
   const packageResult = validatePackageManifest(manifest.package_manifest)
@@ -880,7 +881,7 @@ async function declaredFilesUnderRoot(root) {
     for (const entry of await readdir(directory, { withFileTypes: true })) {
       const path = resolve(directory, entry.name)
       if (entry.isDirectory()) await visit(path)
-      else result.push(relative(root, path))
+      else result.push(relative(root, path).split(sep).join('/'))
     }
   }
   await visit(root)

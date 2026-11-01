@@ -2,7 +2,7 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     fs::{self, OpenOptions},
     io::Write,
-    path::{Component, Path, PathBuf},
+    path::{Component, Path},
 };
 
 use crate::{
@@ -30,6 +30,34 @@ impl ProjectError {
         Self {
             code: code.to_owned(),
         }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectLoadError {
+    pub code: String,
+    pub path: Option<String>,
+}
+
+impl ProjectLoadError {
+    fn new(code: &str) -> Self {
+        Self {
+            code: code.to_owned(),
+            path: None,
+        }
+    }
+
+    fn with_path(code: &str, path: String) -> Self {
+        Self {
+            code: code.to_owned(),
+            path: Some(path),
+        }
+    }
+}
+
+impl From<ProjectError> for ProjectLoadError {
+    fn from(error: ProjectError) -> Self {
+        Self::new(&error.code)
     }
 }
 
@@ -484,11 +512,18 @@ pub fn package_manifest_digest(package: &NativePackage) -> Result<String, Projec
 pub fn load_project_directory(
     root_directory: impl AsRef<Path>,
 ) -> Result<NativeProject, ProjectError> {
+    load_project_directory_with_diagnostics(root_directory)
+        .map_err(|error| ProjectError::new(&error.code))
+}
+
+pub fn load_project_directory_with_diagnostics(
+    root_directory: impl AsRef<Path>,
+) -> Result<NativeProject, ProjectLoadError> {
     let root = fs::canonicalize(root_directory.as_ref())
-        .map_err(|_| ProjectError::new("project-root-unreadable"))?;
+        .map_err(|_| ProjectLoadError::new("project-root-unreadable"))?;
     let manifest_path = root.join("project.json");
     let manifest_source = fs::read_to_string(&manifest_path)
-        .map_err(|_| ProjectError::new("project-manifest-unreadable"))?;
+        .map_err(|_| ProjectLoadError::new("project-manifest-unreadable"))?;
     let document = parse_json(&manifest_source)?;
     let (project_modules, package, agents, allowed_capabilities, resources) =
         parse_project_manifest(&document)?;
@@ -502,7 +537,7 @@ pub fn load_project_directory(
         .values()
         .any(|(module, _)| !module_names.contains(module.as_str()))
     {
-        return Err(ProjectError::new("project-agent-module-not-found"));
+        return Err(ProjectLoadError::new("project-agent-module-not-found"));
     }
 
     let mut declared = BTreeSet::from(["project.json".to_owned()]);
@@ -514,12 +549,12 @@ pub fn load_project_directory(
         let metadata = fs::symlink_metadata(&source_path)
             .map_err(|_| ProjectError::new("project-module-source-missing"))?;
         if metadata.file_type().is_symlink() {
-            return Err(ProjectError::new("project-module-symlink-not-allowed"));
+            return Err(ProjectLoadError::new("project-module-symlink-not-allowed"));
         }
         let real_source = fs::canonicalize(&source_path)
             .map_err(|_| ProjectError::new("project-module-source-missing"))?;
         if !real_source.starts_with(&root) {
-            return Err(ProjectError::new("project-module-path-escapes-root"));
+            return Err(ProjectLoadError::new("project-module-path-escapes-root"));
         }
         let bytes = fs::read(&real_source)
             .map_err(|_| ProjectError::new("project-module-source-unreadable"))?;
@@ -527,12 +562,14 @@ pub fn load_project_directory(
             .map_err(|_| ProjectError::new("project-module-source-invalid-utf8"))?;
         for (agent, authority) in module_agent_identities(source, &module.name)? {
             if source_agents.insert(agent, authority).is_some() {
-                return Err(ProjectError::new("duplicate-project-agent"));
+                return Err(ProjectLoadError::new("duplicate-project-agent"));
             }
         }
         let actual = sha256_digest(&bytes);
         if actual != module.source_sha256 {
-            return Err(ProjectError::new("project-module-source-digest-mismatch"));
+            return Err(ProjectLoadError::new(
+                "project-module-source-digest-mismatch",
+            ));
         }
         declared.insert(module.path.clone());
         let package_module = package
@@ -541,7 +578,7 @@ pub fn load_project_directory(
             .find(|candidate| candidate.name == module.name)
             .ok_or_else(|| ProjectError::new("project-module-not-in-package-manifest"))?;
         if package_module.implementation_digest != actual {
-            return Err(ProjectError::new(
+            return Err(ProjectLoadError::new(
                 "project-module-implementation-digest-mismatch",
             ));
         }
@@ -554,14 +591,17 @@ pub fn load_project_directory(
             source_sha256: actual,
         });
     }
-    if let Some(path) = first_unlisted_file(&root, &root, &declared)? {
-        return Err(ProjectError::new_with_detail(
-            "unlisted-project-file",
-            path.to_string_lossy().as_ref(),
-        ));
+    let mut project_files = Vec::new();
+    collect_project_files(&root, &root, &mut project_files)?;
+    project_files.sort_by(|left, right| left.as_bytes().cmp(right.as_bytes()));
+    if let Some(path) = project_files
+        .into_iter()
+        .find(|path| !declared.contains(path) && !is_project_metadata(path))
+    {
+        return Err(ProjectLoadError::with_path("unlisted-project-file", path));
     }
     if !source_agents.is_empty() && !agents.is_empty() && source_agents != agents {
-        return Err(ProjectError::new("project-agent-authority-mismatch"));
+        return Err(ProjectLoadError::new("project-agent-authority-mismatch"));
     }
     let agents = if agents.is_empty() {
         source_agents
@@ -3402,16 +3442,15 @@ fn validate_relative_path(value: &str) -> Result<(), ProjectError> {
     Ok(())
 }
 
-fn first_unlisted_file(
+fn collect_project_files(
     root: &Path,
     directory: &Path,
-    declared: &BTreeSet<String>,
-) -> Result<Option<PathBuf>, ProjectError> {
-    let mut entries = fs::read_dir(directory)
+    files: &mut Vec<String>,
+) -> Result<(), ProjectError> {
+    let entries = fs::read_dir(directory)
         .map_err(|_| ProjectError::new("project-root-unreadable"))?
         .collect::<Result<Vec<_>, _>>()
         .map_err(|_| ProjectError::new("project-root-unreadable"))?;
-    entries.sort_by_key(|left| left.file_name());
     for entry in entries {
         let path = entry.path();
         let relative = path
@@ -3423,14 +3462,12 @@ fn first_unlisted_file(
             .file_type()
             .map_err(|_| ProjectError::new("project-root-unreadable"))?;
         if file_type.is_dir() {
-            if let Some(found) = first_unlisted_file(root, &path, declared)? {
-                return Ok(Some(found));
-            }
-        } else if !declared.contains(&relative) && !is_project_metadata(&relative) {
-            return Ok(Some(path));
+            collect_project_files(root, &path, files)?;
+        } else {
+            files.push(relative);
         }
     }
-    Ok(None)
+    Ok(())
 }
 
 fn is_project_metadata(relative: &str) -> bool {
@@ -3445,12 +3482,6 @@ fn unique_nonce() -> u128 {
         .duration_since(std::time::UNIX_EPOCH)
         .map(|duration| duration.as_nanos())
         .unwrap_or(0)
-}
-
-impl ProjectError {
-    fn new_with_detail(_code: &str, _detail: &str) -> Self {
-        Self::new(_code)
-    }
 }
 
 pub fn parse_json(source: &str) -> Result<JsonValue, ProjectError> {

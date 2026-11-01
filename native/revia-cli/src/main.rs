@@ -102,7 +102,8 @@ use revia_core::{
     parser::{parse_source, tokenize_source},
     project::{
         NativeExport, NativeInterface, NativeModule, NativePackage, NativeProjectModule,
-        build_project, load_project_directory, parse_json, serialize_build_manifest,
+        ProjectLoadError, build_project, load_project_directory,
+        load_project_directory_with_diagnostics, parse_json, serialize_build_manifest,
         serialize_project_graph, serialize_project_manifest, validate_enterprise_project_scale,
     },
     project_receipt::{build_project_run_receipt, serialize_project_run_receipt},
@@ -6525,8 +6526,8 @@ fn translate(path: &str) -> Result<(), i32> {
 }
 
 fn project_check(path: &str) -> Result<(), i32> {
-    let project = load_project_directory(path).map_err(|error| {
-        print_project_error(&error.code);
+    let project = load_project_directory_with_diagnostics(path).map_err(|error| {
+        print_project_load_error(&error, "re.native-project-result@0.1.0");
         65
     })?;
     let graph = serialize_project_graph(&project).map_err(|error| {
@@ -6538,8 +6539,8 @@ fn project_check(path: &str) -> Result<(), i32> {
 }
 
 fn project_surface_check(path: &str) -> Result<(), i32> {
-    let project = load_project_directory(path).map_err(|error| {
-        print_project_surface_error(&error.code);
+    let project = load_project_directory_with_diagnostics(path).map_err(|error| {
+        print_project_load_error(&error, "re.native-project-surface-result@0.1.0");
         65
     })?;
     revia_core::project::validate_project_module_surfaces(path, &project).map_err(|error| {
@@ -8309,6 +8310,20 @@ fn print_project_error(code: &str) {
         "{{\"diagnostics\":[{{\"code\":{}}}],\"ok\":false,\"schema\":{}}}",
         quote(code),
         quote("re.native-project-result@0.1.0"),
+    );
+}
+
+fn print_project_load_error(error: &ProjectLoadError, schema: &str) {
+    let path = error
+        .path
+        .as_ref()
+        .map(|path| format!(",\"path\":{}", quote(path)))
+        .unwrap_or_default();
+    println!(
+        "{{\"diagnostics\":[{{\"code\":{}{}}}],\"ok\":false,\"schema\":{}}}",
+        quote(&error.code),
+        path,
+        quote(schema),
     );
 }
 

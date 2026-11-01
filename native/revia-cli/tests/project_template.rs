@@ -33,6 +33,118 @@ fn checked_in_project_template_passes_native_project_check() {
 }
 
 #[test]
+fn native_project_check_reports_unlisted_file_as_project_relative_path() {
+    let project = temp_project("re 1.0 compact\nmodule agent.surface.main\nexport main\n");
+    fs::create_dir(project.join("notes")).unwrap();
+    fs::write(project.join("notes/extra.txt"), "not declared\n").unwrap();
+
+    let output = Command::new(env!("CARGO_BIN_EXE_revia"))
+        .args(["project-check", project.to_str().unwrap()])
+        .output()
+        .unwrap();
+
+    assert_eq!(output.status.code(), Some(65));
+    assert_eq!(output.stderr, b"");
+    assert_eq!(
+        String::from_utf8(output.stdout).unwrap(),
+        "{\"diagnostics\":[{\"code\":\"unlisted-project-file\",\"path\":\"notes/extra.txt\"}],\"ok\":false,\"schema\":\"re.native-project-result@0.1.0\"}\n",
+    );
+    fs::remove_dir_all(project).unwrap();
+}
+
+#[test]
+fn native_project_check_matches_shared_unlisted_file_diagnostic_corpus() {
+    let corpus = parse_json(include_str!(
+        "../../../test/fixtures/project-check-diagnostic-corpus.json"
+    ))
+    .unwrap();
+    assert_eq!(
+        corpus_string(object_field(&corpus, "schema")),
+        "re.project-check-diagnostic-corpus@0.1.0"
+    );
+    let JsonValue::Array(cases) = object_field(&corpus, "cases") else {
+        panic!("project-check diagnostic corpus cases must be an array");
+    };
+
+    for case in cases {
+        let project = temp_project("re 1.0 compact\nmodule agent.surface.main\nexport main\n");
+        let JsonValue::Array(unlisted_files) = object_field(case, "unlisted_files") else {
+            panic!("unlisted_files must be an array");
+        };
+        let mut expected_paths = unlisted_files
+            .iter()
+            .map(|path| corpus_string(path).to_owned())
+            .collect::<Vec<_>>();
+        expected_paths.sort_by(|left, right| left.as_bytes().cmp(right.as_bytes()));
+        for relative_path in unlisted_files {
+            let relative_path = corpus_string(relative_path);
+            let file_path = project.join(relative_path);
+            fs::create_dir_all(file_path.parent().unwrap()).unwrap();
+            fs::write(file_path, "not declared\n").unwrap();
+        }
+
+        match object_field(case, "expected_path") {
+            JsonValue::Null => {
+                let output = Command::new(env!("CARGO_BIN_EXE_revia"))
+                    .args(["project-check", project.to_str().unwrap()])
+                    .output()
+                    .unwrap();
+                assert!(
+                    output.status.success(),
+                    "{}",
+                    corpus_string(object_field(case, "id"))
+                );
+                assert!(
+                    String::from_utf8_lossy(&output.stdout)
+                        .contains("re.native-project-graph@0.1.0"),
+                );
+            }
+            JsonValue::String(expected_path) => {
+                assert_eq!(
+                    expected_paths.first().map(String::as_str),
+                    Some(expected_path.as_str())
+                );
+                for (command, schema) in [
+                    ("project-check", "re.native-project-result@0.1.0"),
+                    (
+                        "project-surface-check",
+                        "re.native-project-surface-result@0.1.0",
+                    ),
+                ] {
+                    let output = Command::new(env!("CARGO_BIN_EXE_revia"))
+                        .args([command, project.to_str().unwrap()])
+                        .output()
+                        .unwrap();
+                    assert_eq!(
+                        output.status.code(),
+                        Some(65),
+                        "{}: {}",
+                        corpus_string(object_field(case, "id")),
+                        command,
+                    );
+                    assert_eq!(output.stderr, b"");
+                    let stdout = String::from_utf8(output.stdout).unwrap();
+                    assert_eq!(
+                        stdout,
+                        format!(
+                            "{{\"diagnostics\":[{{\"code\":\"unlisted-project-file\",\"path\":{}}}],\"ok\":false,\"schema\":{}}}\n",
+                            revia_core::canonical_json::quote(expected_path),
+                            revia_core::canonical_json::quote(schema),
+                        ),
+                        "{}: {}",
+                        corpus_string(object_field(case, "id")),
+                        command,
+                    );
+                    assert!(!stdout.contains(project.to_str().unwrap()));
+                }
+            }
+            _ => panic!("expected_path must be a string or null"),
+        }
+        fs::remove_dir_all(project).unwrap();
+    }
+}
+
+#[test]
 fn checked_in_projection_routes_are_project_metadata() {
     let project = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../examples/agent-expense-review")
@@ -523,6 +635,23 @@ fn json_field(source: &str, field: &str) -> String {
         .unwrap_or_else(|| panic!("missing {field} in {source}"))
         + marker.len();
     source[start..].split('"').next().unwrap().to_owned()
+}
+
+fn object_field<'a>(value: &'a JsonValue, name: &str) -> &'a JsonValue {
+    let JsonValue::Object(fields) = value else {
+        panic!("expected object while reading {name}");
+    };
+    fields
+        .iter()
+        .find_map(|(key, value)| (key == name).then_some(value))
+        .unwrap_or_else(|| panic!("missing field {name}"))
+}
+
+fn corpus_string(value: &JsonValue) -> &str {
+    let JsonValue::String(value) = value else {
+        panic!("expected string value");
+    };
+    value
 }
 
 fn temp_project(source: &str) -> PathBuf {

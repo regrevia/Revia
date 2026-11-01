@@ -655,6 +655,11 @@ gate 与签名；这些不写入私有 native 实现。
     `re.native-project-execution@0.1.0` 的 canonical execution digest、plan/profile/
     toolchain/project/input authority 与嵌套 steps。多步 envelope 的同步重签、嵌套 run
     drift、缺失 step 和非 canonical bytes 在消费前 fail closed；当前 CLI 输出兼容不变。
+28. **WP-338 · native project-check location diagnostics（当前工作包）**：
+    `unlisted-project-file` 在 native `project-check`/`project-surface-check` envelope
+    中返回 root-relative `diagnostics[].path`，不泄漏绝对路径；多个未列文件按完整相对路径
+    UTF-8 字节序选择首个。共享 `re.project-check-diagnostic-corpus@0.1.0` 同时约束 Node/native
+    的根路径、嵌套路径、多候选确定性与 clean control。
 
 ## 4. 执行纪律
 

@@ -1,0 +1,35 @@
+{
+  "cases": [
+    {
+      "expected_path": "notes.txt",
+      "id": "root-unlisted-file",
+      "unlisted_files": ["notes.txt"]
+    },
+    {
+      "expected_path": "notes/extra.txt",
+      "id": "nested-unlisted-file",
+      "unlisted_files": ["notes/extra.txt"]
+    },
+    {
+      "expected_path": "a-notes.txt",
+      "id": "deterministic-first-unlisted-file",
+      "unlisted_files": ["z-notes.txt", "a-notes.txt"]
+    },
+    {
+      "expected_path": "a-notes.txt",
+      "id": "deterministic-order-across-root-and-nested-files",
+      "unlisted_files": ["a/extra.txt", "a-notes.txt"]
+    },
+    {
+      "expected_path": "\ue000.txt",
+      "id": "deterministic-utf8-byte-order-for-unicode-paths",
+      "unlisted_files": ["\ud800\udc00.txt", "\ue000.txt"]
+    },
+    {
+      "expected_path": null,
+      "id": "clean-project",
+      "unlisted_files": []
+    }
+  ],
+  "schema": "re.project-check-diagnostic-corpus@0.1.0"
+}

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
-import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { createHash } from 'node:crypto'
 import test from 'node:test'
 
@@ -59,6 +59,50 @@ test('project loader rejects source digest drift and unlisted files', async () =
     result.diagnostics.map(({ code }) => code),
     ['project-module-source-digest-mismatch', 'unlisted-project-file'],
   )
+})
+
+test('project-check diagnostic corpus binds unlisted paths relative to the project root', async (context) => {
+  const corpus = JSON.parse(await readFile(
+    new URL('./fixtures/project-check-diagnostic-corpus.json', import.meta.url),
+    'utf8',
+  ))
+  assert.equal(corpus.schema, 're.project-check-diagnostic-corpus@0.1.0')
+
+  for (const entry of corpus.cases) {
+    const root = await createProject()
+    context.after(() => rm(root, { force: true, recursive: true }))
+    for (const relativePath of entry.unlisted_files) {
+      const filePath = join(root, relativePath)
+      await mkdir(dirname(filePath), { recursive: true })
+      await writeFile(filePath, 'not declared\n')
+    }
+
+    const result = await loadProjectDirectory(root)
+    if (entry.expected_path === null) {
+      assert.equal(result.ok, true, entry.id)
+      continue
+    }
+
+    assert.equal(result.ok, false, entry.id)
+    const diagnostic = result.diagnostics.find(
+      ({ code }) => code === 'unlisted-project-file',
+    )
+    const unlistedPaths = result.diagnostics
+      .filter(({ code }) => code === 'unlisted-project-file')
+      .map(({ path }) => path)
+    assert.deepEqual(
+      { code: diagnostic?.code, path: diagnostic?.path },
+      { code: 'unlisted-project-file', path: entry.expected_path },
+      entry.id,
+    )
+    assert.deepEqual(
+      unlistedPaths,
+      [...unlistedPaths].sort((left, right) =>
+        Buffer.compare(Buffer.from(left), Buffer.from(right))),
+      `${entry.id}: diagnostics must use global root-relative UTF-8 byte order`,
+    )
+    assert.ok(!JSON.stringify(result).includes(root), 'diagnostic leaked the absolute project root')
+  }
 })
 
 test('project loader closes missing module, duplicate module, and package cycle', async () => {
