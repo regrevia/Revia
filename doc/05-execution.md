@@ -392,6 +392,12 @@ WP-330 将该 verifier 接入 `bundle-comparison` 与 project-workflow compariso
 `run_digest`，而是先按同一 canonical `re.native-project-run@0.1.0` 规则重算 digest；
 同步重签的 project-run 即使字段自洽，也会在 comparison report 写出前拒绝。
 
+WP-331 收紧 project-run 的生产输出边界：`serialize_project_run` 在生成
+`re.native-project-run@0.1.0` 前重算嵌套 `re.native-vm-receipt@0.1.0` 的 digest，并
+拒绝 receipt schema、executor、profile 或 digest drift。这样 project-run、execution plan
+和 comparison 共享同一 VM receipt authority；当前 envelope 仍只携带 receipt digest，
+离线 verifier 不宣称能从 envelope 单独重建完整 invocation/trace receipt。
+
 WP-268 在该 authority 之上增加
 `re.native-project-execution-plan@0.1.0` 与
 `re.native-project-execution@0.1.0`。execution plan 必须显式给出 public root

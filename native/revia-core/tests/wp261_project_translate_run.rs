@@ -110,6 +110,13 @@ fn native_project_translation_and_run_are_deterministic_and_authority_bound() {
         verify_project_run_serialized(&tampered).unwrap_err().code,
         "native-project-run-digest-mismatch"
     );
+    let mut forged = run.clone();
+    forged.vm.receipt.receipt_digest =
+        "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff".to_owned();
+    assert_eq!(
+        serialize_project_run(&forged).unwrap_err().code,
+        "native-vm-receipt-digest-mismatch"
+    );
 
     let mut error_bridge = Bridge {
         return_err: true,

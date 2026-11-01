@@ -630,6 +630,11 @@ gate 与签名；这些不写入私有 native 实现。
     时复用 `verify_project_run_serialized`，先重算 canonical `run_digest`，再进入
     artifact/graph/input/receipt/outcome 对齐；project-run 同步重签或非 canonical bytes
     在 comparison report 写出前 fail closed。
+24. **WP-331 · project-run nested VM receipt integrity（当前工作包）**：
+    `serialize_project_run` 在输出前复用 native VM receipt verifier，重算嵌套
+    `re.native-vm-receipt@0.1.0` digest，并拒绝 schema/executor/profile/receipt digest drift。
+    project-run、execution plan 和 comparison 不再接受 caller 构造的伪造 VM receipt；当前
+    project-run envelope 仍只携带 receipt digest，不宣称离线重建完整 trace/invocation。
 
 ## 4. 执行纪律
 

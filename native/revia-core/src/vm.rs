@@ -550,6 +550,23 @@ fn serialize_receipt_without_digest(receipt: &VmReceipt) -> String {
     )
 }
 
+pub fn verify_vm_receipt(receipt: &VmReceipt) -> Result<(), GraphError> {
+    if receipt.schema != NATIVE_VM_RECEIPT_SCHEMA
+        || receipt.executor != NATIVE_VM_EXECUTOR
+        || receipt.profile != NATIVE_VM_PROFILE
+    {
+        return Err(GraphError::new("native-vm-receipt-authority-mismatch"));
+    }
+    let expected = format!(
+        "sha256:{}",
+        sha256_hex(serialize_receipt_without_digest(receipt).as_bytes())
+    );
+    if receipt.receipt_digest != expected {
+        return Err(GraphError::new("native-vm-receipt-digest-mismatch"));
+    }
+    Ok(())
+}
+
 fn literal_value(literal: &crate::bytecode::BytecodeLiteral) -> Result<VmValue, GraphError> {
     match literal.type_name.as_str() {
         "text.utf8" | "fs.path" | "text.encoding" => Ok(VmValue::Text(literal.value.clone())),

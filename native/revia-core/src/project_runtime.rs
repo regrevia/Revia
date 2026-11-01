@@ -19,7 +19,7 @@ use crate::{
     vm::{
         CapabilityBridge, NATIVE_VM_PROFILE, VmLimits, VmRequest, VmResult, VmValue,
         execute_bytecode_with_input_value, execute_bytecode_with_return_value, serialize_vm_value,
-        vm_value_digest, vm_value_type_name,
+        verify_vm_receipt, vm_value_digest, vm_value_type_name,
     },
 };
 
@@ -698,6 +698,7 @@ pub fn serialize_project_translation(
 
 pub fn serialize_project_run(run: &NativeProjectRun) -> Result<String, ProjectRuntimeError> {
     validate_translation(&run.translation)?;
+    verify_vm_receipt(&run.vm.receipt).map_err(|error| ProjectRuntimeError::new(&error.code))?;
     if run.schema != PROJECT_RUN_SCHEMA
         || run.module != run.translation.module
         || run.project_digest != run.translation.project_digest
