@@ -22,6 +22,7 @@ pub mod multi_module;
 pub mod node_free;
 pub mod parser;
 pub mod project;
+pub mod project_receipt;
 pub mod project_runtime;
 pub mod release;
 pub mod release_evidence;

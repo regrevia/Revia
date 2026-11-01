@@ -105,6 +105,7 @@ use revia_core::{
         build_project, load_project_directory, parse_json, serialize_build_manifest,
         serialize_project_graph, serialize_project_manifest, validate_enterprise_project_scale,
     },
+    project_receipt::{build_project_run_receipt, serialize_project_run_receipt},
     project_runtime::{
         NativeProjectExecutionPlan, execute_project_execution_plan,
         execute_project_execution_plan_cached, execute_project_execution_plan_direct,
@@ -196,6 +197,7 @@ Commands:
   runtime-authority-pin <bundle> <input-digest> <pin>
   runtime-receipt-verify <pin> <receipt> <result> <stdout>
   project-run-verify <run>
+  project-run [--project-receipt <receipt>] <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest>
   runtime-run [--authority-pin <pin> [--authority-receipt <receipt>]] <bundle> <input-digest> <sandbox>
   task-request <config.json> <request.json> <sandbox> <bundle.json> <review.json>
   approval-authority <socket> <state-dir> <policy.json>
@@ -514,6 +516,27 @@ fn main() {
         ),
         [
             command,
+            receipt_flag,
+            receipt_path,
+            project_path,
+            cache_path,
+            build_path,
+            profile_digest,
+            toolchain_digest,
+            module_name,
+            input_digest,
+        ] if command == "project-run" && receipt_flag == "--project-receipt" => project_run(
+            project_path,
+            cache_path,
+            build_path,
+            profile_digest,
+            toolchain_digest,
+            module_name,
+            input_digest,
+            Some(receipt_path),
+        ),
+        [
+            command,
             project_path,
             cache_path,
             build_path,
@@ -529,6 +552,7 @@ fn main() {
             toolchain_digest,
             module_name,
             input_digest,
+            None,
         ),
         [
             command,
@@ -789,7 +813,7 @@ fn command_help(command: &str) -> Result<(), i32> {
             "revia project-translate <project> <cache> <build> <profile-digest> <toolchain-digest> <module>\n  Translate one project module.\n"
         }
         "project-run" => {
-            "revia project-run <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest>\n  Execute one project module.\n"
+            "revia project-run [--project-receipt <receipt>] <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest>\n  Execute one project module.\n"
         }
         "project-run-sandbox" => {
             "revia project-run-sandbox <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest> <sandbox>\n  Execute one project module against an explicit external filesystem sandbox.\n"
@@ -7570,6 +7594,7 @@ fn project_translate(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn project_run(
     project_path: &str,
     cache_path: &str,
@@ -7578,6 +7603,7 @@ fn project_run(
     toolchain_digest: &str,
     module_name: &str,
     input_digest: &str,
+    receipt_path: Option<&str>,
 ) -> Result<(), i32> {
     let translation = translate_project_module(
         project_path,
@@ -7620,6 +7646,25 @@ fn project_run(
         print_project_runtime_error(&error.code);
         65
     })?;
+    if let Some(receipt_path) = receipt_path {
+        let receipt = build_project_run_receipt(
+            &run.project_digest,
+            &run.graph_revision,
+            &run.module,
+            &run.input_digest,
+            &run.translation.translation_digest,
+            &run.vm.receipt.receipt_digest,
+            &run.run_digest,
+        );
+        let receipt = serialize_project_run_receipt(&receipt).map_err(|code| {
+            print_project_runtime_error(&code);
+            65
+        })?;
+        if write_authority_receipt_atomic(Path::new(receipt_path), receipt.as_bytes()).is_err() {
+            print_project_runtime_error("native-project-run-receipt-write-failure");
+            return Err(74);
+        }
+    }
     print!("{output}");
     Ok(())
 }

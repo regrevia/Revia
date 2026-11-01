@@ -635,6 +635,10 @@ gate 与签名；这些不写入私有 native 实现。
     `re.native-vm-receipt@0.1.0` digest，并拒绝 schema/executor/profile/receipt digest drift。
     project-run、execution plan 和 comparison 不再接受 caller 构造的伪造 VM receipt；当前
     project-run envelope 仍只携带 receipt digest，不宣称离线重建完整 trace/invocation。
+25. **WP-332 · project-run authority receipt output（当前工作包）**：
+    增加可选 `--project-receipt <receipt>`，默认 project-run 输出保持兼容；显式 receipt
+    绑定 project/graph/module/input/translation/VM receipt/run digest，并使用 canonical
+    self-digest。receipt 写失败 fail closed，当前仍不扩展为完整 trace/invocation 归档。
 
 ## 4. 执行纪律
 

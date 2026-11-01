@@ -398,6 +398,13 @@ WP-331 收紧 project-run 的生产输出边界：`serialize_project_run` 在生
 和 comparison 共享同一 VM receipt authority；当前 envelope 仍只携带 receipt digest，
 离线 verifier 不宣称能从 envelope 单独重建完整 invocation/trace receipt。
 
+WP-332 增加可选的
+`project-run --project-receipt <receipt> <project> <cache> <build> <profile-digest>
+<toolchain-digest> <module> <input-digest>`。默认 `project-run` 输出保持不变；显式 receipt
+绑定 project digest、graph revision、module、input、translation digest、VM receipt digest
+和 run digest，并使用 canonical self-digest。receipt 写入失败不伪装为成功，适合 AI 在不
+执行项目的情况下消费一次 project-run 的 authority 摘要。
+
 WP-268 在该 authority 之上增加
 `re.native-project-execution-plan@0.1.0` 与
 `re.native-project-execution@0.1.0`。execution plan 必须显式给出 public root

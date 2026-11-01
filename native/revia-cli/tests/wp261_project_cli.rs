@@ -106,6 +106,27 @@ fn native_cli_project_translate_and_run_are_path_free_and_deterministic() {
     assert!(run_stdout.contains("\"outcome_code\":0"));
     assert!(run_stdout.contains("\"schema\":\"re.native-project-run@0.1.0\""));
     assert!(!run_stdout.contains(root.to_str().unwrap()));
+    let receipt_file = root.join("project.receipt.json");
+    let receipt_run_args = [
+        "project-run",
+        "--project-receipt",
+        receipt_file.to_str().unwrap(),
+        root.to_str().unwrap(),
+        cache.to_str().unwrap(),
+        build.to_str().unwrap(),
+        PROFILE,
+        TOOLCHAIN,
+        "agent.native.main",
+        INPUT,
+    ];
+    let receipt_run = Command::new(env!("CARGO_BIN_EXE_revia"))
+        .args(receipt_run_args)
+        .output()
+        .unwrap();
+    assert!(receipt_run.status.success());
+    let receipt = fs::read_to_string(&receipt_file).unwrap();
+    assert!(receipt.contains("re.native-project-run-receipt@0.1.0"));
+    assert!(receipt.contains("\"vm_receipt_digest\":\"sha256:"));
     let run_file = root.join("run.json");
     fs::write(&run_file, &run_bytes).unwrap();
     let verified = Command::new(env!("CARGO_BIN_EXE_revia"))
