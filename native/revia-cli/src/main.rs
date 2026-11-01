@@ -132,7 +132,8 @@ use revia_core::{
     },
     runtime_authority::{
         RUNTIME_LOAD_AUTHORITY_SCHEMA, build_runtime_load_authority_pin,
-        serialize_runtime_load_authority_pin, verify_runtime_load_authority,
+        parse_runtime_load_authority_pin, serialize_runtime_load_authority_pin,
+        verify_runtime_load_authority,
     },
     runtime_bundle::{
         RUNTIME_BUNDLE_SCHEMA, build_runtime_bundle, serialize_runtime_bundle,
@@ -168,6 +169,8 @@ const PROJECT_INIT_TOOLCHAIN_DIGEST: &str =
 const PROJECT_INIT_SOURCE: &str = include_str!("../../../examples/hello.re");
 const PROJECT_CAPABILITY_ENTRY_RESULT: &str = "process.status@0.1.0";
 const RUNTIME_BUNDLE_VERIFICATION_SCHEMA: &str = "re.native-runtime-bundle-verification@0.1.0";
+const RUNTIME_RECEIPT_VERIFICATION_SCHEMA: &str =
+    "re.native-runtime-load-receipt-verification@0.1.0";
 const DEVELOPER_GATE_SCHEMA: &str = "re.native-developer-gate@0.1.0";
 const TOOLCHAIN_GATE_SCHEMA: &str = "re.native-toolchain-gate@0.1.0";
 static TEMP_WORKSPACE_COUNTER: AtomicU64 = AtomicU64::new(0);
@@ -188,6 +191,7 @@ Commands:
   runtime-package <source> <bundle>
   runtime-verify <bundle>
   runtime-authority-pin <bundle> <input-digest> <pin>
+  runtime-receipt-verify <pin> <receipt> <result> <stdout>
   runtime-run [--authority-pin <pin> [--authority-receipt <receipt>]] <bundle> <input-digest> <sandbox>
   task-request <config.json> <request.json> <sandbox> <bundle.json> <review.json>
   approval-authority <socket> <state-dir> <policy.json>
@@ -259,6 +263,11 @@ fn main() {
             runtime_package(source_path, bundle_path)
         }
         [command, bundle_path] if command == "runtime-verify" => runtime_verify(bundle_path),
+        [command, pin_path, receipt_path, result_path, stdout_path]
+            if command == "runtime-receipt-verify" =>
+        {
+            runtime_receipt_verify(pin_path, receipt_path, result_path, stdout_path)
+        }
         [command, bundle_path, input_digest, sandbox_path] if command == "runtime-run" => {
             runtime_run(bundle_path, input_digest, sandbox_path, None, None)
         }
@@ -703,6 +712,9 @@ fn command_help(command: &str) -> Result<(), i32> {
         "runtime-authority-pin" => {
             "revia runtime-authority-pin <bundle> <input-digest> <pin>\n  Emit a canonical load-time authority pin for runtime-run.\n"
         }
+        "runtime-receipt-verify" => {
+            "revia runtime-receipt-verify <pin> <receipt> <result> <stdout>\n  Verify a runtime result receipt offline without executing the bundle.\n"
+        }
         "task-request" => {
             "revia task-request <config.json> <request.json> <sandbox> <bundle.json> <review.json>\n  Reserved WP-313 reviewed-task entry; unavailable until approval-authority peer identity is verified.\n"
         }
@@ -1088,6 +1100,71 @@ fn runtime_authority_pin(bundle_path: &str, input_digest: &str, pin_path: &str) 
         return Err(74);
     }
     print!("{output}");
+    Ok(())
+}
+
+fn runtime_receipt_verify(
+    pin_path: &str,
+    receipt_path: &str,
+    result_path: &str,
+    stdout_path: &str,
+) -> Result<(), i32> {
+    let pin_source = fs::read_to_string(pin_path).map_err(|_| {
+        print_runtime_authority_error("native-runtime-load-authority-pin-unreadable");
+        66
+    })?;
+    let pin = parse_runtime_load_authority_pin(&pin_source).map_err(|error| {
+        print_runtime_authority_error(&error.code);
+        65
+    })?;
+    let receipt_source = fs::read_to_string(receipt_path).map_err(|_| {
+        print_runtime_receipt_error("native-runtime-load-receipt-unreadable");
+        66
+    })?;
+    let result_bytes = fs::read(result_path).map_err(|_| {
+        print_runtime_receipt_error("native-runtime-load-result-unreadable");
+        66
+    })?;
+    let stdout_bytes = fs::read(stdout_path).map_err(|_| {
+        print_runtime_receipt_error("native-runtime-load-stdout-unreadable");
+        66
+    })?;
+    let receipt = revia_core::runtime_receipt::verify_runtime_load_receipt(
+        &receipt_source,
+        &pin,
+        &result_bytes,
+        &stdout_bytes,
+    )
+    .map_err(|error| {
+        print_runtime_receipt_error(&error.code);
+        65
+    })?;
+    println!(
+        "{}",
+        canonicalize(&JsonValue::Object(vec![
+            (
+                "loaded_bytes_digest".to_owned(),
+                JsonValue::String(receipt.loaded_bytes_digest),
+            ),
+            ("ok".to_owned(), JsonValue::Bool(true),),
+            (
+                "receipt_digest".to_owned(),
+                JsonValue::String(receipt.receipt_digest),
+            ),
+            (
+                "result_digest".to_owned(),
+                JsonValue::String(receipt.result_digest),
+            ),
+            (
+                "schema".to_owned(),
+                JsonValue::String(RUNTIME_RECEIPT_VERIFICATION_SCHEMA.to_owned()),
+            ),
+            (
+                "stdout_digest".to_owned(),
+                JsonValue::String(receipt.stdout_digest),
+            ),
+        ])),
+    );
     Ok(())
 }
 
@@ -7913,6 +7990,14 @@ fn print_runtime_authority_error(code: &str) {
         "{{\"diagnostics\":[{{\"code\":{}}}],\"ok\":false,\"schema\":{}}}",
         quote(code),
         quote(RUNTIME_LOAD_AUTHORITY_SCHEMA),
+    );
+}
+
+fn print_runtime_receipt_error(code: &str) {
+    eprintln!(
+        "{{\"diagnostics\":[{{\"code\":{}}}],\"ok\":false,\"schema\":{}}}",
+        quote(code),
+        quote("re.native-runtime-load-receipt@0.1.0"),
     );
 }
 

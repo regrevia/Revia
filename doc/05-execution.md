@@ -912,6 +912,14 @@ snapshot，不会按路径重新打开。`runtime`、`command` 和 input 在当�
 目标父目录会先 canonicalize；当前 bounded CLI 假定该目录本身是受控、稳定的 host
 边界，不把普通路径 API 宣称为跨平台 dirfd/openat 级别的抗 parent-replacement 保证。
 
+### Native runtime receipt verification
+
+WP-325 增加 `runtime-receipt-verify <pin> <receipt> <result> <stdout>`。该命令只读取
+四个文件并调用同一 `verify_runtime_load_receipt`，不加载 bundle、不创建 sandbox、不执行
+任何 effect。成功输出 path-free
+`re.native-runtime-load-receipt-verification@0.1.0`，包含 loaded bytes、result、stdout
+和 receipt digests；receipt、result 或 stdout 任一 drift 在输出前返回稳定失败。
+
 当前证据覆盖 Darwin arm64 的 bounded single-Module/four-instruction slice。该 bundle
 是可移动、可离线验证的 native runtime artifact，不是发行仓库 release package，不等于
 完整多函数 lowering、独立 scheduler、签名/custody、公证、跨平台 runner、production
