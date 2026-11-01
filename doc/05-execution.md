@@ -412,6 +412,12 @@ project/graph/run/VM receipt authority，任一 receipt/run drift 均在 stdout 
 其比较域还严格包含 `module`、`input_digest` 和 `translation_digest`；receipt 自身
 self-digest 正确但这些字段与 run envelope 不一致时同样拒绝，避免只绑定较粗粒度 digest。
 
+WP-335 扩展同一 authority 到 `re.native-project-execution@0.1.0` 多步 execution envelope。
+新增 core `verify_project_execution_serialized`，严格重算 execution digest、校验 canonical
+字段、plan/profile/toolchain/project/input authority，并逐步复用 project-run verifier；
+任何嵌套 run drift、step 缺失、非 canonical bytes 或同步重签均 fail closed。当前仍只
+提供 core API，CLI 多步执行命令继续输出兼容 envelope。
+
 WP-268 在该 authority 之上增加
 `re.native-project-execution-plan@0.1.0` 与
 `re.native-project-execution@0.1.0`。execution plan 必须显式给出 public root

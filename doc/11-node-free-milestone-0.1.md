@@ -646,6 +646,11 @@ gate 与签名；这些不写入私有 native 实现。
     receipt/run drift 在 stdout 前 fail closed。
     比较同时核对 module、input digest 和 translation digest，防止 self-consistent receipt
     借较粗粒度 project/run digest 伪装为当前模块 authority。
+27. **WP-335 · multi-step project execution offline verification（当前工作包）**：
+    新增 core `verify_project_execution_serialized`，复用 project-run verifier 逐步校验
+    `re.native-project-execution@0.1.0` 的 canonical execution digest、plan/profile/
+    toolchain/project/input authority 与嵌套 steps。多步 envelope 的同步重签、嵌套 run
+    drift、缺失 step 和非 canonical bytes 在消费前 fail closed；当前 CLI 输出兼容不变。
 
 ## 4. 执行纪律
 

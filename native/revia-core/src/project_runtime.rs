@@ -897,6 +897,111 @@ pub fn serialize_project_execution(
     Ok(format!("{}\n", canonicalize(&execution_json(execution)?)))
 }
 
+pub fn verify_project_execution_serialized(source: &str) -> Result<String, ProjectRuntimeError> {
+    let value = parse_json(source).map_err(|error| ProjectRuntimeError::new(&error.code))?;
+    if format!("{}\n", canonicalize(&value)) != source {
+        return Err(ProjectRuntimeError::new(
+            "native-project-execution-non-canonical-source",
+        ));
+    }
+    let fields = match &value {
+        JsonValue::Object(fields) => fields.clone(),
+        _ => {
+            return Err(ProjectRuntimeError::new(
+                "native-project-execution-json-invalid",
+            ));
+        }
+    };
+    let entries = exact_object(
+        &value,
+        &[
+            "execution_digest",
+            "graph_revision",
+            "handoffs",
+            "input_digest",
+            "plan_digest",
+            "profile_digest",
+            "project_digest",
+            "schema",
+            "steps",
+            "toolchain_digest",
+        ],
+    )
+    .map_err(|error| ProjectRuntimeError::new(&error.code))?;
+    if required_string(&entries, "schema")? != PROJECT_EXECUTION_SCHEMA {
+        return Err(ProjectRuntimeError::new(
+            "native-project-execution-schema-mismatch",
+        ));
+    }
+    validate_digest(
+        &required_string(&entries, "execution_digest")?,
+        "native-project-execution-digest-invalid",
+    )?;
+    validate_digest(
+        &required_string(&entries, "graph_revision")?,
+        "native-project-execution-digest-invalid",
+    )?;
+    validate_digest(
+        &required_string(&entries, "input_digest")?,
+        "native-project-execution-digest-invalid",
+    )?;
+    validate_digest(
+        &required_string(&entries, "plan_digest")?,
+        "native-project-execution-digest-invalid",
+    )?;
+    validate_digest(
+        &required_string(&entries, "profile_digest")?,
+        "native-project-execution-digest-invalid",
+    )?;
+    validate_digest(
+        &required_string(&entries, "project_digest")?,
+        "native-project-execution-digest-invalid",
+    )?;
+    validate_digest(
+        &required_string(&entries, "toolchain_digest")?,
+        "native-project-execution-digest-invalid",
+    )?;
+    let JsonValue::Array(steps) = entries
+        .get("steps")
+        .copied()
+        .ok_or_else(|| ProjectRuntimeError::new("native-project-execution-steps-invalid"))?
+    else {
+        return Err(ProjectRuntimeError::new(
+            "native-project-execution-steps-invalid",
+        ));
+    };
+    if steps.is_empty() {
+        return Err(ProjectRuntimeError::new(
+            "native-project-execution-steps-invalid",
+        ));
+    }
+    for step in steps {
+        let JsonValue::String(step_source) = step else {
+            return Err(ProjectRuntimeError::new(
+                "native-project-execution-steps-invalid",
+            ));
+        };
+        verify_project_run_serialized(step_source)?;
+    }
+    let without_digest = JsonValue::Object(
+        fields
+            .into_iter()
+            .filter(|(key, _)| key != "execution_digest")
+            .collect(),
+    );
+    let expected = format!(
+        "sha256:{}",
+        sha256_hex(canonicalize(&without_digest).as_bytes())
+    );
+    let actual = required_string(&entries, "execution_digest")?;
+    if actual != expected {
+        return Err(ProjectRuntimeError::new(
+            "native-project-execution-digest-mismatch",
+        ));
+    }
+    Ok(actual)
+}
+
 struct TrustedTranslation {
     artifact: BytecodeArtifact,
     graph: Graph,

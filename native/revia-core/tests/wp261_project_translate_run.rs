@@ -16,7 +16,7 @@ use revia_core::{
         NativeProjectExecutionPlan, NativeProjectExecutionStep, execute_project_execution_plan,
         execute_project_module, project_translation_digest, serialize_project_execution,
         serialize_project_execution_plan, serialize_project_run, translate_project_module,
-        verify_project_run_serialized,
+        verify_project_execution_serialized, verify_project_run_serialized,
     },
     vm::{CapabilityBridge, CapabilityResponse, VmLimits, VmValue},
 };
@@ -295,6 +295,21 @@ fn native_project_execution_plan_runs_explicit_dependency_chain_deterministicall
     assert_eq!(first_bridge.calls, 2);
     assert_eq!(second_bridge.calls, 2);
     assert_eq!(serialize_project_execution_plan(&plan).unwrap(), plan_bytes);
+    let execution_bytes = serialize_project_execution(&first).unwrap();
+    assert_eq!(
+        verify_project_execution_serialized(&execution_bytes).unwrap(),
+        first.execution_digest
+    );
+    let tampered_execution = execution_bytes.replace(
+        "\"input_digest\":\"sha256:eeee",
+        "\"input_digest\":\"sha256:ffff",
+    );
+    assert_eq!(
+        verify_project_execution_serialized(&tampered_execution)
+            .unwrap_err()
+            .code,
+        "native-project-execution-digest-mismatch"
+    );
     cleanup_two_module(&fixture);
 }
 
