@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { Buffer } from 'node:buffer'
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
@@ -103,6 +104,26 @@ test('project-check diagnostic corpus binds unlisted paths relative to the proje
     )
     assert.ok(!JSON.stringify(result).includes(root), 'diagnostic leaked the absolute project root')
   }
+})
+
+test('project loader rejects unlisted filenames that are not valid UTF-8', {
+  skip: process.platform !== 'linux',
+}, async (context) => {
+  const root = await createProject()
+  context.after(() => rm(root, { force: true, recursive: true }))
+  const invalidName = Buffer.concat([
+    Buffer.from(root),
+    Buffer.from('/'),
+    Buffer.from([0xff]),
+  ])
+  await writeFile(invalidName, 'unrepresentable path\n')
+
+  const result = await loadProjectDirectory(root)
+
+  assert.equal(result.ok, false)
+  assert.deepEqual(result.diagnostics, [{
+    code: 'project-file-path-invalid-utf8',
+  }])
 })
 
 test('project loader closes missing module, duplicate module, and package cycle', async () => {

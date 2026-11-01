@@ -53,6 +53,45 @@ fn native_project_check_reports_unlisted_file_as_project_relative_path() {
 }
 
 #[test]
+#[cfg(unix)]
+fn native_project_check_preserves_literal_backslash_in_unlisted_filename() {
+    let project = temp_project("re 1.0 compact\nmodule agent.surface.main\nexport main\n");
+    fs::write(project.join("notes\\extra.txt"), "not declared\n").unwrap();
+    let output = Command::new(env!("CARGO_BIN_EXE_revia"))
+        .args(["project-check", project.to_str().unwrap()])
+        .output()
+        .unwrap();
+    fs::remove_dir_all(project).unwrap();
+    assert_eq!(output.status.code(), Some(65));
+    assert_eq!(
+        String::from_utf8(output.stdout).unwrap(),
+        "{\"diagnostics\":[{\"code\":\"unlisted-project-file\",\"path\":\"notes\\\\extra.txt\"}],\"ok\":false,\"schema\":\"re.native-project-result@0.1.0\"}\n",
+    );
+}
+
+#[test]
+#[cfg(target_os = "linux")]
+fn native_project_check_rejects_non_utf8_filename_without_lossy_path() {
+    use std::{ffi::OsString, os::unix::ffi::OsStringExt};
+    let project = temp_project("re 1.0 compact\nmodule agent.surface.main\nexport main\n");
+    fs::write(
+        project.join(OsString::from_vec(vec![0xff])),
+        "not declared\n",
+    )
+    .unwrap();
+    let output = Command::new(env!("CARGO_BIN_EXE_revia"))
+        .args(["project-check", project.to_str().unwrap()])
+        .output()
+        .unwrap();
+    fs::remove_dir_all(project).unwrap();
+    assert_eq!(output.status.code(), Some(65));
+    assert_eq!(
+        String::from_utf8(output.stdout).unwrap(),
+        "{\"diagnostics\":[{\"code\":\"project-file-path-invalid-utf8\"}],\"ok\":false,\"schema\":\"re.native-project-result@0.1.0\"}\n",
+    );
+}
+
+#[test]
 fn native_project_check_matches_shared_unlisted_file_diagnostic_corpus() {
     let corpus = parse_json(include_str!(
         "../../../test/fixtures/project-check-diagnostic-corpus.json"

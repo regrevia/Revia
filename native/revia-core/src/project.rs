@@ -3456,8 +3456,15 @@ fn collect_project_files(
         let relative = path
             .strip_prefix(root)
             .map_err(|_| ProjectError::new("project-root-unreadable"))?
-            .to_string_lossy()
-            .replace('\\', "/");
+            .components()
+            .map(|component| {
+                component
+                    .as_os_str()
+                    .to_str()
+                    .ok_or_else(|| ProjectError::new("project-file-path-invalid-utf8"))
+            })
+            .collect::<Result<Vec<_>, _>>()?
+            .join("/");
         let file_type = entry
             .file_type()
             .map_err(|_| ProjectError::new("project-root-unreadable"))?;

@@ -96,7 +96,7 @@ export async function loadProjectDirectory(rootDirectory) {
       })
       continue
     }
-    declaredFiles.add(relative(root, filePath))
+    declaredFiles.add(normalizeRelativePath(relative(root, filePath)))
     let source
     try {
       source = await readFile(realFilePath, 'utf8')
@@ -124,7 +124,17 @@ export async function loadProjectDirectory(rootDirectory) {
     loaded.push({ entry, path: filePath, source })
   }
 
-  const unlistedFiles = (await declaredFilesUnderRoot(root))
+  let unlistedFiles
+  try {
+    unlistedFiles = await declaredFilesUnderRoot(root)
+  } catch (error) {
+    return rejected({
+      code: error?.code === 'project-file-path-invalid-utf8'
+        ? error.code
+        : 'project-root-unreadable',
+    })
+  }
+  unlistedFiles = unlistedFiles
     .filter((file) => !declaredFiles.has(file))
     .sort(compareText)
   for (const file of unlistedFiles) {
@@ -878,14 +888,33 @@ function heapDown(values, start) {
 async function declaredFilesUnderRoot(root) {
   const result = []
   async function visit(directory) {
-    for (const entry of await readdir(directory, { withFileTypes: true })) {
-      const path = resolve(directory, entry.name)
+    for (const entry of await readdir(directory, {
+      encoding: 'buffer',
+      withFileTypes: true,
+    })) {
+      const name = decodePathComponent(entry.name)
+      const path = resolve(directory, name)
       if (entry.isDirectory()) await visit(path)
-      else result.push(relative(root, path).split(sep).join('/'))
+      else result.push(normalizeRelativePath(relative(root, path)))
     }
   }
   await visit(root)
   return result
+}
+
+function decodePathComponent(value) {
+  if (typeof value === 'string') return value
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(value)
+  } catch {
+    const error = new Error('project-file-path-invalid-utf8')
+    error.code = 'project-file-path-invalid-utf8'
+    throw error
+  }
+}
+
+function normalizeRelativePath(value) {
+  return value.split(sep).join('/')
 }
 
 function withinRoot(root, path) {
