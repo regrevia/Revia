@@ -1247,21 +1247,21 @@ fn project_run_verify(run_path: &str) -> Result<(), i32> {
 
 fn project_run_receipt_verify(receipt_path: &str, run_path: &str) -> Result<(), i32> {
     let receipt_source = fs::read_to_string(receipt_path).map_err(|_| {
-        eprint_project_runtime_error("native-project-run-receipt-unreadable");
+        eprint_project_receipt_error("native-project-run-receipt-unreadable");
         66
     })?;
     let run_source = fs::read_to_string(run_path).map_err(|_| {
-        eprint_project_runtime_error("native-project-run-unreadable");
+        eprint_project_receipt_error("native-project-run-unreadable");
         66
     })?;
     let receipt = revia_core::project_receipt::parse_project_run_receipt(&receipt_source).map_err(
         |code| {
-            eprint_project_runtime_error(&code);
+            eprint_project_receipt_error(&code);
             65
         },
     )?;
     let run = verify_project_run_serialized(&run_source).map_err(|error| {
-        eprint_project_runtime_error(&error.code);
+        eprint_project_receipt_error(&error.code);
         65
     })?;
     if receipt.project_digest != run.project_digest
@@ -1272,7 +1272,7 @@ fn project_run_receipt_verify(receipt_path: &str, run_path: &str) -> Result<(), 
         || receipt.run_digest != run.run_digest
         || receipt.vm_receipt_digest != run.vm_receipt_digest
     {
-        eprint_project_runtime_error("DRIFTED");
+        eprint_project_receipt_error("DRIFTED");
         return Err(65);
     }
     println!(
@@ -8333,6 +8333,14 @@ fn eprint_project_runtime_error(code: &str) {
         "{{\"diagnostics\":[{{\"code\":{}}}],\"ok\":false,\"schema\":{}}}",
         quote(code),
         quote("re.native-project-runtime-result@0.1.0"),
+    );
+}
+
+fn eprint_project_receipt_error(code: &str) {
+    eprintln!(
+        "{{\"diagnostics\":[{{\"code\":{}}}],\"ok\":false,\"schema\":{}}}",
+        quote(code),
+        quote("re.native-project-run-receipt-verification@0.1.0"),
     );
 }
 

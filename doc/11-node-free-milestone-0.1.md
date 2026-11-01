@@ -646,6 +646,10 @@ gate 与签名；这些不写入私有 native 实现。
     receipt/run drift 在 stdout 前 fail closed。
     比较同时核对 module、input digest 和 translation digest，防止 self-consistent receipt
     借较粗粒度 project/run digest 伪装为当前模块 authority。
+27. **WP-336 · project receipt verification error contract（当前工作包）**：
+    project-run receipt verifier 的 unreadable、malformed、drift 和 authority mismatch
+    使用稳定 `re.native-project-run-receipt-verification@0.1.0` error envelope，不再复用
+    泛 project-runtime schema，便于 AI 按 schema/diagnostic 自动分流。
 27. **WP-335 · multi-step project execution offline verification（当前工作包）**：
     新增 core `verify_project_execution_serialized`，复用 project-run verifier 逐步校验
     `re.native-project-execution@0.1.0` 的 canonical execution digest、plan/profile/

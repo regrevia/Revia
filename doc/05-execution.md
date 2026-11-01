@@ -412,6 +412,11 @@ project/graph/run/VM receipt authority，任一 receipt/run drift 均在 stdout 
 其比较域还严格包含 `module`、`input_digest` 和 `translation_digest`；receipt 自身
 self-digest 正确但这些字段与 run envelope 不一致时同样拒绝，避免只绑定较粗粒度 digest。
 
+WP-336 固定 project receipt verifier 的错误 envelope 为同一
+`re.native-project-run-receipt-verification@0.1.0` schema；unreadable、malformed、drift
+和 authority mismatch 不再退化为泛 project-runtime result，AI 可按 schema/diagnostic
+区分 receipt verification failure。
+
 WP-335 扩展同一 authority 到 `re.native-project-execution@0.1.0` 多步 execution envelope。
 新增 core `verify_project_execution_serialized`，严格重算 execution digest、校验 canonical
 字段、plan/profile/toolchain/project/input authority，并逐步复用 project-run verifier；
