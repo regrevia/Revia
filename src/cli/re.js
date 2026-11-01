@@ -50,15 +50,35 @@ import { decodeUtf8Source } from '../toolchain/source-text.js'
 const EXIT_USAGE = 64
 const EXIT_CHECK_FAILURE = 65
 const EXIT_HOST_FAULT = 70
+const CLI_USAGE = [
+  'Usage: re check [--format json | --write] <file.re>',
+  '       re audit --format json <file.re>',
+  '       re build --out <dir> <file.re>',
+  '       re manifest <file.re>',
+  '       re patch --patch <patch.json> <file.re>',
+  '       re profile <file.re>',
+  '       re project-check --format json <project-dir>',
+  '       re project-run --fixture <fixture.json> <project-dir>',
+  '       re project-projection --routes <routes.json> --out <dir> <project-dir>',
+  '       re project-translate [--locale zh-CN|en-US] [--format json|text|html|svg] <project-dir>',
+  '       re module-surface --manifest <manifest.json> <file.re>',
+  '       re review-index [--changed-since <revision>] [--cursor <cursor>] [--limit <n>] [--fact-id <id> --index-revision <revision>] <file.re>',
+  '       re run <file.re> [-- <args>...]',
+  '         [--format json --runtime-receipt | --format json --authority-pin <pin.json>]',
+  '       re translate --format json <file.re>',
+  '       re view [--locale zh-CN|en-US] [--format html|svg] <file.re>',
+  '',
+].join('\n')
 
 await main(process.argv.slice(2))
 
 async function main(arguments_) {
   const parsed = parseArguments(arguments_)
   if (!parsed.ok) {
-    process.stderr.write(
-      'Usage: re check [--format json | --write] <file.re>\n       re audit --format json <file.re>\n       re build --out <dir> <file.re>\n       re manifest <file.re>\n       re patch --patch <patch.json> <file.re>\n       re profile <file.re>\n       re project-check --format json <project-dir>\n       re project-run --fixture <fixture.json> <project-dir>\n       re project-projection --routes <routes.json> --out <dir> <project-dir>\n       re module-surface --manifest <manifest.json> <file.re>\n       re review-index [--changed-since <revision>] [--cursor <cursor>] [--limit <n>] [--fact-id <id> --index-revision <revision>] <file.re>\n       re run [--format json] [--runtime-receipt | --authority-pin <pin.json>] <file.re> [-- <args>...]\n       re translate --format json <file.re>\n       re view [--locale zh-CN|en-US] [--format html|svg] <file.re>\n',
-    )
+    if (parsed.error !== undefined) {
+      process.stderr.write(`Usage error: ${parsed.error}\n`)
+    }
+    process.stderr.write(CLI_USAGE)
     process.exitCode = EXIT_USAGE
     return
   }
@@ -867,8 +887,10 @@ function parseArguments(arguments_) {
   if (command === 'run') {
     while (rest[0]?.startsWith('--')) {
       const option = rest.shift()
-      if (option === '--format' && rest.shift() === 'json') {
-        format = 'json'
+      if (option === '--format') {
+        const value = rest.shift()
+        if (!['json', 'text'].includes(value)) return { ok: false }
+        format = value
       } else if (option === '--runtime-receipt') {
         runtimeReceipt = true
       } else if (option === '--authority-pin') {
@@ -878,9 +900,17 @@ function parseArguments(arguments_) {
         return { ok: false }
       }
     }
-    if (runtimeReceipt && format !== 'json') return { ok: false }
-    if (authorityPinFile !== undefined && (format !== 'json' || runtimeReceipt)) {
-      return { ok: false }
+    if (authorityPinFile !== undefined && runtimeReceipt) {
+      return {
+        error: '--runtime-receipt and --authority-pin are mutually exclusive',
+        ok: false,
+      }
+    }
+    if ((runtimeReceipt || authorityPinFile !== undefined) && format !== 'json') {
+      return {
+        error: `${runtimeReceipt ? '--runtime-receipt' : '--authority-pin'} requires --format json`,
+        ok: false,
+      }
     }
   } else if (command === 'audit') {
     if (rest[0] !== '--format' || rest[1] !== 'json') return { ok: false }

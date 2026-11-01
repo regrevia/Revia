@@ -136,6 +136,80 @@ test('re run --format json emits the versioned process-status envelope', () => {
   )
 })
 
+test('re help lists every supported command and the JSON-only run option forms', () => {
+  const result = runCli('--help')
+
+  assert.equal(result.status, 64)
+  assert.equal(result.stdout, '')
+  assert.equal(result.stderr, [
+    'Usage: re check [--format json | --write] <file.re>',
+    '       re audit --format json <file.re>',
+    '       re build --out <dir> <file.re>',
+    '       re manifest <file.re>',
+    '       re patch --patch <patch.json> <file.re>',
+    '       re profile <file.re>',
+    '       re project-check --format json <project-dir>',
+    '       re project-run --fixture <fixture.json> <project-dir>',
+    '       re project-projection --routes <routes.json> --out <dir> <project-dir>',
+    '       re project-translate [--locale zh-CN|en-US] [--format json|text|html|svg] <project-dir>',
+    '       re module-surface --manifest <manifest.json> <file.re>',
+    '       re review-index [--changed-since <revision>] [--cursor <cursor>] [--limit <n>] [--fact-id <id> --index-revision <revision>] <file.re>',
+    '       re run <file.re> [-- <args>...]',
+    '         [--format json --runtime-receipt | --format json --authority-pin <pin.json>]',
+    '       re translate --format json <file.re>',
+    '       re view [--locale zh-CN|en-US] [--format html|svg] <file.re>',
+    '',
+  ].join('\n'))
+})
+
+test('re run reports JSON format requirement for receipt authority options', () => {
+  for (const args of [
+    ['run', '--runtime-receipt', 'examples/hello.re'],
+    ['run', '--authority-pin', 'pin.json', 'examples/hello.re'],
+    ['run', '--format', 'text', '--runtime-receipt', 'examples/hello.re'],
+    ['run', '--authority-pin', 'pin.json', '--format', 'text', 'examples/hello.re'],
+  ]) {
+    const result = runCli(...args)
+
+    assert.equal(result.status, 64)
+    assert.equal(result.stdout, '')
+    assert.match(result.stderr, /^Usage error: (?:--runtime-receipt|--authority-pin) requires --format json\n/u)
+    assert.match(result.stderr, /project-translate/u)
+  }
+})
+
+test('re run reports receipt authority options as mutually exclusive', () => {
+  const result = runCli(
+    'run',
+    '--format',
+    'json',
+    '--runtime-receipt',
+    '--authority-pin',
+    'pin.json',
+    'examples/hello.re',
+  )
+
+  assert.equal(result.status, 64)
+  assert.equal(result.stdout, '')
+  assert.match(result.stderr, /^Usage error: --runtime-receipt and --authority-pin are mutually exclusive\n/u)
+})
+
+test('re run reports receipt authority conflict before JSON format requirements', () => {
+  const result = runCli(
+    'run',
+    '--format',
+    'text',
+    '--runtime-receipt',
+    '--authority-pin',
+    'pin.json',
+    'examples/hello.re',
+  )
+
+  assert.equal(result.status, 64)
+  assert.equal(result.stdout, '')
+  assert.match(result.stderr, /^Usage error: --runtime-receipt and --authority-pin are mutually exclusive\n/u)
+})
+
 test('re run --authority-pin verifies the loader snapshot before execution', async (context) => {
   const directory = await mkdtemp(join(tmpdir(), 're-authority-cli-'))
   context.after(() => rm(directory, { force: true, recursive: true }))
