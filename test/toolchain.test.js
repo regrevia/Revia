@@ -561,7 +561,9 @@ test('semantic view IR binds facts to evidence and graph revision', () => {
   assert.deepEqual(effect.access, ['write process.stdout'])
   assert.equal(errorPath.audit_category, 'error_path')
   assert.equal(errorPath.error_type, 'io.write_error')
-  assert.ok(result.value.text.includes('RE 语义视图 0.1\n单位：@hello\n'))
+  assert.ok(result.value.text.includes(
+    'RE 语义视图 0.1\n此为可读翻译，非审计结论。\n单位：@hello\n',
+  ))
 })
 
 test('semantic view locale renderers share the same fact identity', () => {

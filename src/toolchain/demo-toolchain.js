@@ -1171,6 +1171,7 @@ function renderChineseView(view) {
   const factsByKind = groupedFacts(view)
   const lines = [
     'RE 语义视图 0.1',
+    '此为可读翻译，非审计结论。',
     `单位：${view.unit}`,
     `图修订：${view.revision}`,
     '能力：',
@@ -1189,6 +1190,7 @@ function renderEnglishView(view) {
   const factsByKind = groupedFacts(view)
   const lines = [
     'RE Semantic View 0.1',
+    'Readable view; not an audit conclusion.',
     `Unit: ${view.unit}`,
     `Graph revision: ${view.revision}`,
     'Capabilities:',
@@ -1203,7 +1205,77 @@ function renderEnglishView(view) {
   return `${lines.join('\n')}\n`
 }
 
+const VIEW_COPY = {
+  'zh-CN': {
+    title: 'RE 语义视图 0.1',
+    unit: '单位',
+    graphRevision: '图修订',
+    auditNotice: '可读翻译，非审计结论。',
+    sections: ['能力', '效果', '错误路径', '退出码'],
+    headers: {
+      subject: '主体',
+      reference: '接口',
+      binding: '绑定',
+      evidenceUid: '证据 UID',
+      factId: '事实 ID',
+      call: '调用',
+      access: '访问',
+      returns: '返回',
+      consumers: '消费者',
+      producerUid: '生产者 UID',
+      errorType: '错误类型',
+      consumerUid: '消费者 UID',
+      statusCodes: '退出码',
+      kind: '类型',
+      summary: '摘要',
+    },
+    factKinds: {
+      capability: '能力',
+      effect: '效果',
+      error_path: '错误路径',
+      status_codes: '退出码',
+    },
+    empty: '无',
+    svgDescription: (schema, revision) =>
+      `由 ${schema} 和 ${revision} 确定性生成的 SVG 可读视图，非审计结论。`,
+  },
+  'en-US': {
+    title: 'RE Semantic View 0.1',
+    unit: 'Unit',
+    graphRevision: 'Graph revision',
+    auditNotice: 'Readable view; not an audit conclusion.',
+    sections: ['Capabilities', 'Effects', 'Error paths', 'Status codes'],
+    headers: {
+      subject: 'Subject',
+      reference: 'Reference',
+      binding: 'Binding',
+      evidenceUid: 'Evidence UID',
+      factId: 'Fact ID',
+      call: 'Call',
+      access: 'Access',
+      returns: 'Returns',
+      consumers: 'Consumers',
+      producerUid: 'Producer UID',
+      errorType: 'Error type',
+      consumerUid: 'Consumer UID',
+      statusCodes: 'Status codes',
+      kind: 'Kind',
+      summary: 'Summary',
+    },
+    factKinds: {
+      capability: 'Capability',
+      effect: 'Effect',
+      error_path: 'Error path',
+      status_codes: 'Status codes',
+    },
+    empty: 'None',
+    svgDescription: (schema, revision) =>
+      `Deterministic SVG readable view of ${schema} for ${revision}; not an audit conclusion.`,
+  },
+}
+
 function renderHtmlView(view) {
+  const copy = VIEW_COPY[view.locale]
   const factsByKind = groupedFacts(view)
   const capabilityRows = renderHtmlRows(
     factsByKind.get('capability') ?? [],
@@ -1214,6 +1286,7 @@ function renderHtmlView(view) {
       fact.evidence_uid,
       fact.fact_id,
     ],
+    copy.empty,
   )
   const effectRows = renderHtmlRows(
     factsByKind.get('effect') ?? [],
@@ -1226,6 +1299,7 @@ function renderHtmlView(view) {
       fact.evidence_uid,
       fact.fact_id,
     ],
+    copy.empty,
   )
   const errorRows = renderHtmlRows(
     factsByKind.get('error_path') ?? [],
@@ -1237,27 +1311,30 @@ function renderHtmlView(view) {
       fact.evidence_uid,
       fact.fact_id,
     ],
+    copy.empty,
   )
   const statusRows = renderHtmlRows(
     factsByKind.get('status_codes') ?? [],
     (fact) => [formatList(fact.status_codes), fact.evidence_uid, fact.fact_id],
+    copy.empty,
   )
   return `<!doctype html>
-<html lang="zh-CN">
+<html lang="${view.locale}">
 <head>
 <meta charset="utf-8">
-<title>RE 语义视图 0.1 - ${escapeHtml(view.unit)}</title>
+<title>${copy.title} - ${escapeHtml(view.unit)}</title>
 <style>
 :root{color-scheme:light dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45;color:#111827;background:#f8fafc}body{margin:0;padding:32px}main{max-width:1120px;margin:0 auto}h1{font-size:28px;margin:0 0 8px}p{margin:0 0 24px;color:#475569}.section{border-top:1px solid #cbd5e1;padding:20px 0}h2{font-size:16px;margin:0 0 12px}table{width:100%;border-collapse:collapse;font-size:13px;background:white}th,td{border-bottom:1px solid #e2e8f0;padding:8px 10px;text-align:left;vertical-align:top}th{color:#334155;background:#f1f5f9;font-weight:650}code{font-family:"SFMono-Regular",Consolas,monospace;font-size:12px}@media (prefers-color-scheme:dark){:root{color:#e5e7eb;background:#0f172a}p{color:#94a3b8}table{background:#111827}th{color:#e2e8f0;background:#1f2937}th,td,.section{border-color:#334155}}</style>
 </head>
 <body>
 <main data-schema="${escapeHtml(view.schema)}" data-revision="${escapeHtml(view.revision)}">
-<h1>RE 语义视图 0.1</h1>
-<p>单位：<code>${escapeHtml(view.unit)}</code> · 图修订：<code>${escapeHtml(view.revision)}</code></p>
-${renderHtmlSection('能力', ['Subject', 'Reference', 'Binding', 'Evidence UID', 'Fact ID'], capabilityRows)}
-${renderHtmlSection('效果', ['Subject', 'Call', 'Access', 'Returns', 'Consumers', 'Evidence UID', 'Fact ID'], effectRows)}
-${renderHtmlSection('错误路径', ['Producer UID', 'Error Type', 'Consumer UID', 'Status Codes', 'Evidence UID', 'Fact ID'], errorRows)}
-${renderHtmlSection('退出码', ['Status Codes', 'Evidence UID', 'Fact ID'], statusRows)}
+<h1>${copy.title}</h1>
+<p>${copy.unit}: <code>${escapeHtml(view.unit)}</code> | ${copy.graphRevision}: <code>${escapeHtml(view.revision)}</code></p>
+<p>${copy.auditNotice}</p>
+${renderHtmlSection(copy.sections[0], [copy.headers.subject, copy.headers.reference, copy.headers.binding, copy.headers.evidenceUid, copy.headers.factId], capabilityRows)}
+${renderHtmlSection(copy.sections[1], [copy.headers.subject, copy.headers.call, copy.headers.access, copy.headers.returns, copy.headers.consumers, copy.headers.evidenceUid, copy.headers.factId], effectRows)}
+${renderHtmlSection(copy.sections[2], [copy.headers.producerUid, copy.headers.errorType, copy.headers.consumerUid, copy.headers.statusCodes, copy.headers.evidenceUid, copy.headers.factId], errorRows)}
+${renderHtmlSection(copy.sections[3], [copy.headers.statusCodes, copy.headers.evidenceUid, copy.headers.factId], statusRows)}
 </main>
 </body>
 </html>
@@ -1266,31 +1343,33 @@ ${renderHtmlSection('退出码', ['Status Codes', 'Evidence UID', 'Fact ID'], st
 
 
 function renderSvgView(view) {
+  const copy = VIEW_COPY[view.locale]
   const rows = view.facts.map((fact) => ({
     evidence: fact.evidence_uid ?? '',
     factId: fact.fact_id,
-    kind: fact.kind,
-    summary: svgFactSummary(fact),
+    kind: copy.factKinds[fact.kind] ?? fact.kind,
+    summary: svgFactSummary(fact, view.locale),
   }))
   const rowHeight = 34
-  const rowStart = 160
+  const rowStart = 180
   const height = rowStart + Math.max(rows.length, 1) * rowHeight + 28
   const rowElements = rows.length === 0
-    ? `<text x="32" y="${rowStart}" class="muted">No facts</text>`
+    ? `<text x="32" y="${rowStart}" class="muted">${escapeXml(copy.empty)}</text>`
     : rows.map((row, index) => renderSvgFactRow(row, rowStart + index * rowHeight)).join('\n')
-  return `<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="RE Semantic View 0.1" width="1120" height="${height}" viewBox="0 0 1120 ${height}" data-schema="${escapeXml(view.schema)}" data-revision="${escapeXml(view.revision)}">
-<title>RE Semantic View 0.1 - ${escapeXml(view.unit)}</title>
-<desc>Deterministic SVG rendering of ${escapeXml(view.schema)} for ${escapeXml(view.revision)}</desc>
+  return `<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${escapeXml(copy.title)}" width="1120" height="${height}" viewBox="0 0 1120 ${height}" data-schema="${escapeXml(view.schema)}" data-revision="${escapeXml(view.revision)}">
+<title>${escapeXml(copy.title)} - ${escapeXml(view.unit)}</title>
+<desc>${escapeXml(copy.svgDescription(view.schema, view.revision))}</desc>
 <style>text{font-family:Inter,Arial,sans-serif}.title{font-size:26px;font-weight:700;fill:#111827}.meta{font-size:12px;fill:#475569}.head{font-size:11px;font-weight:700;fill:#334155}.cell{font-size:12px;fill:#111827}.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.muted{fill:#64748b}.rule{stroke:#cbd5e1;stroke-width:1}.row:nth-child(even) rect{fill:#f8fafc}.row:nth-child(odd) rect{fill:#ffffff}</style>
 <rect width="1120" height="${height}" fill="#ffffff"/>
-<text x="32" y="42" class="title">RE Semantic View 0.1</text>
-<text x="32" y="68" class="meta mono">unit=${escapeXml(view.unit)}</text>
-<text x="32" y="88" class="meta mono">revision=${escapeXml(view.revision)}</text>
-<line x1="32" y1="104" x2="1088" y2="104" class="rule"/>
-<text x="32" y="128" class="head">Kind</text>
-<text x="150" y="128" class="head">Fact ID</text>
-<text x="470" y="128" class="head">Evidence UID</text>
-<text x="720" y="128" class="head">Summary</text>
+<text x="32" y="42" class="title">${escapeXml(copy.title)}</text>
+<text x="32" y="64" class="meta">${escapeXml(copy.auditNotice)}</text>
+<text x="32" y="88" class="meta mono">${escapeXml(copy.unit)}=${escapeXml(view.unit)}</text>
+<text x="32" y="108" class="meta mono">${escapeXml(copy.graphRevision)}=${escapeXml(view.revision)}</text>
+<line x1="32" y1="124" x2="1088" y2="124" class="rule"/>
+<text x="32" y="148" class="head">${escapeXml(copy.headers.kind)}</text>
+<text x="150" y="148" class="head">${escapeXml(copy.headers.factId)}</text>
+<text x="470" y="148" class="head">${escapeXml(copy.headers.evidenceUid)}</text>
+<text x="720" y="148" class="head">${escapeXml(copy.headers.summary)}</text>
 ${rowElements}
 </svg>
 `
@@ -1306,7 +1385,23 @@ function renderSvgFactRow(row, y) {
 </g>`
 }
 
-function svgFactSummary(fact) {
+function svgFactSummary(fact, locale) {
+  const copy = VIEW_COPY[locale]
+  if (locale === 'zh-CN') {
+    if (fact.kind === 'capability') {
+      return `${fact.subject} 使用 ${fact.reference}（${fact.binding_kind}）`
+    }
+    if (fact.kind === 'effect') {
+      return `${fact.subject} 调用 ${fact.capability_instance}.${fact.member}；访问 ${fact.access.join('、')}`
+    }
+    if (fact.kind === 'error_path') {
+      return `${fact.producer_uid} 的 ${fact.error_type} 由 ${fact.consumer_uid} 消费`
+    }
+    if (fact.kind === 'status_codes') {
+      return `退出码 ${formatList(fact.status_codes)}`
+    }
+    return fact.subject ?? copy.factKinds[fact.kind] ?? fact.kind
+  }
   if (fact.kind === 'capability') {
     return `${fact.subject} -> ${fact.reference} (${fact.binding_kind})`
   }
@@ -1336,8 +1431,8 @@ function renderHtmlSection(title, headers, rows) {
   return `<section class="section"><h2>${escapeHtml(title)}</h2><table><thead><tr>${headers.map((header) => `<th>${escapeHtml(header)}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></section>`
 }
 
-function renderHtmlRows(facts, toCells) {
-  if (facts.length === 0) return '<tr><td colspan="99">无</td></tr>'
+function renderHtmlRows(facts, toCells, emptyLabel) {
+  if (facts.length === 0) return `<tr><td colspan="99">${escapeHtml(emptyLabel)}</td></tr>`
   return facts
     .map((fact) => `<tr>${toCells(fact).map((cell) => `<td><code>${escapeHtml(cell ?? '')}</code></td>`).join('')}</tr>`)
     .join('')

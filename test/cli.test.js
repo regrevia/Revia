@@ -419,7 +419,7 @@ test('re view renders a deterministic Chinese semantic summary', () => {
   assert.equal(result.stderr, '')
   assert.equal(
     result.stdout,
-    'RE 语义视图 0.1\n单位：@hello\n图修订：sha256:fbc879084d06d619f700d640826bebd4e758489171e269d162c57f1c26a19083\n能力：\n- @stdout 使用 process.stdout@0.1.0（memory，证据 aaaaaaaaaaaaaaaaaaaaaaaaaa）\n效果：\n- aaaaaadaaaaaaaaaaaaaaaaaaa 调用 @stdout.write；访问 write process.stdout；返回 result<unit, io.write_error>；消费者 aaaaaafaaaaaaaaaaaaaaaaaaa\n错误路径：\n- aaaaaadaaaaaaaaaaaaaaaaaaa 的 io.write_error 由 aaaaaafaaaaaaaaaaaaaaaaaaa 消费；可能退出 1\n退出码：\n- 0, 1\n',
+    'RE 语义视图 0.1\n此为可读翻译，非审计结论。\n单位：@hello\n图修订：sha256:fbc879084d06d619f700d640826bebd4e758489171e269d162c57f1c26a19083\n能力：\n- @stdout 使用 process.stdout@0.1.0（memory，证据 aaaaaaaaaaaaaaaaaaaaaaaaaa）\n效果：\n- aaaaaadaaaaaaaaaaaaaaaaaaa 调用 @stdout.write；访问 write process.stdout；返回 result<unit, io.write_error>；消费者 aaaaaafaaaaaaaaaaaaaaaaaaa\n错误路径：\n- aaaaaadaaaaaaaaaaaaaaaaaaa 的 io.write_error 由 aaaaaafaaaaaaaaaaaaaaaaaaa 消费；可能退出 1\n退出码：\n- 0, 1\n',
   )
 })
 
@@ -434,7 +434,7 @@ test('re view renders deterministic English text from the same facts', () => {
   assert.equal(first.stdout, second.stdout)
   assert.equal(
     first.stdout,
-    'RE Semantic View 0.1\nUnit: @hello\nGraph revision: sha256:fbc879084d06d619f700d640826bebd4e758489171e269d162c57f1c26a19083\nCapabilities:\n- @stdout uses process.stdout@0.1.0 (memory, evidence aaaaaaaaaaaaaaaaaaaaaaaaaa)\nEffects:\n- aaaaaadaaaaaaaaaaaaaaaaaaa calls @stdout.write; access write process.stdout; returns result<unit, io.write_error>; consumers aaaaaafaaaaaaaaaaaaaaaaaaa\nError paths:\n- aaaaaadaaaaaaaaaaaaaaaaaaa io.write_error is consumed by aaaaaafaaaaaaaaaaaaaaaaaaa; possible exit 1\nStatus codes:\n- 0, 1\n',
+    'RE Semantic View 0.1\nReadable view; not an audit conclusion.\nUnit: @hello\nGraph revision: sha256:fbc879084d06d619f700d640826bebd4e758489171e269d162c57f1c26a19083\nCapabilities:\n- @stdout uses process.stdout@0.1.0 (memory, evidence aaaaaaaaaaaaaaaaaaaaaaaaaa)\nEffects:\n- aaaaaadaaaaaaaaaaaaaaaaaaa calls @stdout.write; access write process.stdout; returns result<unit, io.write_error>; consumers aaaaaafaaaaaaaaaaaaaaaaaaa\nError paths:\n- aaaaaadaaaaaaaaaaaaaaaaaaa io.write_error is consumed by aaaaaafaaaaaaaaaaaaaaaaaaa; possible exit 1\nStatus codes:\n- 0, 1\n',
   )
 })
 
@@ -462,6 +462,30 @@ test('re view renders deterministic HTML from the semantic view IR', () => {
   assert.match(first.stdout, /<code>capability:@stdout<\/code>/)
   assert.match(first.stdout, /<code>effect:aaaaaadaaaaaaaaaaaaaaaaaaa<\/code>/)
   assert.match(first.stdout, /<code>error-path:aaaaaadaaaaaaaaaaaaaaaaaaa:io.write_error:aaaaaafaaaaaaaaaaaaaaaaaaa<\/code>/)
+  assert.match(first.stdout, /可读翻译，非审计结论/)
+})
+
+test('re view localizes HTML without changing fact anchors', () => {
+  const chinese = runCli('view', '--locale', 'zh-CN', '--format', 'html', 'test/golden/canonical-hello.re')
+  const english = runCli('view', '--locale', 'en-US', '--format', 'html', 'test/golden/canonical-hello.re')
+  const englishAgain = runCli('view', '--locale', 'en-US', '--format', 'html', 'test/golden/canonical-hello.re')
+
+  assert.equal(chinese.status, 0)
+  assert.equal(english.status, 0)
+  assert.equal(englishAgain.status, 0)
+  assert.equal(english.stdout, englishAgain.stdout)
+  assert.notEqual(chinese.stdout, english.stdout)
+  assert.match(english.stdout, /^<!doctype html>\n<html lang="en-US">/)
+  assert.match(english.stdout, /<title>RE Semantic View 0\.1 - @hello<\/title>/)
+  assert.match(english.stdout, /<p>Unit: <code>@hello<\/code> \| Graph revision:/)
+  assert.match(english.stdout, /Readable view; not an audit conclusion\./)
+  assert.match(english.stdout, /<h2>Capabilities<\/h2>/)
+  assert.match(english.stdout, /<th>Evidence UID<\/th>/)
+  assert.doesNotMatch(english.stdout, /语义视图|单位：|图修订：|能力|效果|错误路径|退出码|可读翻译/u)
+  assert.deepEqual(
+    [...chinese.stdout.matchAll(/<td><code>(.*?)<\/code><\/td>/gu)].map(([, value]) => value),
+    [...english.stdout.matchAll(/<td><code>(.*?)<\/code><\/td>/gu)].map(([, value]) => value),
+  )
 })
 
 test('re view renders deterministic SVG from the semantic view IR', () => {
@@ -478,7 +502,30 @@ test('re view renders deterministic SVG from the semantic view IR', () => {
   assert.match(first.stdout, /data-revision="sha256:fbc879084d06d619f700d640826bebd4e758489171e269d162c57f1c26a19083"/)
   assert.match(first.stdout, /data-fact-id="capability:@stdout" data-evidence-uid="aaaaaaaaaaaaaaaaaaaaaaaaaa"/)
   assert.match(first.stdout, /data-fact-id="effect:aaaaaadaaaaaaaaaaaaaaaaaaa" data-evidence-uid="aaaaaadaaaaaaaaaaaaaaaaaaa"/)
-  assert.match(first.stdout, /@stdout -&gt; process\.stdout@0\.1\.0/)
+  assert.match(first.stdout, /@stdout 使用 process\.stdout@0\.1\.0（memory）/)
+  assert.match(first.stdout, /可读翻译，非审计结论/)
+})
+
+test('re view localizes SVG without changing fact anchors', () => {
+  const chinese = runCli('view', '--locale', 'zh-CN', '--format', 'svg', 'test/golden/canonical-hello.re')
+  const english = runCli('view', '--locale', 'en-US', '--format', 'svg', 'test/golden/canonical-hello.re')
+  const englishAgain = runCli('view', '--locale', 'en-US', '--format', 'svg', 'test/golden/canonical-hello.re')
+
+  assert.equal(chinese.status, 0)
+  assert.equal(english.status, 0)
+  assert.equal(englishAgain.status, 0)
+  assert.equal(english.stdout, englishAgain.stdout)
+  assert.notEqual(chinese.stdout, english.stdout)
+  assert.match(english.stdout, /aria-label="RE Semantic View 0\.1"/)
+  assert.match(english.stdout, /<title>RE Semantic View 0\.1 - @hello<\/title>/)
+  assert.match(english.stdout, /Readable view; not an audit conclusion\./)
+  assert.match(english.stdout, />Kind<\/text>/)
+  assert.match(english.stdout, />Capability<\/text>/)
+  assert.doesNotMatch(english.stdout, /语义视图|图修订|摘要|能力|效果|错误路径|退出码|可读翻译/u)
+  assert.deepEqual(
+    [...chinese.stdout.matchAll(/data-(?:fact-id|evidence-uid|revision)="([^"]+)"/gu)].map(([, value]) => value),
+    [...english.stdout.matchAll(/data-(?:fact-id|evidence-uid|revision)="([^"]+)"/gu)].map(([, value]) => value),
+  )
 })
 
 test('re view reports check failures as human diagnostics', () => {

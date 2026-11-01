@@ -115,6 +115,15 @@ effect call UID、capability reference/member 与 source anchor 对齐，不要�
 
 > ⚠️ **定位警告**：`view` 是从结构化事实渲染的非权威表达，**不是审计结论**。任何关乎安全/权限/副作用的判断必须以 `re audit` 为准。`view` 的输出顶部须标注「此为可读翻译，非审计结论」。
 
+`--locale zh-CN|en-US` applies to all human-readable text in text, HTML, and SVG
+views, including document language metadata, titles, section and column labels,
+empty-state text, accessibility labels, and fact-summary templates. Structural
+values such as fact IDs, UIDs, graph revisions, capability references, error
+types, and status codes are not translated. Both locales render the same
+ordered facts and evidence anchors; locale changes presentation only. Every
+format includes a visible notice that the view is readable translation, not an
+audit conclusion.
+
 V1-P0-08/10 预留的候选管线是：
 
 ```text

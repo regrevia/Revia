@@ -13,6 +13,23 @@ The renderer does not add, remove, or reinterpret facts. Each rendered fact
 keeps its `fact_id`, graph revision, UID anchor, and evidence anchor so a
 human-readable view can be traced back to the machine-readable contract.
 
+## Locale Contract / 语言契约
+
+The `view` command supports `zh-CN` and `en-US` for text, HTML, and SVG.
+Locale applies to the complete presentation layer, including document language,
+titles, section and column labels, empty states, accessibility text, and
+fact-summary phrasing. Machine-facing values such as fact IDs, UIDs, graph
+revisions, capability references, error types, and status codes remain exact.
+The ordered facts and evidence anchors are identical across locales.
+
+Each format visibly labels its output as a readable view, not an audit
+conclusion. Use `audit` for authority-bearing security, permission, and effect
+claims.
+
+`view --locale en-US --format html` emits `<html lang="en-US">`; `zh-CN` emits
+`<html lang="zh-CN">`. Repeated renders of the same source, format, and locale
+are byte-deterministic.
+
 ## Readability At Project Scale / 面向大型项目的可读性
 
 Project HTML output is organized by fact kind instead of one unbounded list:
