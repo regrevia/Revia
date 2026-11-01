@@ -1,0 +1,33 @@
+{
+  "cases": [
+    {
+      "id": "clean-control",
+      "result": "VERIFIED"
+    },
+    {
+      "id": "source-mutation",
+      "result": "DRIFTED"
+    },
+    {
+      "id": "artifact-replacement",
+      "result": "DRIFTED"
+    },
+    {
+      "id": "runtime-drift",
+      "result": "DRIFTED"
+    },
+    {
+      "id": "canonicalization-drift",
+      "result": "DRIFTED"
+    },
+    {
+      "id": "missing-canonicalization",
+      "result": "REJECTED"
+    },
+    {
+      "id": "pre-effect-rejection",
+      "result": "DRIFTED"
+    }
+  ],
+  "schema": "re.load-time-authority-corpus@0.1.0"
+}

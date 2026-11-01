@@ -17,6 +17,7 @@ under [`doc/`](../doc/).
 | Compare target support / 查看目标兼容性 | [`compatibility.md`](compatibility.md) |
 | Read the execution and CLI contracts / 阅读执行与 CLI 契约 | [`execution-contract.md`](execution-contract.md), [`protocol.md`](protocol.md) |
 | Interpret Node test population evidence / 解读 Node 测试人口证据 | [`test-population-evidence.md`](test-population-evidence.md) |
+| Load-time authority / 加载时权威链 | [`load-time-authority.md`](load-time-authority.md) |
 | Inspect historical RC1 evidence / 查看历史 RC1 证据 | [`evidence.md`](evidence.md), [`../experiments/rc1/`](../experiments/rc1/) |
 | Understand release requirements / 了解发行要求 | [`release-policy.md`](release-policy.md), [`stable-release-gate.md`](stable-release-gate.md) |
 | Integrate a host or protocol / 集成宿主或协议 | [`integration.md`](integration.md), [`server-conformance.md`](server-conformance.md) |
