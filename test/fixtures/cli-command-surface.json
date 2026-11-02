@@ -1,0 +1,57 @@
+{
+  "historical_native_version": "1.0.0-rc.2.2.1",
+  "native_run_arity": 3,
+  "native_commands": [
+    "check",
+    "lex",
+    "digest",
+    "canonical",
+    "manifest",
+    "translate",
+    "compile",
+    "execute",
+    "project-check",
+    "project-run",
+    "project-translate"
+  ],
+  "reference_only_commands": [
+    "view",
+    "audit",
+    "profile",
+    "patch",
+    "review-index",
+    "build",
+    "project-projection",
+    "module-surface"
+  ],
+  "source_run_options": [
+    "--format",
+    "--runtime-receipt",
+    "--authority-pin"
+  ],
+  "schema": "re.cli-command-surface-corpus@0.1.0",
+  "source_form": [
+    { "args": ["run", "examples/hello.re"], "id": "run-relative" },
+    { "args": ["run", "--format", "json", "--runtime-receipt", "examples/hello.re"], "id": "run-option" },
+    { "args": ["run", "--authority-pin", "pin.json", "--format", "json", "examples/hello.re"], "id": "run-authority-pin-option" },
+    { "args": ["run", "examples/hello.re", "--", "one", "two"], "id": "run-arguments" },
+    { "args": ["run", "examples/hello.Re"], "id": "run-mixed-case-extension" },
+    { "args": ["view", "--format", "html", "examples/hello.re"], "id": "view" },
+    { "args": ["audit", "--format", "json", "examples/hello.re"], "id": "audit" },
+    { "args": ["profile", "examples/hello.re"], "id": "profile" },
+    { "args": ["patch", "--patch", "patch.json", "examples/hello.re"], "id": "patch" },
+    { "args": ["review-index", "examples/hello.re"], "id": "review-index" },
+    { "args": ["build", "--out", "build/hello", "examples/hello.re"], "id": "build" },
+    { "args": ["check", "--format", "json", "examples/hello.re"], "id": "check-json-option" },
+    { "args": ["check", "--write", "examples/hello.re"], "id": "check-write-option" },
+    { "args": ["translate", "--format", "json", "examples/hello.re"], "id": "translate-json-option" },
+    { "args": ["project-check", "--format", "json", "examples/agent-review"], "id": "project-check-json-option" },
+    { "args": ["project-run", "--fixture", "fixture.json", "examples/agent-review"], "id": "project-run-fixture-option" },
+    { "args": ["project-translate", "examples/agent-review"], "id": "project-translate-default-source" },
+    { "args": ["project-translate", "--locale", "en-US", "examples/agent-review"], "id": "project-translate-locale-source" },
+    { "args": ["project-translate", "--locale", "en-US", "--format", "html", "examples/agent-review"], "id": "project-translate-source-option" },
+    { "args": ["project-translate", "--format", "html", "--locale", "en-US", "examples/agent-review"], "id": "project-translate-reversed-options" },
+    { "args": ["project-projection", "--routes", "routes.json", "--out", "out", "examples/agent-review"], "id": "project-projection" },
+    { "args": ["module-surface", "--manifest", "manifest.json", "examples/hello.re"], "id": "module-surface" }
+  ]
+}

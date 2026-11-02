@@ -112,6 +112,8 @@ test('source import inventory is explicit, path-safe, and digest-bound', () => {
   const paths = inventory.files.map(({ path }) => path)
   assert.deepEqual(paths, allowlist.files)
   assert.deepEqual(paths, [...new Set(paths)].sort())
+  assert.ok(paths.includes('bin/revia'))
+  assert.ok(paths.includes('bin/revia.ps1'))
   const rootFiles = new Set([
     '.gitattributes',
     '.gitignore',
@@ -131,7 +133,7 @@ test('source import inventory is explicit, path-safe, and digest-bound', () => {
   for (const entry of inventory.files) {
     assert.ok(
       rootFiles.has(entry.path)
-        || /^(?:\.github\/workflows|doc|docs|examples|experiments|projects|scripts|native|src|test|test-support)\//u.test(entry.path),
+        || /^(?:\.github\/workflows|bin|doc|docs|examples|experiments|projects|scripts|native|src|test|test-support)\//u.test(entry.path),
       `path outside approved import areas: ${entry.path}`,
     )
     assert.doesNotMatch(entry.path, /(^|\/)(relay|scratch|target|\.git)(\/|$)/u)

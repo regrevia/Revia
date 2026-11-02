@@ -17,16 +17,18 @@ this release.
 ## Developer Workflow / 开发流程
 
 ```bash
-./bin/revia check examples/agent-review/main.re
-./bin/revia run examples/agent-review/main.re
-./bin/revia translate --format json examples/agent-review/main.re
-./bin/revia manifest examples/agent-review/main.re
-./bin/revia view --locale en-US --format html examples/agent-review/main.re
-./bin/revia build --out build/agent-review examples/agent-review/main.re
+npm run re -- check examples/agent-review/main.re
+npm run re -- run examples/agent-review/main.re
+npm run re -- translate --format json examples/agent-review/main.re
+npm run re -- manifest examples/agent-review/main.re
+npm run re -- view --locale en-US --format html examples/agent-review/main.re
+npm run re -- build --out build/agent-review examples/agent-review/main.re
 ```
 
 Use `project-check` on checked project examples. Projects with Agent or
-business facts can also use `project-translate`. Native
+business facts can also use `project-translate`. Its native and Node reference
+signatures differ; use `revia help project-translate` to select the intended
+surface. Native
 `project-build`/`project-run` remain bound to versioned candidate contracts;
 the public source tree does not present them as a complete package manager or
 production project system.
@@ -103,7 +105,8 @@ Questions for Agent experiments:
 
 | Surface / 表面 | Public RC state / 公开 RC 状态 |
 |---|---|
-| Native CLI, check/run/manifest/view | measured on macOS arm64 |
+| Revia `1.0.0-rc.2.2.1` native CLI | measured-native on Linux x64 and Windows x64; other targets pending |
+| Node reference CLI, source-oriented run/view/audit/build | Node conformance-tested; not native release evidence |
 | Bounded HTTP/JSON/SQLite trial | published as bounded evidence |
 | Generated frontend contract | bounded TypeScript projection, not a complete generator |
 | HTTP adapter | bounded trial only |

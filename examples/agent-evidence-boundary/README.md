@@ -14,10 +14,10 @@ stdout line proves every reachable path executed.
 From the repository root:
 
 ```bash
-./bin/revia check examples/agent-evidence-boundary.re
-./bin/revia run examples/agent-evidence-boundary.re
-./bin/revia manifest examples/agent-evidence-boundary.re
-./bin/revia view --locale en-US --format html examples/agent-evidence-boundary.re > evidence-boundary.html
+npm run re -- check examples/agent-evidence-boundary.re
+npm run re -- run examples/agent-evidence-boundary.re
+npm run re -- manifest examples/agent-evidence-boundary.re
+npm run --silent re -- view --locale en-US --format html examples/agent-evidence-boundary.re > evidence-boundary.html
 ```
 
 Expected observed output / 预期观察到的输出：

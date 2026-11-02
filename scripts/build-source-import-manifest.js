@@ -25,6 +25,8 @@ const EXPLICIT_PATHS = [
   '.gitignore',
   '.github/workflows/validate.yml',
   'AGENTS.md',
+  'bin/revia',
+  'bin/revia.ps1',
   'CONTRIBUTING.md',
   'docs/README.md',
   'examples/README.md',
@@ -85,6 +87,7 @@ const EXPLICIT_PATHS = [
   'scripts/run-standalone-semantic-performance-hard-gate.js',
   'scripts/run-standalone-task-lifecycle-core.js',
   'scripts/run-task-runtime-lifecycle-benchmark.js',
+  'scripts/test-cli-surface.ps1',
   'scripts/run-tracked-tests.js',
   'scripts/validate-public-tree.sh',
 ]

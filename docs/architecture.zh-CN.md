@@ -50,10 +50,10 @@ Revia 将 Agent 编写的程序与人类审阅界面连接在同一条确定性�
 公开示例保持简洁，但完整走过源码到审阅的路径：
 
 ```bash
-./bin/revia check examples/agent-review/main.re
-./bin/revia run examples/agent-review/main.re
-./bin/revia manifest examples/agent-review/main.re
-./bin/revia view --locale zh-CN --format html examples/agent-review/main.re > review.html
+npm run re -- check examples/agent-review/main.re
+npm run re -- run examples/agent-review/main.re
+npm run re -- manifest examples/agent-review/main.re
+npm run --silent re -- view --locale zh-CN --format html examples/agent-review/main.re > review.html
 ```
 
 生成的 `manifest` 与 `view` 均来自 Revia 翻译器对同一 `.re` 文件的直接处理。

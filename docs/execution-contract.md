@@ -35,14 +35,18 @@ directly from `.re`; it is not a second hand-written explanation.
 ## Verification Loop
 
 ```bash
-./bin/revia check examples/agent-handoff-review/main.re
-./bin/revia run examples/agent-handoff-review/main.re
-./bin/revia manifest examples/agent-handoff-review/main.re > manifest.json
-./bin/revia view --locale en-US --format html examples/agent-handoff-review/main.re > review.html
+npm run re -- check examples/agent-handoff-review/main.re
+npm run re -- run examples/agent-handoff-review/main.re
+npm run --silent re -- manifest examples/agent-handoff-review/main.re > manifest.json
+npm run --silent re -- view --locale en-US --format html examples/agent-handoff-review/main.re > review.html
 ```
 
 Use the source, `manifest.json`, `review.html`, output, and exit status as one
 review set. A change to the source should be checked against all four views.
+
+These source-oriented commands use the Node reference CLI. `bin/revia` is the
+versioned native launcher; its `run` command accepts a checked graph, bytecode
+artifact, and input digest.
 
 ## Public Contract Surface
 

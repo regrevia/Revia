@@ -49,43 +49,213 @@ EOF
   fi
 
   cat <<'EOF'
-Usage: revia <command> [options] <file.re>
+Revia native release CLI (versioned executable)
+Usage: revia <native-command> [arguments]
 
-Commands:
-  check       Validate a Re program.
-  run         Execute a checked Re program.
-  manifest    Print the machine contract.
-  view        Render a semantic review view.
-  translate   Print the checked translation.
-  build       Emit a self-contained Node demo artifact.
-  audit       Print structured audit facts.
-  profile     Print the runtime profile.
-  patch       Apply a checked patch.
-  review-index Query semantic review facts.
+Native source commands:
+  check <file.re>
+  lex <file.re>
+  digest <file.re>
+  canonical <file.re>
+  manifest <file.re>
+  translate <file.re>
+  compile <source.re> <artifact>
+  execute <source.re> <input-digest>
+  run <graph> <artifact> <input-digest>
+  project-check <project-dir>
+  project-run <project-dir> <cache> <build> <profile> <toolchain> <module> <input-digest>
+  project-translate <project> <cache> <build> <profile-digest> <toolchain-digest> <module>
+  [Additional versioned runtime, project, and evidence commands]
 
-Run "revia help <command>" or "revia <command> --help" for command usage.
+This launcher invokes the versioned native executable. It does not invoke Node.
+The Node reference CLI has a separate source-oriented surface:
+  npm run re -- <command> [arguments]
+  npm run re -- run <file.re> [-- <program-args>...]
+    [--format json --runtime-receipt | --format json --authority-pin <pin.json>]
+  Exactly one program argument collides with native run arity; use the explicit npm command.
+  npm run re -- view [--locale zh-CN|en-US] [--format html|svg] <file.re>
+  view, audit, profile, patch, review-index, build, project-projection,
+  module-surface, project-translate
+
+Use "revia help <command>" for both signatures where they overlap.
 EOF
 }
 
 command_usage() {
   case "$1" in
-    check) printf '%s\n' 'Usage: revia check [--format json | --write] <file.re>' ;;
-    run) printf '%s\n' 'Usage: revia run [--format json] <file.re> [-- <args>...]' ;;
-    manifest) printf '%s\n' 'Usage: revia manifest <file.re>' ;;
-    view) printf '%s\n' 'Usage: revia view [--locale zh-CN|en-US] [--format html|svg] <file.re>' ;;
-    translate) printf '%s\n' 'Usage: revia translate --format json <file.re>' ;;
-    build) printf '%s\n' 'Usage: revia build --out <dir> <file.re>' ;;
-    audit) printf '%s\n' 'Usage: revia audit --format json <file.re>' ;;
-    profile) printf '%s\n' 'Usage: revia profile <file.re>' ;;
-    patch) printf '%s\n' 'Usage: revia patch --patch <patch.json> <file.re>' ;;
-    review-index) printf '%s\n' 'Usage: revia review-index [--changed-since <revision>] [--cursor <cursor>] [--limit <n>] [--fact-id <id> --index-revision <revision>] <file.re>' ;;
-    project-check) printf '%s\n' 'Usage: revia project-check --format json <project-dir>' ;;
-    project-run) printf '%s\n' 'Usage: revia project-run --fixture <fixture.json> <project-dir>' ;;
+    check) cat <<'EOF'
+Native: revia check <file.re>
+Reference: npm run re -- check [--format json | --write] <file.re>
+EOF
+      ;;
+    run) cat <<'EOF'
+Native: revia run <graph> <artifact> <input-digest>
+Reference: npm run re -- run [--format json|text] <file.re> [-- <args>...]
+          [--format json --runtime-receipt | --format json --authority-pin <pin.json>]
+EOF
+      ;;
+    manifest) printf '%s\n' 'Native/reference: revia manifest <file.re> / npm run re -- manifest <file.re>' ;;
+    translate) cat <<'EOF'
+Native: revia translate <file.re>
+Reference: npm run re -- translate --format json <file.re>
+EOF
+      ;;
+    view) printf '%s\n' 'Node reference only: npm run re -- view [--locale zh-CN|en-US] [--format html|svg] <file.re>' ;;
+    audit) printf '%s\n' 'Node reference only: npm run re -- audit --format json <file.re>' ;;
+    profile) printf '%s\n' 'Node reference only: npm run re -- profile <file.re>' ;;
+    patch) printf '%s\n' 'Node reference only: npm run re -- patch --patch <patch.json> <file.re>' ;;
+    review-index) printf '%s\n' 'Node reference only: npm run re -- review-index [options] <file.re>' ;;
+    build) printf '%s\n' 'Node reference only: npm run re -- build --out <dir> <file.re>' ;;
+    project-check) cat <<'EOF'
+Native: revia project-check <project-dir>
+Reference: npm run re -- project-check --format json <project-dir>
+EOF
+      ;;
+    project-run) cat <<'EOF'
+Native: revia project-run <project> <cache> <build> <profile> <toolchain> <module> <input-digest>
+Reference: npm run re -- project-run --fixture <fixture.json> <project-dir>
+EOF
+      ;;
+    project-translate) cat <<'EOF'
+Native: revia project-translate <project> <cache> <build> <profile-digest> <toolchain-digest> <module>
+Reference: npm run re -- project-translate [--locale zh-CN|en-US] [--format json|text|html|svg] <project-dir>
+EOF
+      ;;
+    project-projection) printf '%s\n' 'Node reference only: npm run re -- project-projection --routes <routes.json> --out <dir> <project-dir>' ;;
+    module-surface) printf '%s\n' 'Node reference only: npm run re -- module-surface --manifest <manifest.json> <file.re>' ;;
     *)
       printf '%s\n' "Unknown Revia command: $1" >&2
       exit 64
       ;;
   esac
+}
+
+has_launcher_command_usage() {
+  case "$1" in
+    check|run|manifest|translate|view|audit|profile|patch|review-index|build|project-check|project-run|project-translate|project-projection|module-surface)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+is_source_file() {
+  case "$1" in
+    *.[rR][eE]) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+is_reference_run_form() {
+  # Three operands collide with the native run signature; native wins.
+  [ "$#" -eq 3 ] && return 1
+
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --format)
+        [ "$#" -ge 2 ] || return 1
+        case "$2" in json|text) ;; *) return 1 ;; esac
+        shift 2
+        ;;
+      --runtime-receipt)
+        shift
+        ;;
+      --authority-pin)
+        [ "$#" -ge 2 ] || return 1
+        shift 2
+        ;;
+      *) break ;;
+    esac
+  done
+
+  [ "$#" -ge 1 ] || return 1
+  is_source_file "$1" || return 1
+  shift
+  [ "$#" -eq 0 ] && return 0
+  [ "$1" = '--' ] && [ "$#" -ge 3 ]
+}
+
+source_form_diagnostic() {
+  command=$1
+  printf 'Revia native release CLI %s does not accept this source-form invocation.\n' "$VERSION" >&2
+  case "$command" in
+    run) printf '%s\n' 'Use the Node reference CLI: npm run re -- run <file.re> [-- <program-args>...]' >&2 ;;
+    view|audit|profile|patch|review-index|build|project-projection|module-surface)
+      command_usage "$command" >&2
+      ;;
+    project-check|project-run|project-translate|check|translate)
+      command_usage "$command" >&2
+      ;;
+    *) printf '%s\n' 'Use the Node reference CLI: npm run re -- <command> [arguments]' >&2 ;;
+  esac
+  exit 64
+}
+
+check_source_form_invocation() {
+  [ "$VERSION" = '1.0.0-rc.2.2.1' ] || return 0
+  command=${1:-}
+  [ "$#" -gt 0 ] && shift
+
+  case "$command" in
+    view|audit|profile|patch|review-index|build|project-projection|module-surface)
+      source_form_diagnostic "$command"
+      ;;
+    run)
+      if is_reference_run_form "$@"; then
+        source_form_diagnostic "$command"
+      fi
+      ;;
+    check)
+      if [ "${1:-}" = '--write' ] && [ "$#" -eq 2 ] && is_source_file "$2"; then
+        source_form_diagnostic "$command"
+      fi
+      if [ "${1:-}" = '--format' ] && [ "$#" -eq 3 ] && [ "$2" = 'json' ] && is_source_file "$3"; then
+        source_form_diagnostic "$command"
+      fi
+      ;;
+    translate)
+      if [ "${1:-}" = '--format' ] && [ "$#" -eq 3 ] && [ "$2" = 'json' ] && is_source_file "$3"; then
+        source_form_diagnostic "$command"
+      fi
+      ;;
+    project-check)
+      if [ "$#" -eq 3 ] && [ "$1" = '--format' ] && [ "$2" = 'json' ]; then
+        source_form_diagnostic "$command"
+      fi
+      ;;
+    project-run)
+      if [ "$#" -eq 3 ] && [ "$1" = '--fixture' ]; then
+        source_form_diagnostic "$command"
+      fi
+      ;;
+    project-translate)
+      case "${1:-}" in
+        --locale)
+          if { [ "$#" -eq 3 ] && { [ "$2" = 'zh-CN' ] || [ "$2" = 'en-US' ]; }; } \
+            || { [ "$#" -eq 5 ] && { [ "$2" = 'zh-CN' ] || [ "$2" = 'en-US' ]; } \
+              && [ "$3" = '--format' ] \
+              && { [ "$4" = 'json' ] || [ "$4" = 'text' ] || [ "$4" = 'html' ] || [ "$4" = 'svg' ]; }; }; then
+            source_form_diagnostic "$command"
+          fi
+          ;;
+        --format)
+          if { [ "$#" -eq 3 ] && { [ "$2" = 'json' ] || [ "$2" = 'text' ] || [ "$2" = 'html' ] || [ "$2" = 'svg' ]; }; } \
+            || { [ "$#" -eq 5 ] \
+              && { [ "$2" = 'json' ] || [ "$2" = 'text' ] || [ "$2" = 'html' ] || [ "$2" = 'svg' ]; } \
+              && [ "$3" = '--locale' ] \
+              && { [ "$4" = 'zh-CN' ] || [ "$4" = 'en-US' ]; }; }; then
+            source_form_diagnostic "$command"
+          fi
+          ;;
+        *)
+          if [ "$#" -eq 1 ]; then source_form_diagnostic "$command"; fi
+          ;;
+      esac
+      ;;
+  esac
+  return 0
 }
 
 case "${1:-}" in
@@ -104,26 +274,30 @@ case "${1:-}" in
   help)
     if [ "$#" -eq 1 ]; then
       usage
-    elif [ "$#" -eq 2 ]; then
+      exit 0
+    elif [ "$#" -eq 2 ] && has_launcher_command_usage "$2"; then
       command_usage "$2"
-    else
-      usage >&2
+      exit 0
+    elif [ "$#" -gt 2 ]; then
+      printf '%s\n' 'Usage: revia help <command>' >&2
       exit 64
+    else
+      :
     fi
-    exit 0
     ;;
 esac
 
-if [ "$VERSION" != '1.0.0-rc.1' ]; then
-  case "${1:-}" in
-    check|run|manifest|view|translate|build|audit|profile|patch|review-index|project-check|project-run)
-      if [ "$#" -eq 2 ] && [ "${2:-}" = "--help" ]; then
-        command_usage "$1"
-        exit 0
-      fi
-      ;;
-  esac
+if [ "$VERSION" != '1.0.0-rc.1' ] && [ "$#" -eq 2 ] && [ "${2:-}" = '--help' ]; then
+  if has_launcher_command_usage "$1"; then
+    command_usage "$1"
+    exit 0
+  fi
 fi
+
+case "${1:-}" in
+  help|--help|--version|version) ;;
+  *) check_source_form_invocation "$@" ;;
+esac
 
 runtime_error() {
   printf 'Revia runtime error: %s\n' "$1" >&2

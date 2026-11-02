@@ -9,10 +9,10 @@ an explicit failure branch, and a concrete next action.
 ## Run / 运行
 
 ```bash
-./bin/revia check examples/agent-handoff-review/main.re
-./bin/revia run examples/agent-handoff-review/main.re
-./bin/revia manifest examples/agent-handoff-review/main.re
-./bin/revia view --locale en-US --format html examples/agent-handoff-review/main.re > handoff-review.html
+npm run re -- check examples/agent-handoff-review/main.re
+npm run re -- run examples/agent-handoff-review/main.re
+npm run re -- manifest examples/agent-handoff-review/main.re
+npm run --silent re -- view --locale en-US --format html examples/agent-handoff-review/main.re > handoff-review.html
 ```
 
 Expected output / 预期输出：

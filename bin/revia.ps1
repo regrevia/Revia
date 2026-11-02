@@ -22,43 +22,193 @@ For the bounded, reproducible trials, see experiments/rc1/kit/README.md.
   }
 
   @'
-Usage: revia <command> [options] <file.re>
+Revia native release CLI (versioned executable)
+Usage: revia <native-command> [arguments]
 
-Commands:
-  check       Validate a Re program.
-  run         Execute a checked Re program.
-  manifest    Print the machine contract.
-  view        Render a semantic review view.
-  translate   Print the checked translation.
-  build       Emit a self-contained Node demo artifact.
-  audit       Print structured audit facts.
-  profile     Print the runtime profile.
-  patch       Apply a checked patch.
-  review-index Query semantic review facts.
+Native source commands:
+  check <file.re>
+  lex <file.re>
+  digest <file.re>
+  canonical <file.re>
+  manifest <file.re>
+  translate <file.re>
+  compile <source.re> <artifact>
+  execute <source.re> <input-digest>
+  run <graph> <artifact> <input-digest>
+  project-check <project-dir>
+  project-run <project-dir> <cache> <build> <profile> <toolchain> <module> <input-digest>
+  project-translate <project> <cache> <build> <profile-digest> <toolchain-digest> <module>
+  [Additional versioned runtime, project, and evidence commands]
 
-Run "revia help <command>" or "revia <command> --help" for command usage.
+This launcher invokes the versioned native executable. It does not invoke Node.
+The Node reference CLI has a separate source-oriented surface:
+  npm run re -- <command> [arguments]
+  npm run re -- run <file.re> [-- <program-args>...]
+    [--format json --runtime-receipt | --format json --authority-pin <pin.json>]
+  Exactly one program argument collides with native run arity; use the explicit npm command.
+  npm run re -- view [--locale zh-CN|en-US] [--format html|svg] <file.re>
+  view, audit, profile, patch, review-index, build, project-projection,
+  module-surface, project-translate
+
+Use "revia help <command>" for both signatures where they overlap.
 '@
 }
 
 function Show-CommandUsage([string]$Command) {
   switch ($Command) {
-    'check' { 'Usage: revia check [--format json | --write] <file.re>'; break }
-    'run' { 'Usage: revia run [--format json] <file.re> [-- <args>...]'; break }
-    'manifest' { 'Usage: revia manifest <file.re>'; break }
-    'view' { 'Usage: revia view [--locale zh-CN|en-US] [--format html|svg] <file.re>'; break }
-    'translate' { 'Usage: revia translate --format json <file.re>'; break }
-    'build' { 'Usage: revia build --out <dir> <file.re>'; break }
-    'audit' { 'Usage: revia audit --format json <file.re>'; break }
-    'profile' { 'Usage: revia profile <file.re>'; break }
-    'patch' { 'Usage: revia patch --patch <patch.json> <file.re>'; break }
-    'review-index' { 'Usage: revia review-index [--changed-since <revision>] [--cursor <cursor>] [--limit <n>] [--fact-id <id> --index-revision <revision>] <file.re>'; break }
-    'project-check' { 'Usage: revia project-check --format json <project-dir>'; break }
-    'project-run' { 'Usage: revia project-run --fixture <fixture.json> <project-dir>'; break }
+    'check' {
+      @'
+Native: revia check <file.re>
+Reference: npm run re -- check [--format json | --write] <file.re>
+'@
+      break
+    }
+    'run' {
+      @'
+Native: revia run <graph> <artifact> <input-digest>
+Reference: npm run re -- run [--format json|text] <file.re> [-- <args>...]
+          [--format json --runtime-receipt | --format json --authority-pin <pin.json>]
+'@
+      break
+    }
+    'manifest' { 'Native/reference: revia manifest <file.re> / npm run re -- manifest <file.re>'; break }
+    'translate' {
+      @'
+Native: revia translate <file.re>
+Reference: npm run re -- translate --format json <file.re>
+'@
+      break
+    }
+    'view' { 'Node reference only: npm run re -- view [--locale zh-CN|en-US] [--format html|svg] <file.re>'; break }
+    'audit' { 'Node reference only: npm run re -- audit --format json <file.re>'; break }
+    'profile' { 'Node reference only: npm run re -- profile <file.re>'; break }
+    'patch' { 'Node reference only: npm run re -- patch --patch <patch.json> <file.re>'; break }
+    'review-index' { 'Node reference only: npm run re -- review-index [options] <file.re>'; break }
+    'build' { 'Node reference only: npm run re -- build --out <dir> <file.re>'; break }
+    'project-check' {
+      @'
+Native: revia project-check <project-dir>
+Reference: npm run re -- project-check --format json <project-dir>
+'@
+      break
+    }
+    'project-run' {
+      @'
+Native: revia project-run <project> <cache> <build> <profile> <toolchain> <module> <input-digest>
+Reference: npm run re -- project-run --fixture <fixture.json> <project-dir>
+'@
+      break
+    }
+    'project-translate' {
+      @'
+Native: revia project-translate <project> <cache> <build> <profile-digest> <toolchain-digest> <module>
+Reference: npm run re -- project-translate [--locale zh-CN|en-US] [--format json|text|html|svg] <project-dir>
+'@
+      break
+    }
+    'project-projection' { 'Node reference only: npm run re -- project-projection --routes <routes.json> --out <dir> <project-dir>'; break }
+    'module-surface' { 'Node reference only: npm run re -- module-surface --manifest <manifest.json> <file.re>'; break }
     default {
       [Console]::Error.WriteLine("Unknown Revia command: $Command")
       exit 64
     }
   }
+}
+
+function Test-SourceFile([string]$Path) {
+  return $null -ne $Path -and $Path.EndsWith('.re', [StringComparison]::OrdinalIgnoreCase)
+}
+
+function Test-ReferenceOnlyCommand([string]$Command) {
+  return @('view', 'audit', 'profile', 'patch', 'review-index', 'build', 'project-projection', 'module-surface') -ccontains $Command
+}
+
+function Test-LauncherHelpCommand([string]$Command) {
+  return @('check', 'run', 'manifest', 'translate', 'view', 'audit', 'profile', 'patch', 'review-index', 'build', 'project-check', 'project-run', 'project-translate', 'project-projection', 'module-surface') -ccontains $Command
+}
+
+function Test-ReferenceRunForm([string[]]$Arguments) {
+  if ($Arguments.Count -eq 3) {
+    return $false
+  }
+
+  $index = 0
+  while ($index -lt $Arguments.Count -and $Arguments[$index].StartsWith('--', [StringComparison]::Ordinal)) {
+    $option = $Arguments[$index]
+    if ($option -ceq '--format') {
+      if ($index + 1 -ge $Arguments.Count -or @('json', 'text') -cnotcontains $Arguments[$index + 1]) { return $false }
+      $index += 2
+    } elseif ($option -ceq '--runtime-receipt') {
+      $index++
+    } elseif ($option -ceq '--authority-pin') {
+      if ($index + 1 -ge $Arguments.Count) { return $false }
+      $index += 2
+    } else {
+      break
+    }
+  }
+
+  if ($index -ge $Arguments.Count -or -not (Test-SourceFile $Arguments[$index])) { return $false }
+  $index++
+  if ($index -eq $Arguments.Count) { return $true }
+  return $Arguments[$index] -ceq '--' -and ($Arguments.Count - $index) -ge 3
+}
+
+function Get-ReferenceCommand([string]$Command, [string[]]$Arguments) {
+  if ($Version -cne '1.0.0-rc.2.2.1') { return $null }
+  switch -CaseSensitive ($Command) {
+    { Test-ReferenceOnlyCommand $_ } { return $Command }
+    'run' {
+      if (Test-ReferenceRunForm $Arguments) { return $Command }
+    }
+    'check' {
+      if (($Arguments.Count -eq 2 -and $Arguments[0] -ceq '--write'
+          -and (Test-SourceFile $Arguments[1])) -or
+        ($Arguments.Count -eq 3 -and $Arguments[0] -ceq '--format'
+          -and $Arguments[1] -ceq 'json' -and (Test-SourceFile $Arguments[2]))) {
+        return $Command
+      }
+    }
+    'translate' {
+      if ($Arguments.Count -eq 3 -and $Arguments[0] -ceq '--format'
+        -and $Arguments[1] -ceq 'json' -and (Test-SourceFile $Arguments[2])) {
+        return $Command
+      }
+    }
+    'project-check' {
+      if ($Arguments.Count -eq 3 -and $Arguments[0] -ceq '--format' -and $Arguments[1] -ceq 'json') { return $Command }
+    }
+    'project-run' {
+      if ($Arguments.Count -eq 3 -and $Arguments[0] -ceq '--fixture') { return $Command }
+    }
+    'project-translate' {
+      if ($Arguments.Count -eq 1) { return $Command }
+      if ($Arguments.Count -eq 3 -and $Arguments[0] -ceq '--locale'
+        -and @('zh-CN', 'en-US') -ccontains $Arguments[1]) { return $Command }
+      if ($Arguments.Count -eq 3 -and $Arguments[0] -ceq '--format'
+        -and @('json', 'text', 'html', 'svg') -ccontains $Arguments[1]) { return $Command }
+      if ($Arguments.Count -eq 5
+        -and $Arguments[0] -ceq '--locale'
+        -and @('zh-CN', 'en-US') -ccontains $Arguments[1]
+        -and $Arguments[2] -ceq '--format'
+        -and @('json', 'text', 'html', 'svg') -ccontains $Arguments[3]) { return $Command }
+      if ($Arguments.Count -eq 5
+        -and $Arguments[0] -ceq '--format'
+        -and @('json', 'text', 'html', 'svg') -ccontains $Arguments[1]
+        -and $Arguments[2] -ceq '--locale'
+        -and @('zh-CN', 'en-US') -ccontains $Arguments[3]) { return $Command }
+    }
+  }
+  return $null
+}
+
+function Stop-ForReferenceCommand([string]$Command) {
+  [Console]::Error.WriteLine("Revia native release CLI $Version does not accept this source-form invocation.")
+  switch -CaseSensitive ($Command) {
+    'run' { [Console]::Error.WriteLine('Use the Node reference CLI: npm run re -- run <file.re> [-- <program-args>...]') }
+    default { Show-CommandUsage $Command | ForEach-Object { [Console]::Error.WriteLine($_) } }
+  }
+  exit 64
 }
 
 function Get-ReviaRoot {
@@ -84,21 +234,36 @@ try {
   $Version = (Get-Content -LiteralPath (Join-Path $Root 'VERSION') -TotalCount 1).Trim()
   $script:ReviaVersion = $Version
 
-  if ($args.Count -eq 1 -and ($args[0] -eq '--version' -or $args[0] -eq 'version')) {
+  if ($args.Count -eq 1 -and ($args[0] -ceq '--version' -or $args[0] -ceq 'version')) {
     Write-Output "revia $Version"
     exit 0
   }
-  if ($args.Count -eq 1 -and ($args[0] -eq '--help' -or $args[0] -eq 'help')) {
+  if ($args.Count -eq 1 -and ($args[0] -ceq '--help' -or $args[0] -ceq 'help')) {
     Show-Usage
     exit 0
   }
-  if ($args.Count -eq 2 -and $args[0] -eq 'help') {
-    Show-CommandUsage $args[1]
-    exit 0
+  if ($args.Count -gt 2 -and $args[0] -ceq 'help') {
+    [Console]::Error.WriteLine('Usage: revia help <command>')
+    exit 64
   }
-  if ($args.Count -eq 2 -and $args[1] -eq '--help') {
-    Show-CommandUsage $args[0]
-    exit 0
+  if ($args.Count -eq 2 -and $args[0] -ceq 'help') {
+    if (Test-LauncherHelpCommand $args[1]) {
+      Show-CommandUsage $args[1]
+      exit 0
+    }
+  }
+  if ($args.Count -eq 2 -and $args[1] -ceq '--help') {
+    if (Test-LauncherHelpCommand $args[0]) {
+      Show-CommandUsage $args[0]
+      exit 0
+    }
+  }
+
+  if ($args.Count -gt 0) {
+    $referenceCommand = Get-ReferenceCommand $args[0] @($args | Select-Object -Skip 1)
+    if ($referenceCommand) {
+      Stop-ForReferenceCommand $referenceCommand
+    }
   }
 
   if ($Version -eq '1.0.0-rc.1') {

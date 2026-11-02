@@ -1,11 +1,12 @@
 # Re Language Reference / Re 语言参考
 
 This reference describes the public `re 0.1 compact` surface implemented by
-the current release binary. The source is a text projection of an executable
-semantic graph.
+the current native and Node reference toolchains. The source is a text
+projection of an executable semantic graph; each CLI's evidence boundary is
+identified separately below.
 
 本参考描述当前发行二进制实现的公开 `re 0.1 compact` 表面。源码是可执行语义图
-的文本投影。
+的文本投影；下文会分别说明各 CLI 的证据边界。
 
 ## Minimal Grammar / 最小语法
 
@@ -153,11 +154,15 @@ output is captured and tested in the same way.
 
 ## One Source, Four Projections / 一份源码，四种投影
 
+The source-oriented examples below use the Node reference CLI (`npm run re --`).
+The versioned `bin/revia` launcher exposes the native release command surface;
+its `run` signature is `run <graph> <artifact> <input-digest>`.
+
 ```bash
-./bin/revia check examples/agent-workflow-brief.re
-./bin/revia run examples/agent-workflow-brief.re
-./bin/revia manifest examples/agent-workflow-brief.re > manifest.json
-./bin/revia view --locale en-US --format html examples/agent-workflow-brief.re > review.html
+npm run re -- check examples/agent-workflow-brief.re
+npm run re -- run examples/agent-workflow-brief.re
+npm run --silent re -- manifest examples/agent-workflow-brief.re > manifest.json
+npm run --silent re -- view --locale en-US --format html examples/agent-workflow-brief.re > review.html
 ```
 
 `check` validates, `run` observes execution, `manifest` exposes machine facts,

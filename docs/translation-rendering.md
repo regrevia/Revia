@@ -83,8 +83,8 @@ production workloads.
 ## Try It / 试用
 
 ```bash
-./bin/revia project-translate --locale en-US --format html examples/agent-expense-review > review.html
-./bin/revia project-translate --locale zh-CN --format svg examples/agent-expense-review > review.svg
+npm run --silent re -- project-translate --locale en-US --format html examples/agent-expense-review > review.html
+npm run --silent re -- project-translate --locale zh-CN --format svg examples/agent-expense-review > review.svg
 ```
 
 The generated files are review projections, not audit authority. Use the

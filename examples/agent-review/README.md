@@ -5,10 +5,10 @@ human review graph in one small program.
 一个小程序同时展示显式能力、效果结果、失败处理、机器清单与人类审阅图。
 
 ```bash
-./bin/revia check examples/agent-review/main.re
-./bin/revia run examples/agent-review/main.re
-./bin/revia manifest examples/agent-review/main.re
-./bin/revia view --locale en-US --format html examples/agent-review/main.re > review.html
+npm run re -- check examples/agent-review/main.re
+npm run re -- run examples/agent-review/main.re
+npm run re -- manifest examples/agent-review/main.re
+npm run --silent re -- view --locale en-US --format html examples/agent-review/main.re > review.html
 ```
 
 Generate the manifest from the same source file when reviewing a run. It

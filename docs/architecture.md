@@ -56,10 +56,10 @@ The public example is intentionally small, but it crosses the complete
 source-to-review path:
 
 ```bash
-./bin/revia check examples/agent-review/main.re
-./bin/revia run examples/agent-review/main.re
-./bin/revia manifest examples/agent-review/main.re
-./bin/revia view --locale en-US --format html examples/agent-review/main.re > review.html
+npm run re -- check examples/agent-review/main.re
+npm run re -- run examples/agent-review/main.re
+npm run re -- manifest examples/agent-review/main.re
+npm run --silent re -- view --locale en-US --format html examples/agent-review/main.re > review.html
 ```
 
 公开示例保持简洁，但完整走过源码到审阅的路径。生成的 `manifest` 与

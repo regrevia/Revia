@@ -34,14 +34,17 @@ Revia 将 Agent 编写的源码到人类审阅的路径明确连接起来：
 ## 验证流程
 
 ```bash
-./bin/revia check examples/agent-handoff-review/main.re
-./bin/revia run examples/agent-handoff-review/main.re
-./bin/revia manifest examples/agent-handoff-review/main.re > manifest.json
-./bin/revia view --locale zh-CN --format html examples/agent-handoff-review/main.re > review.html
+npm run re -- check examples/agent-handoff-review/main.re
+npm run re -- run examples/agent-handoff-review/main.re
+npm run --silent re -- manifest examples/agent-handoff-review/main.re > manifest.json
+npm run --silent re -- view --locale zh-CN --format html examples/agent-handoff-review/main.re > review.html
 ```
 
 将源码、`manifest.json`、`review.html`、输出和退出状态作为一组审阅证据。
 源码变化后，应对照四个视图重新检查。
+
+这些面向源码的命令使用 Node 参考 CLI。`bin/revia` 是版本化 native 入口；
+它的 `run` 接收已检查的 graph、bytecode artifact 和 input digest。
 
 ## 公开契约面
 
