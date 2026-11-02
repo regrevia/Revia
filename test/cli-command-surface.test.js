@@ -46,6 +46,7 @@ test('launcher surfaces match the shared CLI command-surface corpus', async () =
   }
   assert.match(sh, /source-form invocation/u)
   assert.match(powershell, /source-form invocation/u)
+  assert.doesNotMatch(powershellContract, /,\s*@\(/u)
   assert.match(windowsWorkflow, /scripts\/test-cli-surface\.ps1/u)
   assert.match(powershellContract, /Node reference only/u)
 })

@@ -40,17 +40,19 @@ try {
   Copy-Item -LiteralPath (Resolve-Path -LiteralPath $NativeExecutable).Path -Destination $native
 
   $helpCases = @(
-    @('--help'),
-    @('help'),
-    @('help', 'run'),
-    @('help', 'view'),
-    @('help', 'build'),
-    @('help', 'project-translate'),
-    @('view', '--help'),
-    @('help', 'lex'),
-    @('lex', '--help')
+    '--help',
+    'help',
+    'help|run',
+    'help|view',
+    'help|build',
+    'help|project-translate',
+    'view|--help',
+    'help|lex',
+    'lex|--help'
   )
-  foreach ($helpArgs in $helpCases) {
+  foreach ($helpCase in $helpCases) {
+    $helpArgs = $helpCase.Split('|')
+    if ($helpCase -eq '--help') { $helpArgs = @('--help') }
     $output = & (Join-Path $bin 'revia.ps1') @helpArgs 2> $stderrFile | Out-String
     $stderr = Get-Content -LiteralPath $stderrFile -Raw -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $stderrFile -Force -ErrorAction SilentlyContinue
@@ -77,10 +79,8 @@ try {
       throw "launcher help does not distinguish CLI surfaces: $($helpArgs -join ' ')"
     }
   }
-  foreach ($invalidHelp in @(
-    ,@('help', 'check', 'extra'),
-    ,@('help', 'a', 'b')
-  )) {
+  foreach ($invalidHelpCase in @('help|check|extra', 'help|a|b')) {
+    $invalidHelp = $invalidHelpCase.Split('|')
     $output = & (Join-Path $bin 'revia.ps1') @invalidHelp 2> $stderrFile | Out-String
     $stderr = Get-Content -LiteralPath $stderrFile -Raw -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $stderrFile -Force -ErrorAction SilentlyContinue
@@ -139,14 +139,15 @@ try {
   if ($nativeProjectOutput -match 'npm run re --') {
     throw "native project-translate signature was intercepted: exit=$LASTEXITCODE output=$nativeProjectOutput"
   }
-  foreach ($nativeArgs in @(
-    ,@('project-check', '--format', 'json', 'project', 'extra'),
-    ,@('project-run', '--fixture', 'fixture.json', 'project', 'extra'),
-    ,@('RUN', 'examples/hello.re'),
-    ,@('VIEW', 'examples/hello.re'),
-    ,@('project-translate', '--locale', 'en-us', 'project'),
-    ,@('run', '--FORMAT', 'json', 'examples/hello.re')
+  foreach ($nativeCase in @(
+    'project-check|--format|json|project|extra',
+    'project-run|--fixture|fixture.json|project|extra',
+    'RUN|examples/hello.re',
+    'VIEW|examples/hello.re',
+    'project-translate|--locale|en-us|project',
+    'run|--FORMAT|json|examples/hello.re'
   )) {
+    $nativeArgs = $nativeCase.Split('|')
     $nativeOutput = & (Join-Path $bin 'revia.ps1') @nativeArgs 2>&1 | Out-String
     if ($nativeOutput -match 'npm run re --') {
       throw "non-exact source form was intercepted: $($nativeArgs -join ' ')"
