@@ -99,7 +99,7 @@ try {
     $cases += ,[pscustomobject]@{ Name = $case.id; Args = [string[]]$case.args }
   }
   $cases += [pscustomobject]@{ Name = 'run-absolute'; Args = [string[]]@('run', $source) }
-  $cases += [pscustomobject]@{ Name = 'run-authority-option'; Args = [string[]]@('run', '--authority-pin', 'pin.json', 'examples/hello.re') }
+  $cases += [pscustomobject]@{ Name = 'run-authority-option'; Args = [string[]]@('run', '--authority-pin', 'pin.json', '--format', 'json', 'examples/hello.re') }
   $cases += [pscustomobject]@{ Name = 'run-relative-program-arguments'; Args = [string[]]@('run', 'examples/hello.re', '--', 'one', 'two') }
   $cases += [pscustomobject]@{ Name = 'run-mixed-case-extension'; Args = [string[]]@('run', 'examples/hello.Re') }
 
@@ -152,6 +152,13 @@ try {
     $nativeOutput = & (Join-Path $bin 'revia.ps1') @nativeArgs 2>&1 | Out-String
     if ($nativeOutput -match 'npm run re --') {
       throw "non-exact source form was intercepted: $($nativeArgs -join ' ')"
+    }
+  }
+  foreach ($case in $corpus.native_controls) {
+    $nativeArgs = [string[]]$case.args
+    $nativeOutput = & (Join-Path $bin 'revia.ps1') @nativeArgs 2>&1 | Out-String
+    if ($nativeOutput -match 'npm run re --') {
+      throw "native arity control was intercepted: $($case.id)"
     }
   }
   Write-Output 'PowerShell CLI surface contract passed.'

@@ -53,5 +53,8 @@
     { "args": ["project-translate", "--format", "html", "--locale", "en-US", "examples/agent-review"], "id": "project-translate-reversed-options" },
     { "args": ["project-projection", "--routes", "routes.json", "--out", "out", "examples/agent-review"], "id": "project-projection" },
     { "args": ["module-surface", "--manifest", "manifest.json", "examples/hello.re"], "id": "module-surface" }
+  ],
+  "native_controls": [
+    { "args": ["run", "--authority-pin", "pin.json", "examples/hello.re"], "id": "run-authority-pin-arity-collision-native" }
   ]
 }

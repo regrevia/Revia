@@ -147,7 +147,9 @@ test('Bash launcher passes native commands through without guessing from .re pat
   const emptyReferenceSeparator = ['run', 'examples/hello.re', '--']
 
   for (const args of [
+    ...corpus.native_controls.map(({ args }) => args),
     nativeThreeOperand,
+    ['run', '--authority-pin', 'pin.json', 'examples/hello.re'],
     nativeSeparatorPath,
     nativeFlagLikePath,
     ['run', '--format', 'json', 'examples/hello.re'],
