@@ -27,13 +27,14 @@ try {
   Copy-Item -LiteralPath (Join-Path $root 'bin/revia.ps1') -Destination (Join-Path $bin 'revia.ps1')
   Set-Content -LiteralPath (Join-Path $project 'VERSION') -Value "$version`n" -NoNewline
   $env:LOCALAPPDATA = $cache
-  Set-Content -LiteralPath (Join-Path $project 'runtime/checksums.txt') -Value (
-    ('a' * 64) + "  revia-$version-windows-x64.zip`n" + ('b' * 64) + "  revia-$version-windows-x64`n"
-  ) -NoNewline
+  $checksumsPath = Join-Path $project 'runtime/checksums.txt'
+  $checksumText = ('a' * 64) + "  revia-$version-windows-x64.zip`n"
+  $checksumText += ('b' * 64) + "  revia-$version-windows-x64`n"
+  Set-Content -LiteralPath $checksumsPath -Value $checksumText -NoNewline
   $nativeBytes = [IO.File]::ReadAllBytes((Resolve-Path -LiteralPath $NativeExecutable).Path)
   $nativeDigest = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($nativeBytes)).ToLowerInvariant()
-  (Get-Content -LiteralPath (Join-Path $project 'runtime/checksums.txt') -Raw).Replace(('b' * 64), $nativeDigest) |
-    Set-Content -LiteralPath (Join-Path $project 'runtime/checksums.txt') -NoNewline
+  (Get-Content -LiteralPath $checksumsPath -Raw).Replace(('b' * 64), $nativeDigest) |
+    Set-Content -LiteralPath $checksumsPath -NoNewline
 
   $native = Join-Path $cache "Revia/$version/windows-x64/revia.exe"
   New-Item -ItemType Directory -Force -Path (Split-Path -Parent $native) | Out-Null

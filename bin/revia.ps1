@@ -127,6 +127,10 @@ function Test-LauncherHelpCommand([string]$Command) {
   return @('check', 'run', 'manifest', 'translate', 'view', 'audit', 'profile', 'patch', 'review-index', 'build', 'project-check', 'project-run', 'project-translate', 'project-projection', 'module-surface') -ccontains $Command
 }
 
+function Test-ExactChoice([string]$Value, [string[]]$Choices) {
+  return $Choices -ccontains $Value
+}
+
 function Test-ReferenceRunForm([string[]]$Arguments) {
   if ($Arguments.Count -eq 3) {
     return $false
@@ -136,7 +140,8 @@ function Test-ReferenceRunForm([string[]]$Arguments) {
   while ($index -lt $Arguments.Count -and $Arguments[$index].StartsWith('--', [StringComparison]::Ordinal)) {
     $option = $Arguments[$index]
     if ($option -ceq '--format') {
-      if ($index + 1 -ge $Arguments.Count -or @('json', 'text') -cnotcontains $Arguments[$index + 1]) { return $false }
+      if ($index + 1 -ge $Arguments.Count) { return $false }
+      if (-not (Test-ExactChoice $Arguments[$index + 1] @('json', 'text'))) { return $false }
       $index += 2
     } elseif ($option -ceq '--runtime-receipt') {
       $index++
@@ -184,19 +189,19 @@ function Get-ReferenceCommand([string]$Command, [string[]]$Arguments) {
     'project-translate' {
       if ($Arguments.Count -eq 1) { return $Command }
       if ($Arguments.Count -eq 3 -and $Arguments[0] -ceq '--locale'
-        -and @('zh-CN', 'en-US') -ccontains $Arguments[1]) { return $Command }
+        -and (Test-ExactChoice $Arguments[1] @('zh-CN', 'en-US'))) { return $Command }
       if ($Arguments.Count -eq 3 -and $Arguments[0] -ceq '--format'
-        -and @('json', 'text', 'html', 'svg') -ccontains $Arguments[1]) { return $Command }
+        -and (Test-ExactChoice $Arguments[1] @('json', 'text', 'html', 'svg'))) { return $Command }
       if ($Arguments.Count -eq 5
         -and $Arguments[0] -ceq '--locale'
-        -and @('zh-CN', 'en-US') -ccontains $Arguments[1]
+        -and (Test-ExactChoice $Arguments[1] @('zh-CN', 'en-US'))
         -and $Arguments[2] -ceq '--format'
-        -and @('json', 'text', 'html', 'svg') -ccontains $Arguments[3]) { return $Command }
+        -and (Test-ExactChoice $Arguments[3] @('json', 'text', 'html', 'svg'))) { return $Command }
       if ($Arguments.Count -eq 5
         -and $Arguments[0] -ceq '--format'
-        -and @('json', 'text', 'html', 'svg') -ccontains $Arguments[1]
+        -and (Test-ExactChoice $Arguments[1] @('json', 'text', 'html', 'svg'))
         -and $Arguments[2] -ceq '--locale'
-        -and @('zh-CN', 'en-US') -ccontains $Arguments[3]) { return $Command }
+        -and (Test-ExactChoice $Arguments[3] @('zh-CN', 'en-US'))) { return $Command }
     }
   }
   return $null
