@@ -145,6 +145,14 @@ function Test-ReferenceFormat([string]$Value) {
   }
 }
 
+function Test-ReferenceRunFormat([string]$Value) {
+  switch -CaseSensitive ($Value) {
+    'json' { return $true }
+    'text' { return $true }
+    default { return $false }
+  }
+}
+
 function Test-ReferenceRunForm([string[]]$Arguments) {
   if ($Arguments.Count -eq 3) {
     return $false
@@ -155,7 +163,8 @@ function Test-ReferenceRunForm([string[]]$Arguments) {
     $option = $Arguments[$index]
     if ($option -ceq '--format') {
       if ($index + 1 -ge $Arguments.Count) { return $false }
-      if ($Arguments[$index + 1] -cne 'json' -and $Arguments[$index + 1] -cne 'text') { return $false }
+      $validFormat = Test-ReferenceRunFormat -Value $Arguments[$index + 1]
+      if (-not $validFormat) { return $false }
       $index += 2
     } elseif ($option -ceq '--runtime-receipt') {
       $index++
@@ -167,56 +176,103 @@ function Test-ReferenceRunForm([string[]]$Arguments) {
     }
   }
 
-  if ($index -ge $Arguments.Count -or -not (Test-SourceFile $Arguments[$index])) { return $false }
+  if ($index -ge $Arguments.Count) { return $false }
+  $isSource = Test-SourceFile -Path $Arguments[$index]
+  if (-not $isSource) { return $false }
   $index++
   if ($index -eq $Arguments.Count) { return $true }
   return $Arguments[$index] -ceq '--' -and ($Arguments.Count - $index) -ge 3
 }
 
+function Test-ReferenceCheckForm([string[]]$Arguments) {
+  if ($Arguments.Count -eq 2) {
+    if ($Arguments[0] -cne '--write') { return $false }
+    $isSource = Test-SourceFile -Path $Arguments[1]
+    return $isSource
+  }
+  if ($Arguments.Count -eq 3) {
+    if ($Arguments[0] -cne '--format' -or $Arguments[1] -cne 'json') { return $false }
+    $isSource = Test-SourceFile -Path $Arguments[2]
+    return $isSource
+  }
+  return $false
+}
+
+function Test-ReferenceTranslateForm([string[]]$Arguments) {
+  if ($Arguments.Count -ne 3) { return $false }
+  if ($Arguments[0] -cne '--format' -or $Arguments[1] -cne 'json') { return $false }
+  $isSource = Test-SourceFile -Path $Arguments[2]
+  return $isSource
+}
+
+function Test-ReferenceProjectCheckForm([string[]]$Arguments) {
+  if ($Arguments.Count -ne 3) { return $false }
+  if ($Arguments[0] -cne '--format') { return $false }
+  return $Arguments[1] -ceq 'json'
+}
+
+function Test-ReferenceProjectRunForm([string[]]$Arguments) {
+  if ($Arguments.Count -ne 3) { return $false }
+  return $Arguments[0] -ceq '--fixture'
+}
+
+function Test-ReferenceProjectTranslateForm([string[]]$Arguments) {
+  if ($Arguments.Count -eq 1) { return $true }
+  if ($Arguments.Count -eq 3) {
+    if ($Arguments[0] -ceq '--locale') {
+      $isLocale = Test-ReferenceLocale -Value $Arguments[1]
+      return $isLocale
+    }
+    if ($Arguments[0] -ceq '--format') {
+      $isFormat = Test-ReferenceFormat -Value $Arguments[1]
+      return $isFormat
+    }
+    return $false
+  }
+  if ($Arguments.Count -ne 5) { return $false }
+
+  if ($Arguments[0] -ceq '--locale') {
+    $localeValid = Test-ReferenceLocale -Value $Arguments[1]
+    if ($Arguments[2] -cne '--format') { return $false }
+    $formatValid = Test-ReferenceFormat -Value $Arguments[3]
+    return $localeValid -and $formatValid
+  }
+  if ($Arguments[0] -ceq '--format') {
+    $formatValid = Test-ReferenceFormat -Value $Arguments[1]
+    if ($Arguments[2] -cne '--locale') { return $false }
+    $localeValid = Test-ReferenceLocale -Value $Arguments[3]
+    return $formatValid -and $localeValid
+  }
+  return $false
+}
+
 function Get-ReferenceCommand([string]$Command, [string[]]$Arguments) {
   if ($Version -cne '1.0.0-rc.2.2.1') { return $null }
-  switch -CaseSensitive ($Command) {
-    { Test-ReferenceOnlyCommand $_ } { return $Command }
-    'run' {
-      if (Test-ReferenceRunForm $Arguments) { return $Command }
-    }
-    'check' {
-      if (($Arguments.Count -eq 2 -and $Arguments[0] -ceq '--write'
-          -and (Test-SourceFile $Arguments[1])) -or
-        ($Arguments.Count -eq 3 -and $Arguments[0] -ceq '--format'
-          -and $Arguments[1] -ceq 'json' -and (Test-SourceFile $Arguments[2]))) {
-        return $Command
-      }
-    }
-    'translate' {
-      if ($Arguments.Count -eq 3 -and $Arguments[0] -ceq '--format'
-        -and $Arguments[1] -ceq 'json' -and (Test-SourceFile $Arguments[2])) {
-        return $Command
-      }
-    }
-    'project-check' {
-      if ($Arguments.Count -eq 3 -and $Arguments[0] -ceq '--format' -and $Arguments[1] -ceq 'json') { return $Command }
-    }
-    'project-run' {
-      if ($Arguments.Count -eq 3 -and $Arguments[0] -ceq '--fixture') { return $Command }
-    }
-    'project-translate' {
-      if ($Arguments.Count -eq 1) { return $Command }
-      if ($Arguments.Count -eq 3 -and $Arguments[0] -ceq '--locale'
-        -and (Test-ReferenceLocale $Arguments[1])) { return $Command }
-      if ($Arguments.Count -eq 3 -and $Arguments[0] -ceq '--format'
-        -and (Test-ReferenceFormat $Arguments[1])) { return $Command }
-      if ($Arguments.Count -eq 5
-        -and $Arguments[0] -ceq '--locale'
-        -and (Test-ReferenceLocale $Arguments[1])
-        -and $Arguments[2] -ceq '--format'
-        -and (Test-ReferenceFormat $Arguments[3])) { return $Command }
-      if ($Arguments.Count -eq 5
-        -and $Arguments[0] -ceq '--format'
-        -and (Test-ReferenceFormat $Arguments[1])
-        -and $Arguments[2] -ceq '--locale'
-        -and (Test-ReferenceLocale $Arguments[3])) { return $Command }
-    }
+  $referenceOnly = Test-ReferenceOnlyCommand -Command $Command
+  if ($referenceOnly) { return $Command }
+  if ($Command -ceq 'run') {
+    $matches = Test-ReferenceRunForm -Arguments $Arguments
+    if ($matches) { return $Command }
+  }
+  if ($Command -ceq 'check') {
+    $matches = Test-ReferenceCheckForm -Arguments $Arguments
+    if ($matches) { return $Command }
+  }
+  if ($Command -ceq 'translate') {
+    $matches = Test-ReferenceTranslateForm -Arguments $Arguments
+    if ($matches) { return $Command }
+  }
+  if ($Command -ceq 'project-check') {
+    $matches = Test-ReferenceProjectCheckForm -Arguments $Arguments
+    if ($matches) { return $Command }
+  }
+  if ($Command -ceq 'project-run') {
+    $matches = Test-ReferenceProjectRunForm -Arguments $Arguments
+    if ($matches) { return $Command }
+  }
+  if ($Command -ceq 'project-translate') {
+    $matches = Test-ReferenceProjectTranslateForm -Arguments $Arguments
+    if ($matches) { return $Command }
   }
   return $null
 }
