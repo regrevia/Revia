@@ -99,6 +99,21 @@ jobs:
           if ($LASTEXITCODE -ne 0 -or $manifest -notmatch 'graph_revision') {
             throw 'manifest smoke failed'
           }
+          foreach ($path in @('bin/revia.ps1', 'scripts/test-cli-surface.ps1')) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path -LiteralPath $path).Path,
+              [ref]$tokens,
+              [ref]$errors
+            ) | Out-Null
+            if ($errors.Count -gt 0) {
+              $details = $errors | ForEach-Object {
+                "${path}:$($_.Extent.StartLineNumber):$($_.Extent.StartColumnNumber) $($_.Message)"
+              }
+              throw "PowerShell parse failed:`n$($details -join "`n")"
+            }
+          }
           ./scripts/test-cli-surface.ps1 -NativeExecutable $exe
 
       - name: Upload source-built Windows x64 executable
