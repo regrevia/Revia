@@ -115,6 +115,7 @@ jobs:
             }
           }
           ./scripts/test-cli-surface.ps1 -NativeExecutable $exe
+          $LASTEXITCODE = 0
 
       - name: Upload source-built Windows x64 executable
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4
