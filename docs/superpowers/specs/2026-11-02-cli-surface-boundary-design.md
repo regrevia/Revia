@@ -31,20 +31,32 @@ must remain unchanged.
   release CLI only.
 - `npm run re -- <command> [arguments]` describes and invokes the current Node
   reference CLI.
-- Overlapping command names are documented with both signatures. Native
-  `run <graph> <artifact> <input-digest>` remains pass-through behavior.
+- Overlapping command names are documented with both signatures. The native
+  three-operand `run <graph> <artifact> <input-digest>` is always pass-through,
+  including when the graph filename ends in `.re`.
 - Recognized source-form commands sent to the current native launcher fail
   with exit 64 and a deterministic diagnostic naming the Node reference
-  command. The launcher must not execute or fall back to Node.
+  command. The launcher must not execute or fall back to Node. A valid native
+  one-shot alternative, `execute <source> <input-digest>`, remains available
+  and is documented distinctly from reference `run`.
+- `run` routing recognizes only valid Node source-form shapes: a source file
+  with no program arguments, recognized Node run options before the source
+  path, or a source path followed by the literal `--` argument separator.
+  Other incomplete native `run` forms retain the native usage failure and are
+  not guessed to be Node invocations.
 - The source-form guard is bound to native version `1.0.0-rc.2.2.1`; a future
   native candidate must update its supported command matrix deliberately.
+- Tests must assert that repository `VERSION` is
+  `1.0.0-rc.2.2.1` while this compatibility guard is active. A later native
+  version cannot silently inherit the old release matrix.
 - Source examples, integration guidance, and CLI reference pages use the Node
   reference prefix for Node-only capabilities and use the native launcher only
   for commands supported by the published native surface.
 
 ## Scope
 
-- Update both launchers' help and source-form mismatch diagnostics.
+- Update both launchers' help and source-form mismatch diagnostics, including
+  `help run` so it displays the two signatures separately.
 - Add a shared command-surface corpus and focused shell/Node contract tests.
 - Update affected README, execution, architecture, integration, language
   reference, and example instructions.
@@ -56,18 +68,33 @@ metadata; claiming that issue #17's historical asset is fixed.
 
 ## Acceptance
 
-1. Both launchers identify native release commands and point to
-   `npm run re --` for source-oriented reference commands.
-2. Source-form calls such as `bin/revia run examples/hello.re` fail before
-   download with exit 64, an actionable reference command, and no stdout or
-   effect.
-3. Native `run <graph> <artifact> <input-digest>` is not intercepted.
-4. Node source-oriented run/view examples pass through the documented
-   reference CLI; native-supported check/manifest/translate forms remain
-   accurately identified.
-5. Tests reject contradictory command/help/docs fixtures and cover both launch
-   scripts plus a no-defect native command control.
-6. Historical RC2.2.1 tag, release assets, and checksums remain unchanged.
+1. Both launchers' `--help` and `help run` identify the native release surface,
+   distinguish the Node reference CLI, exit successfully, and do not download
+   an asset.
+2. Tests assert the active guard version equals the repository `VERSION`
+   (`1.0.0-rc.2.2.1`). If `VERSION` changes without an updated command matrix,
+   the focused contract fails.
+3. On that version, source-form calls such as
+   `bin/revia run examples/hello.re`, its absolute-path equivalent, recognized
+   Node run options, and a source path followed by `-- <program-args>` fail
+   before download with exit 64, empty stdout, and an actionable reference
+   command on stderr. A two-operand incomplete native form retains native
+   usage behavior.
+4. Native `run <graph> <artifact> <input-digest>` is not intercepted even when
+   `<graph>` ends in `.re`; the native `execute <source> <input-digest>` form
+   also remains outside the source-form guard.
+5. `npm run re -- run examples/agent-review/main.re` and the corresponding
+   `view --format html` invocation both exit 0. They are not expected to fail
+   with exit 64 or to fall back to the native launcher.
+6. Both launcher `--help`, `help run`, and source-only `help view` return
+   successfully without downloading an asset. Native-supported
+   check/manifest/translate forms remain accurately identified.
+7. A shared corpus covers the route matrix, relative and absolute paths,
+   argument separator, version binding, and the no-defect controls. Focused
+   tests exercise Bash and PowerShell launchers and reject contradictory
+   command/help/docs fixtures.
+8. Tests assert that RC2.2.1 `VERSION`, candidate manifest, checksums and
+   release-gate historical-tag rejection remain unchanged.
 
 ## Evidence Boundary
 
