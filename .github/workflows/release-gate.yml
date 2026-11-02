@@ -11,8 +11,52 @@ on:
 permissions: {}
 
 jobs:
+  provenance:
+    name: Verify draft release provenance
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Reject historical or malformed tag
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          test "$TAG" != 'v1.0.0-rc.2.2.1'
+          case "$TAG" in
+            v[0-9]*) ;;
+            *) printf '%s\n' 'invalid release tag' >&2; exit 64 ;;
+          esac
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+      - name: Download and verify every measured draft archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(sed -n '1p' VERSION)
+          test "$TAG" = "v$version"
+          test "$TAG" != 'v1.0.0-rc.2.2.1'
+          mkdir -p assets
+          candidate=$(jq -er '.candidate_manifest' runtime/build-metadata.json)
+          while IFS= read -r asset; do
+            test "$(basename "$asset")" = "$asset"
+            gh release download "$TAG" --repo "$GITHUB_REPOSITORY" \
+              --pattern "$asset" --dir assets
+          done < <(jq -er '.targets[].archive' "$candidate")
+          node scripts/validate-release-provenance.mjs \
+            --metadata-path runtime/build-metadata.json \
+            --checksums-path runtime/checksums.txt \
+            --tag "$TAG" \
+            --artifact-dir assets
+
   smoke:
     name: Gate ${{ matrix.target }}
+    needs: provenance
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -140,6 +184,7 @@ jobs:
 
   windows-x64-native:
     name: Gate Windows x64 asset on regrevia-win
+    needs: provenance
     runs-on: [self-hosted, Windows, X64, regrevia-win]
     timeout-minutes: 15
     permissions:
@@ -226,7 +271,7 @@ jobs:
 
   publish:
     name: Publish verified draft
-    needs: [smoke, windows-x64-native]
+    needs: [provenance, smoke, windows-x64-native]
     runs-on: ubuntu-24.04
     permissions:
       contents: write

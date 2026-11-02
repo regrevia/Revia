@@ -1,0 +1,15 @@
+{
+  "cases": [
+    { "id": "clean", "mutate": null, "status": "pass" },
+    { "id": "missing-inventory", "mutate": "missing-inventory", "status": "fail" },
+    { "id": "export-inventory-drift", "mutate": "export-inventory", "status": "fail" },
+    { "id": "evidence-inventory-drift", "mutate": "evidence-inventory", "status": "fail" },
+    { "id": "build-archive-drift", "mutate": "build-archive", "status": "fail" },
+    { "id": "checksum-archive-drift", "mutate": "checksum-archive", "status": "fail" },
+    { "id": "actual-archive-drift", "mutate": "asset-archive", "status": "fail" },
+    { "id": "missing-archive", "mutate": "missing-asset", "status": "fail" },
+    { "id": "extra-build-target", "mutate": "extra-build", "status": "fail" },
+    { "id": "export-tag-drift", "mutate": "wrong-tag", "status": "fail" }
+  ],
+  "schema": "re.release-provenance-corpus@0.1.0"
+}

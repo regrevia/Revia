@@ -72,6 +72,12 @@ license or from the source MPL-2.0 license. The RC2.2.1 binary license scope
 needs version-specific clarification. Signed tags/checksums, immutable
 releases, SBOM, and artifact attestation also remain pending for Stable V1.0.
 
+The release-candidate workflow verifies provenance before target smoke or
+publication. It binds candidate, export manifest, build metadata, native
+evidence, source inventory digest, checksums, and downloaded archive bytes.
+The historical `v1.0.0-rc.2.2.1` tag and release assets are retained as
+published evidence and are explicitly excluded from republishing by this gate.
+
 最新已发布候选为 `v1.0.0-rc.2.2.1`。其目标矩阵记录 Linux x64 与 Windows x64
 原生证据，其余四个桌面目标仍为 pending；该 tag 指向 `35ae4ed`。
 
