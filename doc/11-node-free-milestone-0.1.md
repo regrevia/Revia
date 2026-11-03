@@ -373,6 +373,12 @@ source、project source、project digest 和 module authority。当前 fixture �
 Node/Go/JVM measured result，因此这些后端仍是 pending；本包不产生性能资格、
 production claim 或 Stable V1.0 结论。
 
+WP-343 改变内嵌 Node result 的摘要推导，但不改 catalog/report 的字段集合与
+canonical 形状；内嵌结果仍按自身 schema（现为
+`re.cross-language-backend-result@0.2.0`）校验，旧版本结果会被该 authority 检查
+拒绝。因此 catalog/report 继续使用 `@0.1.0` 表示 envelope 未变，版本变化由内嵌
+payload 携带，而不是漏升版本。
+
 ### WP-285 · native CLI usability and help/version contract
 
 native `revia` 现在提供统一的 `--help`、`help`、`help <command>` 和
