@@ -515,8 +515,9 @@ sequence、参数、响应和 transcript 一致后，才生成 `observed_result_
 ReplayBridge 核验后的 transcript 和实际 VM 终态生成。固定 transcript 是 expected
 fixture，不单独证明 Node 实际观察结果。
 
-WP-343 修正了 0.1.0 的等价证据缺陷：旧构造器虽然接收 result/observed digest
-参数，却在内部按 outcome 与 invocation 列表重新计算语义摘要，Node stdout 与 effect
+WP-343 修正了 0.1.0 的等价证据缺陷：旧构造器的 `measured` 接收
+`result_digest`/`semantic_digest` 两个占位参数却忽略它们，在内部按 outcome 与
+invocation 列表重新计算语义摘要，Node stdout 与 effect
 observation 因此无法影响跨语言相等判断。0.2.0 将
 `observed_result_digest`（backend envelope 观察结果）与 `receipt_digest`
 （backend-local receipt 完整性）拆开，`semantic_digest` 显式绑定 outcome、
