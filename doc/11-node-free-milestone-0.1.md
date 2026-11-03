@@ -365,6 +365,30 @@ source/graph/registry 无效 65。
 `native/revia-cli/tests/wp347_graph_check_cli.rs` 覆盖命令四种退出行为与 help。本包不改变
 research/preview 成熟度声明，也不承诺任何第三方库可用。
 
+### WP-348 · result contract carried by the registry
+
+WP-347 的投影只到参数层；运行期要按声明分派，还缺每个成员返回什么、失败时能命名
+哪些错误变体。本包把 `returns` 与 `types[family].variants` 也投影进同一个制品，仍
+不新增方言：`returns` 就是 JS 定义里的 `result<T, E>` 字符串，变体就是 `types[E]`
+的 `variants` 数组。
+
+`DeclaredMember` 增加 `returns: Option<String>` 和 `errors: Vec<String>`（后者是
+家族变体按声明顺序的列表；家族没有 `types` 条目时为空，不去猜）。两侧校验：registry
+解析期要求 `returns` 是非空字符串、`types` 是对象、家族条目 `kind` 为 `error-sum` 且
+`variants` 是非空字符串数组，否则 `declared-schema-registry-invalid`；声明校验期要求
+`result<...>` 两个非空半段、变体名合法且不重复、只有 `returns` 为
+`result<ok, family>` 时才允许携带变体、同一 definition 内共享同一家族的两个成员变体
+表必须一致，否则 `declared-schema-invalid`。
+
+`render_definition` 在有 `returns` 时写回它、有变体时写 `types`，两者都缺时省略，
+所以 WP-347 的字节稳定性与回读相等不变。运行期仍不读这些字段：四个硬编码站点照旧
+拒绝一切声明成员，`access` 规则也仍不投影。新增
+`native/revia-core/tests/wp348_declared_result_contract.rs`（9 例：投影、缺省返回、
+无 `types` 的家族、六类坏制品、程序内声明同规则、共享家族一致性、渲染回读、无结果
+契约时省略 `types`）与 `native/revia-cli/tests/wp348_graph_check_cli.rs`（2 例：带
+结果契约的 registry 端到端通过、坏 `kind` 仍是 registry 问题）。本包不改变
+research/preview 成熟度声明，也不把 registry 说成运行期准入通道。
+
 ### WP-274 · native replay workload catalog
 
 增加 `re.native-replay-workload-catalog@0.1.0`、

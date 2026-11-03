@@ -19,12 +19,13 @@
 //!
 //! This module projects that document onto
 //! [`DeclaredSchema`](crate::graph::DeclaredSchema): the reference is
-//! `identity@revision`, each member keeps only its name and its positional
-//! argument names and types. Everything else a real definition carries
-//! (`types`, `access`, `returns`, `resource_catalog`, parameter `default` and
-//! `primary` flags) is deliberately ignored here, so an out-of-tree library
-//! definition can be loaded without being rewritten for this reader. Those
-//! fields are read by later slices, not this one.
+//! `identity@revision`, each member keeps its name, its positional argument
+//! names and types, and — since WP-348 — its declared `returns` type plus the
+//! variants of that type's error family from the definition's `types` table.
+//! Everything else a real definition carries (`access`, `resource_catalog`,
+//! parameter `default` and `primary` flags) is deliberately ignored here, so an
+//! out-of-tree library definition can be loaded without being rewritten for
+//! this reader. Those fields are read by later slices, not this one.
 //!
 //! The registry only widens the check-time gates. A graph admitted here still
 //! fails closed at the runtime host boundary until the four runtime sites
@@ -32,7 +33,9 @@
 
 use crate::{
     canonical_json::{JsonValue, canonicalize},
-    graph::{DeclaredMember, DeclaredSchema, GraphError, validate_declarations},
+    graph::{
+        DeclaredMember, DeclaredSchema, GraphError, result_error_type_name, validate_declarations,
+    },
     project::parse_json,
 };
 
@@ -101,6 +104,10 @@ fn parse_definition(value: &JsonValue, index: usize) -> Result<DeclaredSchema, G
     if revision.contains('@') || revision.chars().any(char::is_whitespace) {
         return Err(invalid(&format!("{path}.revision")));
     }
+    let types = match definition.iter().find(|(key, _)| key == "types") {
+        Some((_, value)) => Some(object(value, &format!("{path}.types"))?),
+        None => None,
+    };
     let members = object(
         field(definition, "members", &path)?,
         &format!("{path}.members"),
@@ -110,10 +117,12 @@ fn parse_definition(value: &JsonValue, index: usize) -> Result<DeclaredSchema, G
     }
     let mut declared_members = Vec::with_capacity(members.len());
     for (name, member) in members {
-        declared_members.push(DeclaredMember {
-            name: name.clone(),
-            parameters: parse_parameters(member, &format!("{path}.members.{name}"))?,
-        });
+        declared_members.push(parse_member(
+            name,
+            member,
+            types,
+            &format!("{path}.members.{name}"),
+        )?);
     }
     Ok(DeclaredSchema {
         reference: format!("{identity}@{revision}"),
@@ -121,8 +130,67 @@ fn parse_definition(value: &JsonValue, index: usize) -> Result<DeclaredSchema, G
     })
 }
 
-fn parse_parameters(member: &JsonValue, path: &str) -> Result<Vec<(String, String)>, GraphError> {
-    let member = object(member, path)?;
+fn parse_member(
+    name: &str,
+    member: &JsonValue,
+    types: Option<&[(String, JsonValue)]>,
+    path: &str,
+) -> Result<DeclaredMember, GraphError> {
+    let entry = object(member, path)?;
+    let parameters = parse_parameters(entry, path)?;
+    let returns = match entry.iter().find(|(key, _)| key == "returns") {
+        Some((_, JsonValue::String(value))) if !value.is_empty() => Some(value.clone()),
+        Some((_, _)) => return Err(invalid(&format!("{path}.returns"))),
+        None => None,
+    };
+    // The error family is whatever `returns` names in its second half; its
+    // variants come from the definition's `types` table when that table
+    // declares the family. Without a `types` entry the family is carried but
+    // its variant list stays empty, which later runtime slices map to their
+    // own "unknown family" error rather than guessing.
+    let errors = match (returns.as_deref(), types) {
+        (Some(returns), Some(types)) => match result_error_type_name(returns) {
+            Some(family) => match types.iter().find(|(key, _)| key == family) {
+                Some((_, declared_type)) => {
+                    parse_error_variants(declared_type, &format!("{path}.types.{family}"))?
+                }
+                None => Vec::new(),
+            },
+            None => Vec::new(),
+        },
+        _ => Vec::new(),
+    };
+    Ok(DeclaredMember {
+        name: name.to_owned(),
+        parameters,
+        returns,
+        errors,
+    })
+}
+
+fn parse_error_variants(value: &JsonValue, path: &str) -> Result<Vec<String>, GraphError> {
+    let entry = object(value, path)?;
+    if string_field(entry, "kind", path)? != "error-sum" {
+        return Err(invalid(&format!("{path}.kind")));
+    }
+    let variants = match field(entry, "variants", path)? {
+        JsonValue::Array(items) => items,
+        _ => return Err(invalid(&format!("{path}.variants"))),
+    };
+    let mut parsed = Vec::with_capacity(variants.len());
+    for (index, variant) in variants.iter().enumerate() {
+        match variant {
+            JsonValue::String(value) if !value.is_empty() => parsed.push(value.clone()),
+            _ => return Err(invalid(&format!("{path}.variants[{index}]"))),
+        }
+    }
+    Ok(parsed)
+}
+
+fn parse_parameters(
+    member: &[(String, JsonValue)],
+    path: &str,
+) -> Result<Vec<(String, String)>, GraphError> {
     let parameters = field(member, "params", path)?;
     let parameters = match parameters {
         JsonValue::Array(items) => items,
@@ -145,23 +213,52 @@ fn render_definition(schema: &DeclaredSchema) -> Result<JsonValue, GraphError> {
         return Err(invalid(&schema.reference));
     };
     let mut members = Vec::with_capacity(schema.members.len());
+    let mut types: Vec<(String, JsonValue)> = Vec::new();
     for member in &schema.members {
-        let parameters = member
-            .parameters
-            .iter()
-            .map(|(name, type_name)| {
+        let mut entries = vec![(
+            "params".to_owned(),
+            JsonValue::Array(
+                member
+                    .parameters
+                    .iter()
+                    .map(|(name, type_name)| {
+                        JsonValue::Object(vec![
+                            ("name".to_owned(), JsonValue::String(name.clone())),
+                            ("type".to_owned(), JsonValue::String(type_name.clone())),
+                        ])
+                    })
+                    .collect(),
+            ),
+        )];
+        if let Some(returns) = &member.returns {
+            entries.push(("returns".to_owned(), JsonValue::String(returns.clone())));
+        }
+        members.push((member.name.clone(), JsonValue::Object(entries)));
+        // A family shared by several members is written once; validation has
+        // already rejected members that disagree about its variants.
+        if !member.errors.is_empty()
+            && let Some(family) = member.returns.as_deref().and_then(result_error_type_name)
+            && !types.iter().any(|(key, _)| key == family)
+        {
+            types.push((
+                family.to_owned(),
                 JsonValue::Object(vec![
-                    ("name".to_owned(), JsonValue::String(name.clone())),
-                    ("type".to_owned(), JsonValue::String(type_name.clone())),
-                ])
-            })
-            .collect();
-        members.push((
-            member.name.clone(),
-            JsonValue::Object(vec![("params".to_owned(), JsonValue::Array(parameters))]),
-        ));
+                    ("kind".to_owned(), JsonValue::String("error-sum".to_owned())),
+                    (
+                        "variants".to_owned(),
+                        JsonValue::Array(
+                            member
+                                .errors
+                                .iter()
+                                .map(|variant| JsonValue::String(variant.clone()))
+                                .collect(),
+                        ),
+                    ),
+                ]),
+            ));
+        }
     }
-    Ok(JsonValue::Object(vec![
+    let mut definition = vec![
         (
             "identity".to_owned(),
             JsonValue::String(identity.to_owned()),
@@ -171,7 +268,11 @@ fn render_definition(schema: &DeclaredSchema) -> Result<JsonValue, GraphError> {
             "revision".to_owned(),
             JsonValue::String(revision.to_owned()),
         ),
-    ]))
+    ];
+    if !types.is_empty() {
+        definition.push(("types".to_owned(), JsonValue::Object(types)));
+    }
+    Ok(JsonValue::Object(definition))
 }
 
 fn object<'a>(value: &'a JsonValue, path: &str) -> Result<&'a [(String, JsonValue)], GraphError> {

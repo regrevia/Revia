@@ -90,6 +90,8 @@ fn echo_schema() -> DeclaredSchema {
         members: vec![DeclaredMember {
             name: "say".to_owned(),
             parameters: vec![("text".to_owned(), "text.utf8".to_owned())],
+            returns: None,
+            errors: Vec::new(),
         }],
     }
 }
@@ -137,6 +139,8 @@ fn declared_member_argument_types_are_enforced_from_the_declaration() {
         members: vec![DeclaredMember {
             name: "say".to_owned(),
             parameters: vec![("count".to_owned(), "int".to_owned())],
+            returns: None,
+            errors: Vec::new(),
         }],
     }];
     let error = check_graph_with_declared_schemas(parse(WRONG_TYPE_SOURCE), &declared)
@@ -153,6 +157,8 @@ fn declaration_cannot_shadow_a_built_in_reference() {
         members: vec![DeclaredMember {
             name: "write".to_owned(),
             parameters: vec![("data".to_owned(), "bytes".to_owned())],
+            returns: None,
+            errors: Vec::new(),
         }],
     }];
     let error = check_graph_with_declared_schemas(parse(DECLARED_SOURCE), &declared)

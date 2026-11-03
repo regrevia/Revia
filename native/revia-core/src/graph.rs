@@ -58,6 +58,17 @@ pub struct DeclaredMember {
     pub name: String,
     /// Positional argument names and their literal type names, in call order.
     pub parameters: Vec<(String, String)>,
+    /// The declared result type, e.g. `result<text.utf8, demo.echo_error>`.
+    ///
+    /// The check phase does not consume it yet; it is carried here so the
+    /// runtime half of the same artifact does not need a second reader.
+    pub returns: Option<String>,
+    /// The variants of the declared result error type, in declared order.
+    ///
+    /// Empty when the definition declares a plain return type or no `types`
+    /// table. The runtime error mapping reads this list; the check phase only
+    /// validates its shape.
+    pub errors: Vec<String>,
 }
 
 /// A schema reference that `check_graph_with_declared_schemas` admits in
@@ -752,9 +763,75 @@ pub fn validate_declarations(declared: &[DeclaredSchema]) -> Result<(), GraphErr
                     return Err(invalid());
                 }
             }
+            if let Some(returns) = &member.returns {
+                // A name that opens like a result type must parse like one;
+                // anything else is a single declared type name.
+                let well_formed = if returns.starts_with("result<") {
+                    is_result_type_name(returns)
+                } else {
+                    is_declared_type_name(returns)
+                };
+                if !well_formed {
+                    return Err(invalid());
+                }
+            }
+            for (variant_index, variant) in member.errors.iter().enumerate() {
+                if !is_declared_type_name(variant)
+                    || member.errors[..variant_index]
+                        .iter()
+                        .any(|seen| seen == variant)
+                {
+                    return Err(invalid());
+                }
+            }
+            // An error family only means something next to a result type that
+            // names it: `result<ok, family>` with the family as the second half.
+            if !member.errors.is_empty() {
+                match member.returns.as_deref().and_then(result_error_type_name) {
+                    Some(family) if is_declared_type_name(family) => {}
+                    _ => return Err(invalid()),
+                }
+            }
+        }
+        // One error family, one variant list: two members may share a family,
+        // they may not disagree about what it contains.
+        for (member_index, member) in schema.members.iter().enumerate() {
+            let Some(family) = member.returns.as_deref().and_then(result_error_type_name) else {
+                continue;
+            };
+            for earlier in &schema.members[..member_index] {
+                if earlier.returns.as_deref().and_then(result_error_type_name) == Some(family)
+                    && earlier.errors != member.errors
+                {
+                    return Err(invalid());
+                }
+            }
         }
     }
     Ok(())
+}
+
+/// A single type name: non-empty, no whitespace, no `@` separator.
+fn is_declared_type_name(name: &str) -> bool {
+    !name.is_empty() && !name.contains('@') && !name.chars().any(char::is_whitespace)
+}
+
+/// `result<ok, error>` — both halves non-empty type names.
+fn is_result_type_name(name: &str) -> bool {
+    name.strip_prefix("result<")
+        .and_then(|rest| rest.strip_suffix('>'))
+        .and_then(|inner| inner.split_once(','))
+        .is_some_and(|(ok, error)| {
+            is_declared_type_name(ok.trim()) && is_declared_type_name(error.trim())
+        })
+}
+
+pub(crate) fn result_error_type_name(name: &str) -> Option<&str> {
+    name.strip_prefix("result<")
+        .and_then(|rest| rest.strip_suffix('>'))
+        .and_then(|inner| inner.split_once(','))
+        .map(|(_, error)| error.trim())
+        .filter(|error| !error.is_empty())
 }
 
 fn parameters(

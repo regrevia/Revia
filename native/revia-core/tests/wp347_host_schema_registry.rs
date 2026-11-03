@@ -64,6 +64,8 @@ fn registry_artifact_is_what_admits_the_declared_schema() {
             members: vec![DeclaredMember {
                 name: "say".to_owned(),
                 parameters: vec![("text".to_owned(), "text.utf8".to_owned())],
+                returns: None,
+                errors: Vec::new(),
             }],
         }]
     );

@@ -109,10 +109,11 @@ Partial progress, measured (WP-347): the declaration list now travels as a file.
 definitions are the objects `src/host/schema-registry.js` already validates
 (`identity`, `revision`, `members.<name>.params[] = {name, type}`); the reference
 is derived as `identity@revision`, exactly as `referenceOf` does, so no second
-converter is needed. The projection keeps only identity, revision, member names,
-parameter names and parameter types: `types`, `access`, `returns`, `default`,
-`primary`, `resource_catalog` and `resource_parents` are tolerated and ignored
-until the sites that consume them open. `render_registry` writes the same shape
+converter is needed. WP-348 extends the projection with each member's declared
+`returns` type and the variants of the error family it names
+(`types[family].variants`, with `kind: "error-sum"` required); `access`,
+`default`, `primary`, `resource_catalog` and `resource_parents` are tolerated and
+ignored until the sites that consume them open. `render_registry` writes the same shape
 through `canonical_json`, so the artifact is byte-stable and round-trips through
 the reader. Malformed artifacts are rejected with
 `declared-schema-registry-invalid` before the graph is read; duplicate,
@@ -123,6 +124,19 @@ shadowing, empty or otherwise invalid declarations keep their
 registry exit 65) — a new command because `check` is the parser path. Runtime
 admission is unchanged: a registry-admitted graph still fails closed at the host
 boundary.
+
+Partial progress, measured (WP-348): the artifact also states what a member
+returns. `DeclaredMember.returns` carries the definition's `result<T, E>` string
+(or a plain type name) and `DeclaredMember.errors` carries the ordered variants
+of the family that string names, read from the definition's `types` table. A
+family with no `types` entry keeps an empty variant list rather than a guess.
+Malformed result strings, non-`error-sum` families and bad variant lists are
+rejected with `declared-schema-registry-invalid`; a member whose result names no
+family cannot carry variants, `result<...>` must have two non-empty halves, and
+members sharing one family must agree on its variants, all under
+`declared-schema-invalid`. Rendering writes `returns`/`types` only when present,
+so WP-347 artifacts keep their exact bytes. No runtime site reads these fields
+yet; the host boundary stays closed.
 
 Consequence: Route H costs a core edit at **each** of those eight sites, with a
 test per site — not the single enum change this document originally claimed, and
@@ -175,8 +189,10 @@ re-litigating the same library later.
    label. Undeclared members stay fail-closed at every one of them.
    Status: WP-346 lands the three check-time sites behind
    `check_graph_with_declared_schemas`; WP-347 gives that list its file format
-   (`host_schema_registry`, `revia graph-check --schema-registry`); the four
-   runtime sites and the two parse-time helpers are still hardcoded.
+   (`host_schema_registry`, `revia graph-check --schema-registry`), and WP-348
+   carries each member's declared result type and error variants in that same
+   artifact; the four runtime sites and the two parse-time helpers are still
+   hardcoded and read none of it.
    Acceptance test: an out-of-tree schema and member declared through the
    registry (not a new match arm) passes `re check`, executes through
    `HostBackedBridge`, returns its declared result type, surfaces its declared
