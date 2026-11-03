@@ -60,10 +60,10 @@ hardcoded in eight places, split by phase:
 
 | Phase | Site | What it fixes | Failure code when unmatched |
 | --- | --- | --- | --- |
-| check | `graph::is_known_schema` (`graph.rs:879-888`) | exactly five schema references | `unknown-schema-reference` |
-| check | `graph::parameters` (`graph.rs:666-688`) | the legal `(schema, member)` table and arity | `unknown-capability-member` (`:686`) |
-| check | `graph::default_argument_name` (`graph.rs:600-611`) | positional argument name per member | `missing-argument-name` |
-| check | `graph::contextual_literal` (`graph.rs:548-598`) | literal type per member; unlisted pairs fall back to `text.utf8` at `:583` | — (silent default) |
+| check | `graph::is_known_schema` (`graph.rs:977-986`) | exactly five schema references | `unknown-schema-reference` |
+| check | `graph::parameters` (`graph.rs:760-786`) | the legal `(schema, member)` table and arity | `unknown-capability-member` (`:784`) |
+| check | `graph::default_argument_name` (`graph.rs:632-643`) | positional argument name per member | `missing-argument-name` |
+| check | `graph::contextual_literal` (`graph.rs:580-630`) | literal type per member; unlisted pairs fall back to `text.utf8` at `:615` | — (silent default) |
 | runtime | `HostBackedBridge::host_request` (`minimal_std.rs:909-957`) | maps a member onto a `HostRequest` | `native-host-bridge-operation-unsupported:<instance>.<member>` |
 | runtime | `HostBackedBridge::response` (`:959-997`) | maps a `HostOutcome` back onto the declared result type | `native-host-return-type-mismatch` |
 | runtime | `declared_host_error` (`:1063-1093`) | maps a `StdError` onto the member's declared error family | `native-host-bridge-error-reference-unknown` |
@@ -73,8 +73,8 @@ Two corrections to the obvious reading of that table:
 
 - `host_request` matches **four** references, not the same five as the allowlist.
   `process.exit@0.1.0` never reaches the bridge: `compact_target`
-  (`graph.rs:520-527`) turns it into a `Target::PureOperation`, validated at
-  `:630-640`.
+  (`graph.rs:552-578`) turns it into a `Target::PureOperation`, validated at
+  `:666-675`.
 - `HostOperation::Unknown(String)` (`:317-329`) and `HostRequest::unknown`
   (`:401`) are not an adapter extension point today, but the reason is narrower
   than "adapters cannot construct one": `unknown` is `pub` and every
@@ -88,6 +88,20 @@ Two corrections to the obvious reading of that table:
   constructor stays: sealing or deleting it breaks those call sites and drops
   the forward-compatibility placeholder, so treat it as reserved surface rather
   than as an admission path.
+
+Partial progress, measured (WP-346): `graph::check_graph_with_declared_schemas`
+takes a `DeclaredSchema` list and lets it drive the three check-time sites — the
+allowlist (`graph.rs:253-259`), the member table and arity (the declared branch
+at the top of `parameters`, `:766-768`), and argument names/types (declared types
+are enforced, so the silent `text.utf8` fallback at `:615` no longer absorbs a
+type mismatch). The four runtime sites stay closed on purpose: a declared schema
+passes `re check` and still fails closed at the host boundary with
+`native-host-bridge-operation-unsupported:<instance>.<member>`. Two parse-time
+helpers stay closed too (`default_argument_name`, `contextual_literal`, both run
+inside `parse_compact_graph` where no declaration list exists), so a declaration
+cannot yet drive positional arguments. Declarations cannot shadow the five
+built-in references; a conflicting or malformed declaration is rejected with
+`declared-schema-invalid` before the graph is read.
 
 Consequence: Route H costs a core edit at **each** of those eight sites, with a
 test per site — not the single enum change this document originally claimed, and
@@ -138,6 +152,9 @@ re-litigating the same library later.
    the `(schema, member)` table and the positional argument names; at runtime the
    request mapping, the response mapping, the error mapping, and the observation
    label. Undeclared members stay fail-closed at every one of them.
+   Status: WP-346 lands the three check-time sites behind
+   `check_graph_with_declared_schemas`; the four runtime sites and the two
+   parse-time helpers are still hardcoded.
    Acceptance test: an out-of-tree schema and member declared through the
    registry (not a new match arm) passes `re check`, executes through
    `HostBackedBridge`, returns its declared result type, surfaces its declared

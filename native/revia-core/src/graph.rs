@@ -52,6 +52,22 @@ pub struct CapabilityNode {
     pub reference: String,
 }
 
+/// One schema member declared outside `revia-core`'s closed vocabulary.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DeclaredMember {
+    pub name: String,
+    /// Positional argument names and their literal type names, in call order.
+    pub parameters: Vec<(String, String)>,
+}
+
+/// A schema reference that `check_graph_with_declared_schemas` admits in
+/// addition to the five built-in references.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DeclaredSchema {
+    pub reference: String,
+    pub members: Vec<DeclaredMember>,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FunctionNode {
     pub kind: String,
@@ -215,13 +231,29 @@ pub fn parse_compact_graph(source: &str, file: &str) -> Result<Graph, GraphError
     })
 }
 
-pub fn check_graph(mut graph: Graph) -> Result<Graph, GraphError> {
+pub fn check_graph(graph: Graph) -> Result<Graph, GraphError> {
+    check_graph_with_declared_schemas(graph, &[])
+}
+
+/// `check_graph`, with additional schemas admitted at check time.
+///
+/// Declarations only widen the check-time gates (allowlist, member table,
+/// argument names and types). The runtime bridge still rejects them until its
+/// own closed vocabulary learns about them, so a graph that passes here can
+/// still fail closed at the host boundary.
+pub fn check_graph_with_declared_schemas(
+    mut graph: Graph,
+    declared: &[DeclaredSchema],
+) -> Result<Graph, GraphError> {
+    validate_declarations(declared)?;
     validate_identities(&graph)?;
     if graph.version != VERSION {
         return Err(GraphError::new("unsupported-language-version"));
     }
     for capability in &graph.capabilities {
-        if !is_known_schema(&capability.reference) {
+        if !is_known_schema(&capability.reference)
+            && declared_schema(declared, &capability.reference).is_none()
+        {
             return Err(GraphError::new("unknown-schema-reference")
                 .with_actual(capability.reference.clone()));
         }
@@ -250,7 +282,7 @@ pub fn check_graph(mut graph: Graph) -> Result<Graph, GraphError> {
                     if producers.insert(binding.clone(), uid.clone()).is_some() {
                         return Err(GraphError::new("duplicate-value-binding"));
                     }
-                    check_call(value, &capabilities, &function.literals)?;
+                    check_call(value, &capabilities, &function.literals, declared)?;
                     if binding.is_empty() {
                         return Err(GraphError::new("invalid-value-binding"));
                     }
@@ -266,7 +298,7 @@ pub fn check_graph(mut graph: Graph) -> Result<Graph, GraphError> {
                         return Err(GraphError::new("non-exhaustive-result-match"));
                     }
                     for branch in &value.branches {
-                        check_call(&branch.value, &capabilities, &function.literals)?;
+                        check_call(&branch.value, &capabilities, &function.literals, declared)?;
                     }
                 }
             }
@@ -614,6 +646,7 @@ fn check_call(
     call: &Call,
     capabilities: &std::collections::BTreeMap<String, String>,
     literals: &[LiteralNode],
+    declared: &[DeclaredSchema],
 ) -> Result<(), GraphError> {
     let (schema, member) = match &call.target {
         Target::CapabilityMember {
@@ -641,7 +674,7 @@ fn check_call(
             (schema_reference.as_str(), operation.as_str())
         }
     };
-    let params = parameters(schema, member, call.arguments.len())?;
+    let params = parameters(schema, member, call.arguments.len(), declared)?;
     if call.arguments.len() != params.len() {
         return Err(GraphError::new("argument-count-mismatch"));
     }
@@ -663,11 +696,76 @@ fn check_call(
     Ok(())
 }
 
+fn declared_schema<'a>(
+    declared: &'a [DeclaredSchema],
+    reference: &str,
+) -> Option<&'a DeclaredSchema> {
+    declared.iter().find(|schema| schema.reference == reference)
+}
+
+fn declared_parameters(
+    declared: &[DeclaredSchema],
+    schema: &str,
+    member: &str,
+) -> Option<Vec<(String, String)>> {
+    declared_schema(declared, schema)
+        .and_then(|schema| schema.members.iter().find(|entry| entry.name == member))
+        .map(|entry| entry.parameters.clone())
+}
+
+fn validate_declarations(declared: &[DeclaredSchema]) -> Result<(), GraphError> {
+    for (index, schema) in declared.iter().enumerate() {
+        let invalid =
+            || GraphError::new("declared-schema-invalid").with_actual(schema.reference.clone());
+        if schema.reference.is_empty() || schema.members.is_empty() {
+            return Err(invalid());
+        }
+        // A declaration may widen the vocabulary, never shadow it: the built-in
+        // semantics stay the only meaning of a built-in reference.
+        if is_known_schema(&schema.reference) {
+            return Err(invalid());
+        }
+        if declared[..index]
+            .iter()
+            .any(|seen| seen.reference == schema.reference)
+        {
+            return Err(invalid());
+        }
+        for (member_index, member) in schema.members.iter().enumerate() {
+            if member.name.is_empty() {
+                return Err(invalid());
+            }
+            if schema.members[..member_index]
+                .iter()
+                .any(|seen| seen.name == member.name)
+            {
+                return Err(invalid());
+            }
+            for (parameter_index, (name, type_name)) in member.parameters.iter().enumerate() {
+                if name.is_empty() || type_name.is_empty() {
+                    return Err(invalid());
+                }
+                if member.parameters[..parameter_index]
+                    .iter()
+                    .any(|(seen, _)| seen == name)
+                {
+                    return Err(invalid());
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 fn parameters(
     schema: &str,
     member: &str,
     argument_count: usize,
+    declared: &[DeclaredSchema],
 ) -> Result<Vec<(String, String)>, GraphError> {
+    if let Some(parameters) = declared_parameters(declared, schema, member) {
+        return Ok(parameters);
+    }
     match (schema, member) {
         ("process.stdout@0.1.0", "write") => Ok(vec![("data".to_owned(), "text.utf8".to_owned())]),
         ("process.args@0.1.0", "read") => Ok(Vec::new()),

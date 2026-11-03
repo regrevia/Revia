@@ -283,15 +283,15 @@ effect 或平台绑定走 adapter，第三方纯库必须过等价语料），�
 该文档记录三条实测阻塞，其中第一条与先前判断不同：adapter seam 本身是开的
 （`HostAdapter:425`、`HostEnvironment<A>:430`、`HostBackedBridge<A>:752` 均为 pub），真正
 关门的是散在八个点的闭合词表，按阶段分成两组。检查期：`graph::is_known_schema`
-（`graph.rs:879-888`，只认五个 reference）、`graph::parameters`（`:666-688`，合法
-`(schema, member)` 表与 arity，`:686` 报 `unknown-capability-member`）、
-`graph::default_argument_name`（`:600-611`）、`graph::contextual_literal`（`:548-598`，
-未列出的组合静默落成 `text.utf8`，`:583`）。运行期：`HostBackedBridge::host_request`
+（`graph.rs:977-986`，只认五个 reference）、`graph::parameters`（`:760-786`，合法
+`(schema, member)` 表与 arity，`:784` 报 `unknown-capability-member`）、
+`graph::default_argument_name`（`:632-643`）、`graph::contextual_literal`（`:580-630`，
+未列出的组合静默落成 `text.utf8`，`:615`）。运行期：`HostBackedBridge::host_request`
 （`minimal_std.rs:909-957`）、`response`（`:959-997`）、`declared_host_error`
 （`:1063-1093`）、`host_operation_name`（`:1205-1213`，未知 reference 静默记成
 `"unknown"`）。两处需要纠正的读法：`host_request` 只匹配四个 reference——`process.exit`
-不走 bridge，`compact_target`（`graph.rs:520-527`）把它变成 `Target::PureOperation` 并在
-`:630-640` 校验；`HostOperation::Unknown(String):317-329` 与 `HostRequest::unknown:401`
+不走 bridge，`compact_target`（`graph.rs:552-578`）把它变成 `Target::PureOperation` 并在
+`:666-675` 校验；`HostOperation::Unknown(String):317-329` 与 `HostRequest::unknown:401`
 今天不是 adapter 的扩展点，但理由要窄一档：`unknown` 是 pub、`HostRequest` 字段也全
 pub，外部 crate 能自己构造一个交给 `HostEnvironment::invoke`（`:443`）；仓库能支撑的说法
 只是没有生产路径（`graph`、VM、`HostBackedBridge::host_request`）会产出它，adapter 在
@@ -306,6 +306,30 @@ pub，外部 crate 能自己构造一个交给 `HostEnvironment::invoke`（`:443
 分支：未声明成员在 IO 之前以 `StdError::UnknownOperation` 失败、重复调用错误一致、host
 仍可继续读写；它不测试上述八个准入点，`doc/12` §6 第 1 项落地时应重访而不是只求继续绿。
 本包不接纳任何第三方库，也不改变 research/preview 成熟度声明。
+
+### WP-346 · check-time schema declarations
+
+`doc/12` §6 第 1 项要求用一个 registry 同时驱动八个准入点，本包只做其中三个检查期站点，
+运行期四个站点明确不动：新增公开入口
+`graph::check_graph_with_declared_schemas(graph, &[DeclaredSchema])`，调用方传入
+`DeclaredSchema { reference, members }` / `DeclaredMember { name, parameters }` 后，三个
+检查期站点改为先查声明、再落回内置词表——`is_known_schema` 的允许列表
+（`graph.rs:253-259`）、`parameters` 的 `(schema, member)` 表与 arity（`:760-786`）、以及
+由声明给出的参数名与类型（类型不符走 `literal-type-mismatch`，`:615` 的静默
+`text.utf8` 回退不再吞掉类型不符）。运行期四个站点（`host_request`、`response`、
+`declared_host_error`、`host_operation_name`）**原样关闭**：声明过的 schema 能过
+`re check`，执行到 host 边界仍按 `native-host-bridge-operation-unsupported:<instance>.<member>`
+失败关闭，这就是本包验收测试里最后一条断言。
+
+仍然封闭的两处解析期助手是 `default_argument_name`（`:632-643`）与
+`contextual_literal`（`:580-630`）：两者跑在 `parse_compact_graph` 内，声明表此时还不存在，
+所以本包验收测试只用命名参数 + 词法器真实产出的字符串字面量；位置参数在解析期仍以
+`missing-argument-name` 失败。声明也不得遮蔽五个内置 reference——冲突、空引用、零成员、
+重名、空参数名或类型名一律在读写图之前以 `declared-schema-invalid` 拒绝，不静默覆盖。
+`check_graph` 委托给新入口并传空列表，既有五个调用者行为不变。
+测试 `native/revia-core/tests/wp346_host_schema_extension.rs` 覆盖通过、未声明 schema 与
+未声明成员仍失败关闭、arity 由声明强制、内置遮蔽被拒、空/重复声明被拒、以及空声明列表
+下内置图仍可检查。本包不改变 research/preview 成熟度声明，也不承诺任何第三方库可用。
 
 ### WP-274 · native replay workload catalog
 
