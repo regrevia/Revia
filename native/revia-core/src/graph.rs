@@ -713,7 +713,7 @@ fn declared_parameters(
         .map(|entry| entry.parameters.clone())
 }
 
-fn validate_declarations(declared: &[DeclaredSchema]) -> Result<(), GraphError> {
+pub fn validate_declarations(declared: &[DeclaredSchema]) -> Result<(), GraphError> {
     for (index, schema) in declared.iter().enumerate() {
         let invalid =
             || GraphError::new("declared-schema-invalid").with_actual(schema.reference.clone());

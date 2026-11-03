@@ -331,6 +331,40 @@ pub，外部 crate 能自己构造一个交给 `HostEnvironment::invoke`（`:443
 未声明成员仍失败关闭、arity 由声明强制、内置遮蔽被拒、空/重复声明被拒、以及空声明列表
 下内置图仍可检查。本包不改变 research/preview 成熟度声明，也不承诺任何第三方库可用。
 
+### WP-347 · schema registry artifact
+
+`doc/12` §6 第 1 项要一个 registry 同时驱动八个准入点；WP-346 只让三个检查期站点
+接受程序内构造的声明列表，调用方仍要自己拼 `DeclaredSchema`。本包补上载体：新增
+`revia-core` 模块 `host_schema_registry`，读一份 JSON 制品
+
+    {"schema": "revia.host-schema-definitions@0.1.0", "definitions": [...]}
+
+其中每个 definition 就是 `src/host/schema-registry.js` 已在校验、`src/host/demo-schema.js`
+已在使用的对象形状（`identity`、`revision`、`members.<name>.params[] = {name, type}`），
+reference 由 `identity@revision` 推出，与 JS 侧 `referenceOf` 完全一致——所以不需要第二个
+转换器，也不需要另造一套 Rust 方言。投影只保留 identity、revision、成员名、参数名和参数
+类型；`types`、`access`、`returns`、`default`、`primary`、`resource_catalog`、
+`resource_parents` 原样容忍并忽略，等消费它们的站点开门。`render_registry` 经
+`canonical_json` 写回同一形状，字节稳定且可被 `parse_registry` 回读。
+
+制品在读图之前校验：顶层未知键、缺 `schema`、schema id 不符、identity/revision 为空或
+带 `@`、空 `members`、缺 `params`、参数缺名/缺类型/重名等一律
+`declared-schema-registry-invalid`；重复 definition、遮蔽五个内置 reference 等语义问题
+仍走 WP-346 的 `declared-schema-invalid`，两种代码不混用。CLI 增加显式命令
+`revia graph-check [--schema-registry <registry>] <file>`（`check` 是词法/解析路径，不能
+兼任）：输出 `re.native-graph-result@0.1.0`，含 `declared_schema_count`；文件不可读 66，
+source/graph/registry 无效 65。
+
+运行期四个站点仍原样关闭：经 registry 准入的图执行到 host 边界照样以
+`native-host-bridge-operation-unsupported:<instance>.<member>` 失败，registry 不是运行期
+准入通道，而是检查期声明的载体。测试
+`native/revia-core/tests/wp347_host_schema_registry.rs` 覆盖：registry 是准入的唯一开关
+（同一图无 registry 仍 `unknown-schema-reference`）、未列出成员仍
+`unknown-capability-member`、JS 富字段被忽略、渲染回读相等且字节稳定、坏制品各类拒绝、
+语义冲突沿用 `declared-schema-invalid`、以及多份 registry 合并；
+`native/revia-cli/tests/wp347_graph_check_cli.rs` 覆盖命令四种退出行为与 help。本包不改变
+research/preview 成熟度声明，也不承诺任何第三方库可用。
+
 ### WP-274 · native replay workload catalog
 
 增加 `re.native-replay-workload-catalog@0.1.0`、

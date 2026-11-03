@@ -89,9 +89,10 @@ use revia_core::{
         serialize_native_fault_corpus_report,
     },
     graph::{
-        check_graph, graph_revision, load_canonical_graph, parse_compact_graph, review_manifest,
-        serialize_canonical_graph,
+        check_graph, check_graph_with_declared_schemas, graph_revision, load_canonical_graph,
+        parse_compact_graph, review_manifest, serialize_canonical_graph,
     },
+    host_schema_registry::parse_registry,
     lexer::{Token, TokenKind},
     minimal_std::{HostBackedBridge, SystemHost},
     multi_module::{execute_native_multi_module_gate, serialize_native_multi_module_gate_report},
@@ -162,6 +163,7 @@ use revia_core::{
 };
 
 const CHECK_SCHEMA: &str = "re.native-parser-result@0.1.0";
+const GRAPH_CHECK_SCHEMA: &str = "re.native-graph-result@0.1.0";
 const LEX_SCHEMA: &str = "re.native-lexer-result@0.1.0";
 const PROJECT_BENCHMARK_SCHEMA: &str = "re.native-project-benchmark@0.1.0";
 const PROJECT_TEST_SCHEMA: &str = "re.native-project-test@0.1.0";
@@ -190,6 +192,7 @@ Commands:
   lex <file>
   digest <file>
   canonical <file>
+  graph-check [--schema-registry <registry>] <file>
   manifest <file>
   translate <file>
   compile <source> <artifact>
@@ -260,6 +263,12 @@ fn main() {
         [command, path] if command == "lex" => lex(path),
         [command, path] if command == "digest" => digest(path),
         [command, path] if command == "canonical" => canonical(path),
+        [command, path] if command == "graph-check" => graph_check(path, None),
+        [command, flag, registry_path, path]
+            if command == "graph-check" && flag == "--schema-registry" =>
+        {
+            graph_check(path, Some(registry_path))
+        }
         [command, path] if command == "manifest" => manifest(path),
         [command, path] if command == "translate" => translate(path),
         [command, source_path, artifact_path] if command == "compile" => {
@@ -729,6 +738,9 @@ fn command_help(command: &str) -> Result<(), i32> {
         "lex" => "revia lex <file>\n  Tokenize a source file.\n",
         "digest" => "revia digest <file>\n  Print the source digest.\n",
         "canonical" => "revia canonical <file>\n  Load and print canonical RE.\n",
+        "graph-check" => {
+            "revia graph-check [--schema-registry <registry>] <file>\n  Check a graph, optionally admitting host schemas declared by a registry artifact.\n  Unreadable file: exit 66. Invalid source, graph or registry: exit 65.\n"
+        }
         "manifest" => "revia manifest <file>\n  Print the checked graph manifest.\n",
         "translate" => "revia translate <file>\n  Translate a checked graph.\n",
         "compile" => "revia compile <source> <artifact>\n  Write a verified native artifact.\n",
@@ -6512,6 +6524,51 @@ fn canonical(path: &str) -> Result<(), i32> {
         65
     })?;
     print!("{rendered}");
+    Ok(())
+}
+
+fn graph_check(path: &str, registry_path: Option<&str>) -> Result<(), i32> {
+    let declared = match registry_path {
+        None => Vec::new(),
+        Some(registry_path) => {
+            let source = fs::read_to_string(registry_path).map_err(|_| 66)?;
+            parse_registry(&source).map_err(|error| {
+                print_graph_error(&error);
+                65
+            })?
+        }
+    };
+    let bytes = fs::read(path).map_err(|_| 66)?;
+    let source = SourceText::from_bytes(&bytes, path).map_err(|diagnostic| {
+        print_simple_graph_error(diagnostic.code.as_str());
+        65
+    })?;
+    let graph = if source.text.starts_with("re 0.1 canonical\n") {
+        load_canonical_graph(&source.text)
+    } else {
+        parse_compact_graph(&source.text, path)
+    }
+    .map_err(|error| {
+        print_graph_error(&error);
+        65
+    })?;
+    let graph = check_graph_with_declared_schemas(graph, &declared).map_err(|error| {
+        print_graph_error(&error);
+        65
+    })?;
+    let statement_count = graph
+        .functions
+        .iter()
+        .map(|function| function.statements.len())
+        .sum::<usize>();
+    println!(
+        "{{\"capability_count\":{},\"declared_schema_count\":{},\"ok\":true,\"schema\":{},\"statement_count\":{},\"unit\":{}}}",
+        graph.capabilities.len(),
+        declared.len(),
+        quote(GRAPH_CHECK_SCHEMA),
+        statement_count,
+        quote(&graph.unit),
+    );
     Ok(())
 }
 

@@ -16,6 +16,7 @@ pub mod digest;
 pub mod experiment_kit;
 pub mod fault_corpus;
 pub mod graph;
+pub mod host_schema_registry;
 pub mod lexer;
 pub mod minimal_std;
 pub mod multi_module;

@@ -103,6 +103,27 @@ cannot yet drive positional arguments. Declarations cannot shadow the five
 built-in references; a conflicting or malformed declaration is rejected with
 `declared-schema-invalid` before the graph is read.
 
+Partial progress, measured (WP-347): the declaration list now travels as a file.
+`host_schema_registry::parse_registry` reads one JSON artifact,
+`{"schema": "revia.host-schema-definitions@0.1.0", "definitions": [...]}`, whose
+definitions are the objects `src/host/schema-registry.js` already validates
+(`identity`, `revision`, `members.<name>.params[] = {name, type}`); the reference
+is derived as `identity@revision`, exactly as `referenceOf` does, so no second
+converter is needed. The projection keeps only identity, revision, member names,
+parameter names and parameter types: `types`, `access`, `returns`, `default`,
+`primary`, `resource_catalog` and `resource_parents` are tolerated and ignored
+until the sites that consume them open. `render_registry` writes the same shape
+through `canonical_json`, so the artifact is byte-stable and round-trips through
+the reader. Malformed artifacts are rejected with
+`declared-schema-registry-invalid` before the graph is read; duplicate,
+shadowing, empty or otherwise invalid declarations keep their
+`declared-schema-invalid` code. The CLI exposes it as
+`revia graph-check [--schema-registry <registry>] <file>` (output schema
+`re.native-graph-result@0.1.0`, unreadable file exit 66, invalid source, graph or
+registry exit 65) — a new command because `check` is the parser path. Runtime
+admission is unchanged: a registry-admitted graph still fails closed at the host
+boundary.
+
 Consequence: Route H costs a core edit at **each** of those eight sites, with a
 test per site — not the single enum change this document originally claimed, and
 not a two-edit change either. §6 item 1 is written against this table.
@@ -153,8 +174,9 @@ re-litigating the same library later.
    request mapping, the response mapping, the error mapping, and the observation
    label. Undeclared members stay fail-closed at every one of them.
    Status: WP-346 lands the three check-time sites behind
-   `check_graph_with_declared_schemas`; the four runtime sites and the two
-   parse-time helpers are still hardcoded.
+   `check_graph_with_declared_schemas`; WP-347 gives that list its file format
+   (`host_schema_registry`, `revia graph-check --schema-registry`); the four
+   runtime sites and the two parse-time helpers are still hardcoded.
    Acceptance test: an out-of-tree schema and member declared through the
    registry (not a new match arm) passes `re check`, executes through
    `HostBackedBridge`, returns its declared result type, surfaces its declared

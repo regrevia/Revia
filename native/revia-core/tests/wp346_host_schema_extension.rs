@@ -4,8 +4,9 @@
 // drives every closed match site. This file covers the check-time half only:
 // the allowlist, the member table, and the argument names/types. The four
 // runtime sites stay closed, so a graph admitted here is still rejected by the
-// host bridge; that boundary is asserted in `wp345_library_admission_boundary.rs`
-// and in the Rust half of WP-347.
+// host bridge; that boundary is asserted in `wp345_library_admission_boundary.rs`.
+// WP-347 adds the registry artifact format around this same declaration list and
+// leaves the runtime sites closed, so it does not widen what this file proves.
 //
 // Scope limits that keep this honest:
 // - source uses named arguments, because positional argument naming happens in
