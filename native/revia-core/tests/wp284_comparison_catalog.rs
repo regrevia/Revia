@@ -6,7 +6,10 @@ use revia_core::{
         build_comparison_report, comparison_semantic_digest, parse_comparison_catalog,
         serialize_comparison_catalog, serialize_comparison_report,
     },
-    cross_language::{CrossLanguageBackendResult, CrossLanguageInvocation},
+    cross_language::{
+        CrossLanguageBackendResult, CrossLanguageInvocation, observed_execution_digest,
+        observed_replay_result_digest,
+    },
     digest::sha256_hex,
     graph::{graph_revision, load_canonical_graph},
     replay::{NativeReplayTranscript, serialize_native_replay_transcript},
@@ -46,16 +49,19 @@ fn host_fault_transcript() -> String {
     stdout_transcript(CapabilityResponse::host_fault("host-fault-injected"))
 }
 
-fn node_result() -> CrossLanguageBackendResult {
-    let graph = graph_revision(&load_canonical_graph(SOURCE).unwrap()).unwrap();
-    let transcript_digest = digest(transcript().as_bytes());
+fn node_result(transcript_source: &str) -> CrossLanguageBackendResult {
+    let graph_value = load_canonical_graph(SOURCE).unwrap();
+    let graph = graph_revision(&graph_value).unwrap();
+    let transcript_value =
+        revia_core::replay::parse_native_replay_transcript(transcript_source).unwrap();
     CrossLanguageBackendResult::measured(
         "node",
-        graph,
+        graph.clone(),
         INPUT,
-        transcript_digest,
+        digest(transcript_source.as_bytes()),
         TOOLCHAIN,
-        "",
+        observed_replay_result_digest(&graph_value, &transcript_value, 0, "process.status")
+            .unwrap(),
         digest(b"node-receipt"),
         0,
         "process.status",
@@ -65,7 +71,6 @@ fn node_result() -> CrossLanguageBackendResult {
             "aaaaaadaaaaaaaaaaaaaaaaaaa",
             "ok",
         )],
-        "",
     )
 }
 
@@ -80,7 +85,7 @@ fn catalog() -> ComparisonCatalog {
             None,
             None,
             ComparisonApplicability::all(),
-            Some(node_result()),
+            Some(node_result(&transcript())),
         ),
         ComparisonWorkload::new(
             "closed-error",
@@ -117,7 +122,7 @@ fn catalog() -> ComparisonCatalog {
             Some(PROJECT.to_owned()),
             Some("agent.enterprise.m000".to_owned()),
             ComparisonApplicability::all(),
-            Some(node_result()),
+            Some(node_result(&transcript())),
         ),
     ])
 }
@@ -127,14 +132,18 @@ fn digest(bytes: &[u8]) -> String {
 }
 
 fn native_result(transcript_source: &str) -> CrossLanguageBackendResult {
-    let graph = graph_revision(&load_canonical_graph(SOURCE).unwrap()).unwrap();
+    let graph_value = load_canonical_graph(SOURCE).unwrap();
+    let graph = graph_revision(&graph_value).unwrap();
+    let transcript_value =
+        revia_core::replay::parse_native_replay_transcript(transcript_source).unwrap();
     CrossLanguageBackendResult::measured(
         "native",
         graph,
         INPUT,
         digest(transcript_source.as_bytes()),
         TOOLCHAIN,
-        "",
+        observed_replay_result_digest(&graph_value, &transcript_value, 0, "process.status")
+            .unwrap(),
         digest(b"native-receipt"),
         0,
         "process.status",
@@ -144,7 +153,6 @@ fn native_result(transcript_source: &str) -> CrossLanguageBackendResult {
             "aaaaaadaaaaaaaaaaaaaaaaaaa",
             "ok",
         )],
-        "",
     )
 }
 
@@ -379,12 +387,16 @@ fn comparison_semantic_digest_is_bound_to_catalog_observations() {
         original.input_digest.clone(),
         original.transcript_digest.clone(),
         original.toolchain_digest.clone(),
-        "",
+        observed_execution_digest(
+            1,
+            &original.outcome_type,
+            b"Hello, World!\n",
+            &original.observed_result_digest,
+        ),
         original.receipt_digest.clone(),
         1,
         original.outcome_type.clone(),
         original.invocations.clone(),
-        "",
     ));
     let changed = build_comparison_report(
         &changed_catalog,
@@ -407,12 +419,16 @@ fn comparison_semantic_digest_is_bound_to_catalog_observations() {
                             native.input_digest.clone(),
                             native.transcript_digest.clone(),
                             native.toolchain_digest.clone(),
-                            "",
+                            observed_execution_digest(
+                                1,
+                                &native.outcome_type,
+                                b"Hello, World!\n",
+                                &native.observed_result_digest,
+                            ),
                             native.receipt_digest.clone(),
                             1,
                             native.outcome_type.clone(),
                             native.invocations.clone(),
-                            "",
                         ),
                         changed_catalog.workloads[index].node_result.clone(),
                     )

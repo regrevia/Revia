@@ -7,12 +7,14 @@ use std::{
 };
 
 use revia_core::{
+    canonical_json::JsonValue,
     cross_language::{
-        CrossLanguageBackendResult, CrossLanguageInvocation, parse_cross_language_matrix,
-        serialize_backend_result,
+        CrossLanguageBackendResult, CrossLanguageInvocation, observed_node_run_result_digest,
+        parse_cross_language_matrix, serialize_backend_result,
     },
     digest::sha256_hex,
     graph::{check_graph, graph_revision, load_canonical_graph, parse_compact_graph},
+    project::parse_json,
     replay::{parse_native_replay_transcript, serialize_native_replay_transcript},
     source::SourceText,
 };
@@ -39,7 +41,14 @@ fn native_cross_language_matrix_runs_native_and_records_node_oracle() {
 
     let node_run = Command::new("node")
         .current_dir(&repo_root)
-        .args(["src/cli/re.js", "run", "--format", "json", GRAPH])
+        .args([
+            "src/cli/re.js",
+            "run",
+            "--format",
+            "json",
+            "--runtime-receipt",
+            GRAPH,
+        ])
         .output()
         .unwrap();
     assert!(
@@ -49,20 +58,23 @@ fn native_cross_language_matrix_runs_native_and_records_node_oracle() {
         String::from_utf8_lossy(&node_run.stdout),
         String::from_utf8_lossy(&node_run.stderr)
     );
-    assert!(String::from_utf8_lossy(&node_run.stdout).contains("\"code\":0"));
-
-    let graph = load_graph(&repo_root.join(GRAPH));
-    let revision = graph_revision(&graph).unwrap();
     let transcript = parse_native_replay_transcript(TRANSCRIPT).unwrap();
     let transcript_source = serialize_native_replay_transcript(&transcript).unwrap();
+    let graph = load_graph(&repo_root.join(GRAPH));
+    let revision = graph_revision(&graph).unwrap();
+    let node_source = String::from_utf8(node_run.stdout.clone()).unwrap();
+    let observed_result_digest =
+        observed_node_run_result_digest(&node_source, &graph, &revision, &transcript).unwrap();
+    let node_receipt_digest = node_receipt_digest(&node_source);
+
     let node = CrossLanguageBackendResult::measured(
         "node",
         revision,
         INPUT,
         digest(transcript_source.as_bytes()),
         digest(b"node-reference-24"),
-        "",
-        digest(&node_run.stdout),
+        observed_result_digest,
+        node_receipt_digest,
         0,
         "process.status",
         vec![CrossLanguageInvocation::new(
@@ -71,7 +83,6 @@ fn native_cross_language_matrix_runs_native_and_records_node_oracle() {
             "aaaaaadaaaaaaaaaaaaaaaaaaa",
             "ok",
         )],
-        "",
     );
     fs::write(&node_result_path, serialize_backend_result(&node).unwrap()).unwrap();
 
@@ -118,13 +129,31 @@ fn native_cross_language_matrix_rejects_node_authority_drift_before_write() {
     let node_result_path = temp_path("node-result-drift");
     let output_path = temp_path("matrix-drift");
     fs::write(&transcript_path, TRANSCRIPT).unwrap();
+    let graph = load_graph(&repo_root.join(GRAPH));
+    let transcript = parse_native_replay_transcript(TRANSCRIPT).unwrap();
+    let node_run = Command::new("node")
+        .current_dir(&repo_root)
+        .args([
+            "src/cli/re.js",
+            "run",
+            "--format",
+            "json",
+            "--runtime-receipt",
+            GRAPH,
+        ])
+        .output()
+        .unwrap();
+    assert!(node_run.status.success());
+    let node_source = String::from_utf8(node_run.stdout.clone()).unwrap();
+    let actual_revision = graph_revision(&graph).unwrap();
     let node = CrossLanguageBackendResult::measured(
         "node",
         "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         INPUT,
         digest(TRANSCRIPT.as_bytes()),
         digest(b"node-reference-24"),
-        "",
+        observed_node_run_result_digest(&node_source, &graph, &actual_revision, &transcript)
+            .unwrap(),
         digest(b"node-receipt"),
         0,
         "process.status",
@@ -134,7 +163,6 @@ fn native_cross_language_matrix_rejects_node_authority_drift_before_write() {
             "aaaaaadaaaaaaaaaaaaaaaaaaa",
             "ok",
         )],
-        "",
     );
     fs::write(&node_result_path, serialize_backend_result(&node).unwrap()).unwrap();
     let output = Command::new(env!("CARGO_BIN_EXE_revia"))
@@ -159,6 +187,28 @@ fn native_cross_language_matrix_rejects_node_authority_drift_before_write() {
     cleanup(&transcript_path);
     cleanup(&node_result_path);
     cleanup(&output_path);
+}
+
+fn node_receipt_digest(source: &str) -> String {
+    let JsonValue::Object(fields) = parse_json(source).unwrap() else {
+        panic!("node run result must be an object");
+    };
+    let receipt = fields
+        .iter()
+        .find(|(key, _)| key == "runtime_effect_receipt")
+        .map(|(_, value)| value)
+        .expect("node run result must carry a runtime receipt");
+    let JsonValue::Object(receipt_fields) = receipt else {
+        panic!("node runtime receipt must be an object");
+    };
+    receipt_fields
+        .iter()
+        .find(|(key, _)| key == "receipt_digest")
+        .and_then(|(_, value)| match value {
+            JsonValue::String(value) => Some(value.clone()),
+            _ => None,
+        })
+        .expect("node runtime receipt digest")
 }
 
 fn load_graph(path: &Path) -> revia_core::graph::Graph {

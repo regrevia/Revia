@@ -489,7 +489,7 @@ capability response 前 exact 比较当前 VM invocation；调用完成后还检
 不代表 transcript authority、完整 lowering、真实 scheduler、production backend、
 跨语言性能或 Stable V1.0。
 
-WP-273 在该 transcript 之上建立 `re.cross-language-replay-matrix@0.1.0`
+WP-273 在该 transcript 之上建立 `re.cross-language-replay-matrix@0.2.0`
 比较入口。matrix 只接受从当前 checked graph、input digest、canonical transcript
 和真实 backend result 重建的条目；每个 backend 必须明确为 `measured` 或 `pending`，
 且 `measured` 需要真实 runner、toolchain、result/receipt digest 和 exact workload
@@ -498,12 +498,47 @@ authority。native 与 Node 可在同一 workload 上比较，Go/JVM/其他后�
 跨语言语义比较基础，不宣称后端性能、完整语言覆盖、独立机器 custody、production
 backend 或 Stable V1.0。
 
+跨语言 backend result 使用 `re.cross-language-backend-result@0.2.0`。
+每个 measured backend 必须同时提供：
+
+- `observed_result_digest`：由规范化终态、原始 `program_stdout` 字节摘要和
+  effect observation projection 计算；这是跨 backend 等价比较的输入；
+- `result_digest`：backend result envelope 自身的 canonical 完整性摘要；
+- `receipt_digest`：backend-local receipt 摘要，不参与跨 backend 相等判断。
+
+`observed_node_run_result_digest` 只接受 `re.run-result@0.2.0` envelope：校验 graph
+revision、receipt digest、effect uid（必须等于 transcript 的 `invocation_id`）、
+sequence、参数、响应和 transcript 一致后，才生成 `observed_result_digest`；transcript
+有 invocation 而 receipt 为 null 时直接拒绝。该严格派生函数目前只由测试调用。
+`cross-language-matrix` CLI 不运行 Node，只读调用方提供的 canonical backend-result
+文件，因此 Node result 的来源与 custody 不由本地 matrix 证明。native 条目由
+ReplayBridge 核验后的 transcript 和实际 VM 终态生成。固定 transcript 是 expected
+fixture，不单独证明 Node 实际观察结果。
+
+WP-343 修正了 0.1.0 的等价证据缺陷：旧构造器虽然接收 result/observed digest
+参数，却在内部按 outcome 与 invocation 列表重新计算语义摘要，Node stdout 与 effect
+observation 因此无法影响跨语言相等判断。0.2.0 将
+`observed_result_digest`（backend envelope 观察结果）与 `receipt_digest`
+（backend-local receipt 完整性）拆开，`semantic_digest` 显式绑定 outcome、
+invocation 列表和 `observed_result_digest`。严格派生函数要求 Node 侧从
+`re.run-result@0.2.0` 的 `runtime_effect_receipt` 校验逐项 sequence、arguments、
+response、effect uid（绑定 transcript `invocation_id`）、`demand_id`、`receipt_id`
+与 transcript correspondence，再生成观察摘要。WP-343 的 negative tests 覆盖：
+参数或响应篡改后重算内层 `demand_id`/`receipt_id` 并重签外层 `receipt_digest`，
+仍被 transcript projection 拒绝；effect uid、sequence、occurrence、graph revision
+和 receipt id 的逐项篡改分别被对应身份校验拒绝；未重签外层摘要时由
+`receipt_digest` 先拒绝；非空 transcript 配 null receipt 被拒绝。
+观察摘要的 outcome type 固定为进程终态 `process.status`：VM 驱动的进程退出满足该
+约束，非进程终态当前一律 fail closed，不宣称支持。合成 fixture 只证明校验按预期
+拒绝或接受，不构成 measured backend、独立 signer/custody 或跨平台等价证据。
+
 可直接复跑的 native 入口为：
 `cross-language-matrix <source> <input-digest> <transcript> <node-result> <output>`。
 它从 source 重新构建 native checked graph/artifact/VM，并把外部 Node oracle 的
-`re.cross-language-backend-result@0.1.0` canonical JSON 作为第二个 measured 条目；
-输出 `re.cross-language-replay-matrix@0.1.0`，包含 native/node 各自的
-`result_digest`、`receipt_digest`，以及共同的 `semantic_digest`。该命令不接收
+`re.cross-language-backend-result@0.2.0` canonical JSON 作为第二个 measured 条目；
+输出 `re.cross-language-replay-matrix@0.2.0`，包含 native/node 各自的
+`observed_result_digest`、`result_digest`、`receipt_digest`，以及共同的
+`semantic_digest`。该命令不接收
 expected outcome，输出 path-free，Go/JVM 当前固定为 `pending`；Node result 的真实
 runner/custody 仍属于更高层证据，不由本地 matrix 自行宣称。
 
@@ -513,7 +548,7 @@ JSON，根对象为 `re.native-replay-workload-catalog@0.1.0`，每个 workload 
 `node_result`。runner 不从路径猜测 source，也不接收 expected outcome；它在内存中
 逐项重新执行 native replay，再生成 `re.native-replay-workload-report@0.1.0`。
 三项 workload 是最低 catalog 边界；有 Node result 的条目生成
-`re.cross-language-replay-matrix@0.1.0`，没有 Node result 的条目明确把 node、go、
+`re.cross-language-replay-matrix@0.2.0`，没有 Node result 的条目明确把 node、go、
 jvm 标为 `pending`。报告绑定 catalog digest、graph/input/transcript、backend
 result/receipt 和 report digest，失败只写 stderr，结果不包含本地路径。
 

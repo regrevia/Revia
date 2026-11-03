@@ -228,7 +228,7 @@ lowering、真实 scheduler、production backend、跨平台性能或 Stable V1.
 ### WP-273 · native/Node cross-language replay matrix
 
 在 `re.native-vm-replay@0.1.0` transcript 之上增加
-`re.cross-language-replay-matrix@0.1.0`。matrix 绑定当前 checked graph、input digest、
+`re.cross-language-replay-matrix@0.2.0`。matrix 绑定当前 checked graph、input digest、
 canonical transcript、backend identity、toolchain authority 和实际 result/receipt digest；
 比较只使用 matrix 外部重建的 workload/result authority。native 与 Node 在真实运行过的
 相同 workload 上可以标记 `measured`；Go/JVM/其他后端未具备真实 runner 时固定为
@@ -240,10 +240,25 @@ production backend 或 Stable V1.0。
 native 可直接使用
 `cross-language-matrix <source> <input-digest> <transcript> <node-result> <output>`。
 命令从当前 source 重新执行 native replay，并只接受 canonical
-`re.cross-language-backend-result@0.1.0` Node 条目；输出的
-`re.cross-language-replay-matrix@0.1.0` 绑定 graph/input/transcript 和双方
-semantic digest。Go/JVM 未实际运行时保持 `pending`，不把外部 result 文件本身解释为
-独立 signer/custody 证明。
+`re.cross-language-backend-result@0.2.0` Node 条目；输出的
+`re.cross-language-replay-matrix@0.2.0` 绑定 graph/input/transcript、双方
+`observed_result_digest` 和 `semantic_digest`。`result_digest` 只绑定 backend result
+envelope，`receipt_digest` 只绑定 backend-local receipt，二者不直接跨 backend 比较。
+严格派生函数要求 Node result 携带 runtime receipt 与 `program_stdout`（effect uid
+绑定 transcript `invocation_id`）；但 matrix 与 replay-catalog CLI 只读取调用方提供的
+canonical backend-result，不自行运行 Node，也不核验文件来源。固定 transcript 不能
+替代实际观察结果。Go/JVM 未实际运行时保持 `pending`，不把外部 result 文件本身解释
+为独立 signer/custody 证明。
+
+WP-343 补齐该 seam 的 negative evidence：旧 0.1.0 构造器忽略调用方传入的
+result/observed digest、按 invocation 列表自行重算，Node stdout 与 effect 观察无法
+影响等价判断；0.2.0 拆分 `observed_result_digest` 与 `receipt_digest` 并强制
+`semantic_digest` 绑定前者。逐项篡改参数/响应并重算内层身份摘要后仍被 transcript
+projection 拒绝；effect uid、sequence、occurrence、graph revision、receipt id 的
+篡改由对应身份校验拒绝；未重签外层摘要时由 `receipt_digest` 先拒绝。该严格派生路径
+目前只有测试覆盖，CLI 接受外部 backend-result，不核验其产生方式。固定 transcript 与
+合成 tamper case 只证明比较契约，不证明 Node 实际运行、独立 custody、production
+backend 或跨平台等价。
 
 ### WP-274 · native replay workload catalog
 

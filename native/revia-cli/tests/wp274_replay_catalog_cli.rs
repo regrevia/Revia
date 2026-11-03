@@ -8,9 +8,12 @@ use std::{
 };
 
 use revia_core::{
+    canonical_json::JsonValue,
+    cross_language::observed_node_run_result_digest,
     cross_language::{CrossLanguageBackendResult, CrossLanguageInvocation},
     digest::sha256_hex,
     graph::{graph_revision, load_canonical_graph},
+    project::parse_json,
     replay::{NativeReplayInvocation, NativeReplayTranscript, serialize_native_replay_transcript},
     replay_catalog::{
         ReplayWorkload, ReplayWorkloadCatalog, parse_replay_workload_report,
@@ -40,6 +43,7 @@ fn native_replay_catalog_runs_three_workloads_and_one_node_matrix() {
             "run",
             "--format",
             "json",
+            "--runtime-receipt",
             "test/golden/canonical-hello.re",
         ])
         .output()
@@ -47,14 +51,39 @@ fn native_replay_catalog_runs_three_workloads_and_one_node_matrix() {
     assert!(node_run.status.success());
     let hello_revision = graph_revision(&load_canonical_graph(HELLO).unwrap()).unwrap();
     let hello_transcript_source = serialize_native_replay_transcript(&hello_transcript).unwrap();
+    let node_source = String::from_utf8(node_run.stdout.clone()).unwrap();
+    let node_value = parse_json(&node_source).unwrap();
+    let JsonValue::Object(node_fields) = node_value else {
+        panic!("node run result must be an object");
+    };
+    let receipt_digest = node_fields
+        .iter()
+        .find(|(key, _)| key == "runtime_effect_receipt")
+        .and_then(|(_, value)| match value {
+            JsonValue::Object(fields) => fields
+                .iter()
+                .find(|(key, _)| key == "receipt_digest")
+                .and_then(|(_, value)| match value {
+                    JsonValue::String(value) => Some(value.clone()),
+                    _ => None,
+                }),
+            _ => None,
+        })
+        .expect("node runtime receipt digest");
     let node = CrossLanguageBackendResult::measured(
         "node",
-        hello_revision,
+        hello_revision.clone(),
         HELLO_INPUT,
         digest(hello_transcript_source.as_bytes()),
         digest(b"node-reference-24"),
-        "",
-        digest(&node_run.stdout),
+        observed_node_run_result_digest(
+            &node_source,
+            &load_canonical_graph(HELLO).unwrap(),
+            &hello_revision,
+            &hello_transcript,
+        )
+        .unwrap(),
+        receipt_digest,
         0,
         "process.status",
         vec![CrossLanguageInvocation::new(
@@ -63,7 +92,6 @@ fn native_replay_catalog_runs_three_workloads_and_one_node_matrix() {
             "aaaaaadaaaaaaaaaaaaaaaaaaa",
             "ok",
         )],
-        "",
     );
     let catalog = ReplayWorkloadCatalog::new(vec![
         ReplayWorkload::new(

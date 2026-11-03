@@ -43,12 +43,16 @@ fn native_report() -> (
                     workload.input_digest.clone(),
                     transcript_digest.clone(),
                     TOOLCHAIN,
-                    "",
+                    revia_core::cross_language::observed_execution_digest(
+                        0,
+                        "process.status",
+                        &[],
+                        &digest(workload.transcript.as_bytes()),
+                    ),
                     digest(workload.workload_id.as_bytes()),
                     0,
                     "process.status",
                     Vec::new(),
-                    "",
                 );
                 ComparisonObservation::new(workload, revision, transcript_digest, native, None)
             }
@@ -137,12 +141,16 @@ fn experiment_kit_binds_the_trusted_comparison_report() {
             native.input_digest.clone(),
             native.transcript_digest.clone(),
             native.toolchain_digest.clone(),
-            "",
+            revia_core::cross_language::observed_execution_digest(
+                1,
+                &native.outcome_type,
+                b"changed-observation",
+                &digest(b"changed-effect-projection"),
+            ),
             native.receipt_digest.clone(),
             native.outcome_code + 1,
             native.outcome_type.clone(),
             native.invocations.clone(),
-            "",
         ),
     );
     let changed_report = build_comparison_report(&catalog, changed_observations).unwrap();

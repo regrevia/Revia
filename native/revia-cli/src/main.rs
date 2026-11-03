@@ -75,7 +75,8 @@ use revia_core::{
     },
     cross_language::{
         CrossLanguageBackendResult, CrossLanguageInvocation, PendingBackend,
-        build_cross_language_matrix, parse_backend_result, serialize_cross_language_matrix,
+        build_cross_language_matrix, observed_replay_result_digest, parse_backend_result,
+        serialize_cross_language_matrix,
     },
     digest::sha256_hex,
     experiment_kit::{build_experiment_kit, serialize_experiment_kit},
@@ -157,7 +158,7 @@ use revia_core::{
         server_gate_report_digest,
     },
     source::SourceText,
-    vm::{VmLimits, execute_bytecode},
+    vm::{VmLimits, VmResult, execute_bytecode},
 };
 
 const CHECK_SCHEMA: &str = "re.native-parser-result@0.1.0";
@@ -2779,7 +2780,7 @@ fn conformance_run(
         artifact.profile.clone(),
         input_digest,
     );
-    let mut bridge = ReplayBridge::new(transcript);
+    let mut bridge = ReplayBridge::new(transcript.clone());
     let result = execute_bytecode(
         &graph,
         &artifact_source,
@@ -2846,7 +2847,7 @@ fn cross_language_matrix(
         artifact.profile.clone(),
         input_digest,
     );
-    let mut bridge = ReplayBridge::new(transcript);
+    let mut bridge = ReplayBridge::new(transcript.clone());
     let execution = execute_bytecode(
         &graph,
         &artifact_source,
@@ -2866,13 +2867,23 @@ fn cross_language_matrix(
         print_cross_language_error(&code);
         65
     })?;
+    let observed_result_digest = observed_replay_result_digest(
+        &graph,
+        &transcript,
+        execution.outcome.code as u16,
+        &execution.outcome.type_name,
+    )
+    .map_err(|error| {
+        print_cross_language_error(&error.code);
+        65
+    })?;
     let native = CrossLanguageBackendResult::measured(
         "native",
         revision.clone(),
         input_digest,
         transcript_digest.clone(),
         format!("sha256:{}", sha256_hex(b"re.native-rust-toolchain@0.1.0")),
-        "",
+        observed_result_digest,
         execution.receipt.receipt_digest.clone(),
         execution.outcome.code as u16,
         execution.outcome.type_name.clone(),
@@ -2888,7 +2899,6 @@ fn cross_language_matrix(
                 )
             })
             .collect(),
-        "",
     );
     let node_source = fs::read_to_string(node_result_path).map_err(|_| 66)?;
     let node = parse_backend_result(&node_source).map_err(|error| {
@@ -2966,7 +2976,7 @@ fn replay_catalog(catalog_path: &str, output_path: &str) -> Result<(), i32> {
             artifact.profile.clone(),
             &workload.input_digest,
         );
-        let mut bridge = ReplayBridge::new(transcript);
+        let mut bridge = ReplayBridge::new(transcript.clone());
         let execution_result = execute_bytecode(
             &graph,
             &artifact_source,
@@ -2986,13 +2996,23 @@ fn replay_catalog(catalog_path: &str, output_path: &str) -> Result<(), i32> {
             print_replay_catalog_error(&code);
             65
         })?;
+        let observed_result_digest = observed_replay_result_digest(
+            &graph,
+            &transcript,
+            execution.outcome.code as u16,
+            &execution.outcome.type_name,
+        )
+        .map_err(|error| {
+            print_replay_catalog_error(&error.code);
+            65
+        })?;
         let native = CrossLanguageBackendResult::measured(
             "native",
             revision.clone(),
             workload.input_digest.clone(),
             transcript_digest.clone(),
             format!("sha256:{}", sha256_hex(b"re.native-rust-toolchain@0.1.0")),
-            "",
+            observed_result_digest,
             execution.receipt.receipt_digest.clone(),
             execution.outcome.code as u16,
             execution.outcome.type_name.clone(),
@@ -3008,7 +3028,6 @@ fn replay_catalog(catalog_path: &str, output_path: &str) -> Result<(), i32> {
                     )
                 })
                 .collect(),
-            "",
         );
         let (matrix, pending) = match workload.node_result.clone() {
             Some(node) => {
@@ -3157,7 +3176,7 @@ fn run_comparison_catalog_report(
                         module_name,
                     )
                     .map_err(|error| error.code)?;
-                    let mut bridge = ReplayBridge::new(transcript);
+                    let mut bridge = ReplayBridge::new(transcript.clone());
                     let run = execute_project_module(
                         &project_path,
                         workspace.join("cache"),
@@ -3184,7 +3203,7 @@ fn run_comparison_catalog_report(
                 workload,
                 revision,
                 transcript_digest.clone(),
-                backend_result_from_vm("native", &run.vm, &transcript_digest),
+                backend_result_from_vm("native", &run.vm, &transcript_digest, &transcript, &graph)?,
                 workload.node_result.clone(),
             )
         } else {
@@ -3200,7 +3219,7 @@ fn run_comparison_catalog_report(
                 artifact.profile.clone(),
                 &workload.input_digest,
             );
-            let mut bridge = ReplayBridge::new(transcript);
+            let mut bridge = ReplayBridge::new(transcript.clone());
             let execution = execute_bytecode(
                 &graph,
                 &artifact_source,
@@ -3219,7 +3238,13 @@ fn run_comparison_catalog_report(
                         workload,
                         revision,
                         transcript_digest.clone(),
-                        backend_result_from_vm("native", &execution, &transcript_digest),
+                        backend_result_from_vm(
+                            "native",
+                            &execution,
+                            &transcript_digest,
+                            &transcript,
+                            &graph,
+                        )?,
                         workload.node_result.clone(),
                     )
                 }
@@ -3273,16 +3298,24 @@ fn experiment_kit(catalog_path: &str, project_path: &str, output_path: &str) -> 
 
 fn backend_result_from_vm(
     backend: &str,
-    execution: &revia_core::vm::VmResult,
+    execution: &VmResult,
     transcript_digest: &str,
-) -> CrossLanguageBackendResult {
-    CrossLanguageBackendResult::measured(
+    transcript: &revia_core::replay::NativeReplayTranscript,
+    graph: &revia_core::graph::Graph,
+) -> Result<CrossLanguageBackendResult, String> {
+    Ok(CrossLanguageBackendResult::measured(
         backend,
         execution.graph_revision.clone(),
         execution.input_digest.clone(),
         transcript_digest,
         native_toolchain_digest(),
-        "",
+        observed_replay_result_digest(
+            graph,
+            transcript,
+            execution.outcome.code as u16,
+            &execution.outcome.type_name,
+        )
+        .map_err(|error| error.code)?,
         execution.receipt.receipt_digest.clone(),
         execution.outcome.code as u16,
         execution.outcome.type_name.clone(),
@@ -3298,8 +3331,7 @@ fn backend_result_from_vm(
                 )
             })
             .collect(),
-        "",
-    )
+    ))
 }
 
 fn collect_comparison_release_evidence(
@@ -8237,7 +8269,7 @@ fn print_cross_language_error(code: &str) {
     eprintln!(
         "{{\"diagnostics\":[{{\"code\":{}}}],\"ok\":false,\"schema\":{}}}",
         quote(code),
-        quote("re.cross-language-replay-matrix@0.1.0"),
+        quote("re.cross-language-replay-matrix@0.2.0"),
     );
 }
 

@@ -3,11 +3,15 @@ use std::collections::{BTreeMap, BTreeSet};
 use crate::{
     canonical_json::{JsonValue, canonicalize},
     digest::sha256_hex,
+    graph::Graph,
     project::parse_json,
+    replay::{NativeReplayTranscript, observed_invocation_json},
+    vm::{CapabilityResponse, VmValue},
 };
 
-pub const CROSS_LANGUAGE_BACKEND_RESULT_SCHEMA: &str = "re.cross-language-backend-result@0.1.0";
-pub const CROSS_LANGUAGE_MATRIX_SCHEMA: &str = "re.cross-language-replay-matrix@0.1.0";
+pub const CROSS_LANGUAGE_BACKEND_RESULT_SCHEMA: &str = "re.cross-language-backend-result@0.2.0";
+pub const CROSS_LANGUAGE_MATRIX_SCHEMA: &str = "re.cross-language-replay-matrix@0.2.0";
+pub const CROSS_LANGUAGE_OBSERVATION_SCHEMA: &str = "re.cross-language-observation@0.1.0";
 
 const MEASURED_BACKENDS: [&str; 2] = ["native", "node"];
 const PENDING_BACKENDS: [&str; 2] = ["go", "jvm"];
@@ -57,6 +61,7 @@ pub struct CrossLanguageBackendResult {
     pub input_digest: String,
     pub transcript_digest: String,
     pub toolchain_digest: String,
+    pub observed_result_digest: String,
     pub result_digest: String,
     pub receipt_digest: String,
     pub semantic_digest: String,
@@ -74,13 +79,13 @@ impl CrossLanguageBackendResult {
         input_digest: impl Into<String>,
         transcript_digest: impl Into<String>,
         toolchain_digest: impl Into<String>,
-        _result_digest: impl Into<String>,
+        observed_result_digest: impl Into<String>,
         receipt_digest: impl Into<String>,
         outcome_code: u16,
         outcome_type: impl Into<String>,
         invocations: Vec<CrossLanguageInvocation>,
-        _semantic_digest: impl Into<String>,
     ) -> Self {
+        let outcome_type = outcome_type.into();
         let mut result = Self {
             schema: CROSS_LANGUAGE_BACKEND_RESULT_SCHEMA.to_owned(),
             backend: backend.into(),
@@ -88,11 +93,12 @@ impl CrossLanguageBackendResult {
             input_digest: input_digest.into(),
             transcript_digest: transcript_digest.into(),
             toolchain_digest: toolchain_digest.into(),
+            observed_result_digest: observed_result_digest.into(),
             result_digest: String::new(),
             receipt_digest: receipt_digest.into(),
             semantic_digest: String::new(),
             outcome_code,
-            outcome_type: outcome_type.into(),
+            outcome_type,
             invocations,
             status: "measured".to_owned(),
         };
@@ -100,6 +106,7 @@ impl CrossLanguageBackendResult {
             result.outcome_code,
             &result.outcome_type,
             &result.invocations,
+            &result.observed_result_digest,
         );
         result.result_digest = backend_result_digest(&result);
         result
@@ -139,6 +146,7 @@ pub fn backend_semantic_digest(
     outcome_code: u16,
     outcome_type: &str,
     invocations: &[CrossLanguageInvocation],
+    observed_result_digest: &str,
 ) -> String {
     digest_json(&object(vec![
         (
@@ -147,7 +155,319 @@ pub fn backend_semantic_digest(
         ),
         ("outcome_code", JsonValue::Number(outcome_code.to_string())),
         ("outcome_type", JsonValue::String(outcome_type.to_owned())),
+        (
+            "observed_result_digest",
+            JsonValue::String(observed_result_digest.to_owned()),
+        ),
+        (
+            "schema",
+            JsonValue::String(CROSS_LANGUAGE_OBSERVATION_SCHEMA.to_owned()),
+        ),
     ]))
+}
+
+pub fn observed_execution_digest(
+    outcome_code: u16,
+    outcome_type: &str,
+    program_stdout: &[u8],
+    effect_projection_digest: &str,
+) -> String {
+    digest_json(&object(vec![
+        (
+            "effects",
+            JsonValue::String(effect_projection_digest.to_owned()),
+        ),
+        (
+            "outcome",
+            object(vec![
+                ("code", JsonValue::Number(outcome_code.to_string())),
+                ("type", JsonValue::String(outcome_type.to_owned())),
+            ]),
+        ),
+        (
+            "program_stdout_sha256",
+            JsonValue::String(format!("sha256:{}", sha256_hex(program_stdout))),
+        ),
+        (
+            "schema",
+            JsonValue::String(CROSS_LANGUAGE_OBSERVATION_SCHEMA.to_owned()),
+        ),
+    ]))
+}
+
+pub fn observed_replay_result_digest(
+    graph: &Graph,
+    transcript: &NativeReplayTranscript,
+    outcome_code: u16,
+    outcome_type: &str,
+) -> Result<String, CrossLanguageError> {
+    let stdout_instances = graph
+        .capabilities
+        .iter()
+        .filter(|capability| capability.reference == "process.stdout@0.1.0")
+        .map(|capability| capability.instance.as_str())
+        .collect::<BTreeSet<_>>();
+    let mut stdout = Vec::new();
+    for invocation in &transcript.invocations {
+        if !stdout_instances.contains(invocation.instance.as_str()) {
+            continue;
+        }
+        if !matches!(
+            invocation.response,
+            CapabilityResponse::Value { ref variant, .. } if variant == "ok"
+        ) {
+            continue;
+        }
+        if let Some(VmValue::Text(value)) = invocation.arguments.get("data") {
+            stdout.extend_from_slice(value.as_bytes());
+        }
+    }
+    Ok(observed_execution_digest(
+        outcome_code,
+        outcome_type,
+        &stdout,
+        &observed_effect_projection_digest(graph, transcript)?,
+    ))
+}
+
+pub fn observed_node_run_result_digest(
+    source: &str,
+    graph: &Graph,
+    expected_graph_revision: &str,
+    transcript: &NativeReplayTranscript,
+) -> Result<String, CrossLanguageError> {
+    let value = parse_json(source)
+        .map_err(|_| CrossLanguageError::new("cross-language-observed-run-result-invalid"))?;
+    let fields = exact_object(
+        &value,
+        &[
+            "outcome",
+            "program_stdout",
+            "runtime_effect_receipt",
+            "schema",
+        ],
+    )?;
+    if required_string(&fields, "schema")? != "re.run-result@0.2.0" {
+        return Err(CrossLanguageError::new(
+            "cross-language-observed-run-result-invalid",
+        ));
+    }
+    let receipt = fields
+        .get("runtime_effect_receipt")
+        .copied()
+        .ok_or_else(|| CrossLanguageError::new("cross-language-node-effect-receipt-missing"))?;
+    // A null receipt is only meaningful when nothing could be observed: the
+    // transcript records no capability invocation. With a non-empty transcript
+    // the receipt must exist and is validated below.
+    if transcript.invocations.is_empty() && matches!(receipt, JsonValue::Null) {
+        let (code, stdout) = observed_process_status(&fields)?;
+        return Ok(observed_execution_digest(
+            code,
+            "process.status",
+            stdout.as_bytes(),
+            &observed_effect_projection_digest(graph, transcript)?,
+        ));
+    }
+    if matches!(receipt, JsonValue::Null) {
+        return Err(CrossLanguageError::new(
+            "cross-language-node-effect-receipt-invalid",
+        ));
+    }
+    let receipt_fields = exact_object(
+        receipt,
+        &["graph_revision", "observations", "receipt_digest", "schema"],
+    )?;
+    let schema = required_string(&receipt_fields, "schema")?;
+    let graph_revision = required_string(&receipt_fields, "graph_revision")?;
+    let receipt_digest = required_string(&receipt_fields, "receipt_digest")?;
+    let observations = match receipt_fields.get("observations") {
+        Some(JsonValue::Array(values)) => values,
+        _ => {
+            return Err(CrossLanguageError::new(
+                "cross-language-node-effect-receipt-invalid",
+            ));
+        }
+    };
+    if schema != "re.runtime-effect-receipt@0.1.0"
+        || graph_revision != expected_graph_revision
+        || observations.len() != transcript.invocations.len()
+    {
+        return Err(CrossLanguageError::new(
+            "cross-language-node-effect-receipt-authority-mismatch",
+        ));
+    }
+    let receipt_content = JsonValue::Object(
+        receipt_fields
+            .iter()
+            .filter(|(key, _)| key.as_str() != "receipt_digest")
+            .map(|(key, value)| (key.clone(), (*value).clone()))
+            .collect(),
+    );
+    if !is_digest(receipt_digest) || digest_json(&receipt_content) != receipt_digest {
+        return Err(CrossLanguageError::new(
+            "cross-language-node-effect-receipt-digest-mismatch",
+        ));
+    }
+    let mut normalized = Vec::with_capacity(observations.len());
+    let mut demand_occurrences = BTreeMap::<String, u64>::new();
+    for (sequence, value) in observations.iter().enumerate() {
+        let entries = exact_object(
+            value,
+            &[
+                "arguments",
+                "demand_id",
+                "effect_uid",
+                "instance",
+                "member",
+                "occurrence",
+                "receipt_id",
+                "reference",
+                "response",
+                "sequence",
+            ],
+        )?;
+        if required_number(&entries, "sequence")? != sequence.to_string()
+            || required_string(&entries, "effect_uid")?.is_empty()
+            || !is_digest(required_string(&entries, "demand_id")?)
+            || !is_digest(required_string(&entries, "receipt_id")?)
+        {
+            return Err(CrossLanguageError::new(
+                "cross-language-node-effect-receipt-invalid",
+            ));
+        }
+        // The Node bridge records the capability invocation id as the effect
+        // uid, so it is bound to the transcript rather than trusted verbatim.
+        if required_string(&entries, "effect_uid")?
+            != transcript.invocations[sequence].invocation_id
+        {
+            return Err(CrossLanguageError::new(
+                "cross-language-node-effect-receipt-observation-digest-mismatch",
+            ));
+        }
+        let arguments = entries
+            .get("arguments")
+            .map(|value| (*value).clone())
+            .ok_or_else(|| CrossLanguageError::new("cross-language-node-effect-receipt-invalid"))?;
+        let instance = required_string(&entries, "instance")?;
+        let member = required_string(&entries, "member")?;
+        let reference = required_string(&entries, "reference")?;
+        let response = entries
+            .get("response")
+            .map(|value| (*value).clone())
+            .ok_or_else(|| CrossLanguageError::new("cross-language-node-effect-receipt-invalid"))?;
+        let demand = object(vec![
+            ("arguments", arguments.clone()),
+            ("instance", JsonValue::String(instance.to_owned())),
+            ("member", JsonValue::String(member.to_owned())),
+            ("reference", JsonValue::String(reference.to_owned())),
+            (
+                "schema",
+                JsonValue::String("re.runtime-effect-demand@0.1.0".to_owned()),
+            ),
+        ]);
+        let demand_key = canonicalize(&demand);
+        let occurrence = *demand_occurrences.get(&demand_key).unwrap_or(&0);
+        if required_number(&entries, "occurrence")? != occurrence.to_string() {
+            return Err(CrossLanguageError::new(
+                "cross-language-node-effect-receipt-demand-mismatch",
+            ));
+        }
+        demand_occurrences.insert(demand_key, occurrence + 1);
+        let expected_demand_id = digest_json(&object(vec![
+            ("arguments", arguments.clone()),
+            ("instance", JsonValue::String(instance.to_owned())),
+            ("member", JsonValue::String(member.to_owned())),
+            ("occurrence", JsonValue::Number(occurrence.to_string())),
+            ("reference", JsonValue::String(reference.to_owned())),
+            (
+                "schema",
+                JsonValue::String("re.runtime-effect-demand@0.1.0".to_owned()),
+            ),
+        ]));
+        let expected_receipt_id = digest_json(&object(vec![
+            ("demand_id", JsonValue::String(expected_demand_id.clone())),
+            ("response", response.clone()),
+            (
+                "schema",
+                JsonValue::String("re.runtime-effect-receipt@0.1.0".to_owned()),
+            ),
+        ]));
+        if required_string(&entries, "demand_id")? != expected_demand_id
+            || required_string(&entries, "receipt_id")? != expected_receipt_id
+        {
+            return Err(CrossLanguageError::new(
+                "cross-language-node-effect-receipt-observation-digest-mismatch",
+            ));
+        }
+        normalized.push(object(vec![
+            ("arguments", arguments),
+            ("instance", JsonValue::String(instance.to_owned())),
+            ("member", JsonValue::String(member.to_owned())),
+            ("reference", JsonValue::String(reference.to_owned())),
+            ("response", response),
+            ("sequence", JsonValue::Number(sequence.to_string())),
+        ]));
+    }
+    let expected = transcript
+        .invocations
+        .iter()
+        .enumerate()
+        .map(|(sequence, invocation)| {
+            observed_invocation_json(graph, sequence, invocation)
+                .map_err(|error| CrossLanguageError::new(&error.code))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    if canonicalize(&JsonValue::Array(normalized)) != canonicalize(&JsonValue::Array(expected)) {
+        return Err(CrossLanguageError::new(
+            "cross-language-node-effect-observation-mismatch",
+        ));
+    }
+    let (code, program_stdout) = observed_process_status(&fields)?;
+    Ok(observed_execution_digest(
+        code,
+        "process.status",
+        program_stdout.as_bytes(),
+        &observed_effect_projection_digest(graph, transcript)?,
+    ))
+}
+
+fn observed_process_status<'a>(
+    fields: &'a BTreeMap<String, &'a JsonValue>,
+) -> Result<(u16, &'a str), CrossLanguageError> {
+    let outcome = fields
+        .get("outcome")
+        .copied()
+        .ok_or_else(|| CrossLanguageError::new("cross-language-observed-run-result-invalid"))?;
+    let outcome_fields = exact_object(outcome, &["kind", "status"])?;
+    if required_string(&outcome_fields, "kind")? != "process-status" {
+        return Err(CrossLanguageError::new(
+            "cross-language-observed-run-result-invalid",
+        ));
+    }
+    let status = outcome_fields
+        .get("status")
+        .copied()
+        .ok_or_else(|| CrossLanguageError::new("cross-language-observed-run-result-invalid"))?;
+    let status_fields = exact_object(status, &["code"])?;
+    let code = required_number(&status_fields, "code")?
+        .parse::<u16>()
+        .map_err(|_| CrossLanguageError::new("cross-language-observed-run-result-invalid"))?;
+    let stdout = required_string(fields, "program_stdout")?;
+    Ok((code, stdout))
+}
+
+pub fn observed_effect_projection_digest(
+    graph: &crate::graph::Graph,
+    transcript: &NativeReplayTranscript,
+) -> Result<String, CrossLanguageError> {
+    let invocations = transcript
+        .invocations
+        .iter()
+        .enumerate()
+        .map(|(sequence, invocation)| observed_invocation_json(graph, sequence, invocation))
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| CrossLanguageError::new(&error.code))?;
+    Ok(digest_json(&JsonValue::Array(invocations)))
 }
 
 pub fn backend_result_digest(result: &CrossLanguageBackendResult) -> String {
@@ -206,6 +526,7 @@ pub fn parse_backend_result(
             "invocations",
             "outcome_code",
             "outcome_type",
+            "observed_result_digest",
             "receipt_digest",
             "result_digest",
             "schema",
@@ -233,6 +554,7 @@ pub fn parse_backend_result(
         input_digest: required_string(&entries, "input_digest")?.to_owned(),
         transcript_digest: required_string(&entries, "transcript_digest")?.to_owned(),
         toolchain_digest: required_string(&entries, "toolchain_digest")?.to_owned(),
+        observed_result_digest: required_string(&entries, "observed_result_digest")?.to_owned(),
         result_digest: required_string(&entries, "result_digest")?.to_owned(),
         receipt_digest: required_string(&entries, "receipt_digest")?.to_owned(),
         semantic_digest: required_string(&entries, "semantic_digest")?.to_owned(),
@@ -425,6 +747,7 @@ fn validate_backend_result(result: &CrossLanguageBackendResult) -> Result<(), Cr
         || !is_digest(&result.input_digest)
         || !is_digest(&result.transcript_digest)
         || !is_digest(&result.toolchain_digest)
+        || !is_digest(&result.observed_result_digest)
         || !is_digest(&result.result_digest)
         || !is_digest(&result.receipt_digest)
         || !is_digest(&result.semantic_digest)
@@ -434,6 +757,7 @@ fn validate_backend_result(result: &CrossLanguageBackendResult) -> Result<(), Cr
                 result.outcome_code,
                 &result.outcome_type,
                 &result.invocations,
+                &result.observed_result_digest,
             )
         || result.result_digest != backend_result_digest(result)
     {
@@ -506,6 +830,10 @@ fn backend_result_json(result: &CrossLanguageBackendResult, include_digest: bool
         (
             "outcome_type",
             JsonValue::String(result.outcome_type.clone()),
+        ),
+        (
+            "observed_result_digest",
+            JsonValue::String(result.observed_result_digest.clone()),
         ),
         (
             "receipt_digest",

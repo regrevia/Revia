@@ -31,6 +31,150 @@ pub struct NativeReplayInvocation {
     pub response: CapabilityResponse,
 }
 
+pub fn observed_invocation_json(
+    graph: &crate::graph::Graph,
+    sequence: usize,
+    invocation: &NativeReplayInvocation,
+) -> Result<JsonValue, ReplayError> {
+    let reference = graph
+        .capabilities
+        .iter()
+        .find(|capability| capability.instance == invocation.instance)
+        .map(|capability| capability.reference.clone())
+        .ok_or_else(|| ReplayError::new("native-replay-transcript-capability-missing"))?;
+    Ok(JsonValue::Object(vec![
+        (
+            "arguments".to_owned(),
+            JsonValue::Object(
+                invocation
+                    .arguments
+                    .iter()
+                    .map(|(name, value)| (name.clone(), observed_value_json(value)))
+                    .collect(),
+            ),
+        ),
+        (
+            "instance".to_owned(),
+            JsonValue::String(invocation.instance.clone()),
+        ),
+        (
+            "member".to_owned(),
+            JsonValue::String(invocation.member.clone()),
+        ),
+        ("reference".to_owned(), JsonValue::String(reference)),
+        (
+            "response".to_owned(),
+            observed_response_json(&invocation.response),
+        ),
+        (
+            "sequence".to_owned(),
+            JsonValue::Number(sequence.to_string()),
+        ),
+    ]))
+}
+
+fn observed_value_json(value: &VmValue) -> JsonValue {
+    match value {
+        VmValue::Unit => JsonValue::Null,
+        VmValue::Bool(value) => JsonValue::Bool(*value),
+        VmValue::Text(value) => JsonValue::String(value.clone()),
+        VmValue::Bytes(value) => JsonValue::Object(vec![
+            (
+                "hex".to_owned(),
+                JsonValue::String(
+                    value
+                        .iter()
+                        .map(|byte| format!("{byte:02x}"))
+                        .collect::<String>(),
+                ),
+            ),
+            ("kind".to_owned(), JsonValue::String("bytes".to_owned())),
+        ]),
+        VmValue::Int(value) => JsonValue::Number(value.to_string()),
+        VmValue::List(values) => JsonValue::Array(values.iter().map(observed_value_json).collect()),
+        VmValue::Record(fields) => JsonValue::Object(
+            fields
+                .iter()
+                .map(|(name, value)| (name.clone(), observed_value_json(value)))
+                .collect(),
+        ),
+        VmValue::ResultOk(value) => JsonValue::Object(vec![
+            ("kind".to_owned(), JsonValue::String("ok".to_owned())),
+            ("value".to_owned(), observed_value_json(value)),
+        ]),
+        VmValue::ResultErr { type_name, variant } => JsonValue::Object(vec![
+            (
+                "error".to_owned(),
+                JsonValue::Object(vec![
+                    ("type".to_owned(), JsonValue::String(type_name.clone())),
+                    ("variant".to_owned(), JsonValue::String(variant.clone())),
+                ]),
+            ),
+            ("kind".to_owned(), JsonValue::String("err".to_owned())),
+        ]),
+    }
+}
+
+fn observed_response_json(response: &CapabilityResponse) -> JsonValue {
+    match response {
+        CapabilityResponse::Value { variant, payload } if variant == "err" => {
+            if let VmValue::ResultErr { type_name, variant } = payload {
+                JsonValue::Object(vec![
+                    (
+                        "value".to_owned(),
+                        JsonValue::Object(vec![
+                            (
+                                "error".to_owned(),
+                                JsonValue::Object(vec![
+                                    ("type".to_owned(), JsonValue::String(type_name.clone())),
+                                    ("variant".to_owned(), JsonValue::String(variant.clone())),
+                                ]),
+                            ),
+                            ("kind".to_owned(), JsonValue::String("err".to_owned())),
+                        ]),
+                    ),
+                    ("kind".to_owned(), JsonValue::String("value".to_owned())),
+                ])
+            } else {
+                JsonValue::Object(vec![
+                    (
+                        "value".to_owned(),
+                        JsonValue::Object(vec![(
+                            "kind".to_owned(),
+                            JsonValue::String("err".to_owned()),
+                        )]),
+                    ),
+                    ("kind".to_owned(), JsonValue::String("value".to_owned())),
+                ])
+            }
+        }
+        CapabilityResponse::Value { variant, payload } => JsonValue::Object(vec![
+            (
+                "value".to_owned(),
+                JsonValue::Object(vec![
+                    ("kind".to_owned(), JsonValue::String(variant.clone())),
+                    ("value".to_owned(), observed_value_json(payload)),
+                ]),
+            ),
+            ("kind".to_owned(), JsonValue::String("value".to_owned())),
+        ]),
+        CapabilityResponse::CheckFailure { code } => JsonValue::Object(vec![
+            ("code".to_owned(), JsonValue::String(code.clone())),
+            (
+                "kind".to_owned(),
+                JsonValue::String("check_failure".to_owned()),
+            ),
+        ]),
+        CapabilityResponse::HostFault { code } => JsonValue::Object(vec![
+            ("code".to_owned(), JsonValue::String(code.clone())),
+            (
+                "kind".to_owned(),
+                JsonValue::String("host_fault".to_owned()),
+            ),
+        ]),
+    }
+}
+
 impl NativeReplayInvocation {
     pub fn new(
         instance: impl Into<String>,

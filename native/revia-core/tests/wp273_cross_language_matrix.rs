@@ -8,7 +8,6 @@ const GRAPH: &str = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 const INPUT: &str = "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 const TRANSCRIPT: &str = "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc";
 const TOOLCHAIN: &str = "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
-const RESULT: &str = "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
 const RECEIPT: &str = "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
 
 fn backend(name: &str, semantic: &str) -> CrossLanguageBackendResult {
@@ -18,7 +17,7 @@ fn backend(name: &str, semantic: &str) -> CrossLanguageBackendResult {
         INPUT,
         TRANSCRIPT,
         TOOLCHAIN,
-        RESULT,
+        semantic,
         RECEIPT,
         0,
         "process.status",
@@ -28,8 +27,102 @@ fn backend(name: &str, semantic: &str) -> CrossLanguageBackendResult {
             "aaaaaadaaaaaaaaaaaaaaaaaaa",
             "ok",
         )],
-        semantic,
     )
+}
+
+#[test]
+fn cross_language_semantics_bind_observed_result_but_not_receipt_bytes() {
+    let observed = revia_core::cross_language::observed_execution_digest(
+        0,
+        "process.status",
+        b"Hello, World!\n",
+        "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    );
+    let native = backend("native", &observed);
+    let mut node = backend("node", &observed);
+    node.receipt_digest =
+        "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee".to_owned();
+    node.result_digest = revia_core::cross_language::backend_result_digest(&node);
+
+    assert_ne!(native.receipt_digest, node.receipt_digest);
+    assert_eq!(native.semantic_digest, node.semantic_digest);
+
+    node.observed_result_digest = revia_core::cross_language::observed_execution_digest(
+        0,
+        "process.status",
+        b"Different output\n",
+        "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    );
+    node.semantic_digest = revia_core::cross_language::backend_semantic_digest(
+        node.outcome_code,
+        &node.outcome_type,
+        &node.invocations,
+        &node.observed_result_digest,
+    );
+    node.result_digest = revia_core::cross_language::backend_result_digest(&node);
+    assert_ne!(native.semantic_digest, node.semantic_digest);
+    assert!(
+        build_cross_language_matrix(
+            "canonical-hello",
+            GRAPH,
+            INPUT,
+            TRANSCRIPT,
+            vec![native, node],
+            vec![
+                PendingBackend::new("go", "not-measured"),
+                PendingBackend::new("jvm", "not-measured"),
+            ],
+        )
+        .is_err()
+    );
+}
+
+#[test]
+fn cross_language_backend_result_rejects_observed_result_digest_tampering() {
+    let mut result = backend(
+        "node",
+        &revia_core::cross_language::observed_execution_digest(
+            0,
+            "process.status",
+            b"Hello, World!\n",
+            "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        ),
+    );
+    result.observed_result_digest = revia_core::cross_language::observed_execution_digest(
+        0,
+        "process.status",
+        b"tampered output",
+        "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    );
+    assert!(serialize_backend_result(&result).is_err());
+}
+
+#[test]
+fn observed_execution_digest_binds_terminal_and_stdout_bytes() {
+    let baseline = revia_core::cross_language::observed_execution_digest(
+        0,
+        "process.status",
+        b"Hello, World!\n",
+        "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    );
+    assert_ne!(
+        baseline,
+        revia_core::cross_language::observed_execution_digest(
+            0,
+            "process.status",
+            b"Hello, World!",
+            "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        )
+    );
+    assert_ne!(
+        baseline,
+        revia_core::cross_language::observed_execution_digest(
+            1,
+            "process.status",
+            b"Hello, World!\n",
+            "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        )
+    );
 }
 
 #[test]

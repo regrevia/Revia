@@ -13,7 +13,7 @@ const SOURCE: &str = include_str!("../../../test/golden/canonical-hello.re");
 const INPUT: &str = "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 const TRANSCRIPT: &str = "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc";
 const TOOLCHAIN: &str = "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
-const RESULT: &str = "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+const OBSERVED: &str = "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
 const RECEIPT: &str = "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
 
 fn transcript() -> String {
@@ -31,7 +31,7 @@ fn backend(name: &str) -> CrossLanguageBackendResult {
         INPUT,
         TRANSCRIPT,
         TOOLCHAIN,
-        RESULT,
+        OBSERVED,
         RECEIPT,
         0,
         "process.status",
@@ -41,7 +41,6 @@ fn backend(name: &str) -> CrossLanguageBackendResult {
             "aaaaaadaaaaaaaaaaaaaaaaaaa",
             "ok",
         )],
-        "",
     )
 }
 
