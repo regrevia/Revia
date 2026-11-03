@@ -281,20 +281,27 @@ effect 或平台绑定走 adapter，第三方纯库必须过等价语料），�
 可复现证据）。
 
 该文档记录三条实测阻塞，其中第一条与先前判断不同：adapter seam 本身是开的
-（`HostAdapter:425`、`HostEnvironment<A>:430`、`HostBackedBridge<A>:752` 均为 pub，
-`HostOperation::Unknown(String):317-330` 与 `HostRequest::unknown:401` 已存在），真正
-关门的是两处——`graph::is_known_schema`（`graph.rs:879-888`）只认五个 reference，以及
-`HostBackedBridge::host_request`（`minimal_std.rs:926-956`）对这五个 reference 的闭合
-match，后者在 `HostRequest` 构造之前就返回
-`native-host-bridge-operation-unsupported`，所以 `minimal_std.rs:573`、`:734` 的 unknown
-拒绝只有直接调用 `HostEnvironment::invoke` 才走得到。另外两条：生产语法没有 list
-索引/迭代/字符串拼接也没有算术表达式，Route I 今天没有可执行目标；`doc/04` 的
-production lowering 仍是占位（该文有两个 `### 4.1` 标题，按标题引用）。
+（`HostAdapter:425`、`HostEnvironment<A>:430`、`HostBackedBridge<A>:752` 均为 pub），真正
+关门的是散在八个点的闭合词表，按阶段分成两组。检查期：`graph::is_known_schema`
+（`graph.rs:879-888`，只认五个 reference）、`graph::parameters`（`:666-687`，合法
+`(schema, member)` 表与 arity，`:686` 报 `unknown-capability-member`）、
+`graph::default_argument_name`（`:600-611`）、`graph::contextual_literal`（`:548-597`，
+未列出的组合静默落成 `text.utf8`，`:583`）。运行期：`HostBackedBridge::host_request`
+（`minimal_std.rs:926-956`）、`response`（`:959-998`）、`declared_host_error`
+（`:1063-1093`）、`host_operation_name`（`:1205-1213`，未知 reference 静默记成
+`"unknown"`）。两处需要纠正的读法：`host_request` 只匹配四个 reference——`process.exit`
+不走 bridge，`compact_target`（`graph.rs:520-527`）把它变成 `Target::PureOperation` 并在
+`:630-640` 校验；`HostOperation::Unknown(String):317-330` 与 `HostRequest::unknown:401`
+今天不是 adapter 的扩展点，adapter 只拿到 `&HostRequest`、构造不出来，生产侧只有测试在
+用，`minimal_std.rs:573`、`:734` 的 unknown 拒绝只有直接调用 `HostEnvironment::invoke`
+才走得到。另外两条：生产语法没有 list 索引/迭代/算术表达式，文本拼接也只有
+`std.text.concat` 存在于 native std surface、生产语法不可达，Route I 今天没有可执行目标；
+`doc/04` 的 production lowering 仍是占位（该文有两个 `### 4.1` 标题，按标题引用）。
 
 配套测试 `native/revia-core/tests/wp345_library_admission_boundary.rs` 只钉直接调用这一
 分支：未声明成员在 IO 之前以 `StdError::UnknownOperation` 失败、重复调用错误一致、host
-仍可继续读写；它不测试上述两道准入闸门，§6.1 落地时应重访而不是只求继续绿。本包不接纳
-任何第三方库，也不改变 research/preview 成熟度声明。
+仍可继续读写；它不测试上述八个准入点，`doc/12` §6 第 1 项落地时应重访而不是只求继续绿。
+本包不接纳任何第三方库，也不改变 research/preview 成熟度声明。
 
 ### WP-274 · native replay workload catalog
 

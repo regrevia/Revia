@@ -2,18 +2,22 @@
 // member.
 //
 // Route H in `doc/12-library-strategy.md` is where an external library enters
-// Revia as a host adapter. The admission gates for that route are the schema
-// allowlist (`graph::is_known_schema`) and the closed request mapping
-// (`HostBackedBridge::host_request`); neither is exercised here. What this file
-// pins is the smaller contract underneath them: an adapter that is handed an
-// undeclared member through `HostEnvironment::invoke` must fail closed with a
-// typed error, before any IO, and keep failing the same way under repetition.
-// `wp257_minimal_std_host.rs` already asserts the rejection itself; these cases
-// add the absence of side effects and the stability across calls.
+// Revia as a host adapter. Admission for that route is a closed vocabulary
+// spread over eight hardcoded sites (blocker 1 there), from the check-time
+// schema allowlist and member table to the runtime request, response, error and
+// observation mappings; none of them is exercised here. What this file pins is
+// the contract underneath all of them: an adapter handed an undeclared member
+// through `HostEnvironment::invoke` must fail closed with a typed error, before
+// any IO.
 //
-// When doc/12 §6.1 opens the two gates, revisit this file: three cases remain
-// valid (undeclared members must still be rejected), but the header's scope
-// claim and the admission path are what change.
+// Which cases carry which weight: the first two pin closed failure and the
+// absence of side effects; the third adds stability across repetitions; the
+// fourth adds independence from the name shape. `wp257_minimal_std_host.rs`
+// already asserts a single rejection directly.
+//
+// When doc/12 §6 item 1 lands, revisit this file: all four cases remain valid
+// (undeclared members must stay rejected), but the admission path above them
+// changes.
 
 use std::collections::BTreeMap;
 

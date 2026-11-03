@@ -50,32 +50,42 @@ the fail-closed projection contract in `doc/05-execution.md`.
 
 ## 4. What actually blocks admission, measured / 已知阻塞（实测）
 
-### Blocker 1 — the gate is the schema allowlist plus the request mapping, not the adapter trait
+### Blocker 1 — the gate is a closed vocabulary spread over eight sites, not the adapter trait
 
 The adapter seam is already public and generic: `HostAdapter`
 (`native/revia-core/src/minimal_std.rs:425`), `HostEnvironment<A>` (`:430`), and
-`HostBackedBridge<A>` (`:752`) accept any out-of-tree implementor, and
-`HostOperation::Unknown(String)` (`:317-330`) with the public constructor
-`HostRequest::unknown` (`:401`) exists so an adapter can name members core does
-not know.
+`HostBackedBridge<A>` (`:752`) accept any out-of-tree implementor. But that seam
+alone admits nothing, because the set of legal schema references and members is
+hardcoded in eight places, split by phase:
 
-What closes the door is elsewhere, in two places:
+| Phase | Site | What it fixes | Failure code when unmatched |
+| --- | --- | --- | --- |
+| check | `graph::is_known_schema` (`graph.rs:879-888`) | exactly five schema references | `unknown-schema-reference` |
+| check | `graph::parameters` (`graph.rs:666-687`) | the legal `(schema, member)` table and arity | `unknown-capability-member` (`:686`) |
+| check | `graph::default_argument_name` (`graph.rs:600-611`) | positional argument name per member | `missing-argument-name` |
+| check | `graph::contextual_literal` (`graph.rs:548-597`) | literal type per member; unlisted pairs fall back to `text.utf8` at `:583` | — (silent default) |
+| runtime | `HostBackedBridge::host_request` (`minimal_std.rs:926-956`) | maps a member onto a `HostRequest` | `native-host-bridge-operation-unsupported:<instance>.<member>` |
+| runtime | `HostBackedBridge::response` (`:959-998`) | maps a `HostOutcome` back onto the declared result type | `native-host-return-type-mismatch` |
+| runtime | `declared_host_error` (`:1063-1093`) | maps a `StdError` onto the member's declared error family | `native-host-bridge-error-reference-unknown` |
+| runtime | `host_operation_name` (`:1205-1213`) | observation label for the effect log | none — silently `"unknown"` |
 
-1. **Schema allowlist.** `graph::is_known_schema`
-   (`native/revia-core/src/graph.rs:879-888`) admits exactly five references, so
-   a program that calls a new library schema fails at check time regardless of
-   any adapter.
-2. **Closed request mapping.** `HostBackedBridge::host_request`
-   (`native/revia-core/src/minimal_std.rs:926-956`) is a closed match over those
-   same five references and returns
-   `native-host-bridge-operation-unsupported:<instance>.<member>` *before* a
-   `HostRequest` exists. The `Unknown` rejection arms (`:573`, `:734`) are only
-   reachable by calling `HostEnvironment::invoke` directly — no graph or VM path
-   reaches them.
+Two corrections to the obvious reading of that table:
 
-Consequence: Route H costs a core edit at the schema list **and** the bridge
-mapping, each with its own authority tests — not the single enum change this
-document previously claimed. §6.1 reflects that.
+- `host_request` matches **four** references, not the same five as the allowlist.
+  `process.exit@0.1.0` never reaches the bridge: `compact_target`
+  (`graph.rs:520-527`) turns it into a `Target::PureOperation`, validated at
+  `:630-640`.
+- `HostOperation::Unknown(String)` (`:317-330`) and `HostRequest::unknown`
+  (`:401`) are not an adapter extension point today. Adapters receive
+  `&HostRequest` and cannot construct one; the only producers are tests
+  (`wp257_minimal_std_host.rs:277`, `wp345_library_admission_boundary.rs:43,72`),
+  and the `Unknown` rejection arms (`:573`, `:734`) are reachable only through a
+  direct `HostEnvironment::invoke` call. Treat them as a forward-compatibility
+  placeholder, not a supported path.
+
+Consequence: Route H costs a core edit at **each** of those eight sites, with a
+test per site — not the single enum change this document originally claimed, and
+not a two-edit change either. §6 item 1 is written against this table.
 
 ### Blocker 2 — the expression surface cannot walk data, and has no arithmetic
 
@@ -115,12 +125,21 @@ re-litigating the same library later.
 
 ## 6. Prerequisites, in order / 前置条件（按顺序）
 
-1. **Open Route H's two gates** — extend `is_known_schema` and
-   `HostBackedBridge::host_request` behind a declared schema, leaving undeclared
-   members fail-closed. Acceptance test: a schema and member declared outside
-   `revia-core` (via a registry, not a hardcoded match arm) is reachable through
-   the bridge; an undeclared member is still rejected at both gates. Extending
-   `HostOperation` alone satisfies neither.
+1. **Open Route H's closed vocabulary behind one schema registry.** A registry
+   entry supplies, for one schema member: its reference, its argument names and
+   types, its result type, and its declared error family. That single declaration
+   must drive all eight sites listed in blocker 1 — at check time the allowlist,
+   the `(schema, member)` table and the positional argument names; at runtime the
+   request mapping, the response mapping, the error mapping, and the observation
+   label. Undeclared members stay fail-closed at every one of them.
+   Acceptance test: an out-of-tree schema and member declared through the
+   registry (not a new match arm) passes `re check`, executes through
+   `HostBackedBridge`, returns its declared result type, surfaces its declared
+   error family, and appears in the effect log under its real operation name.
+   The same program without the registry entry fails at check time with
+   `unknown-schema-reference`; a declared schema with an undeclared member fails
+   with `unknown-capability-member`. Extending `HostOperation` or `HostAdapter`
+   alone satisfies none of this.
 2. **Expression surface for traversal and arithmetic**: list indexing,
    iteration, text concatenation, and numeric operations, with canonical form and
    lowering defined — the precondition for any Route I candidate beyond trivia.
@@ -137,9 +156,9 @@ re-litigating the same library later.
   general third-party extensibility; blocker 1 explains what is missing.
 - The tests added alongside this document
   (`native/revia-core/tests/wp345_library_admission_boundary.rs`) pin the
-  *direct-invocation* branch of an undeclared member. They do not test the two
-  admission gates named in blocker 1, and they must be revisited, not merely kept
-  green, when §6.1 lands.
+  *direct-invocation* branch of an undeclared member. They do not test the eight
+  admission sites named in blocker 1, and they must be revisited, not merely kept
+  green, when §6 item 1 lands.
 - No claim that transpilation generalizes beyond pure total deterministic
   functions with a typed surface.
 - Nothing here changes the research/preview maturity statement in `README.md`.
