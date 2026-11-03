@@ -272,6 +272,20 @@ WP-344 收紧该 seam 的拒绝原因与投影边界：effect uid 与 transcript
 运行投影成同一摘要。该变更不改变 matrix/catalog 的字段集合与 canonical 形状，也不
 证明 Node 实际运行、独立 custody、production backend 或跨平台等价。
 
+WP-345 把「库从哪来」写成策略而不是继续加 schema：
+`doc/12-library-strategy.md` 定义三条准入路线（core 内纯 op、host adapter、
+带等价语料的入库）、判定规则（纯/全/确定性走 op，effect 或平台绑定走 adapter，
+第三方纯库必须过等价语料），以及 Route I 的七条准入条件（pinned original、corpus、
+逐字节输出相等、determinism、totality、license 分离、可复现证据）。该文档同时记录
+三条实测阻塞：native `HostOperation` 仍是闭合 enum
+（`native/revia-core/src/minimal_std.rs:320-346`），未声明成员落到
+`StdError::UnknownOperation`，所以仓库外 adapter 今天无法接入；生产语法没有 list
+索引/迭代/字符串拼接，纯函数入库暂无执行目标；`doc/04` §4.1 的 lowering 仍是占位。
+配套验收测试 `native/revia-core/tests/wp345_library_admission_boundary.rs` 只在当前
+边界上加锁：已声明成员仍能到 host，未声明成员在 IO 之前 fail closed、错误稳定、不产生
+副作用；§6.1 打开命名空间时该测试会按设计失效。本包不接纳任何第三方库，也不改变
+research/preview 成熟度声明。
+
 ### WP-274 · native replay workload catalog
 
 增加 `re.native-replay-workload-catalog@0.1.0`、

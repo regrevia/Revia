@@ -23,6 +23,7 @@ currently a research and preview implementation; see
 | [09-host-conformance-0.1.md](09-host-conformance-0.1.md) | Host conformance cases / 宿主一致性用例 |
 | [10-agent-authoring-human-review-0.1.md](10-agent-authoring-human-review-0.1.md) | Agent authoring and human review workflow / Agent 编写与人类审阅流程 |
 | [11-node-free-milestone-0.1.md](11-node-free-milestone-0.1.md) | Native translator and runtime milestones / 原生翻译器与运行时里程碑 |
+| [12-library-strategy.md](12-library-strategy.md) | External library admission routes and evidence gates / 外部库准入路线与证据门禁 |
 
 ## Related Guides / 相关入口
 
