@@ -10,7 +10,7 @@
 // through `HostEnvironment::invoke` must fail closed with a typed error, before
 // any IO.
 //
-// Which cases carry which weight: the first two pin closed failure and the
+// Which cases carry which weight: the second test pins closed failure and the
 // absence of side effects; the third adds stability across repetitions; the
 // fourth adds independence from the name shape. `wp257_minimal_std_host.rs`
 // already asserts a single rejection directly.

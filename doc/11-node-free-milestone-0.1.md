@@ -283,18 +283,22 @@ effect 或平台绑定走 adapter，第三方纯库必须过等价语料），�
 该文档记录三条实测阻塞，其中第一条与先前判断不同：adapter seam 本身是开的
 （`HostAdapter:425`、`HostEnvironment<A>:430`、`HostBackedBridge<A>:752` 均为 pub），真正
 关门的是散在八个点的闭合词表，按阶段分成两组。检查期：`graph::is_known_schema`
-（`graph.rs:879-888`，只认五个 reference）、`graph::parameters`（`:666-687`，合法
+（`graph.rs:879-888`，只认五个 reference）、`graph::parameters`（`:666-688`，合法
 `(schema, member)` 表与 arity，`:686` 报 `unknown-capability-member`）、
-`graph::default_argument_name`（`:600-611`）、`graph::contextual_literal`（`:548-597`，
+`graph::default_argument_name`（`:600-611`）、`graph::contextual_literal`（`:548-598`，
 未列出的组合静默落成 `text.utf8`，`:583`）。运行期：`HostBackedBridge::host_request`
-（`minimal_std.rs:926-956`）、`response`（`:959-998`）、`declared_host_error`
+（`minimal_std.rs:909-957`）、`response`（`:959-997`）、`declared_host_error`
 （`:1063-1093`）、`host_operation_name`（`:1205-1213`，未知 reference 静默记成
 `"unknown"`）。两处需要纠正的读法：`host_request` 只匹配四个 reference——`process.exit`
 不走 bridge，`compact_target`（`graph.rs:520-527`）把它变成 `Target::PureOperation` 并在
-`:630-640` 校验；`HostOperation::Unknown(String):317-330` 与 `HostRequest::unknown:401`
-今天不是 adapter 的扩展点，adapter 只拿到 `&HostRequest`、构造不出来，生产侧只有测试在
-用，`minimal_std.rs:573`、`:734` 的 unknown 拒绝只有直接调用 `HostEnvironment::invoke`
-才走得到。另外两条：生产语法没有 list 索引/迭代/算术表达式，文本拼接也只有
+`:630-640` 校验；`HostOperation::Unknown(String):317-329` 与 `HostRequest::unknown:401`
+今天不是 adapter 的扩展点，但理由要窄一档：`unknown` 是 pub、`HostRequest` 字段也全
+pub，外部 crate 能自己构造一个交给 `HostEnvironment::invoke`（`:443`）；仓库能支撑的说法
+只是没有生产路径（`graph`、VM、`HostBackedBridge::host_request`）会产出它，adapter 在
+测试之外收不到，显式构造它的只有测试（`wp257_minimal_std_host.rs:277`、
+`wp345_library_admission_boundary.rs:47,76,97`），`minimal_std.rs:573`、`:734` 的 unknown
+拒绝只有直接调用 `invoke` 才走得到。这个构造器要保留：封死或删掉会破坏上述调用点、
+并删掉前向兼容占位。另外两条：生产语法没有 list 索引/迭代/算术表达式，文本拼接也只有
 `std.text.concat` 存在于 native std surface、生产语法不可达，Route I 今天没有可执行目标；
 `doc/04` 的 production lowering 仍是占位（该文有两个 `### 4.1` 标题，按标题引用）。
 

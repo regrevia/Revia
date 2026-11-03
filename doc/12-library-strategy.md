@@ -61,11 +61,11 @@ hardcoded in eight places, split by phase:
 | Phase | Site | What it fixes | Failure code when unmatched |
 | --- | --- | --- | --- |
 | check | `graph::is_known_schema` (`graph.rs:879-888`) | exactly five schema references | `unknown-schema-reference` |
-| check | `graph::parameters` (`graph.rs:666-687`) | the legal `(schema, member)` table and arity | `unknown-capability-member` (`:686`) |
+| check | `graph::parameters` (`graph.rs:666-688`) | the legal `(schema, member)` table and arity | `unknown-capability-member` (`:686`) |
 | check | `graph::default_argument_name` (`graph.rs:600-611`) | positional argument name per member | `missing-argument-name` |
-| check | `graph::contextual_literal` (`graph.rs:548-597`) | literal type per member; unlisted pairs fall back to `text.utf8` at `:583` | — (silent default) |
-| runtime | `HostBackedBridge::host_request` (`minimal_std.rs:926-956`) | maps a member onto a `HostRequest` | `native-host-bridge-operation-unsupported:<instance>.<member>` |
-| runtime | `HostBackedBridge::response` (`:959-998`) | maps a `HostOutcome` back onto the declared result type | `native-host-return-type-mismatch` |
+| check | `graph::contextual_literal` (`graph.rs:548-598`) | literal type per member; unlisted pairs fall back to `text.utf8` at `:583` | — (silent default) |
+| runtime | `HostBackedBridge::host_request` (`minimal_std.rs:909-957`) | maps a member onto a `HostRequest` | `native-host-bridge-operation-unsupported:<instance>.<member>` |
+| runtime | `HostBackedBridge::response` (`:959-997`) | maps a `HostOutcome` back onto the declared result type | `native-host-return-type-mismatch` |
 | runtime | `declared_host_error` (`:1063-1093`) | maps a `StdError` onto the member's declared error family | `native-host-bridge-error-reference-unknown` |
 | runtime | `host_operation_name` (`:1205-1213`) | observation label for the effect log | none — silently `"unknown"` |
 
@@ -75,13 +75,19 @@ Two corrections to the obvious reading of that table:
   `process.exit@0.1.0` never reaches the bridge: `compact_target`
   (`graph.rs:520-527`) turns it into a `Target::PureOperation`, validated at
   `:630-640`.
-- `HostOperation::Unknown(String)` (`:317-330`) and `HostRequest::unknown`
-  (`:401`) are not an adapter extension point today. Adapters receive
-  `&HostRequest` and cannot construct one; the only producers are tests
-  (`wp257_minimal_std_host.rs:277`, `wp345_library_admission_boundary.rs:43,72`),
-  and the `Unknown` rejection arms (`:573`, `:734`) are reachable only through a
-  direct `HostEnvironment::invoke` call. Treat them as a forward-compatibility
-  placeholder, not a supported path.
+- `HostOperation::Unknown(String)` (`:317-329`) and `HostRequest::unknown`
+  (`:401`) are not an adapter extension point today, but the reason is narrower
+  than "adapters cannot construct one": `unknown` is `pub` and every
+  `HostRequest` field is `pub`, so an out-of-tree crate can build one and pass
+  it to `HostEnvironment::invoke` (`:443`). What the repo actually supports is
+  that no production path (`graph`, the VM, `HostBackedBridge::host_request`)
+  ever produces an `Unknown` request, so adapters never receive one outside the
+  tests that construct it explicitly (`wp257_minimal_std_host.rs:277`,
+  `wp345_library_admission_boundary.rs:47,76,97`). The `Unknown` rejection arms
+  (`:573`, `:734`) are reachable only through a direct `invoke` call. The
+  constructor stays: sealing or deleting it breaks those call sites and drops
+  the forward-compatibility placeholder, so treat it as reserved surface rather
+  than as an admission path.
 
 Consequence: Route H costs a core edit at **each** of those eight sites, with a
 test per site — not the single enum change this document originally claimed, and
