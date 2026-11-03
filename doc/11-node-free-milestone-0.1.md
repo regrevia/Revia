@@ -272,19 +272,29 @@ WP-344 收紧该 seam 的拒绝原因与投影边界：effect uid 与 transcript
 运行投影成同一摘要。该变更不改变 matrix/catalog 的字段集合与 canonical 形状，也不
 证明 Node 实际运行、独立 custody、production backend 或跨平台等价。
 
-WP-345 把「库从哪来」写成策略而不是继续加 schema：
-`doc/12-library-strategy.md` 定义三条准入路线（core 内纯 op、host adapter、
-带等价语料的入库）、判定规则（纯/全/确定性走 op，effect 或平台绑定走 adapter，
-第三方纯库必须过等价语料），以及 Route I 的七条准入条件（pinned original、corpus、
-逐字节输出相等、determinism、totality、license 分离、可复现证据）。该文档同时记录
-三条实测阻塞：native `HostOperation` 仍是闭合 enum
-（`native/revia-core/src/minimal_std.rs:320-346`），未声明成员落到
-`StdError::UnknownOperation`，所以仓库外 adapter 今天无法接入；生产语法没有 list
-索引/迭代/字符串拼接，纯函数入库暂无执行目标；`doc/04` §4.1 的 lowering 仍是占位。
-配套验收测试 `native/revia-core/tests/wp345_library_admission_boundary.rs` 只在当前
-边界上加锁：已声明成员仍能到 host，未声明成员在 IO 之前 fail closed、错误稳定、不产生
-副作用；§6.1 打开命名空间时该测试会按设计失效。本包不接纳任何第三方库，也不改变
-research/preview 成熟度声明。
+### WP-345 · external library admission strategy
+
+把「库从哪来」写成策略而不是继续加 schema：`doc/12-library-strategy.md` 定义三条准入
+路线（core 内纯 op、host adapter、带等价语料的入库）、判定规则（纯/全/确定性走 op，
+effect 或平台绑定走 adapter，第三方纯库必须过等价语料），以及 Route I 的七条准入条件
+（pinned original、corpus、逐字节输出相等、determinism、totality、license 分离、
+可复现证据）。
+
+该文档记录三条实测阻塞，其中第一条与先前判断不同：adapter seam 本身是开的
+（`HostAdapter:425`、`HostEnvironment<A>:430`、`HostBackedBridge<A>:752` 均为 pub，
+`HostOperation::Unknown(String):317-330` 与 `HostRequest::unknown:401` 已存在），真正
+关门的是两处——`graph::is_known_schema`（`graph.rs:879-888`）只认五个 reference，以及
+`HostBackedBridge::host_request`（`minimal_std.rs:926-956`）对这五个 reference 的闭合
+match，后者在 `HostRequest` 构造之前就返回
+`native-host-bridge-operation-unsupported`，所以 `minimal_std.rs:573`、`:734` 的 unknown
+拒绝只有直接调用 `HostEnvironment::invoke` 才走得到。另外两条：生产语法没有 list
+索引/迭代/字符串拼接也没有算术表达式，Route I 今天没有可执行目标；`doc/04` 的
+production lowering 仍是占位（该文有两个 `### 4.1` 标题，按标题引用）。
+
+配套测试 `native/revia-core/tests/wp345_library_admission_boundary.rs` 只钉直接调用这一
+分支：未声明成员在 IO 之前以 `StdError::UnknownOperation` 失败、重复调用错误一致、host
+仍可继续读写；它不测试上述两道准入闸门，§6.1 落地时应重访而不是只求继续绿。本包不接纳
+任何第三方库，也不改变 research/preview 成熟度声明。
 
 ### WP-274 · native replay workload catalog
 

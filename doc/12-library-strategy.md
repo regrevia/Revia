@@ -48,22 +48,49 @@ the fail-closed projection contract in `doc/05-execution.md`.
 2. Effectful, platform-bound, or non-deterministic → **H**.
 3. Pure, third-party, larger than we want to own → **I**, gated by §5.
 
-## 4. Known blockers, measured / 已知阻塞（实测）
+## 4. What actually blocks admission, measured / 已知阻塞（实测）
 
-1. **The native operation namespace is closed.** `HostOperation` is an enum
-   (`native/revia-core/src/minimal_std.rs:320-346`) and every unlisted name
-   fails closed with `StdError::UnknownOperation` at both dispatch sites
-   (`:573`, `:734`). An out-of-tree library adapter cannot be admitted without
-   editing core. The Node host is already name-open by contrast
-   (`src/host/server-json-codec-adapter.js:60-62` rejects only members outside its
-   own declared pair). Opening this namespace is prerequisite §6.1.
-2. **The expression surface cannot walk data.** Production syntax has no list
-   indexing, iteration, or argument echo (`doc/01-syntax.md` §9), so Route I has no
-   runnable target for realistic libraries. The first ingestable class is scalar
-   arithmetic only.
-3. **No lowering to a foreign backend.** `doc/04-translation.md` §4.1 leaves
-   RE Core IR → WASM → ARM64/x86-64 undefined, so Route H's isolation story is
-   "trust the host process" rather than "run in a sandbox".
+### Blocker 1 — the gate is the schema allowlist plus the request mapping, not the adapter trait
+
+The adapter seam is already public and generic: `HostAdapter`
+(`native/revia-core/src/minimal_std.rs:425`), `HostEnvironment<A>` (`:430`), and
+`HostBackedBridge<A>` (`:752`) accept any out-of-tree implementor, and
+`HostOperation::Unknown(String)` (`:317-330`) with the public constructor
+`HostRequest::unknown` (`:401`) exists so an adapter can name members core does
+not know.
+
+What closes the door is elsewhere, in two places:
+
+1. **Schema allowlist.** `graph::is_known_schema`
+   (`native/revia-core/src/graph.rs:879-888`) admits exactly five references, so
+   a program that calls a new library schema fails at check time regardless of
+   any adapter.
+2. **Closed request mapping.** `HostBackedBridge::host_request`
+   (`native/revia-core/src/minimal_std.rs:926-956`) is a closed match over those
+   same five references and returns
+   `native-host-bridge-operation-unsupported:<instance>.<member>` *before* a
+   `HostRequest` exists. The `Unknown` rejection arms (`:573`, `:734`) are only
+   reachable by calling `HostEnvironment::invoke` directly — no graph or VM path
+   reaches them.
+
+Consequence: Route H costs a core edit at the schema list **and** the bridge
+mapping, each with its own authority tests — not the single enum change this
+document previously claimed. §6.1 reflects that.
+
+### Blocker 2 — the expression surface cannot walk data, and has no arithmetic
+
+Production syntax has no list indexing, iteration, argument echo, or arithmetic
+expressions (`doc/01-syntax.md` §2, §9); the native std surface likewise has no
+arithmetic operation (`StdOperation`, `minimal_std.rs:32-44`). Route I therefore
+has no runnable target today. A scalar arithmetic function is the *intended first*
+ingestable class, not a currently supported one.
+
+### Blocker 3 — no lowering to a foreign backend
+
+`doc/04-translation.md` leaves RE Core IR → WASM → ARM64/x86-64 undefined; the
+relevant subsection is the one titled "production lowering（占位）" (the document
+has two `### 4.1` headings, so cite it by title, not by number). Route H isolation
+is therefore "trust the host process", not "run in a sandbox".
 
 ## 5. Admission gates for Route I / Route I 准入条件
 
@@ -88,12 +115,15 @@ re-litigating the same library later.
 
 ## 6. Prerequisites, in order / 前置条件（按顺序）
 
-1. **Open the native operation namespace** (schema-declared, not enum-closed),
-   keeping undeclared members fail-closed. Acceptance test: an adapter defined
-   outside `revia-core` is reachable through a declared schema; an undeclared
-   member still returns `UnknownOperation`.
-2. **Expression surface for traversal**: list indexing, iteration, and text
-   concatenation, with canonical form and lowering defined.
+1. **Open Route H's two gates** — extend `is_known_schema` and
+   `HostBackedBridge::host_request` behind a declared schema, leaving undeclared
+   members fail-closed. Acceptance test: a schema and member declared outside
+   `revia-core` (via a registry, not a hardcoded match arm) is reachable through
+   the bridge; an undeclared member is still rejected at both gates. Extending
+   `HostOperation` alone satisfies neither.
+2. **Expression surface for traversal and arithmetic**: list indexing,
+   iteration, text concatenation, and numeric operations, with canonical form and
+   lowering defined — the precondition for any Route I candidate beyond trivia.
 3. **Lowering skeleton** to one foreign backend, starting at `wasm32-wasip1`
    hello-world, so Route H can eventually mean sandboxed rather than trusted.
 4. **Ingestion pipeline prototype** on exactly one scalar function, exercising
@@ -104,7 +134,12 @@ re-litigating the same library later.
 - This document does not admit any library, and no Route I evidence artifact
   exists yet.
 - Route H evidence in `src/host/` is bounded host conformance, not a promise of
-  general third-party extensibility; blocker §4.1 explains why.
+  general third-party extensibility; blocker 1 explains what is missing.
+- The tests added alongside this document
+  (`native/revia-core/tests/wp345_library_admission_boundary.rs`) pin the
+  *direct-invocation* branch of an undeclared member. They do not test the two
+  admission gates named in blocker 1, and they must be revisited, not merely kept
+  green, when §6.1 lands.
 - No claim that transpilation generalizes beyond pure total deterministic
   functions with a typed surface.
 - Nothing here changes the research/preview maturity statement in `README.md`.

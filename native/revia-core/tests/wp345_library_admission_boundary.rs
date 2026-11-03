@@ -1,11 +1,19 @@
-// WP-345 acceptance test: the host adapter boundary that any external library
-// must cross is currently closed to out-of-tree members.
+// WP-345 acceptance test: the direct-invocation branch of an undeclared host
+// member.
 //
-// Route H in `doc/12-library-strategy.md` says an external library enters Revia as
-// a host adapter behind a declared capability schema. This test pins the part of
-// that route that already holds today: a member the host does not declare fails
-// closed, before any IO, and with a stable typed error. It will have to change
-// when §6.1 of doc/12 opens the operation namespace; that change is the point.
+// Route H in `doc/12-library-strategy.md` is where an external library enters
+// Revia as a host adapter. The admission gates for that route are the schema
+// allowlist (`graph::is_known_schema`) and the closed request mapping
+// (`HostBackedBridge::host_request`); neither is exercised here. What this file
+// pins is the smaller contract underneath them: an adapter that is handed an
+// undeclared member through `HostEnvironment::invoke` must fail closed with a
+// typed error, before any IO, and keep failing the same way under repetition.
+// `wp257_minimal_std_host.rs` already asserts the rejection itself; these cases
+// add the absence of side effects and the stability across calls.
+//
+// When doc/12 §6.1 opens the two gates, revisit this file: three cases remain
+// valid (undeclared members must still be rejected), but the header's scope
+// claim and the admission path are what change.
 
 use std::collections::BTreeMap;
 
@@ -69,11 +77,12 @@ fn undeclared_library_member_error_is_stable_across_repetitions() {
 }
 
 #[test]
-fn adapter_side_unknown_names_are_the_only_open_axis() {
+fn every_undeclared_member_name_lands_in_the_same_rejection() {
     let mut host = host_with_file("read.txt", b"library");
 
-    // Every external-library member name currently lands in the same closed
-    // branch, regardless of shape. Documented in doc/12-library-strategy.md §4.1.
+    // Direct invocation only: every undeclared name reaches the same rejecting
+    // arm, independent of shape. The admission gates sit above this branch; see
+    // doc/12-library-strategy.md, blocker 1.
     for name in [
         "vendor.json.encode",
         "vendor.sqlite.query",
