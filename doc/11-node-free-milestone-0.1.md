@@ -260,6 +260,18 @@ projection 拒绝；effect uid、sequence、occurrence、graph revision、receip
 合成 tamper case 只证明比较契约，不证明 Node 实际运行、独立 custody、production
 backend 或跨平台等价。
 
+WP-344 收紧该 seam 的拒绝原因与投影边界：effect uid 与 transcript
+`invocation_id` 不一致单独报告为
+`cross-language-node-effect-receipt-effect-uid-mismatch`，内层
+`demand_id`/`receipt_id` 重算不一致为
+`cross-language-node-effect-receipt-id-mismatch`，不再与 transcript projection
+共用同一个 code；重签后的逐项篡改测试改为断言真正命中的 code，projection 拒绝仍由
+独立用例覆盖。native stdout 投影同时改为 fail closed：`process.stdout@0.1.0`
+实例上的 invocation 若成员不是 `write` 或 `data` 不是 `Text`，返回
+`cross-language-observed-stdout-unsupported`，不再按零字节跳过，避免两个输出不同的
+运行投影成同一摘要。该变更不改变 matrix/catalog 的字段集合与 canonical 形状，也不
+证明 Node 实际运行、独立 custody、production backend 或跨平台等价。
+
 ### WP-274 · native replay workload catalog
 
 增加 `re.native-replay-workload-catalog@0.1.0`、

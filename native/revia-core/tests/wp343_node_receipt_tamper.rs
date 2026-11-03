@@ -257,7 +257,7 @@ fn per_item_receipt_tamper_is_rejected_even_after_resigning_outer_digest() {
         let source = canonicalize(&document);
         let code = observation_digest_error(&source);
         assert_eq!(
-            code, "cross-language-node-effect-receipt-observation-digest-mismatch",
+            code, "cross-language-node-effect-receipt-id-mismatch",
             "{name} tamper after re-signing must still be rejected"
         );
     }
@@ -307,7 +307,7 @@ fn re_signed_identity_and_sequence_tamper_is_rejected_before_projection() {
                     JsonValue::String("bbbbbbbaaaaaaaaaaaaaaaaaaa".to_owned()),
                 )
             },
-            "cross-language-node-effect-receipt-observation-digest-mismatch",
+            "cross-language-node-effect-receipt-effect-uid-mismatch",
         ),
         (
             "empty effect uid",

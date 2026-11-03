@@ -530,7 +530,15 @@ response、effect uid（绑定 transcript `invocation_id`）、`demand_id`、`re
 和 receipt id 的逐项篡改分别被对应身份校验拒绝；未重签外层摘要时由
 `receipt_digest` 先拒绝；非空 transcript 配 null receipt 被拒绝。
 观察摘要的 outcome type 固定为进程终态 `process.status`：VM 驱动的进程退出满足该
-约束，非进程终态当前一律 fail closed，不宣称支持。合成 fixture 只证明校验按预期
+约束，非进程终态当前一律 fail closed，不宣称支持。native stdout 投影同样 fail
+closed：`process.stdout@0.1.0` 实例上的 invocation 若成员不是 `write`、或 `data`
+不是 `Text`，直接返回 `cross-language-observed-stdout-unsupported`，而不是按零字节
+跳过——否则两个输出不同的运行会投影成同一个摘要。Node receipt 校验按拒绝原因分开
+报告：effect uid 与 transcript `invocation_id` 不一致为
+`cross-language-node-effect-receipt-effect-uid-mismatch`，内层
+`demand_id`/`receipt_id` 重算不一致为
+`cross-language-node-effect-receipt-id-mismatch`，transcript projection 不一致仍为
+`cross-language-node-effect-observation-mismatch`。合成 fixture 只证明校验按预期
 拒绝或接受，不构成 measured backend、独立 signer/custody 或跨平台等价证据。
 
 可直接复跑的 native 入口为：

@@ -218,8 +218,21 @@ pub fn observed_replay_result_digest(
         ) {
             continue;
         }
-        if let Some(VmValue::Text(value)) = invocation.arguments.get("data") {
-            stdout.extend_from_slice(value.as_bytes());
+        // Fail closed rather than skip: the projection is evidence for cross
+        // backend equality, so a stdout effect this function cannot observe
+        // exactly must not silently contribute zero bytes.
+        if invocation.member != "write" {
+            return Err(CrossLanguageError::new(
+                "cross-language-observed-stdout-unsupported",
+            ));
+        }
+        match invocation.arguments.get("data") {
+            Some(VmValue::Text(value)) => stdout.extend_from_slice(value.as_bytes()),
+            _ => {
+                return Err(CrossLanguageError::new(
+                    "cross-language-observed-stdout-unsupported",
+                ));
+            }
         }
     }
     Ok(observed_execution_digest(
@@ -341,7 +354,7 @@ pub fn observed_node_run_result_digest(
             != transcript.invocations[sequence].invocation_id
         {
             return Err(CrossLanguageError::new(
-                "cross-language-node-effect-receipt-observation-digest-mismatch",
+                "cross-language-node-effect-receipt-effect-uid-mismatch",
             ));
         }
         let arguments = entries
@@ -396,7 +409,7 @@ pub fn observed_node_run_result_digest(
             || required_string(&entries, "receipt_id")? != expected_receipt_id
         {
             return Err(CrossLanguageError::new(
-                "cross-language-node-effect-receipt-observation-digest-mismatch",
+                "cross-language-node-effect-receipt-id-mismatch",
             ));
         }
         normalized.push(object(vec![
