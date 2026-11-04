@@ -66,7 +66,7 @@ hardcoded in eight places, split by phase:
 | check | `graph::contextual_literal` (`graph.rs:580-630`) | literal type per member; unlisted pairs fall back to `text.utf8` at `:615` | — (silent default) |
 | runtime | `HostBackedBridge::host_request` (`minimal_std.rs:970`), fallback `declared_request` (`:1023`) | maps a member onto a `HostRequest`; since WP-351 a declared reference maps to `HostOperation::Declared` | `native-host-bridge-operation-unsupported:<instance>.<member>`, plus `-argument-missing`, `-argument-unknown:<name>`, `-argument-type-mismatch`, `-declared-member-unknown:<reference>.<member>` |
 | runtime | `HostBackedBridge::response` (`:1074`) | maps a `HostOutcome` back onto the declared result type; since WP-351 declared members have their own arm | `native-host-return-type-mismatch` (`declared_response`, `:1332`) |
-| runtime | `declared_host_error` (`:1196`) | maps a `StdError` onto the member's declared error family; since WP-351 the declared arm accepts only variants the member lists | `native-host-bridge-error-reference-unknown`, `-error-variant-unknown:<family>.<variant>` |
+| runtime | `declared_response` (`minimal_std.rs:1322`), not `declared_host_error` (`:1196`) | maps a declared outcome back onto the declared result and error family; `declared_host_error` still only translates the closed built-in `StdError` set and WP-351 does not touch it | `-error-variant-unknown:<family>.<variant>`, `native-host-return-type-mismatch` |
 | runtime | `host_operation_name` (`:1498`) | observation label for the effect log; declared calls are labelled `declared:<reference>.<member>` | none — silently `"unknown"` |
 
 Two corrections to the obvious reading of that table:
@@ -102,6 +102,22 @@ inside `parse_compact_graph` where no declaration list exists), so a declaration
 cannot yet drive positional arguments. Declarations cannot shadow the five
 built-in references; a conflicting or malformed declaration is rejected with
 `declared-schema-invalid` before the graph is read.
+
+Partial progress, measured (WP-351a): inside one bridge instance the declaration
+list now drives request mapping, response mapping, error mapping and the
+observation label with one canonical encoding. Two properties make check-time and
+run-time agree on the same registry. First, the declared argument object is
+serialized in bytewise key order, so `argument_digest` does not depend on the
+order in which the registry lists members or parameters. Second, type support and
+shadowing are enforced only for a reference the graph actually calls: a
+declaration the program never names no longer turns a `check`-admitted registry
+into a construction failure. One direction of that seam is still open and is
+recorded rather than hidden: `graph::validate_declarations` is vocabulary-free,
+so a *referenced* member whose declared type the bridge cannot type-check passes
+`graph-check` and fails only when `HostBackedBridge` is constructed
+(`native-host-bridge-declared-type-unsupported:<name>`). Closing it needs one
+public declared-type validator shared by check time and the bridge, with tests on
+both sides; it is not claimed here.
 
 Partial progress, measured (WP-347): the declaration list now travels as a file.
 `host_schema_registry::parse_registry` reads one JSON artifact,

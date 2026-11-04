@@ -1,4 +1,5 @@
 use std::{
+    borrow::Cow,
     cell::RefCell,
     collections::BTreeMap,
     fs::{self, File, OpenOptions},
@@ -336,20 +337,26 @@ pub enum HostOperation {
 }
 
 impl HostOperation {
-    fn name(&self) -> String {
+    /// The operation label used in observations and adapter-facing logs.
+    ///
+    /// The label is owned only for `Declared`, so built-in dispatch keeps its
+    /// original borrow/no-allocation path.
+    fn name(&self) -> Cow<'_, str> {
         match self {
-            Self::ProcessArgs => "process.args.read".to_owned(),
-            Self::StdoutWrite => "process.stdout.write".to_owned(),
-            Self::FileRead => "fs.read.read_file".to_owned(),
-            Self::FileWrite => "fs.write.write_file".to_owned(),
-            Self::EnvironmentRead => "config.read.read".to_owned(),
-            Self::SecretRead => "secret.read.read".to_owned(),
-            Self::ClockMonotonic => "clock.monotonic.now".to_owned(),
-            Self::RandomBytes => "random.bytes.read".to_owned(),
-            Self::LogEvent => "log.event.write".to_owned(),
-            Self::TraceEvent => "trace.event.write".to_owned(),
-            Self::Declared { reference, member } => format!("declared:{reference}.{member}"),
-            Self::Unknown(name) => name.clone(),
+            Self::ProcessArgs => Cow::Borrowed("process.args.read"),
+            Self::StdoutWrite => Cow::Borrowed("process.stdout.write"),
+            Self::FileRead => Cow::Borrowed("fs.read.read_file"),
+            Self::FileWrite => Cow::Borrowed("fs.write.write_file"),
+            Self::EnvironmentRead => Cow::Borrowed("config.read.read"),
+            Self::SecretRead => Cow::Borrowed("secret.read.read"),
+            Self::ClockMonotonic => Cow::Borrowed("clock.monotonic.now"),
+            Self::RandomBytes => Cow::Borrowed("random.bytes.read"),
+            Self::LogEvent => Cow::Borrowed("log.event.write"),
+            Self::TraceEvent => Cow::Borrowed("trace.event.write"),
+            Self::Declared { reference, member } => {
+                Cow::Owned(format!("declared:{reference}.{member}"))
+            }
+            Self::Unknown(name) => Cow::Borrowed(name),
         }
     }
 }
@@ -851,7 +858,6 @@ impl<A: HostAdapter> HostBackedBridge<A> {
         input_digest: impl Into<String>,
         declared: &[DeclaredSchema],
     ) -> Result<Self, String> {
-        let declared = declared_table(declared)?;
         let graph_revision = graph_revision.into();
         let input_digest = input_digest.into();
         if graphs.is_empty() || !valid_digest(&graph_revision) || !valid_digest(&input_digest) {
@@ -891,6 +897,11 @@ impl<A: HostAdapter> HostBackedBridge<A> {
             .get(&graph_revision)
             .cloned()
             .ok_or_else(|| "native-host-bridge-graph-mismatch".to_owned())?;
+        let referenced = capabilities_by_revision
+            .values()
+            .flat_map(|capabilities| capabilities.values().cloned())
+            .collect::<std::collections::BTreeSet<_>>();
+        let declared = declared_table(declared, &referenced)?;
         Ok(Self {
             capabilities_by_revision,
             active_capabilities: RefCell::new(Some(active_capabilities)),
@@ -926,7 +937,7 @@ impl<A: HostAdapter> HostBackedBridge<A> {
             instance: instance.to_owned(),
             member: member.to_owned(),
             invocation_id: invocation_id.to_owned(),
-            operation: request.operation.name(),
+            operation: request.operation.name().into_owned(),
             argument_digest: format!("sha256:{}", sha256_hex(request.argument.as_bytes())),
             payload_digest: format!("sha256:{}", sha256_hex(&request.payload)),
             outcome: outcome_name,
@@ -1051,16 +1062,20 @@ impl<A: HostAdapter> HostBackedBridge<A> {
         }) {
             return Err(format!("native-host-bridge-argument-unknown:{extra}"));
         }
+        // Canonical JSON: keys sorted bytewise, independent of the order in
+        // which the registry happened to list the parameters. The digest this
+        // string feeds must stay stable for the same logical call.
+        let mut ordered = declaration
+            .parameters
+            .iter()
+            .map(|(name, _)| (name.as_str(), arguments[name].clone()))
+            .collect::<Vec<_>>();
+        ordered.sort_by(|left, right| left.0.as_bytes().cmp(right.0.as_bytes()));
         let argument = format!(
             "{{{}}}",
-            declaration
-                .parameters
+            ordered
                 .iter()
-                .map(|(name, _)| format!(
-                    "{}:{}",
-                    quote(name),
-                    serialize_vm_value(&arguments[name])
-                ))
+                .map(|(name, value)| format!("{}:{}", quote(name), serialize_vm_value(value)))
                 .collect::<Vec<_>>()
                 .join(",")
         );
@@ -1079,10 +1094,13 @@ impl<A: HostAdapter> HostBackedBridge<A> {
         outcome: Result<HostOutcome, StdError>,
     ) -> Result<CapabilityResponse, String> {
         if let Some(members) = self.declared.get(reference) {
+            // Request mapping already rejects an unknown member, so this arm is
+            // defensive only; it repeats that rejection instead of inventing a
+            // second error code for the same condition.
             return match members.get(member) {
                 Some(declaration) => declared_response(instance, member, declaration, outcome),
                 None => Ok(CapabilityResponse::host_fault(format!(
-                    "native-host-bridge-operation-unsupported:{instance}.{member}"
+                    "native-host-bridge-declared-member-unknown:{reference}.{member}"
                 ))),
             };
         }
@@ -1231,13 +1249,27 @@ fn declared_host_error(reference: &str, error: StdError) -> Result<(String, Stri
 /// carried alongside it. Declarations that graph admission would reject, or
 /// whose types this bridge cannot type-check, are rejected here as well: the
 /// runtime must not expose a member it cannot honour.
+/// Build the dispatch table for the declarations the graph can actually call.
+///
+/// Structural legality (`validate_declarations`) covers the whole registry, the
+/// same way check time does. Type support and shadowing are only enforced for a
+/// reference a capability in `referenced` actually names: a registry entry the
+/// graph never calls must not decide whether the program runs, or check time and
+/// run time disagree on the same registry.
 fn declared_table(
     declared: &[DeclaredSchema],
+    referenced: &std::collections::BTreeSet<String>,
 ) -> Result<BTreeMap<String, BTreeMap<String, DeclaredMember>>, String> {
     crate::graph::validate_declarations(declared)
         .map_err(|_| "native-host-bridge-declaration-invalid".to_owned())?;
     let mut table = BTreeMap::new();
     for schema in declared {
+        if !referenced.contains(&schema.reference) {
+            continue;
+        }
+        if crate::graph::is_known_schema(&schema.reference) {
+            return Err("native-host-bridge-declaration-invalid".to_owned());
+        }
         let mut members = BTreeMap::new();
         for member in &schema.members {
             validate_declared_member(member)?;

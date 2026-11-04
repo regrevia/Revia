@@ -422,10 +422,12 @@ WP-346 让声明驱动三个检查期站点，WP-347/348 给出制品与结果�
 多参、参数类型不符分别沿用 `-declared-member-unknown:<reference>.<member>`、
 `-argument-missing`、`-argument-unknown:<name>`、`-argument-type-mismatch`；
 声明调用不记 `effect_committed`。新增
-`native/revia-core/tests/wp351_declared_host_dispatch.rs`（11 例，用 stub
-`HostAdapter` 覆盖成功/失败/列表与整数返回、未知成员、三类参数错误、未知错误
-变体、`UnknownOperation`、内建引用在带声明时行为不变、影子与不支持类型的构造
-期拒绝）。
+`native/revia-core/tests/wp351_declared_host_dispatch.rs`（17 例，用 stub
+`HostAdapter` 覆盖成功/失败/`unit` 结果成功、整数/`bool`/`unit`/列表返回、
+未知成员、三类参数错误、未知错误变体、`UnknownOperation`、参数按字节序规范化
+（`argument_digest` 与 registry 顺序无关）、未被引用的声明不参与构造校验、
+两个 graph 的构造入口、声明调用不记 `effect_committed`、内建引用在带声明时行为
+不变、影子与不支持类型的构造期拒绝）。
 
 边界：`SystemHost` 与 `MemoryHost` 尚未实现声明成员，仍以
 `StdError::UnknownOperation` 回答 `Declared` 请求，所以运行期分派目前只能由测试

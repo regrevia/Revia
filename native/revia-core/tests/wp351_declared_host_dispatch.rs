@@ -63,6 +63,8 @@ fn echo_members() -> Vec<DeclaredMember> {
         ),
         member("count", &[], Some("number.i64"), &[]),
         member("list", &[], Some("list<text.utf8>"), &[]),
+        member("flag", &[], Some("bool"), &[]),
+        member("ping", &[], Some("unit"), &[]),
     ]
 }
 
@@ -342,5 +344,154 @@ fn constructor_rejects_a_declared_type_the_bridge_cannot_type_check() {
     assert_eq!(
         error,
         "native-host-bridge-declared-type-unsupported:map<text.utf8,number.i64>"
+    );
+}
+
+#[test]
+fn declared_member_maps_a_unit_result_success() {
+    let declared = declarations();
+    let (mut bridge, _) =
+        bridge_with_declarations(StubHost::answering(Ok(HostOutcome::Unit)), &declared);
+
+    assert_eq!(
+        invoke(&mut bridge, "fail", &[]).unwrap(),
+        CapabilityResponse::ok(VmValue::Unit)
+    );
+    assert_eq!(bridge.observations()[0].outcome, "unit");
+}
+
+#[test]
+fn declared_member_maps_bool_and_unit_returns() {
+    let declared = declarations();
+    let (mut bridge, _) = bridge_with_declarations(
+        StubHost::answering(Ok(HostOutcome::Int("1".to_owned()))),
+        &declared,
+    );
+    assert_eq!(
+        invoke(&mut bridge, "flag", &[]).unwrap(),
+        CapabilityResponse::ok(VmValue::Bool(true))
+    );
+
+    let (mut bridge, _) =
+        bridge_with_declarations(StubHost::answering(Ok(HostOutcome::Unit)), &declared);
+    assert_eq!(
+        invoke(&mut bridge, "ping", &[]).unwrap(),
+        CapabilityResponse::ok(VmValue::Unit)
+    );
+}
+
+#[test]
+fn a_declared_call_never_commits_an_effect() {
+    let declared = declarations();
+    let (mut bridge, _) = bridge_with_declarations(
+        StubHost::answering(Ok(HostOutcome::Text("hi!".to_owned()))),
+        &declared,
+    );
+
+    invoke(&mut bridge, "say", &[("text", TEXT("hi"))]).unwrap();
+
+    assert!(!bridge.observations()[0].effect_committed);
+}
+
+#[test]
+fn declared_arguments_are_serialized_in_canonical_key_order() {
+    // The registry lists `zeta` before `alpha`; the canonical argument object
+    // must still serialize `alpha` first so its digest is registry-independent.
+    let mut declared = declarations();
+    declared.push(DeclaredSchema {
+        reference: "demo.pair@0.1.0".to_owned(),
+        members: vec![member(
+            "join",
+            &[("zeta", "text.utf8"), ("alpha", "text.utf8")],
+            Some("text.utf8"),
+            &[],
+        )],
+    });
+    let source = PROGRAM.replace(
+        "cap @echo: demo.echo@0.1.0",
+        "cap @echo: demo.echo@0.1.0\ncap @pair: demo.pair@0.1.0",
+    );
+    let graph = check_graph_with_declared_schemas(
+        parse_compact_graph(&source, "demo.re").unwrap(),
+        &declared,
+    )
+    .unwrap();
+    let revision = graph_revision(&graph).unwrap();
+    let mut bridge = HostBackedBridge::new_with_declarations(
+        &graph,
+        StubHost::answering(Ok(HostOutcome::Text("a-z".to_owned()))),
+        revision,
+        INPUT_DIGEST,
+        &declared,
+    )
+    .unwrap();
+
+    let response = bridge
+        .invoke(
+            "@pair",
+            "join",
+            &[
+                ("zeta".to_owned(), TEXT("z")),
+                ("alpha".to_owned(), TEXT("a")),
+            ]
+            .into_iter()
+            .collect(),
+            "invocation-1",
+        )
+        .unwrap();
+
+    assert_eq!(
+        response,
+        CapabilityResponse::ok(VmValue::Text("a-z".to_owned()))
+    );
+    let expected = "{\"alpha\":{\"type\":\"text.utf8\",\"value\":\"a\"},\"zeta\":{\"type\":\"text.utf8\",\"value\":\"z\"}}";
+    assert_eq!(
+        bridge.observations()[0].argument_digest,
+        format!(
+            "sha256:{}",
+            revia_core::digest::sha256_hex(expected.as_bytes())
+        )
+    );
+}
+
+#[test]
+fn a_graph_carries_only_the_declarations_it_references() {
+    // A registry entry the graph never calls must not decide whether the
+    // program runs, even when its declared types are outside this bridge's
+    // vocabulary. Check time already admits the registry; run time must agree.
+    let mut declared = declarations();
+    declared.push(DeclaredSchema {
+        reference: "demo.unused@0.1.0".to_owned(),
+        members: vec![member("weird", &[("x", "map<text.utf8,unit>")], None, &[])],
+    });
+
+    let (mut bridge, _) = bridge_with_declarations(
+        StubHost::answering(Ok(HostOutcome::Text("hi!".to_owned()))),
+        &declared,
+    );
+
+    assert_eq!(
+        invoke(&mut bridge, "say", &[("text", TEXT("hi"))]).unwrap(),
+        CapabilityResponse::ok(VmValue::Text("hi!".to_owned()))
+    );
+}
+
+#[test]
+fn two_graph_construction_dispatches_declared_members() {
+    let declared = declarations();
+    let graph = graph(&declared);
+    let revision = graph_revision(&graph).unwrap();
+    let mut bridge = HostBackedBridge::new_for_graphs_with_declarations(
+        &[&graph, &graph],
+        StubHost::answering(Ok(HostOutcome::Text("hi!".to_owned()))),
+        revision,
+        INPUT_DIGEST,
+        &declared,
+    )
+    .unwrap();
+
+    assert_eq!(
+        invoke(&mut bridge, "say", &[("text", TEXT("hi"))]).unwrap(),
+        CapabilityResponse::ok(VmValue::Text("hi!".to_owned()))
     );
 }
