@@ -111,13 +111,14 @@ serialized in bytewise key order, so `argument_digest` does not depend on the
 order in which the registry lists members or parameters. Second, type support and
 shadowing are enforced only for a reference the graph actually calls: a
 declaration the program never names no longer turns a `check`-admitted registry
-into a construction failure. One direction of that seam is still open and is
-recorded rather than hidden: `graph::validate_declarations` is vocabulary-free,
-so a *referenced* member whose declared type the bridge cannot type-check passes
-`graph-check` and fails only when `HostBackedBridge` is constructed
-(`native-host-bridge-declared-type-unsupported:<name>`). Closing it needs one
-public declared-type validator shared by check time and the bridge, with tests on
-both sides; it is not claimed here.
+into a construction failure. That seam is closed by WP-353:
+`graph::validate_declarations` stays vocabulary-free, but check time now holds a
+*referenced* declaration to the same payload vocabulary the bridge can map, so a
+referenced member whose declared type cannot cross the host boundary is refused
+by `check_graph_with_declared_schemas` with `declared-type-unsupported:<name>`
+instead of surviving until `HostBackedBridge` construction. Unreferenced
+declarations stay vocabulary-free on both sides, so a registry entry the program
+never names still cannot decide whether the program runs.
 
 Partial progress, measured (WP-347): the declaration list now travels as a file.
 `host_schema_registry::parse_registry` reads one JSON artifact,
@@ -184,7 +185,9 @@ a variant outside `DeclaredMember.errors` is rejected rather than named. The
 bridge is still fail-closed everywhere else: declarations cannot shadow a
 built-in (that is rejected when the table is built, with
 `native-host-bridge-declaration-invalid`), an unsupported type is rejected with
-`native-host-bridge-declared-type-unsupported:<name>`, an adapter that answers
+`native-host-bridge-declared-type-unsupported:<name>` (the same type name is
+refused earlier, at check time, as `declared-type-unsupported:<name>`), an
+adapter that answers
 `UnknownOperation` still surfaces
 `native-host-bridge-operation-unsupported:<instance>.<member>`, and declared
 calls never commit an effect. New
@@ -211,6 +214,23 @@ still answer `UnknownOperation` for `Declared` requests -- so this is admission
 through the whole pipeline, not execution of a declared member. New
 `native/revia-cli/tests/wp352_declared_registry_cli.rs` (3 cases) pins both
 halves.
+
+Partial progress, measured (WP-353): one declared-type validator now serves
+check time and the runtime bridge. `graph::is_supported_declared_type` (payload
+names) and `graph::declared_return_type_supported` (`result<ok, family>`) are the
+public predicates; `check_graph_with_declared_schemas` applies them to every
+member of a schema the graph names, and `minimal_std` delegates its two
+predicates to them, so the two sides cannot drift. The bridge keeps its own
+`native-host-bridge-declared-type-unsupported:<name>` for the unit-level caller
+that builds a bridge directly from an unchecked declaration list.
+`validate_declarations` stays shape-only and vocabulary-free: a definition the
+graph never names keeps whatever types it likes. New
+`native/revia-core/tests/wp353_declared_type_vocabulary.rs` (7 cases: a matrix
+over accepted and refused payload and return types asserting both sides answer,
+plus the unused-definition tolerance) and
+`native/revia-cli/tests/wp353_declared_type_cli.rs` (3 cases: `graph-check` and
+`compile` refuse a bad parameter and a bad return type with exit 65 and JSON on
+stdout, and an unused unsupported definition still checks).
 
 Consequence: Route H costs a core edit at **each** of those eight sites, with a
 test per site — not the single enum change this document originally claimed, and

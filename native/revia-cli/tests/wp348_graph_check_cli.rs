@@ -92,9 +92,20 @@ fn a_comma_inside_a_generic_half_is_not_the_result_separator() {
     )
     .unwrap();
     let output = run(&["graph-check", "--schema-registry", &registry, &source]);
-    assert!(output.status.success(), "{output:?}");
+    // The declaration parses (no `declared-schema-invalid`) but names a payload
+    // type the host boundary cannot carry; since WP-353 that is refused at
+    // check time. A split at the inner comma would instead strand the `types`
+    // entry and surface `declared-schema-invalid`.
+    assert_eq!(output.status.code(), Some(65), "{output:?}");
     let stdout = String::from_utf8(output.stdout).unwrap();
-    assert!(stdout.contains(r#""declared_schema_count":1"#), "{stdout}");
+    assert!(
+        stdout.contains(r#""code":"declared-type-unsupported""#),
+        "{stdout}"
+    );
+    assert!(
+        stdout.contains("result<map<text.utf8,number.i64>, demo.echo_error>"),
+        "{stdout}"
+    );
     fs::remove_dir_all(&root).unwrap();
 }
 

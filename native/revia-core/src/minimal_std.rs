@@ -15,7 +15,10 @@ use std::{
 use crate::{
     canonical_json::quote,
     digest::sha256_hex,
-    graph::{DeclaredMember, DeclaredSchema, split_result_halves},
+    graph::{
+        DeclaredMember, DeclaredSchema, declared_return_type_supported, is_supported_declared_type,
+        split_result_halves,
+    },
     vm::{CapabilityBridge, CapabilityResponse, VmValue, serialize_vm_value},
 };
 
@@ -1282,27 +1285,20 @@ fn declared_table(
 
 fn validate_declared_member(member: &DeclaredMember) -> Result<(), String> {
     for (_, type_name) in &member.parameters {
-        if !declared_type_supported(type_name) {
+        if !is_supported_declared_type(type_name) {
             return Err(format!(
                 "native-host-bridge-declared-type-unsupported:{type_name}"
             ));
         }
     }
     if let Some(returns) = member.returns.as_deref()
-        && !declared_returns_supported(returns)
+        && !declared_return_type_supported(returns)
     {
         return Err(format!(
             "native-host-bridge-declared-type-unsupported:{returns}"
         ));
     }
     Ok(())
-}
-
-fn declared_type_supported(type_name: &str) -> bool {
-    matches!(
-        type_name,
-        "text.utf8" | "bytes" | "fs.path" | "text.encoding" | "number.i64" | "bool" | "unit"
-    ) || type_name == "list<text.utf8>"
 }
 
 fn declared_parameter_accepts(type_name: &str, value: &VmValue) -> bool {
@@ -1324,19 +1320,6 @@ fn declared_result_halves(returns: &str) -> Option<(&str, &str)> {
     let inner = returns.strip_prefix("result<")?.strip_suffix('>')?;
     let (ok, family) = split_result_halves(inner)?;
     Some((ok.trim(), family.trim()))
-}
-
-fn declared_returns_supported(returns: &str) -> bool {
-    if declared_type_supported(returns) {
-        return true;
-    }
-    let Some((ok, family)) = declared_result_halves(returns) else {
-        return false;
-    };
-    declared_type_supported(ok)
-        && !family.is_empty()
-        && !family.contains('@')
-        && !family.chars().any(char::is_whitespace)
 }
 
 /// Map an adapter outcome onto the value the declared return type promises.

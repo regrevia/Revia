@@ -138,7 +138,7 @@ fn declared_member_argument_types_are_enforced_from_the_declaration() {
         reference: "demo.echo@0.1.0".to_owned(),
         members: vec![DeclaredMember {
             name: "say".to_owned(),
-            parameters: vec![("count".to_owned(), "int".to_owned())],
+            parameters: vec![("count".to_owned(), "number.i64".to_owned())],
             returns: None,
             errors: Vec::new(),
         }],
@@ -147,7 +147,7 @@ fn declared_member_argument_types_are_enforced_from_the_declaration() {
         .expect_err("argument types come from the declaration");
     assert_eq!(error.code, "literal-type-mismatch");
     assert_eq!(error.actual.as_deref(), Some("text.utf8"));
-    assert_eq!(error.expected.as_deref(), Some("int"));
+    assert_eq!(error.expected.as_deref(), Some("number.i64"));
 }
 
 #[test]

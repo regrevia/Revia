@@ -391,9 +391,44 @@ WP-347 的投影只到参数层；运行期要按声明分派，还缺每个成�
 无 `types` 的家族、六类坏制品、程序内声明同规则、含逗号泛型半段、未引用条目优先于
 声明校验、共享家族一致性、渲染回读、无结果
 契约时省略 `types`）与 `native/revia-cli/tests/wp348_graph_check_cli.rs`（3 例：带
-结果契约的 registry 端到端通过、含逗号泛型半段照常通过、坏 `kind` 与坏结果串仍是
+结果契约的 registry 端到端通过、含逗号泛型半段按整串交给 WP-353 的类型词表
+（拆错会在 `types` 上留下孤儿条目，报 `declared-schema-invalid`；拆对则是
+`declared-type-unsupported`）、坏 `kind` 与坏结果串仍是
 registry 问题）。本包不改变
 research/preview 成熟度声明，也不把 registry 说成运行期准入通道。
+
+### WP-353 · one declared-type vocabulary for check time and the bridge
+
+WP-351a 只把类型支持（payload 类型是否可跨 host 边界、`result<ok, family>` 的错误
+家族是否可用）落实在 bridge 一侧：`validate_declarations` 有意只校验形状，因此
+被 graph 引用的声明可以用 `map<text.utf8,number.i64>` 通过 `graph-check`，直到构造
+`HostBackedBridge` 才拿到 `native-host-bridge-declared-type-unsupported:<name>`。
+本包把这份词表变成两侧共享的单一来源。
+
+`graph.rs` 新增 `is_supported_declared_type`（`text.utf8`、`bytes`、`fs.path`、
+`text.encoding`、`number.i64`、`bool`、`unit`、`list<text.utf8>`）与
+`declared_return_type_supported`（payload 类型直接通过；`result<ok, family>` 要求
+两半都支持且家族名非空、不含 `@` 与空白）。`check_graph_with_declared_schemas`
+在原有的引用检查之后，对**被引用**的 schema 逐成员跑
+`validate_declared_schema_types`，不支持就报 `declared-type-unsupported`（带
+`actual` 为原拼写）。`minimal_std` 删掉自己那两份谓词，改为调用 `graph` 的实现，
+bridge 侧错误串 `native-host-bridge-declared-type-unsupported:{name}` 保持不变，
+供绕过 `parse_registry` 直接构造 bridge 的调用方使用。
+
+范围是「被引用」而不是整份 registry：`declared_table` 在 bridge 侧本来就只对被
+引用的条目套用类型支持，若在解析期对整份 registry 做词表校验，两侧会重新分叉，
+因此未被引用的声明保持词表自由，只校验形状。已知的顺序限制照实记录：
+`parse_registry` 的形状闸门先于词表校验，`result<text.utf8>`（缺错误家族）这类
+形状坏串仍报 `declared-schema-invalid:<reference>`，不会走到新代码；这是既有分层，
+不是被新校验掩盖的回归。
+
+新增 `native/revia-core/tests/wp353_declared_type_vocabulary.rs`（7 例：payload
+接受/拒绝矩阵、返回类型接受/拒绝矩阵、词表与 bridge 表一致、未引用声明保留自己
+的词表、被支持声明仍映射请求）与
+`native/revia-cli/tests/wp353_declared_type_cli.rs`（3 例：坏参数类型与坏返回
+类型在 `graph-check`/`compile` 以 65 和 stdout JSON 拒绝且不产出制品、未被引用的
+坏定义不阻塞检查）。本包不改变 research/preview 成熟度声明，也不声称声明成员
+已经能真正执行。
 
 ### WP-352 · the registry reaches the consumption commands
 

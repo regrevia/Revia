@@ -265,11 +265,13 @@ pub fn check_graph_with_declared_schemas(
         return Err(GraphError::new("unsupported-language-version"));
     }
     for capability in &graph.capabilities {
-        if !is_known_schema(&capability.reference)
-            && declared_schema(declared, &capability.reference).is_none()
-        {
-            return Err(GraphError::new("unknown-schema-reference")
-                .with_actual(capability.reference.clone()));
+        match declared_schema(declared, &capability.reference) {
+            Some(schema) => validate_declared_schema_types(schema)?,
+            None if is_known_schema(&capability.reference) => {}
+            None => {
+                return Err(GraphError::new("unknown-schema-reference")
+                    .with_actual(capability.reference.clone()));
+            }
         }
     }
     if graph.functions.is_empty() {
@@ -812,6 +814,71 @@ pub fn validate_declarations(declared: &[DeclaredSchema]) -> Result<(), GraphErr
                     return Err(invalid());
                 }
             }
+        }
+    }
+    Ok(())
+}
+
+/// The payload vocabulary a declared member may traffic in.
+///
+/// This is the one validator check time and the runtime bridge share: a
+/// referenced declaration whose parameter or return type is outside this set
+/// is rejected by `check_graph_with_declared_schemas` and by
+/// `HostBackedBridge` with the same offending name. `validate_declarations`
+/// stays vocabulary-free on purpose, so a registry entry the program never
+/// names cannot decide whether the program runs.
+pub fn is_supported_declared_type(type_name: &str) -> bool {
+    matches!(
+        type_name,
+        "text.utf8" | "bytes" | "fs.path" | "text.encoding" | "number.i64" | "bool" | "unit"
+    ) || type_name == "list<text.utf8>"
+}
+
+/// A declared `returns` type the bridge can map back to a VM value: either a
+/// supported payload type or `result<ok, family>` with a supported `ok` half
+/// and a well-formed family name.
+pub fn declared_return_type_supported(returns: &str) -> bool {
+    if is_supported_declared_type(returns) {
+        return true;
+    }
+    let Some(inner) = returns
+        .strip_prefix("result<")
+        .and_then(|rest| rest.strip_suffix('>'))
+    else {
+        return false;
+    };
+    let Some((ok, family)) = split_result_halves(inner) else {
+        return false;
+    };
+    let ok = ok.trim();
+    let family = family.trim();
+    is_supported_declared_type(ok)
+        && !family.is_empty()
+        && !family.contains('@')
+        && !family.chars().any(char::is_whitespace)
+}
+
+/// Type support for one declared schema the graph actually names.
+///
+/// The whole schema is checked, member by member, because the bridge builds
+/// its dispatch table for the whole reference: check time and run time must
+/// agree about which references are usable, not only about which members a
+/// particular call happens to touch.
+fn validate_declared_schema_types(schema: &DeclaredSchema) -> Result<(), GraphError> {
+    for member in &schema.members {
+        for (_, type_name) in &member.parameters {
+            if !is_supported_declared_type(type_name) {
+                return Err(
+                    GraphError::new("declared-type-unsupported").with_actual(type_name.clone())
+                );
+            }
+        }
+        if let Some(returns) = member.returns.as_deref()
+            && !declared_return_type_supported(returns)
+        {
+            return Err(
+                GraphError::new("declared-type-unsupported").with_actual(returns.to_owned())
+            );
         }
     }
     Ok(())
