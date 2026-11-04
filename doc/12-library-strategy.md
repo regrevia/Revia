@@ -194,6 +194,24 @@ dispatch through a stub `HostAdapter`, so the wiring is tested without teaching
 `UnknownOperation` for `Declared` requests, which is why the CLI does not expose
 a registry for `run` yet.
 
+Partial progress, measured (WP-352): the registry now reaches the commands that
+consume a graph, so a declared schema is no longer rejected by a second,
+declaration-blind check downstream. `translate_graph`,
+`verify_bytecode_artifact` and `execute_bytecode` each gained a
+`*_with_declarations` variant that re-checks with
+`check_graph_with_declared_schemas`; the original public functions delegate with
+an empty list, so every existing caller — `fault_corpus`, `runtime_bundle`, the
+VM's own verification path — keeps its exact behaviour and bytes. The CLI wires
+`--schema-registry` into `compile`, `execute`, `verify` and `run`, reading the
+declarations once and threading them through. Without the flag nothing changes:
+a declared graph is still `unknown-schema-reference`. With it, `compile` and
+`verify` succeed and the executing commands reach the host boundary and fail
+closed with `native-vm-capability-failed`, because `SystemHost`/`MemoryHost`
+still answer `UnknownOperation` for `Declared` requests -- so this is admission
+through the whole pipeline, not execution of a declared member. New
+`native/revia-cli/tests/wp352_declared_registry_cli.rs` (3 cases) pins both
+halves.
+
 Consequence: Route H costs a core edit at **each** of those eight sites, with a
 test per site — not the single enum change this document originally claimed, and
 not a two-edit change either. §6 item 1 is written against this table.

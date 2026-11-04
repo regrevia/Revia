@@ -3,7 +3,10 @@ use std::collections::BTreeMap;
 use crate::{
     canonical_json::quote,
     digest::sha256_hex,
-    graph::{Argument, Call, Graph, GraphError, Statement, Target, check_graph, graph_revision},
+    graph::{
+        Argument, Call, DeclaredSchema, Graph, GraphError, Statement, Target,
+        check_graph_with_declared_schemas, graph_revision,
+    },
     lexer::decode_json_string,
 };
 
@@ -59,8 +62,19 @@ pub struct BytecodeArtifact {
 }
 
 pub fn translate_graph(graph: &Graph) -> Result<BytecodeArtifact, GraphError> {
+    translate_graph_with_declarations(graph, &[])
+}
+
+/// `translate_graph`, admitting the same declared schemas the caller checked
+/// the graph against. Translation re-checks the graph (the artifact carries a
+/// graph revision), so a declared member would otherwise be rejected here after
+/// passing `check_graph_with_declared_schemas` in the caller.
+pub fn translate_graph_with_declarations(
+    graph: &Graph,
+    declared: &[DeclaredSchema],
+) -> Result<BytecodeArtifact, GraphError> {
     validate_graph_shape(graph)?;
-    let checked = check_graph(graph.clone())?;
+    let checked = check_graph_with_declared_schemas(graph.clone(), declared)?;
     let revision = graph_revision(&checked)?;
     translate_checked(&checked, &revision)
 }
@@ -156,8 +170,18 @@ pub fn verify_bytecode_artifact(
     checked_graph: &Graph,
     source: &str,
 ) -> Result<BytecodeArtifact, GraphError> {
+    verify_bytecode_artifact_with_declarations(checked_graph, source, &[])
+}
+
+/// `verify_bytecode_artifact`, admitting the same declared schemas the caller
+/// checked the graph against.
+pub fn verify_bytecode_artifact_with_declarations(
+    checked_graph: &Graph,
+    source: &str,
+    declared: &[DeclaredSchema],
+) -> Result<BytecodeArtifact, GraphError> {
     let artifact = load_bytecode_artifact(source)?;
-    let checked = check_graph(checked_graph.clone())?;
+    let checked = check_graph_with_declared_schemas(checked_graph.clone(), declared)?;
     let revision = graph_revision(&checked)?;
     if artifact.graph_revision != revision || artifact.canonical_graph_sha256 != revision {
         return Err(GraphError::new("bytecode-graph-revision-mismatch"));

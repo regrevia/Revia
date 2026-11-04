@@ -32,8 +32,8 @@
 //! list (`HostBackedBridge::new_with_declarations`) dispatches a declared
 //! `(instance, member)` to its adapter, and still fails closed when the
 //! adapter answers `UnknownOperation`. `SystemHost` and `MemoryHost` do not
-//! answer declared members yet, so exposing the registry through the CLI is a
-//! later slice.
+//! answer declared members yet, so a declared graph admitted by
+//! `--schema-registry` reaches the host boundary and fails closed there.
 
 use crate::{
     canonical_json::{JsonValue, canonicalize},

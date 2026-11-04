@@ -2,11 +2,12 @@ use std::collections::BTreeMap;
 
 use crate::{
     bytecode::{
-        BytecodeArtifact, BytecodeInstruction, load_bytecode_artifact, verify_bytecode_artifact,
+        BytecodeArtifact, BytecodeInstruction, load_bytecode_artifact,
+        verify_bytecode_artifact_with_declarations,
     },
     canonical_json::{JsonValue, canonicalize, quote},
     digest::sha256_hex,
-    graph::{Graph, GraphError, graph_revision},
+    graph::{DeclaredSchema, Graph, GraphError, graph_revision},
 };
 
 pub const NATIVE_VM_RESULT_SCHEMA: &str = "re.native-vm-result@0.1.0";
@@ -190,8 +191,29 @@ pub fn execute_bytecode(
     bridge: &mut dyn CapabilityBridge,
     limits: VmLimits,
 ) -> Result<VmResult, GraphError> {
-    execute_bytecode_with_return_value(checked_graph, artifact_source, request, bridge, limits)
-        .map(|execution| execution.result)
+    execute_bytecode_with_declarations(checked_graph, artifact_source, request, bridge, limits, &[])
+}
+
+/// `execute_bytecode`, admitting the same declared schemas the caller checked
+/// the graph against. Execution re-verifies the artifact against the graph, so
+/// the declarations have to travel with the request.
+pub fn execute_bytecode_with_declarations(
+    checked_graph: &Graph,
+    artifact_source: &str,
+    request: &VmRequest,
+    bridge: &mut dyn CapabilityBridge,
+    limits: VmLimits,
+    declared: &[DeclaredSchema],
+) -> Result<VmResult, GraphError> {
+    execute_bytecode_with_return_value_and_declarations(
+        checked_graph,
+        artifact_source,
+        request,
+        bridge,
+        limits,
+        declared,
+    )
+    .map(|execution| execution.result)
 }
 
 pub fn execute_bytecode_with_return_value(
@@ -201,8 +223,27 @@ pub fn execute_bytecode_with_return_value(
     bridge: &mut dyn CapabilityBridge,
     limits: VmLimits,
 ) -> Result<VmExecution, GraphError> {
+    execute_bytecode_with_return_value_and_declarations(
+        checked_graph,
+        artifact_source,
+        request,
+        bridge,
+        limits,
+        &[],
+    )
+}
+
+fn execute_bytecode_with_return_value_and_declarations(
+    checked_graph: &Graph,
+    artifact_source: &str,
+    request: &VmRequest,
+    bridge: &mut dyn CapabilityBridge,
+    limits: VmLimits,
+    declared: &[DeclaredSchema],
+) -> Result<VmExecution, GraphError> {
     let artifact = load_bytecode_artifact(artifact_source)?;
-    let verified = verify_bytecode_artifact(checked_graph, artifact_source)?;
+    let verified =
+        verify_bytecode_artifact_with_declarations(checked_graph, artifact_source, declared)?;
     validate_request(checked_graph, &verified, request)?;
     bridge
         .verify_authority(&request.graph_revision, &request.input_digest)
@@ -219,7 +260,7 @@ pub fn execute_bytecode_with_input_value(
     input: &VmValue,
 ) -> Result<VmExecution, GraphError> {
     let artifact = load_bytecode_artifact(artifact_source)?;
-    let verified = verify_bytecode_artifact(checked_graph, artifact_source)?;
+    let verified = verify_bytecode_artifact_with_declarations(checked_graph, artifact_source, &[])?;
     validate_request(checked_graph, &verified, request)?;
     bridge
         .verify_authority(&request.graph_revision, &request.input_digest)

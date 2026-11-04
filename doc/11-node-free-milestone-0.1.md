@@ -395,6 +395,37 @@ WP-347 的投影只到参数层；运行期要按声明分派，还缺每个成�
 registry 问题）。本包不改变
 research/preview 成熟度声明，也不把 registry 说成运行期准入通道。
 
+### WP-352 · the registry reaches the consumption commands
+
+WP-351 打开了 bridge 的分派，但 registry 只接在 `graph-check` 上，编译与执行两
+条路仍用不带声明的 `check_graph` 复核：同一份 graph 被 CLI 检查放行后，在
+`translate_graph`、`verify_bytecode_artifact`、`execute_bytecode` 三个入口被再
+次拒掉（`unknown-schema-reference`）。本包把声明列表沿这三条链路传下去，且不改
+任何旧入口的语义。
+
+做法与 WP-346 相同：每个站点新增 `*_with_declarations` 变体，旧的公开函数变成
+转发 `&[]` 的壳，因此 `fault_corpus`、`runtime_bundle`、`vm` 内部路径与既有
+字节码测试逐字节不变。`translate_graph_with_declarations` 与
+`verify_bytecode_artifact_with_declarations` 用
+`check_graph_with_declared_schemas` 复核，`execute_bytecode_with_declarations`
+把列表交给 `load_bytecode_artifact` 之后的校验与 VM。
+
+CLI 侧 `compile`、`execute`、`verify`、`run` 都接受 `--schema-registry
+<registry>`（帮助里逐个补了这条），先 `read_declarations` 再
+`read_graph_with_declarations`，然后把声明传进上面对应的变体。`run` 不翻译，
+它读制品，因此只替换执行调用。不带旗标时声明列表为空，行为仍是原来的
+`unknown-schema-reference`；`compile` 的 `74`
+`native-compile-write-failure` 契约不变。
+
+可观测边界：`SystemHost`/`MemoryHost` 仍对 `Declared` 回 `UnknownOperation`，
+所以带 registry 的执行命令结束在 `native-vm-capability-failed`（exit 65），
+这正是「声明已经走到 host 边界」的证据，而不是又一次检查期拒绝。新增
+`native/revia-cli/tests/wp352_declared_registry_cli.rs`（3 例：不带 registry 仍
+是 `unknown-schema-reference`/65、带 registry 的 `graph-check` 报
+`declared_schema_count:1` 且 `compile`/`verify` 成功、`run`/`execute` 带
+registry 走到 host 边界并以 `native-vm-capability-failed`/65 fail closed）。
+本包不改变 research/preview 成熟度声明，也不声称声明成员已经能真正执行。
+
 ### WP-351 · declared members dispatch at the runtime host boundary
 
 WP-346 让声明驱动三个检查期站点，WP-347/348 给出制品与结果契约，运行期四个站点

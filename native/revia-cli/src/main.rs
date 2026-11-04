@@ -52,7 +52,8 @@ impl Read for WindowsRandom {
 use revia_core::{
     bytecode::{
         NATIVE_BYTECODE_PROFILE, load_bytecode_artifact, serialize_bytecode_artifact,
-        translate_graph, verify_bytecode_artifact,
+        translate_graph, translate_graph_with_declarations,
+        verify_bytecode_artifact_with_declarations,
     },
     canonical_json::{JsonValue, canonicalize, quote},
     capability_comparison::{
@@ -89,8 +90,8 @@ use revia_core::{
         serialize_native_fault_corpus_report,
     },
     graph::{
-        check_graph, check_graph_with_declared_schemas, graph_revision, load_canonical_graph,
-        parse_compact_graph, review_manifest, serialize_canonical_graph,
+        DeclaredSchema, check_graph, check_graph_with_declared_schemas, graph_revision,
+        load_canonical_graph, parse_compact_graph, review_manifest, serialize_canonical_graph,
     },
     host_schema_registry::parse_registry,
     lexer::{Token, TokenKind},
@@ -159,7 +160,7 @@ use revia_core::{
         server_gate_report_digest,
     },
     source::SourceText,
-    vm::{VmLimits, VmResult, execute_bytecode},
+    vm::{VmLimits, VmResult, execute_bytecode, execute_bytecode_with_declarations},
 };
 
 const CHECK_SCHEMA: &str = "re.native-parser-result@0.1.0";
@@ -195,8 +196,8 @@ Commands:
   graph-check [--schema-registry <registry>] <file>
   manifest <file>
   translate <file>
-  compile <source> <artifact>
-  execute <source> <input-digest>
+  compile [--schema-registry <registry>] <source> <artifact>
+  execute [--schema-registry <registry>] <source> <input-digest>
   runtime-package <source> <bundle>
   runtime-verify <bundle>
   runtime-authority-pin <bundle> <input-digest> <pin>
@@ -219,8 +220,8 @@ Commands:
   replay-fault-catalog <catalog> <output>
   replay-fault-corpus <corpus> <output>
   replay-fault-corpus-gate <corpus> <evidence>
-  verify <graph> <artifact>
-  run <graph> <artifact> <input-digest>
+  verify [--schema-registry <registry>] <graph> <artifact>
+  run [--schema-registry <registry>] <graph> <artifact> <input-digest>
   project-init <directory>
   project-check <project>
   project-surface-check <project>
@@ -271,11 +272,21 @@ fn main() {
         }
         [command, path] if command == "manifest" => manifest(path),
         [command, path] if command == "translate" => translate(path),
+        [command, flag, registry_path, source_path, artifact_path]
+            if command == "compile" && flag == "--schema-registry" =>
+        {
+            compile(source_path, artifact_path, Some(registry_path))
+        }
         [command, source_path, artifact_path] if command == "compile" => {
-            compile(source_path, artifact_path)
+            compile(source_path, artifact_path, None)
+        }
+        [command, flag, registry_path, source_path, input_digest]
+            if command == "execute" && flag == "--schema-registry" =>
+        {
+            execute(source_path, input_digest, Some(registry_path))
         }
         [command, source_path, input_digest] if command == "execute" => {
-            execute(source_path, input_digest)
+            execute(source_path, input_digest, None)
         }
         [command, source_path, bundle_path] if command == "runtime-package" => {
             runtime_package(source_path, bundle_path)
@@ -390,11 +401,26 @@ fn main() {
         [command, corpus_path, evidence_path] if command == "replay-fault-corpus-gate" => {
             replay_fault_corpus_gate(corpus_path, evidence_path)
         }
+        [command, flag, registry_path, graph_path, artifact_path]
+            if command == "verify" && flag == "--schema-registry" =>
+        {
+            verify(graph_path, artifact_path, Some(registry_path))
+        }
         [command, graph_path, artifact_path] if command == "verify" => {
-            verify(graph_path, artifact_path)
+            verify(graph_path, artifact_path, None)
+        }
+        [
+            command,
+            flag,
+            registry_path,
+            graph_path,
+            artifact_path,
+            input_digest,
+        ] if command == "run" && flag == "--schema-registry" => {
+            run(graph_path, artifact_path, input_digest, Some(registry_path))
         }
         [command, graph_path, artifact_path, input_digest] if command == "run" => {
-            run(graph_path, artifact_path, input_digest)
+            run(graph_path, artifact_path, input_digest, None)
         }
         [command, project_path] if command == "project-check" => project_check(project_path),
         [command, project_path] if command == "project-surface-check" => {
@@ -715,7 +741,7 @@ fn main() {
         }
         _ => {
             eprintln!(
-                "Usage: revia <check|lex|digest|canonical|manifest|translate> <file> | compile <source> <artifact> | execute <source> <input-digest> | runtime-package <source> <bundle> | runtime-verify <bundle> | runtime-authority-pin <bundle> <input-digest> <pin> | runtime-receipt-verify <pin> <receipt> <result> <stdout> | project-run-verify <run> | runtime-run <bundle> <input-digest> <sandbox> | capability-comparison <catalog> <output> | capability-project-comparison <catalog> <project> <cache> <build> <profile-digest> <toolchain-digest> <output> | conformance-run <source> <input-digest> <transcript> | cross-language-matrix <source> <input-digest> <transcript> <node-result> <output> | replay-catalog <catalog> <output> | comparison-catalog <catalog> <project> <output> | experiment-kit <catalog> <project> <output> | replay-fault-catalog <catalog> <output> | replay-fault-corpus <corpus> <output> | replay-fault-corpus-gate <corpus> <evidence> | verify <graph> <artifact> | run <graph> <artifact> <input-digest> | project-init <directory> | project-check <project> | project-test <project> | project-scale <project> | project-execute-plan <project> <plan> <profile-digest> <toolchain-digest> <input-digest> | project-execute-plan-direct <project> <plan> <profile-digest> <toolchain-digest> <input-digest> | project-execute-plan-cached <project> <plan> <execution-cache> <profile-digest> <toolchain-digest> <input-digest> | project-execute <project> <module> <profile-digest> <toolchain-digest> <input-digest> | project-benchmark <project> <module> <profile-digest> <toolchain-digest> <input-digest> <report> | project-translate <project> <cache> <build> <profile-digest> <toolchain-digest> <module> | project-run <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest> | project-run-sandbox <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest> <sandbox> | project-build <project> <cache> <build> <profile-digest> <toolchain-digest> | server-smoke | project-server-smoke <project> <module> <profile-digest> <toolchain-digest> <input-digest> | release-package <binary> <candidate> <target> <source-digest> <toolchain-digest> | release-verify <candidate> <target> <source-digest> <toolchain-digest> | release-install <candidate> <target> <source-digest> <toolchain-digest> | release-rollback <install> <target> <source-digest> <toolchain-digest> | release-matrix <target> <output> | node-free-gate <source> <project> <module> <report> | developer-gate <project> <module> <input-digest> <report> | toolchain-gate <source> <project> <module> <input-digest> <report> | release-evidence-gate <source> <project> <module> <fault-corpus> <evidence>"
+                "Usage: revia <check|lex|digest|canonical|manifest|translate> <file> | compile [--schema-registry <registry>] <source> <artifact> | execute [--schema-registry <registry>] <source> <input-digest> | runtime-package <source> <bundle> | runtime-verify <bundle> | runtime-authority-pin <bundle> <input-digest> <pin> | runtime-receipt-verify <pin> <receipt> <result> <stdout> | project-run-verify <run> | runtime-run <bundle> <input-digest> <sandbox> | capability-comparison <catalog> <output> | capability-project-comparison <catalog> <project> <cache> <build> <profile-digest> <toolchain-digest> <output> | conformance-run <source> <input-digest> <transcript> | cross-language-matrix <source> <input-digest> <transcript> <node-result> <output> | replay-catalog <catalog> <output> | comparison-catalog <catalog> <project> <output> | experiment-kit <catalog> <project> <output> | replay-fault-catalog <catalog> <output> | replay-fault-corpus <corpus> <output> | replay-fault-corpus-gate <corpus> <evidence> | verify [--schema-registry <registry>] <graph> <artifact> | run [--schema-registry <registry>] <graph> <artifact> <input-digest> | project-init <directory> | project-check <project> | project-test <project> | project-scale <project> | project-execute-plan <project> <plan> <profile-digest> <toolchain-digest> <input-digest> | project-execute-plan-direct <project> <plan> <profile-digest> <toolchain-digest> <input-digest> | project-execute-plan-cached <project> <plan> <execution-cache> <profile-digest> <toolchain-digest> <input-digest> | project-execute <project> <module> <profile-digest> <toolchain-digest> <input-digest> | project-benchmark <project> <module> <profile-digest> <toolchain-digest> <input-digest> <report> | project-translate <project> <cache> <build> <profile-digest> <toolchain-digest> <module> | project-run <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest> | project-run-sandbox <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest> <sandbox> | project-build <project> <cache> <build> <profile-digest> <toolchain-digest> | server-smoke | project-server-smoke <project> <module> <profile-digest> <toolchain-digest> <input-digest> | release-package <binary> <candidate> <target> <source-digest> <toolchain-digest> | release-verify <candidate> <target> <source-digest> <toolchain-digest> | release-install <candidate> <target> <source-digest> <toolchain-digest> | release-rollback <install> <target> <source-digest> <toolchain-digest> | release-matrix <target> <output> | node-free-gate <source> <project> <module> <report> | developer-gate <project> <module> <input-digest> <report> | toolchain-gate <source> <project> <module> <input-digest> <report> | release-evidence-gate <source> <project> <module> <fault-corpus> <evidence>"
             );
             Err(64)
         }
@@ -743,9 +769,11 @@ fn command_help(command: &str) -> Result<(), i32> {
         }
         "manifest" => "revia manifest <file>\n  Print the checked graph manifest.\n",
         "translate" => "revia translate <file>\n  Translate a checked graph.\n",
-        "compile" => "revia compile <source> <artifact>\n  Write a verified native artifact.\n",
+        "compile" => {
+            "revia compile [--schema-registry <registry>] <source> <artifact>\n  Write a verified native artifact.\n"
+        }
         "execute" => {
-            "revia execute <source> <input-digest>\n  Check, translate, and execute one source file.\n"
+            "revia execute [--schema-registry <registry>] <source> <input-digest>\n  Check, translate, and execute one source file.\n"
         }
         "runtime-package" => {
             "revia runtime-package <source> <bundle>\n  Package a verified graph and artifact into a movable native runtime bundle.\n"
@@ -810,8 +838,12 @@ fn command_help(command: &str) -> Result<(), i32> {
         "replay-fault-corpus-gate" => {
             "revia replay-fault-corpus-gate <corpus> <evidence>\n  Verify release fault evidence.\n"
         }
-        "verify" => "revia verify <graph> <artifact>\n  Verify a graph-bound artifact.\n",
-        "run" => "revia run <graph> <artifact> <input-digest>\n  Execute a verified artifact.\n",
+        "verify" => {
+            "revia verify [--schema-registry <registry>] <graph> <artifact>\n  Verify a graph-bound artifact.\n"
+        }
+        "run" => {
+            "revia run [--schema-registry <registry>] <graph> <artifact> <input-digest>\n  Execute a verified artifact.\n"
+        }
         "project-init" => {
             "revia project-init <directory>\n  Create a deterministic starter project.\n"
         }
@@ -989,9 +1021,10 @@ fn release_result(result: Result<String, revia_core::release::ReleaseError>) -> 
     }
 }
 
-fn compile(source_path: &str, artifact_path: &str) -> Result<(), i32> {
-    let graph = read_graph(source_path)?;
-    let artifact = translate_graph(&graph).map_err(|error| {
+fn compile(source_path: &str, artifact_path: &str, registry_path: Option<&str>) -> Result<(), i32> {
+    let declared = read_declarations(registry_path)?;
+    let graph = read_graph_with_declarations(source_path, &declared)?;
+    let artifact = translate_graph_with_declarations(&graph, &declared).map_err(|error| {
         print_graph_error(&error);
         65
     })?;
@@ -999,7 +1032,7 @@ fn compile(source_path: &str, artifact_path: &str) -> Result<(), i32> {
         print_graph_error(&error);
         65
     })?;
-    verify_bytecode_artifact(&graph, &bytes).map_err(|error| {
+    verify_bytecode_artifact_with_declarations(&graph, &bytes, &declared).map_err(|error| {
         print_graph_error(&error);
         65
     })?;
@@ -1016,9 +1049,10 @@ fn compile(source_path: &str, artifact_path: &str) -> Result<(), i32> {
     Ok(())
 }
 
-fn execute(source_path: &str, input_digest: &str) -> Result<(), i32> {
-    let graph = read_graph(source_path)?;
-    let artifact = translate_graph(&graph).map_err(|error| {
+fn execute(source_path: &str, input_digest: &str, registry_path: Option<&str>) -> Result<(), i32> {
+    let declared = read_declarations(registry_path)?;
+    let graph = read_graph_with_declarations(source_path, &declared)?;
+    let artifact = translate_graph_with_declarations(&graph, &declared).map_err(|error| {
         print_graph_error(&error);
         65
     })?;
@@ -1032,17 +1066,19 @@ fn execute(source_path: &str, input_digest: &str) -> Result<(), i32> {
         artifact.profile.clone(),
         input_digest,
     );
-    let (mut bridge, program_stdout) = system_host_bridge(&graph, source_path, input_digest)
-        .map_err(|code| {
-            print_host_executor_error(&code);
-            65
-        })?;
-    let result = execute_bytecode(
+    let (mut bridge, program_stdout) =
+        system_host_bridge_with_declarations(&graph, source_path, input_digest, &declared)
+            .map_err(|code| {
+                print_host_executor_error(&code);
+                65
+            })?;
+    let result = execute_bytecode_with_declarations(
         &graph,
         &artifact_source,
         &request,
         &mut bridge,
         VmLimits::default(),
+        &declared,
     )
     .map_err(|error| {
         print_host_executor_error(&error.code);
@@ -6528,16 +6564,7 @@ fn canonical(path: &str) -> Result<(), i32> {
 }
 
 fn graph_check(path: &str, registry_path: Option<&str>) -> Result<(), i32> {
-    let declared = match registry_path {
-        None => Vec::new(),
-        Some(registry_path) => {
-            let source = fs::read_to_string(registry_path).map_err(|_| 66)?;
-            parse_registry(&source).map_err(|error| {
-                print_graph_error(&error);
-                65
-            })?
-        }
-    };
+    let declared = read_declarations(registry_path)?;
     let bytes = fs::read(path).map_err(|_| 66)?;
     let source = SourceText::from_bytes(&bytes, path).map_err(|diagnostic| {
         print_simple_graph_error(diagnostic.code.as_str());
@@ -7959,13 +7986,15 @@ fn project_build(
     Ok(())
 }
 
-fn verify(graph_path: &str, artifact_path: &str) -> Result<(), i32> {
-    let graph = read_graph(graph_path)?;
+fn verify(graph_path: &str, artifact_path: &str, registry_path: Option<&str>) -> Result<(), i32> {
+    let declared = read_declarations(registry_path)?;
+    let graph = read_graph_with_declarations(graph_path, &declared)?;
     let artifact = fs::read_to_string(artifact_path).map_err(|_| 66)?;
-    let verified = verify_bytecode_artifact(&graph, &artifact).map_err(|error| {
-        print_graph_error(&error);
-        65
-    })?;
+    let verified = verify_bytecode_artifact_with_declarations(&graph, &artifact, &declared)
+        .map_err(|error| {
+            print_graph_error(&error);
+            65
+        })?;
     println!(
         "{{\"artifact_digest\":{},\"graph_revision\":{},\"ok\":true,\"profile\":{},\"schema\":{}}}",
         quote(&verified.artifact_digest),
@@ -7976,8 +8005,14 @@ fn verify(graph_path: &str, artifact_path: &str) -> Result<(), i32> {
     Ok(())
 }
 
-fn run(graph_path: &str, artifact_path: &str, input_digest: &str) -> Result<(), i32> {
-    let graph = read_graph(graph_path)?;
+fn run(
+    graph_path: &str,
+    artifact_path: &str,
+    input_digest: &str,
+    registry_path: Option<&str>,
+) -> Result<(), i32> {
+    let declared = read_declarations(registry_path)?;
+    let graph = read_graph_with_declarations(graph_path, &declared)?;
     let artifact = fs::read_to_string(artifact_path).map_err(|_| 66)?;
     let loaded = revia_core::bytecode::load_bytecode_artifact(&artifact).map_err(|error| {
         print_graph_error(&error);
@@ -7989,17 +8024,20 @@ fn run(graph_path: &str, artifact_path: &str, input_digest: &str) -> Result<(), 
         loaded.profile.clone(),
         input_digest,
     );
-    let (mut bridge, program_stdout) = system_host_bridge(&graph, graph_path, input_digest)
-        .map_err(|code| {
-            print_host_executor_error(&code);
-            65
-        })?;
-    let result = execute_bytecode(
+    let (mut bridge, program_stdout) =
+        system_host_bridge_with_declarations(&graph, graph_path, input_digest, &declared).map_err(
+            |code| {
+                print_host_executor_error(&code);
+                65
+            },
+        )?;
+    let result = execute_bytecode_with_declarations(
         &graph,
         &artifact,
         &request,
         &mut bridge,
         VmLimits::default(),
+        &declared,
     )
     .map_err(|error| {
         print_host_executor_error(&error.code);
@@ -8046,23 +8084,36 @@ impl Write for SharedProgramStdout {
     }
 }
 
-fn system_host_bridge(
+/// Builds the host bridge for `graph`, dispatching registry-declared members
+/// to the system host adapter. The declarations are the same list the graph was
+/// checked against; passing an empty list is the pre-registry behavior.
+fn system_host_bridge_with_declarations(
     graph: &revia_core::graph::Graph,
     source_path: &str,
     input_digest: &str,
+    declared: &[DeclaredSchema],
 ) -> Result<(HostBackedBridge<SystemHost>, SharedProgramStdout), String> {
     let source = absolute_input_path(Path::new(source_path))
         .map_err(|_| "native-host-source-unreadable".to_owned())?;
     let sandbox = source
         .parent()
         .ok_or_else(|| "native-host-sandbox-invalid".to_owned())?;
-    system_host_bridge_for_sandbox(graph, sandbox, input_digest)
+    system_host_bridge_for_sandbox_with_declarations(graph, sandbox, input_digest, declared)
 }
 
 fn system_host_bridge_for_sandbox(
     graph: &revia_core::graph::Graph,
     sandbox: &Path,
     input_digest: &str,
+) -> Result<(HostBackedBridge<SystemHost>, SharedProgramStdout), String> {
+    system_host_bridge_for_sandbox_with_declarations(graph, sandbox, input_digest, &[])
+}
+
+fn system_host_bridge_for_sandbox_with_declarations(
+    graph: &revia_core::graph::Graph,
+    sandbox: &Path,
+    input_digest: &str,
+    declared: &[DeclaredSchema],
 ) -> Result<(HostBackedBridge<SystemHost>, SharedProgramStdout), String> {
     let stdout = SharedProgramStdout::default();
     let host = SystemHost::new_with_random_reader(
@@ -8076,7 +8127,8 @@ fn system_host_bridge_for_sandbox(
     .map_err(|_| "native-host-initialization-failed".to_owned())?;
     let revision =
         graph_revision(graph).map_err(|_| "native-host-graph-revision-invalid".to_owned())?;
-    let bridge = HostBackedBridge::new(graph, host, revision, input_digest)?;
+    let bridge =
+        HostBackedBridge::new_with_declarations(graph, host, revision, input_digest, declared)?;
     Ok((bridge, stdout))
 }
 
@@ -8258,18 +8310,48 @@ fn print_vm_result(result: &revia_core::vm::VmResult) {
     );
 }
 
+/// Reads a registry artifact into the declarations a graph may reference.
+///
+/// The registry is read-only admission data: it widens the vocabulary a graph
+/// is checked against and is handed to the host bridge so a declared member can
+/// reach its adapter. It never changes built-in behavior and never shadows a
+/// built-in reference (`parse_registry` rejects that).
+fn read_declarations(registry_path: Option<&str>) -> Result<Vec<DeclaredSchema>, i32> {
+    match registry_path {
+        None => Ok(Vec::new()),
+        Some(registry_path) => {
+            let source = fs::read_to_string(registry_path).map_err(|_| 66)?;
+            parse_registry(&source).map_err(|error| {
+                print_graph_error(&error);
+                65
+            })
+        }
+    }
+}
+
 fn read_graph(path: &str) -> Result<revia_core::graph::Graph, i32> {
+    read_graph_with_declarations(path, &[])
+}
+
+fn read_graph_with_declarations(
+    path: &str,
+    declared: &[DeclaredSchema],
+) -> Result<revia_core::graph::Graph, i32> {
     let bytes = fs::read(path).map_err(|_| 66)?;
     let source = SourceText::from_bytes(&bytes, path).map_err(|diagnostic| {
         print_simple_graph_error(diagnostic.code.as_str());
         65
     })?;
-    if source.text.starts_with("re 0.1 canonical\n") {
+    let graph = if source.text.starts_with("re 0.1 canonical\n") {
         load_canonical_graph(&source.text)
     } else {
-        parse_compact_graph(&source.text, path).and_then(check_graph)
+        parse_compact_graph(&source.text, path)
     }
     .map_err(|error| {
+        print_graph_error(&error);
+        65
+    })?;
+    check_graph_with_declared_schemas(graph, declared).map_err(|error| {
         print_graph_error(&error);
         65
     })
