@@ -37,10 +37,22 @@ fn native_cli_help_and_version_are_stable_without_input_or_path_dependencies() {
     let explicit = run(&root, &["help"]);
     assert_eq!(explicit.stdout, top_level.stdout);
 
+    assert!(
+        top_level.stdout.contains("  66 input file unreadable"),
+        "the legend omits the unreadable-input code: {}",
+        top_level.stdout
+    );
+    assert!(
+        top_level.stdout.contains("  101 internal panic"),
+        "the legend omits the panic code: {}",
+        top_level.stdout
+    );
+
     let command_help = run(&root, &["help", "check"]);
     assert!(command_help.status.success());
     assert!(command_help.stdout.contains("revia check <file>"));
     assert!(command_help.stdout.contains("exit 65"));
+    assert!(command_help.stdout.contains("exit 66"));
 
     let suffix_help = run(&root, &["check", "--help"]);
     assert_eq!(suffix_help.stdout, command_help.stdout);
@@ -52,6 +64,38 @@ fn native_cli_help_and_version_are_stable_without_input_or_path_dependencies() {
     assert!(version.stderr.is_empty());
 
     assert!(fs::read_dir(&root).unwrap().next().is_none());
+    cleanup(&root);
+}
+
+#[test]
+fn native_cli_exit_code_legend_matches_the_observed_codes() {
+    let root = temp_root();
+    fs::create_dir_all(root.join("directory")).unwrap();
+
+    let legend = run(&root, &["--help"]);
+    for line in [
+        "  0  success",
+        "  64 usage or unknown command",
+        "  65 source, project, or contract failure",
+        "  66 input file unreadable",
+        "  101 internal panic (a defect; report the input)",
+    ] {
+        assert!(
+            legend.stdout.contains(line),
+            "the legend lost a line: {line}"
+        );
+    }
+
+    let missing = run(&root, &["check", "absent.re"]);
+    assert_eq!(missing.status.code(), Some(66));
+    assert!(missing.stdout.is_empty());
+
+    let directory = run(&root, &["check", "directory"]);
+    assert_eq!(directory.status.code(), Some(66));
+
+    let usage = run(&root, &["check"]);
+    assert_eq!(usage.status.code(), Some(64));
+
     cleanup(&root);
 }
 

@@ -389,6 +389,21 @@ WP-347 的投影只到参数层；运行期要按声明分派，还缺每个成�
 结果契约的 registry 端到端通过、坏 `kind` 仍是 registry 问题）。本包不改变
 research/preview 成熟度声明，也不把 registry 说成运行期准入通道。
 
+### WP-350 · exit-code legend matches the codes the CLI returns
+
+公开反馈 PF-20261104-01 指出：`--help` 的 exit code 图例只列 0/64/65，而 `check`
+等读文件的命令在输入不可读时实际返回 66，`check --help` 也只写了 65。核对属实
+（`check absent.re` 与 `check <directory>` 都是 66，缺参数是 64），于是图例补
+`66 input file unreadable`，`check` 帮助补 `Unreadable file: exit 66.`，与
+`graph-check` 的既有措辞一致。
+
+同一条反馈建议为 panic 与 SIGPIPE 各留一行。只记 101（`internal panic (a defect;
+report the input)`）：Rust 运行时把 SIGPIPE 设为忽略，管道关闭会以写失败 panic
+收场，因此本二进制不会以 141 退出，也没有任何代码重置 SIGPIPE；把 141 写进图例
+会描述一个不存在的出口。新增
+`native/revia-cli/tests/wp285_cli_help.rs` 的一例回归：图例五行齐全、缺文件与目录
+都是 66、缺参数是 64，`check --help` 同时给出 65 与 66。
+
 ### WP-274 · native replay workload catalog
 
 增加 `re.native-replay-workload-catalog@0.1.0`、

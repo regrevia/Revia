@@ -251,7 +251,7 @@ Commands:
 
 Use `revia <command> --help` for a command's arguments.
 "#;
-const CLI_EXIT_CODES: &str = "Exit codes:\n  0  success\n  64 usage or unknown command\n  65 source, project, or contract failure\n";
+const CLI_EXIT_CODES: &str = "Exit codes:\n  0  success\n  64 usage or unknown command\n  65 source, project, or contract failure\n  66 input file unreadable\n  101 internal panic (a defect; report the input)\n";
 
 fn main() {
     let arguments = env::args().skip(1).collect::<Vec<_>>();
@@ -733,7 +733,7 @@ fn cli_help() -> Result<(), i32> {
 fn command_help(command: &str) -> Result<(), i32> {
     let usage = match command {
         "check" => {
-            "revia check <file>\n  Validate a source file and emit the native parser result.\n  Invalid source or contract: exit 65.\n"
+            "revia check <file>\n  Validate a source file and emit the native parser result.\n  Unreadable file: exit 66. Invalid source or contract: exit 65.\n"
         }
         "lex" => "revia lex <file>\n  Tokenize a source file.\n",
         "digest" => "revia digest <file>\n  Print the source digest.\n",
