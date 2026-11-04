@@ -777,7 +777,10 @@ pub fn validate_declarations(declared: &[DeclaredSchema]) -> Result<(), GraphErr
                 }
             }
             for (variant_index, variant) in member.errors.iter().enumerate() {
+                // A variant is a bare name, so unlike a generic type half it
+                // may not carry a comma anywhere.
                 if !is_declared_type_name(variant)
+                    || variant.contains(',')
                     || member.errors[..variant_index]
                         .iter()
                         .any(|seen| seen == variant)
@@ -812,17 +815,19 @@ pub fn validate_declarations(declared: &[DeclaredSchema]) -> Result<(), GraphErr
     Ok(())
 }
 
-/// A single type name: non-empty, no whitespace, no `@` separator, no
-/// top-level comma.
+/// A declared type name: non-empty, no whitespace, no `@` separator, no comma
+/// outside `<...>` — a generic half such as `map<text.utf8,number.i64>` is one
+/// name, while a comma at depth zero would be read as a separator.
 fn is_declared_type_name(name: &str) -> bool {
     !name.is_empty()
         && !name.contains('@')
-        && !name.contains(',')
+        && !has_top_level_comma(name)
         && !name.chars().any(char::is_whitespace)
 }
 
 /// Split `ok, error` at the single top-level comma, so generic halves such as
-/// `result<list<text.utf8>, demo.echo_error>` stay whole.
+/// `result<list<text.utf8>, demo.echo_error>` and
+/// `result<map<text.utf8,number.i64>, demo.echo_error>` stay whole.
 fn split_result_halves(inner: &str) -> Option<(&str, &str)> {
     let mut depth = 0usize;
     let mut split = None;
@@ -844,6 +849,21 @@ fn split_result_halves(inner: &str) -> Option<(&str, &str)> {
     }
     let index = split?;
     Some((&inner[..index], &inner[index + 1..]))
+}
+
+/// A comma at angle-bracket depth zero separates the result halves; one inside
+/// a generic belongs to the half itself.
+fn has_top_level_comma(name: &str) -> bool {
+    let mut depth = 0usize;
+    for character in name.chars() {
+        match character {
+            '<' => depth += 1,
+            '>' => depth = depth.saturating_sub(1),
+            ',' if depth == 0 => return true,
+            _ => {}
+        }
+    }
+    false
 }
 
 /// `result<ok, error>` — exactly two halves, both non-empty type names.

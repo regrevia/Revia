@@ -80,12 +80,34 @@ fn graph_check_accepts_a_declared_result_contract() {
 }
 
 #[test]
-fn a_malformed_error_sum_is_a_registry_problem() {
+fn a_comma_inside_a_generic_half_is_not_the_result_separator() {
     let root = temp_root();
     let (source, registry) = fixture(&root);
     fs::write(
         &registry,
-        REGISTRY.replace(r#""kind":"error-sum""#, r#""kind":"product""#),
+        REGISTRY.replace(
+            "result<text.utf8, demo.echo_error>",
+            "result<map<text.utf8,number.i64>, demo.echo_error>",
+        ),
+    )
+    .unwrap();
+    let output = run(&["graph-check", "--schema-registry", &registry, &source]);
+    assert!(output.status.success(), "{output:?}");
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(stdout.contains(r#""declared_schema_count":1"#), "{stdout}");
+    fs::remove_dir_all(&root).unwrap();
+}
+
+#[test]
+fn a_malformed_result_names_the_types_entry_it_stranded() {
+    let root = temp_root();
+    let (source, registry) = fixture(&root);
+    fs::write(
+        &registry,
+        REGISTRY.replace(
+            "result<text.utf8, demo.echo_error>",
+            "result<text.utf8,demo.echo_error,extra>",
+        ),
     )
     .unwrap();
     let output = run(&["graph-check", "--schema-registry", &registry, &source]);
@@ -93,6 +115,10 @@ fn a_malformed_error_sum_is_a_registry_problem() {
     let stdout = String::from_utf8(output.stdout).unwrap();
     assert!(
         stdout.contains("declared-schema-registry-invalid"),
+        "{stdout}"
+    );
+    assert!(
+        stdout.contains(r#""actual":"definitions[0].types[demo.echo_error]""#),
         "{stdout}"
     );
     fs::remove_dir_all(&root).unwrap();

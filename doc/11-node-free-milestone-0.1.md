@@ -377,17 +377,22 @@ WP-347 的投影只到参数层；运行期要按声明分派，还缺每个成�
 解析期要求 `returns` 是非空字符串、`types` 是对象、家族条目 `kind` 为 `error-sum` 且
 `variants` 是非空字符串数组、每个 `types` 条目都被某个成员的 `returns` 家族命名（否则
 渲染会丢掉它，回读不相等），否则 `declared-schema-registry-invalid`；声明校验期要求
-`result<...>` 恰好两个非空半段（`list<...>` 这类嵌套半段整体保留）、变体名合法且不重复、只有 `returns` 为
+`result<...>` 恰好两个非空半段（只有深度零的逗号才是分隔符，`map<text.utf8,number.i64>`
+这类含逗号的泛型半段整体保留）、变体名合法且不重复、只有 `returns` 为
 `result<ok, family>` 时才允许携带变体、同一 definition 内共享同一家族的两个成员变体
-表必须一致，否则 `declared-schema-invalid`。
+表必须一致，否则 `declared-schema-invalid`。坏结果串若同时配有同名 `types` 条目，
+家族名解析不出来，该条目就成了未引用条目，制品规则先触发，诊断指向
+`types[family]`，`declared-schema-invalid` 只覆盖程序内声明与没有该条目的制品。
 
 `render_definition` 在有 `returns` 时写回它、有变体时写 `types`，两者都缺时省略，
 所以 WP-347 的字节稳定性与回读相等不变。运行期仍不读这些字段：四个硬编码站点照旧
 拒绝一切声明成员，`access` 规则也仍不投影。新增
-`native/revia-core/tests/wp348_declared_result_contract.rs`（9 例：投影、缺省返回、
-无 `types` 的家族、六类坏制品、程序内声明同规则、共享家族一致性、渲染回读、无结果
-契约时省略 `types`）与 `native/revia-cli/tests/wp348_graph_check_cli.rs`（2 例：带
-结果契约的 registry 端到端通过、坏 `kind` 仍是 registry 问题）。本包不改变
+`native/revia-core/tests/wp348_declared_result_contract.rs`（11 例：投影、缺省返回、
+无 `types` 的家族、六类坏制品、程序内声明同规则、含逗号泛型半段、未引用条目优先于
+声明校验、共享家族一致性、渲染回读、无结果
+契约时省略 `types`）与 `native/revia-cli/tests/wp348_graph_check_cli.rs`（3 例：带
+结果契约的 registry 端到端通过、含逗号泛型半段照常通过、坏 `kind` 与坏结果串仍是
+registry 问题）。本包不改变
 research/preview 成熟度声明，也不把 registry 说成运行期准入通道。
 
 ### WP-350 · exit-code legend matches the codes the CLI returns

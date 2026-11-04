@@ -140,8 +140,13 @@ A `returns` value that is not a non-empty string, a family that is not an
 names are rejected with `declared-schema-registry-invalid` (rendering would drop
 such an entry, so the artifact would not round-trip); a member whose result names
 no family cannot carry variants, `result<...>` must have exactly two non-empty
-halves (a nested `list<...>` half stays whole), and members sharing one family
-must agree on its variants, all under `declared-schema-invalid`. Rendering writes
+halves (only a depth-zero comma separates them, so a `map<text.utf8,number.i64>`
+half stays whole), and members sharing one family
+must agree on its variants, all under `declared-schema-invalid`. A malformed
+result string that leaves its would-be family unnamed makes the matching
+`types` entry unreferenced, so the artifact rule fires first and the diagnostic
+points at `types[family]`; `declared-schema-invalid` only covers programmatic
+declarations and artifacts with no such entry. Rendering writes
 `returns`/`types` only when present, so WP-347 artifacts keep their exact bytes.
 No runtime site reads these fields yet; the host boundary stays closed.
 

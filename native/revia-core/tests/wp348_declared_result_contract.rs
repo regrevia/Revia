@@ -220,7 +220,7 @@ fn a_programmatic_declaration_is_held_to_the_same_result_shape() {
             "demo.echo@0.1.0",
             vec![member(
                 "say",
-                Some("result<text.utf8, demo.echo_error, extra>"),
+                Some("result<text.utf8,demo.echo_error,extra>"),
                 &[]
             )]
         )),
@@ -230,21 +230,38 @@ fn a_programmatic_declaration_is_held_to_the_same_result_shape() {
 
 #[test]
 fn a_generic_ok_half_stays_one_half() {
-    // Splitting on the first comma would read `list<text.utf8>` as ok and
-    // `demo.echo_error>` as the family; the split respects angle brackets.
+    // A comma inside a generic belongs to that half: splitting on the first
+    // comma would read `map<text.utf8` as ok and `number.i64>` as the start of
+    // the family. Only depth-zero commas separate the halves.
     let source = registry(
-        r#"{"identity":"demo.echo","members":{"list":{"params":[],"returns":"result<list<text.utf8>, demo.echo_error>"}},"revision":"0.1.0","types":{"demo.echo_error":{"kind":"error-sum","variants":["refused"]}}}"#,
+        r#"{"identity":"demo.echo","members":{"merge":{"params":[],"returns":"result<map<text.utf8,number.i64>, demo.echo_error>"}},"revision":"0.1.0","types":{"demo.echo_error":{"kind":"error-sum","variants":["refused"]}}}"#,
     );
     let declared = parse_registry(&source).unwrap();
     assert_eq!(
         declared[0].members[0].returns.as_deref(),
-        Some("result<list<text.utf8>, demo.echo_error>")
+        Some("result<map<text.utf8,number.i64>, demo.echo_error>")
     );
     assert_eq!(declared[0].members[0].errors, vec!["refused".to_string()]);
     validate_declarations(&declared).expect("generic ok half is a valid result");
     assert_eq!(
         parse_registry(&render_registry(&declared).unwrap()).unwrap(),
         declared
+    );
+}
+
+#[test]
+fn an_unresolvable_family_leaves_its_types_entry_unreferenced() {
+    // A malformed result string cannot name a family, so the `types` entry it
+    // was meant to reference is unreferenced: the artifact rule fires before
+    // the declaration rule, and the diagnostic names the entry rendering would
+    // have dropped.
+    let error = registry_error(&registry(
+        r#"{"identity":"demo.echo","members":{"say":{"params":[],"returns":"result<text.utf8,demo.echo_error,extra>"}},"revision":"0.1.0","types":{"demo.echo_error":{"kind":"error-sum","variants":["a"]}}}"#,
+    ));
+    assert_eq!(error.code, "declared-schema-registry-invalid");
+    assert_eq!(
+        error.actual.as_deref(),
+        Some("definitions[0].types[demo.echo_error]")
     );
 }
 
