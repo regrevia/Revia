@@ -118,7 +118,12 @@ through `canonical_json`, so the artifact is byte-stable and round-trips through
 the reader. Malformed artifacts are rejected with
 `declared-schema-registry-invalid` before the graph is read; duplicate,
 shadowing, empty or otherwise invalid declarations keep their
-`declared-schema-invalid` code. The CLI exposes it as
+`declared-schema-invalid` code. A `returns` value that is not a non-empty
+string, a family that is not an `error-sum` (`kind` mismatch, empty or
+ill-formed `variants`), and a `types` entry no member names are rejected
+immediately as `declared-schema-registry-invalid`, because rendering would drop
+them; a malformed result string is rejected one step later, when the parsed
+declarations are validated, as `declared-schema-invalid`. The CLI exposes it as
 `revia graph-check [--schema-registry <registry>] <file>` (output schema
 `re.native-graph-result@0.1.0`, unreadable file exit 66, invalid source, graph or
 registry exit 65) — a new command because `check` is the parser path. Runtime
@@ -130,13 +135,15 @@ returns. `DeclaredMember.returns` carries the definition's `result<T, E>` string
 (or a plain type name) and `DeclaredMember.errors` carries the ordered variants
 of the family that string names, read from the definition's `types` table. A
 family with no `types` entry keeps an empty variant list rather than a guess.
-Malformed result strings, non-`error-sum` families and bad variant lists are
-rejected with `declared-schema-registry-invalid`; a member whose result names no
-family cannot carry variants, `result<...>` must have two non-empty halves, and
-members sharing one family must agree on its variants, all under
-`declared-schema-invalid`. Rendering writes `returns`/`types` only when present,
-so WP-347 artifacts keep their exact bytes. No runtime site reads these fields
-yet; the host boundary stays closed.
+A `returns` value that is not a non-empty string, a family that is not an
+`error-sum`, an empty or ill-formed variant list, and a `types` entry no member
+names are rejected with `declared-schema-registry-invalid` (rendering would drop
+such an entry, so the artifact would not round-trip); a member whose result names
+no family cannot carry variants, `result<...>` must have exactly two non-empty
+halves (a nested `list<...>` half stays whole), and members sharing one family
+must agree on its variants, all under `declared-schema-invalid`. Rendering writes
+`returns`/`types` only when present, so WP-347 artifacts keep their exact bytes.
+No runtime site reads these fields yet; the host boundary stays closed.
 
 Consequence: Route H costs a core edit at **each** of those eight sites, with a
 test per site — not the single enum change this document originally claimed, and

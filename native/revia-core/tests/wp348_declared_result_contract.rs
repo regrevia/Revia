@@ -142,6 +142,11 @@ fn malformed_result_contracts_are_rejected() {
         // Its variants must be a list of non-empty strings.
         r#"{"identity":"demo.echo","members":{"say":{"params":[],"returns":"result<text.utf8, demo.echo_error>"}},"revision":"0.1.0","types":{"demo.echo_error":{"kind":"error-sum","variants":"a"}}}"#,
         r#"{"identity":"demo.echo","members":{"say":{"params":[],"returns":"result<text.utf8, demo.echo_error>"}},"revision":"0.1.0","types":{"demo.echo_error":{"kind":"error-sum","variants":["a",""]}}}"#,
+        // An empty variant list would vanish through rendering.
+        r#"{"identity":"demo.echo","members":{"say":{"params":[],"returns":"result<text.utf8, demo.echo_error>"}},"revision":"0.1.0","types":{"demo.echo_error":{"kind":"error-sum","variants":[]}}}"#,
+        // A `types` entry no member names would be dropped by rendering.
+        r#"{"identity":"demo.echo","members":{"say":{"params":[]}},"revision":"0.1.0","types":{"demo.echo_error":{"kind":"error-sum","variants":["a"]}}}"#,
+        r#"{"identity":"demo.echo","members":{"say":{"params":[],"returns":"result<text.utf8, demo.echo_error>"}},"revision":"0.1.0","types":{"demo.other_error":{"kind":"error-sum","variants":["a"]}}}"#,
     ];
     for case in cases {
         let error = registry_error(&registry(case));
@@ -209,6 +214,38 @@ fn a_programmatic_declaration_is_held_to_the_same_result_shape() {
             invalid
         );
     }
+    // A result string with a third half is not a result.
+    assert_eq!(
+        validate(&programmatic(
+            "demo.echo@0.1.0",
+            vec![member(
+                "say",
+                Some("result<text.utf8, demo.echo_error, extra>"),
+                &[]
+            )]
+        )),
+        invalid
+    );
+}
+
+#[test]
+fn a_generic_ok_half_stays_one_half() {
+    // Splitting on the first comma would read `list<text.utf8>` as ok and
+    // `demo.echo_error>` as the family; the split respects angle brackets.
+    let source = registry(
+        r#"{"identity":"demo.echo","members":{"list":{"params":[],"returns":"result<list<text.utf8>, demo.echo_error>"}},"revision":"0.1.0","types":{"demo.echo_error":{"kind":"error-sum","variants":["refused"]}}}"#,
+    );
+    let declared = parse_registry(&source).unwrap();
+    assert_eq!(
+        declared[0].members[0].returns.as_deref(),
+        Some("result<list<text.utf8>, demo.echo_error>")
+    );
+    assert_eq!(declared[0].members[0].errors, vec!["refused".to_string()]);
+    validate_declarations(&declared).expect("generic ok half is a valid result");
+    assert_eq!(
+        parse_registry(&render_registry(&declared).unwrap()).unwrap(),
+        declared
+    );
 }
 
 #[test]

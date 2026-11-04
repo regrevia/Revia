@@ -60,14 +60,15 @@ pub struct DeclaredMember {
     pub parameters: Vec<(String, String)>,
     /// The declared result type, e.g. `result<text.utf8, demo.echo_error>`.
     ///
-    /// The check phase does not consume it yet; it is carried here so the
-    /// runtime half of the same artifact does not need a second reader.
+    /// The check phase only validates its shape. It is carried here so the
+    /// runtime slice can dispatch on it without a second reader; until that
+    /// slice lands, no runtime site reads this field.
     pub returns: Option<String>,
     /// The variants of the declared result error type, in declared order.
     ///
     /// Empty when the definition declares a plain return type or no `types`
-    /// table. The runtime error mapping reads this list; the check phase only
-    /// validates its shape.
+    /// table. The check phase only validates their shape; the runtime slice
+    /// that maps a host failure will read this list.
     pub errors: Vec<String>,
 }
 
@@ -811,27 +812,57 @@ pub fn validate_declarations(declared: &[DeclaredSchema]) -> Result<(), GraphErr
     Ok(())
 }
 
-/// A single type name: non-empty, no whitespace, no `@` separator.
+/// A single type name: non-empty, no whitespace, no `@` separator, no
+/// top-level comma.
 fn is_declared_type_name(name: &str) -> bool {
-    !name.is_empty() && !name.contains('@') && !name.chars().any(char::is_whitespace)
+    !name.is_empty()
+        && !name.contains('@')
+        && !name.contains(',')
+        && !name.chars().any(char::is_whitespace)
 }
 
-/// `result<ok, error>` — both halves non-empty type names.
+/// Split `ok, error` at the single top-level comma, so generic halves such as
+/// `result<list<text.utf8>, demo.echo_error>` stay whole.
+fn split_result_halves(inner: &str) -> Option<(&str, &str)> {
+    let mut depth = 0usize;
+    let mut split = None;
+    for (index, character) in inner.char_indices() {
+        match character {
+            '<' => depth += 1,
+            '>' => depth = depth.checked_sub(1)?,
+            ',' if depth == 0 => {
+                if split.is_some() {
+                    return None;
+                }
+                split = Some(index);
+            }
+            _ => {}
+        }
+    }
+    if depth != 0 {
+        return None;
+    }
+    let index = split?;
+    Some((&inner[..index], &inner[index + 1..]))
+}
+
+/// `result<ok, error>` — exactly two halves, both non-empty type names.
 fn is_result_type_name(name: &str) -> bool {
     name.strip_prefix("result<")
         .and_then(|rest| rest.strip_suffix('>'))
-        .and_then(|inner| inner.split_once(','))
+        .and_then(split_result_halves)
         .is_some_and(|(ok, error)| {
             is_declared_type_name(ok.trim()) && is_declared_type_name(error.trim())
         })
 }
 
 pub(crate) fn result_error_type_name(name: &str) -> Option<&str> {
-    name.strip_prefix("result<")
-        .and_then(|rest| rest.strip_suffix('>'))
-        .and_then(|inner| inner.split_once(','))
-        .map(|(_, error)| error.trim())
-        .filter(|error| !error.is_empty())
+    let inner = name
+        .strip_prefix("result<")
+        .and_then(|rest| rest.strip_suffix('>'))?;
+    let (ok, error) = split_result_halves(inner)?;
+    let error = error.trim();
+    (is_declared_type_name(ok.trim()) && is_declared_type_name(error)).then_some(error)
 }
 
 fn parameters(

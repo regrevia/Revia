@@ -375,8 +375,9 @@ WP-347 的投影只到参数层；运行期要按声明分派，还缺每个成�
 `DeclaredMember` 增加 `returns: Option<String>` 和 `errors: Vec<String>`（后者是
 家族变体按声明顺序的列表；家族没有 `types` 条目时为空，不去猜）。两侧校验：registry
 解析期要求 `returns` 是非空字符串、`types` 是对象、家族条目 `kind` 为 `error-sum` 且
-`variants` 是非空字符串数组，否则 `declared-schema-registry-invalid`；声明校验期要求
-`result<...>` 两个非空半段、变体名合法且不重复、只有 `returns` 为
+`variants` 是非空字符串数组、每个 `types` 条目都被某个成员的 `returns` 家族命名（否则
+渲染会丢掉它，回读不相等），否则 `declared-schema-registry-invalid`；声明校验期要求
+`result<...>` 恰好两个非空半段（`list<...>` 这类嵌套半段整体保留）、变体名合法且不重复、只有 `returns` 为
 `result<ok, family>` 时才允许携带变体、同一 definition 内共享同一家族的两个成员变体
 表必须一致，否则 `declared-schema-invalid`。
 

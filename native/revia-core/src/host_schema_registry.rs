@@ -104,8 +104,9 @@ fn parse_definition(value: &JsonValue, index: usize) -> Result<DeclaredSchema, G
     if revision.contains('@') || revision.chars().any(char::is_whitespace) {
         return Err(invalid(&format!("{path}.revision")));
     }
+    let types_path = format!("{path}.types");
     let types = match definition.iter().find(|(key, _)| key == "types") {
-        Some((_, value)) => Some(object(value, &format!("{path}.types"))?),
+        Some((_, value)) => Some(object(value, &types_path)?),
         None => None,
     };
     let members = object(
@@ -121,8 +122,22 @@ fn parse_definition(value: &JsonValue, index: usize) -> Result<DeclaredSchema, G
             name,
             member,
             types,
+            &types_path,
             &format!("{path}.members.{name}"),
         )?);
+    }
+    // Every `types` entry must be named by some member's result type: an entry
+    // nothing names would be dropped by `render_definition`, so the artifact
+    // would not round-trip through the reader unchanged.
+    if let Some(types) = types {
+        for (family, _) in types {
+            let referenced = declared_members.iter().any(|member| {
+                member.returns.as_deref().and_then(result_error_type_name) == Some(family.as_str())
+            });
+            if !referenced {
+                return Err(invalid(&format!("{types_path}[{family}]")));
+            }
+        }
     }
     Ok(DeclaredSchema {
         reference: format!("{identity}@{revision}"),
@@ -134,6 +149,7 @@ fn parse_member(
     name: &str,
     member: &JsonValue,
     types: Option<&[(String, JsonValue)]>,
+    types_path: &str,
     path: &str,
 ) -> Result<DeclaredMember, GraphError> {
     let entry = object(member, path)?;
@@ -152,7 +168,7 @@ fn parse_member(
         (Some(returns), Some(types)) => match result_error_type_name(returns) {
             Some(family) => match types.iter().find(|(key, _)| key == family) {
                 Some((_, declared_type)) => {
-                    parse_error_variants(declared_type, &format!("{path}.types.{family}"))?
+                    parse_error_variants(declared_type, &format!("{types_path}[{family}]"))?
                 }
                 None => Vec::new(),
             },
@@ -183,6 +199,11 @@ fn parse_error_variants(value: &JsonValue, path: &str) -> Result<Vec<String>, Gr
             JsonValue::String(value) if !value.is_empty() => parsed.push(value.clone()),
             _ => return Err(invalid(&format!("{path}.variants[{index}]"))),
         }
+    }
+    // An error sum with no variants could never be named by a failure; an empty
+    // list would also disappear through `render_definition`, so reject it.
+    if parsed.is_empty() {
+        return Err(invalid(&format!("{path}.variants")));
     }
     Ok(parsed)
 }
