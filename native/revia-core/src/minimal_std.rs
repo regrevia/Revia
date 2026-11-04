@@ -1412,6 +1412,10 @@ fn declared_response(
         Err(StdError::UnknownOperation) => Ok(CapabilityResponse::host_fault(format!(
             "native-host-bridge-operation-unsupported:{instance}.{member}"
         ))),
+        // The only channel that names a declared variant is
+        // `HostOutcome::DeclaredFailure`; a bare `StdError` carries no variant,
+        // so promoting it into the member's family would have to invent one and
+        // defeat `-error-variant-unknown`. It stays a host fault.
         Err(_) => Ok(CapabilityResponse::host_fault("native-host-host-fault")),
     }
 }

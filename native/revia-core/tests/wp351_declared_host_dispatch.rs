@@ -381,6 +381,31 @@ fn declared_member_maps_bool_and_unit_returns() {
 }
 
 #[test]
+fn a_host_fault_on_a_declared_member_stays_a_boundary_fault() {
+    // A declared failure has to name one of the member's variants, and only
+    // `HostOutcome::DeclaredFailure` can do that. A bare `StdError` has no
+    // variant to report, so it must not be promoted into the error family.
+    let declared = declarations();
+    let graph = graph(&declared);
+    let revision = graph_revision(&graph).unwrap();
+    let mut bridge = HostBackedBridge::new_with_declarations(
+        &graph,
+        StubHost::answering(Err(StdError::HostFault)),
+        revision,
+        INPUT_DIGEST,
+        &declared,
+    )
+    .unwrap();
+
+    let response = invoke(&mut bridge, "say", &[("text", TEXT("hi"))]).unwrap();
+
+    assert_eq!(
+        response,
+        CapabilityResponse::host_fault("native-host-host-fault")
+    );
+}
+
+#[test]
 fn a_declared_call_never_commits_an_effect() {
     let declared = declarations();
     let (mut bridge, _) = bridge_with_declarations(
