@@ -1246,12 +1246,6 @@ fn declared_host_error(reference: &str, error: StdError) -> Result<(String, Stri
     Ok((type_name.to_owned(), variant.to_owned()))
 }
 
-/// Build the run-time dispatch table for registry declarations.
-///
-/// The graph only carries `instance -> reference`; the declaration table is
-/// carried alongside it. Declarations that graph admission would reject, or
-/// whose types this bridge cannot type-check, are rejected here as well: the
-/// runtime must not expose a member it cannot honour.
 /// Build the dispatch table for the declarations the graph can actually call.
 ///
 /// Structural legality (`validate_declarations`) covers the whole registry, the

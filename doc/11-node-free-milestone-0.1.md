@@ -397,69 +397,20 @@ WP-347 的投影只到参数层；运行期要按声明分派，还缺每个成�
 registry 问题）。本包不改变
 research/preview 成熟度声明，也不把 registry 说成运行期准入通道。
 
-### WP-353 · one declared-type vocabulary for check time and the bridge
+### WP-350 · exit-code legend matches the codes the CLI returns
 
-WP-351a 只把类型支持（payload 类型是否可跨 host 边界、`result<ok, family>` 的错误
-家族是否可用）落实在 bridge 一侧：`validate_declarations` 有意只校验形状，因此
-被 graph 引用的声明可以用 `map<text.utf8,number.i64>` 通过 `graph-check`，直到构造
-`HostBackedBridge` 才拿到 `native-host-bridge-declared-type-unsupported:<name>`。
-本包把这份词表变成两侧共享的单一来源。
+公开反馈 PF-20261104-01 指出：`--help` 的 exit code 图例只列 0/64/65，而 `check`
+等读文件的命令在输入不可读时实际返回 66，`check --help` 也只写了 65。核对属实
+（`check absent.re` 与 `check <directory>` 都是 66，缺参数是 64），于是图例补
+`66 input file unreadable`，`check` 帮助补 `Unreadable file: exit 66.`，与
+`graph-check` 的既有措辞一致。
 
-`graph.rs` 新增 `is_supported_declared_type`（`text.utf8`、`bytes`、`fs.path`、
-`text.encoding`、`number.i64`、`bool`、`unit`、`list<text.utf8>`）与
-`declared_return_type_supported`（payload 类型直接通过；`result<ok, family>` 要求
-两半都支持且家族名非空、不含 `@` 与空白）。`check_graph_with_declared_schemas`
-在原有的引用检查之后，对**被引用**的 schema 逐成员跑
-`validate_declared_schema_types`，不支持就报 `declared-type-unsupported`（带
-`actual` 为原拼写）。`minimal_std` 删掉自己那两份谓词，改为调用 `graph` 的实现，
-bridge 侧错误串 `native-host-bridge-declared-type-unsupported:{name}` 保持不变，
-供绕过 `parse_registry` 直接构造 bridge 的调用方使用。
-
-范围是「被引用」而不是整份 registry：`declared_table` 在 bridge 侧本来就只对被
-引用的条目套用类型支持，若在解析期对整份 registry 做词表校验，两侧会重新分叉，
-因此未被引用的声明保持词表自由，只校验形状。已知的顺序限制照实记录：
-`parse_registry` 的形状闸门先于词表校验，`result<text.utf8>`（缺错误家族）这类
-形状坏串仍报 `declared-schema-invalid:<reference>`，不会走到新代码；这是既有分层，
-不是被新校验掩盖的回归。
-
-新增 `native/revia-core/tests/wp353_declared_type_vocabulary.rs`（7 例：payload
-接受/拒绝矩阵、返回类型接受/拒绝矩阵、词表与 bridge 表一致、未引用声明保留自己
-的词表、被支持声明仍映射请求）与
-`native/revia-cli/tests/wp353_declared_type_cli.rs`（3 例：坏参数类型与坏返回
-类型在 `graph-check`/`compile` 以 65 和 stdout JSON 拒绝且不产出制品、未被引用的
-坏定义不阻塞检查）。本包不改变 research/preview 成熟度声明，也不声称声明成员
-已经能真正执行。
-
-### WP-352 · the registry reaches the consumption commands
-
-WP-351 打开了 bridge 的分派，但 registry 只接在 `graph-check` 上，编译与执行两
-条路仍用不带声明的 `check_graph` 复核：同一份 graph 被 CLI 检查放行后，在
-`translate_graph`、`verify_bytecode_artifact`、`execute_bytecode` 三个入口被再
-次拒掉（`unknown-schema-reference`）。本包把声明列表沿这三条链路传下去，且不改
-任何旧入口的语义。
-
-做法与 WP-346 相同：每个站点新增 `*_with_declarations` 变体，旧的公开函数变成
-转发 `&[]` 的壳，因此 `fault_corpus`、`runtime_bundle`、`vm` 内部路径与既有
-字节码测试逐字节不变。`translate_graph_with_declarations` 与
-`verify_bytecode_artifact_with_declarations` 用
-`check_graph_with_declared_schemas` 复核，`execute_bytecode_with_declarations`
-把列表交给 `load_bytecode_artifact` 之后的校验与 VM。
-
-CLI 侧 `compile`、`execute`、`verify`、`run` 都接受 `--schema-registry
-<registry>`（帮助里逐个补了这条），先 `read_declarations` 再
-`read_graph_with_declarations`，然后把声明传进上面对应的变体。`run` 不翻译，
-它读制品，因此只替换执行调用。不带旗标时声明列表为空，行为仍是原来的
-`unknown-schema-reference`；`compile` 的 `74`
-`native-compile-write-failure` 契约不变。
-
-可观测边界：`SystemHost`/`MemoryHost` 仍对 `Declared` 回 `UnknownOperation`，
-所以带 registry 的执行命令结束在 `native-vm-capability-failed`（exit 65），
-这正是「声明已经走到 host 边界」的证据，而不是又一次检查期拒绝。新增
-`native/revia-cli/tests/wp352_declared_registry_cli.rs`（3 例：不带 registry 仍
-是 `unknown-schema-reference`/65、带 registry 的 `graph-check` 报
-`declared_schema_count:1` 且 `compile`/`verify` 成功、`run`/`execute` 带
-registry 走到 host 边界并以 `native-vm-capability-failed`/65 fail closed）。
-本包不改变 research/preview 成熟度声明，也不声称声明成员已经能真正执行。
+同一条反馈建议为 panic 与 SIGPIPE 各留一行。只记 101（`internal panic (a defect;
+report the input)`）：Rust 运行时把 SIGPIPE 设为忽略，管道关闭会以写失败 panic
+收场，因此本二进制不会以 141 退出，也没有任何代码重置 SIGPIPE；把 141 写进图例
+会描述一个不存在的出口。新增
+`native/revia-cli/tests/wp285_cli_help.rs` 的一例回归：图例五行齐全、缺文件与目录
+都是 66、缺参数是 64，`check --help` 同时给出 65 与 66。
 
 ### WP-351 · declared members dispatch at the runtime host boundary
 
@@ -502,20 +453,81 @@ stub 观察到；把 registry 接到 `run` 上会得到一串必然失败的
 `operation-unsupported`，因此留到下一包（WP-352）连同 CLI 旗标一起做。本包不改变
 research/preview 成熟度声明。
 
-### WP-350 · exit-code legend matches the codes the CLI returns
+### WP-352 · the registry reaches the consumption commands
 
-公开反馈 PF-20261104-01 指出：`--help` 的 exit code 图例只列 0/64/65，而 `check`
-等读文件的命令在输入不可读时实际返回 66，`check --help` 也只写了 65。核对属实
-（`check absent.re` 与 `check <directory>` 都是 66，缺参数是 64），于是图例补
-`66 input file unreadable`，`check` 帮助补 `Unreadable file: exit 66.`，与
-`graph-check` 的既有措辞一致。
+WP-351 打开了 bridge 的分派，但 registry 只接在 `graph-check` 上，编译与执行两
+条路仍用不带声明的 `check_graph` 复核：同一份 graph 被 CLI 检查放行后，在
+`translate_graph`、`verify_bytecode_artifact`、`execute_bytecode` 三个入口被再
+次拒掉（`unknown-schema-reference`）。本包把声明列表沿这三条链路传下去，且不改
+任何旧入口的语义。
 
-同一条反馈建议为 panic 与 SIGPIPE 各留一行。只记 101（`internal panic (a defect;
-report the input)`）：Rust 运行时把 SIGPIPE 设为忽略，管道关闭会以写失败 panic
-收场，因此本二进制不会以 141 退出，也没有任何代码重置 SIGPIPE；把 141 写进图例
-会描述一个不存在的出口。新增
-`native/revia-cli/tests/wp285_cli_help.rs` 的一例回归：图例五行齐全、缺文件与目录
-都是 66、缺参数是 64，`check --help` 同时给出 65 与 66。
+做法与 WP-346 相同：每个站点新增 `*_with_declarations` 变体，旧的公开函数变成
+转发 `&[]` 的壳，因此 `fault_corpus`、`runtime_bundle`、`vm` 内部路径与既有
+字节码测试逐字节不变。`translate_graph_with_declarations` 与
+`verify_bytecode_artifact_with_declarations` 用
+`check_graph_with_declared_schemas` 复核，`execute_bytecode_with_declarations`
+把列表交给 `load_bytecode_artifact` 之后的校验与 VM。
+
+CLI 侧 `compile`、`execute`、`verify`、`run` 都接受 `--schema-registry
+<registry>`（帮助里逐个补了这条），先 `read_declarations` 再
+`read_graph_with_declarations`，然后把声明传进上面对应的变体。`run` 不翻译，
+它读制品，因此只替换执行调用。不带旗标时声明列表为空，行为仍是原来的
+`unknown-schema-reference`；`compile` 的 `74`
+`native-compile-write-failure` 契约不变。
+
+可观测边界：`SystemHost`/`MemoryHost` 仍对 `Declared` 回 `UnknownOperation`，
+所以带 registry 的执行命令结束在 `native-vm-capability-failed`（exit 65），
+这正是「声明已经走到 host 边界」的证据，而不是又一次检查期拒绝。新增
+`native/revia-cli/tests/wp352_declared_registry_cli.rs`（3 例：不带 registry 仍
+是 `unknown-schema-reference`/65、带 registry 的 `graph-check` 报
+`declared_schema_count:1` 且 `compile`/`verify` 成功、`run`/`execute` 带
+registry 走到 host 边界并以 `native-vm-capability-failed`/65 fail closed）。
+本包不改变 research/preview 成熟度声明，也不声称声明成员已经能真正执行。
+
+### WP-353 · one declared-type vocabulary for check time and the bridge
+
+WP-351a 只把类型支持（payload 类型是否可跨 host 边界、`result<ok, family>` 的错误
+家族是否可用）落实在 bridge 一侧：`validate_declarations` 有意只校验形状，因此
+被 graph 引用的声明可以用 `map<text.utf8,number.i64>` 通过 `graph-check`，直到构造
+`HostBackedBridge` 才拿到 `native-host-bridge-declared-type-unsupported:<name>`。
+本包把这份词表变成两侧共享的单一来源。
+
+`graph.rs` 新增 `is_supported_declared_type`（`text.utf8`、`bytes`、`fs.path`、
+`text.encoding`、`number.i64`、`bool`、`unit`、`list<text.utf8>`）与
+`declared_return_type_supported`（payload 类型直接通过；`result<ok, family>` 要求
+两半都支持且家族名是一个裸名字：非空、不含 `@`、空白或泛型标点 `<` `>` `,`；
+registry 形状闸门本就会先拒绝这些拼写，这条规则保证公开谓词不会把任何声明
+携带不了的写法判成支持）。`check_graph_with_declared_schemas`
+在原有的引用检查之后，对**被引用**的 schema 逐成员跑
+`validate_declared_schema_types`，不支持就报 `declared-type-unsupported`（带
+`actual` 为原拼写）。`minimal_std` 删掉自己那两份谓词，改为调用 `graph` 的实现，
+bridge 侧错误串 `native-host-bridge-declared-type-unsupported:{name}` 保持不变，
+供绕过 `parse_registry` 直接构造 bridge 的调用方使用。
+
+范围是「被引用」而不是整份 registry：`declared_table` 在 bridge 侧本来就只对被
+引用的条目套用类型支持，若在解析期对整份 registry 做词表校验，两侧会重新分叉，
+因此未被引用的声明保持词表自由，只校验形状。已知的顺序限制照实记录：
+`parse_registry` 的形状闸门先于词表校验，`result<text.utf8>`（缺错误家族）这类
+形状坏串仍报 `declared-schema-invalid:<reference>`，不会走到新代码；这是既有分层，
+不是被新校验掩盖的回归。
+
+新增 `native/revia-core/tests/wp353_declared_type_vocabulary.rs`（8 例：payload
+接受/拒绝矩阵、返回类型接受/拒绝矩阵、payload 词表逐项覆盖、坏家族名不被谓词接受、
+未引用声明保留自己的词表、被支持声明仍映射请求）与
+`native/revia-cli/tests/wp353_declared_type_cli.rs`（3 例：坏参数类型与坏返回
+类型在 `graph-check`/`compile` 以 65 和 stdout JSON 拒绝且不产出制品、未被引用的
+坏定义不阻塞检查）。
+
+评审修正把声明通道的边界写进代码而不是只写在文档里：`vm.rs` 的
+`execute_bytecode` / `execute_bytecode_with_return_value` /
+`execute_bytecode_with_input_value` 三个声明盲入口逐条注明「没有 registry 时正确，
+需要 registry 的调用方要走 `*_with_declarations`」，其中 project runtime 专用的
+`execute_bytecode_with_input_value` 明确记为设计如此；两个公开入口共同委托的私有
+核心保留私有并说明原因（当前没有既需要 `VmExecution` 又持有声明的调用方）。CLI
+侧恢复既有的路线分离：`read_graph_with_declarations` 只对 compact 源用调用方声明
+检查，canonical 源仍只经 `load_canonical_graph` 加载（与声明机制引入前的基线逐字
+一致，canonical 写入器不携带声明引用），`graph-check` 仍按检查命令语义对两条路线
+都校验。本包不改变 research/preview 成熟度声明，也不声称声明成员已经能真正执行。
 
 ### WP-274 · native replay workload catalog
 

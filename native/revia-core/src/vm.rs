@@ -184,6 +184,11 @@ pub struct VmExecution {
     pub returned_value: VmValue,
 }
 
+/// Declaration-blind entry point: it admits no registry declarations, so it is
+/// only correct for callers that have none (no `--schema-registry` flag, no
+/// project registry). A caller holding declarations must call
+/// `execute_bytecode_with_declarations`, or the artifact re-verification here
+/// will reject the graph's declared capability references.
 pub fn execute_bytecode(
     checked_graph: &Graph,
     artifact_source: &str,
@@ -216,6 +221,9 @@ pub fn execute_bytecode_with_declarations(
     .map(|execution| execution.result)
 }
 
+/// Declaration-blind twin of `execute_bytecode_with_declarations` that also
+/// returns the produced value. Same rule: callers with declarations must use
+/// the declaration-aware form.
 pub fn execute_bytecode_with_return_value(
     checked_graph: &Graph,
     artifact_source: &str,
@@ -233,6 +241,13 @@ pub fn execute_bytecode_with_return_value(
     )
 }
 
+/// The declaration-aware core both public entry points above delegate to. It
+/// stays private because no crate-external caller needs `VmExecution` together
+/// with declarations today: the CLI's `run`/`execute` routes take
+/// `execute_bytecode_with_declarations`, and the only `VmExecution` consumer is
+/// the project runtime, which has no registry to hand over. A caller that needs
+/// both should get a public `*_with_declarations` form added here rather than
+/// dropping declarations at one of the `&[]` doors.
 fn execute_bytecode_with_return_value_and_declarations(
     checked_graph: &Graph,
     artifact_source: &str,
@@ -251,6 +266,10 @@ fn execute_bytecode_with_return_value_and_declarations(
     execute_verified(checked_graph, &artifact, request, bridge, limits, None)
 }
 
+/// Declaration-blind entry point for the project runtime, which has no registry
+/// to hand over. It admits no declarations by design; adding a registry to the
+/// project runtime means adding a `*_with_declarations` form here too, not
+/// quietly widening this signature's meaning.
 pub fn execute_bytecode_with_input_value(
     checked_graph: &Graph,
     artifact_source: &str,

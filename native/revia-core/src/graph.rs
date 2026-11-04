@@ -852,10 +852,17 @@ pub fn declared_return_type_supported(returns: &str) -> bool {
     };
     let ok = ok.trim();
     let family = family.trim();
-    is_supported_declared_type(ok)
-        && !family.is_empty()
-        && !family.contains('@')
-        && !family.chars().any(char::is_whitespace)
+    is_supported_declared_type(ok) && is_declared_family_name(family)
+}
+
+/// A family name is one bare name: no `@`, no whitespace, no generic
+/// punctuation. Without the last rule `result<text.utf8, family>x>` would strip
+/// one trailing `>` and leave `family>x` looking like a usable family.
+fn is_declared_family_name(family: &str) -> bool {
+    !family.is_empty()
+        && !family.chars().any(|character| {
+            character.is_whitespace() || matches!(character, '@' | '<' | '>' | ',')
+        })
 }
 
 /// Type support for one declared schema the graph actually names.

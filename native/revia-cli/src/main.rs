@@ -8086,7 +8086,14 @@ impl Write for SharedProgramStdout {
 
 /// Builds the host bridge for `graph`, dispatching registry-declared members
 /// to the system host adapter. The declarations are the same list the graph was
-/// checked against; passing an empty list is the pre-registry behavior.
+/// checked against.
+///
+/// There is deliberately no declaration-blind twin of this function. `run` and
+/// `execute` are its only callers and both hold a registry (empty when the flag
+/// is absent), so a `system_host_bridge(...)` wrapper would be dead code kept
+/// alive only for symmetry. The sandbox form below does keep its `&[]` twin,
+/// because sandbox execution still has a live caller that takes the
+/// pre-registry path unchanged.
 fn system_host_bridge_with_declarations(
     graph: &revia_core::graph::Graph,
     source_path: &str,
@@ -8333,6 +8340,17 @@ fn read_graph(path: &str) -> Result<revia_core::graph::Graph, i32> {
     read_graph_with_declarations(path, &[])
 }
 
+/// Reads a source file with the registry declarations the caller checked with.
+///
+/// The two routes stay separate, exactly as they were before declarations
+/// existed: a compact source is parsed and then checked with `declared`, while
+/// a canonical source is only loaded. Canonical form is produced from an
+/// already-checked compact graph and cannot carry a declared reference (the
+/// canonical writer has no registry, and `load_canonical_graph` takes no
+/// declarations), so re-checking it here would neither widen nor narrow what
+/// the route admits; it would only make one route behave differently from the
+/// baseline. A hand-authored canonical source that names a schema no built-in
+/// host serves fails closed later, at translation or artifact verification.
 fn read_graph_with_declarations(
     path: &str,
     declared: &[DeclaredSchema],
@@ -8346,15 +8364,13 @@ fn read_graph_with_declarations(
         load_canonical_graph(&source.text)
     } else {
         parse_compact_graph(&source.text, path)
+            .and_then(|graph| check_graph_with_declared_schemas(graph, declared))
     }
     .map_err(|error| {
         print_graph_error(&error);
         65
     })?;
-    check_graph_with_declared_schemas(graph, declared).map_err(|error| {
-        print_graph_error(&error);
-        65
-    })
+    Ok(graph)
 }
 
 fn read_graph_quiet(path: &str) -> Result<revia_core::graph::Graph, String> {

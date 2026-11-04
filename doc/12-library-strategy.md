@@ -191,11 +191,12 @@ adapter that answers
 `UnknownOperation` still surfaces
 `native-host-bridge-operation-unsupported:<instance>.<member>`, and declared
 calls never commit an effect. New
-`native/revia-core/tests/wp351_declared_host_dispatch.rs` (11 cases) proves the
+`native/revia-core/tests/wp351_declared_host_dispatch.rs` (18 cases) proves the
 dispatch through a stub `HostAdapter`, so the wiring is tested without teaching
 `SystemHost`/`MemoryHost` the declaration table; those two still answer
-`UnknownOperation` for `Declared` requests, which is why the CLI does not expose
-a registry for `run` yet.
+`UnknownOperation` for `Declared` requests, which is why at WP-351 the CLI
+exposed no registry yet -- WP-352 wires the flag in and the executing commands
+still stop at that boundary (below).
 
 Partial progress, measured (WP-352): the registry now reaches the commands that
 consume a graph, so a declared schema is no longer rejected by a second,
@@ -213,7 +214,10 @@ closed with `native-vm-capability-failed`, because `SystemHost`/`MemoryHost`
 still answer `UnknownOperation` for `Declared` requests -- so this is admission
 through the whole pipeline, not execution of a declared member. New
 `native/revia-cli/tests/wp352_declared_registry_cli.rs` (3 cases) pins both
-halves.
+halves. The loaders keep the two routes separate, exactly as before declarations
+existed: a compact source is parsed and checked with the caller's declarations,
+while a canonical source is only loaded, because canonical form is written from
+an already-checked compact graph and carries no declared reference.
 
 Partial progress, measured (WP-353): one declared-type validator now serves
 check time and the runtime bridge. `graph::is_supported_declared_type` (payload
@@ -225,9 +229,11 @@ predicates to them, so the two sides cannot drift. The bridge keeps its own
 that builds a bridge directly from an unchecked declaration list.
 `validate_declarations` stays shape-only and vocabulary-free: a definition the
 graph never names keeps whatever types it likes. New
-`native/revia-core/tests/wp353_declared_type_vocabulary.rs` (7 cases: a matrix
+`native/revia-core/tests/wp353_declared_type_vocabulary.rs` (8 cases: a matrix
 over accepted and refused payload and return types asserting both sides answer,
-plus the unused-definition tolerance) and
+a predicate-only guard that a malformed family half such as
+`result<text.utf8, family>x>` is not a usable family name, plus the
+unused-definition tolerance) and
 `native/revia-cli/tests/wp353_declared_type_cli.rs` (3 cases: `graph-check` and
 `compile` refuse a bad parameter and a bad return type with exit 65 and JSON on
 stdout, and an unused unsupported definition still checks).

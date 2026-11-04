@@ -200,9 +200,41 @@ fn unsupported_return_types_are_rejected_by_both_sides() {
     }
 }
 
+/// A family half must be one bare name: no `@`, no whitespace, no generic
+/// punctuation. This is a predicate-level guarantee: `validate_declarations`
+/// (the registry shape gate) already refuses these spellings as
+/// `declared-schema-invalid` before either side reaches the type gate, so the
+/// rule here keeps the public predicate from calling a spelling supported that
+/// no declaration could ever carry. The trailing-`>` case is why it exists:
+/// stripping one `>` would otherwise leave `family>x` looking like a family.
 #[test]
-fn the_vocabulary_is_exactly_the_bridge_table() {
-    for type_name in ["text.utf8", "bytes", "fs.path", "number.i64", "unit"] {
+fn malformed_family_halves_are_not_supported() {
+    for type_name in [
+        "result<text.utf8,>",
+        "result<text.utf8, demo@x>",
+        "result<text.utf8, demo x>",
+        "result<text.utf8, a,b>",
+        "result<text.utf8, a<b>",
+        "result<text.utf8, family>x>",
+    ] {
+        assert!(
+            !declared_return_type_supported(type_name),
+            "the family rule accepted {type_name}"
+        );
+    }
+}
+
+#[test]
+fn the_payload_vocabulary_names_every_supported_payload_type() {
+    for type_name in [
+        "text.utf8",
+        "bytes",
+        "fs.path",
+        "text.encoding",
+        "number.i64",
+        "bool",
+        "unit",
+    ] {
         assert!(is_supported_declared_type(type_name));
     }
     assert!(is_supported_declared_type("list<text.utf8>"));
