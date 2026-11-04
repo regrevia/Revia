@@ -60,20 +60,22 @@ pub struct DeclaredMember {
     pub parameters: Vec<(String, String)>,
     /// The declared result type, e.g. `result<text.utf8, demo.echo_error>`.
     ///
-    /// The check phase only validates its shape. It is carried here so the
-    /// runtime slice can dispatch on it without a second reader; until that
-    /// slice lands, no runtime site reads this field.
+    /// The check phase validates its shape, and since WP-351 the runtime host
+    /// bridge dispatches on it (a `result<ok, family>` return decides both the
+    /// success mapping and the error-family name).
     pub returns: Option<String>,
     /// The variants of the declared result error type, in declared order.
     ///
     /// Empty when the definition declares a plain return type or no `types`
-    /// table. The check phase only validates their shape; the runtime slice
-    /// that maps a host failure will read this list.
+    /// table. The check phase validates their shape and consistency; since
+    /// WP-351 the runtime host bridge accepts a host-declared failure only when
+    /// its variant appears in this list.
     pub errors: Vec<String>,
 }
 
 /// A schema reference that `check_graph_with_declared_schemas` admits in
-/// addition to the five built-in references.
+/// addition to the five built-in references, and that a host bridge built with
+/// the same declaration list dispatches to its adapter at run time.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DeclaredSchema {
     pub reference: String,
@@ -828,7 +830,7 @@ fn is_declared_type_name(name: &str) -> bool {
 /// Split `ok, error` at the single top-level comma, so generic halves such as
 /// `result<list<text.utf8>, demo.echo_error>` and
 /// `result<map<text.utf8,number.i64>, demo.echo_error>` stay whole.
-fn split_result_halves(inner: &str) -> Option<(&str, &str)> {
+pub(crate) fn split_result_halves(inner: &str) -> Option<(&str, &str)> {
     let mut depth = 0usize;
     let mut split = None;
     for (index, character) in inner.char_indices() {
@@ -1102,7 +1104,7 @@ fn collect_uids(graph: &Graph) -> Vec<String> {
     result
 }
 
-fn is_known_schema(reference: &str) -> bool {
+pub(crate) fn is_known_schema(reference: &str) -> bool {
     matches!(
         reference,
         "process.stdout@0.1.0"

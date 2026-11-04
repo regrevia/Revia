@@ -64,10 +64,10 @@ hardcoded in eight places, split by phase:
 | check | `graph::parameters` (`graph.rs:760-786`) | the legal `(schema, member)` table and arity | `unknown-capability-member` (`:784`) |
 | check | `graph::default_argument_name` (`graph.rs:632-643`) | positional argument name per member | `missing-argument-name` |
 | check | `graph::contextual_literal` (`graph.rs:580-630`) | literal type per member; unlisted pairs fall back to `text.utf8` at `:615` | — (silent default) |
-| runtime | `HostBackedBridge::host_request` (`minimal_std.rs:909-957`) | maps a member onto a `HostRequest` | `native-host-bridge-operation-unsupported:<instance>.<member>` |
-| runtime | `HostBackedBridge::response` (`:959-997`) | maps a `HostOutcome` back onto the declared result type | `native-host-return-type-mismatch` |
-| runtime | `declared_host_error` (`:1063-1093`) | maps a `StdError` onto the member's declared error family | `native-host-bridge-error-reference-unknown` |
-| runtime | `host_operation_name` (`:1205-1213`) | observation label for the effect log | none — silently `"unknown"` |
+| runtime | `HostBackedBridge::host_request` (`minimal_std.rs:970`), fallback `declared_request` (`:1023`) | maps a member onto a `HostRequest`; since WP-351 a declared reference maps to `HostOperation::Declared` | `native-host-bridge-operation-unsupported:<instance>.<member>`, plus `-argument-missing`, `-argument-unknown:<name>`, `-argument-type-mismatch`, `-declared-member-unknown:<reference>.<member>` |
+| runtime | `HostBackedBridge::response` (`:1074`) | maps a `HostOutcome` back onto the declared result type; since WP-351 declared members have their own arm | `native-host-return-type-mismatch` (`declared_response`, `:1332`) |
+| runtime | `declared_host_error` (`:1196`) | maps a `StdError` onto the member's declared error family; since WP-351 the declared arm accepts only variants the member lists | `native-host-bridge-error-reference-unknown`, `-error-variant-unknown:<family>.<variant>` |
+| runtime | `host_operation_name` (`:1498`) | observation label for the effect log; declared calls are labelled `declared:<reference>.<member>` | none — silently `"unknown"` |
 
 Two corrections to the obvious reading of that table:
 
@@ -94,8 +94,8 @@ takes a `DeclaredSchema` list and lets it drive the three check-time sites — t
 allowlist (`graph.rs:253-259`), the member table and arity (the declared branch
 at the top of `parameters`, `:766-768`), and argument names/types (declared types
 are enforced, so the silent `text.utf8` fallback at `:615` no longer absorbs a
-type mismatch). The four runtime sites stay closed on purpose: a declared schema
-passes `re check` and still fails closed at the host boundary with
+type mismatch). The four runtime sites stayed closed until WP-351: then a declared schema
+passed `re check` and still failed closed at the host boundary with
 `native-host-bridge-operation-unsupported:<instance>.<member>`. Two parse-time
 helpers stay closed too (`default_argument_name`, `contextual_literal`, both run
 inside `parse_compact_graph` where no declaration list exists), so a declaration
@@ -148,7 +148,35 @@ result string that leaves its would-be family unnamed makes the matching
 points at `types[family]`; `declared-schema-invalid` only covers programmatic
 declarations and artifacts with no such entry. Rendering writes
 `returns`/`types` only when present, so WP-347 artifacts keep their exact bytes.
-No runtime site reads these fields yet; the host boundary stays closed.
+WP-351 is the slice that starts reading them (below).
+
+Partial progress, measured (WP-351): the runtime half of the registry opens,
+but only for a bridge that is handed the same declaration list. The
+`DeclaredMember` list already travels beside the graph (it was never stored on
+`Graph`), so `HostBackedBridge::new_with_declarations` /
+`new_for_graphs_with_declarations` take `&[DeclaredSchema]` and build a
+`reference -> member -> DeclaredMember` table at construction time; `new` and
+`new_for_graphs` keep their signatures and delegate with an empty list, so
+built-in behaviour is untouched. A capability whose `reference` is in that table
+now projects to `HostOperation::Declared { reference, member }` instead of
+falling off the built-in match, and the response arm maps a declared
+`result<ok, family>` return onto the declared family: `Ok(payload)` becomes a
+plain `CapabilityResponse::ok` (the VM adds the `ok` wrapper, exactly as for the
+built-in `fs.read`), `HostOutcome::DeclaredFailure(variant)` becomes
+`CapabilityResponse::err(VmValue::ResultErr { type_name: family, variant })`, and
+a variant outside `DeclaredMember.errors` is rejected rather than named. The
+bridge is still fail-closed everywhere else: declarations cannot shadow a
+built-in (that is rejected when the table is built, with
+`native-host-bridge-declaration-invalid`), an unsupported type is rejected with
+`native-host-bridge-declared-type-unsupported:<name>`, an adapter that answers
+`UnknownOperation` still surfaces
+`native-host-bridge-operation-unsupported:<instance>.<member>`, and declared
+calls never commit an effect. New
+`native/revia-core/tests/wp351_declared_host_dispatch.rs` (11 cases) proves the
+dispatch through a stub `HostAdapter`, so the wiring is tested without teaching
+`SystemHost`/`MemoryHost` the declaration table; those two still answer
+`UnknownOperation` for `Declared` requests, which is why the CLI does not expose
+a registry for `run` yet.
 
 Consequence: Route H costs a core edit at **each** of those eight sites, with a
 test per site — not the single enum change this document originally claimed, and
@@ -203,8 +231,10 @@ re-litigating the same library later.
    `check_graph_with_declared_schemas`; WP-347 gives that list its file format
    (`host_schema_registry`, `revia graph-check --schema-registry`), and WP-348
    carries each member's declared result type and error variants in that same
-   artifact; the four runtime sites and the two parse-time helpers are still
-   hardcoded and read none of it.
+   artifact; WP-351 opens the four runtime sites for a bridge built with that
+   same list. The two parse-time helpers (positional argument naming and the
+   literal fallback) still run before any declaration exists and stay
+   hardcoded.
    Acceptance test: an out-of-tree schema and member declared through the
    registry (not a new match arm) passes `re check`, executes through
    `HostBackedBridge`, returns its declared result type, surfaces its declared

@@ -385,8 +385,8 @@ WP-347 的投影只到参数层；运行期要按声明分派，还缺每个成�
 `types[family]`，`declared-schema-invalid` 只覆盖程序内声明与没有该条目的制品。
 
 `render_definition` 在有 `returns` 时写回它、有变体时写 `types`，两者都缺时省略，
-所以 WP-347 的字节稳定性与回读相等不变。运行期仍不读这些字段：四个硬编码站点照旧
-拒绝一切声明成员，`access` 规则也仍不投影。新增
+所以 WP-347 的字节稳定性与回读相等不变。本包不读这些字段，四个硬编码站点照旧
+拒绝一切声明成员（WP-351 才让运行期 bridge 读它们），`access` 规则也仍不投影。新增
 `native/revia-core/tests/wp348_declared_result_contract.rs`（11 例：投影、缺省返回、
 无 `types` 的家族、六类坏制品、程序内声明同规则、含逗号泛型半段、未引用条目优先于
 声明校验、共享家族一致性、渲染回读、无结果
@@ -394,6 +394,44 @@ WP-347 的投影只到参数层；运行期要按声明分派，还缺每个成�
 结果契约的 registry 端到端通过、含逗号泛型半段照常通过、坏 `kind` 与坏结果串仍是
 registry 问题）。本包不改变
 research/preview 成熟度声明，也不把 registry 说成运行期准入通道。
+
+### WP-351 · declared members dispatch at the runtime host boundary
+
+WP-346 让声明驱动三个检查期站点，WP-347/348 给出制品与结果契约，运行期四个站点
+仍写死。本包把运行期那一半打开，但只对「拿到同一份声明列表」的 bridge 打开：
+`DeclaredSchema` 本来就作为参数与 graph 同行（`Graph` 上不存声明），所以新增
+`HostBackedBridge::new_with_declarations` 与 `new_for_graphs_with_declarations`，
+构造时把列表摊成 `reference -> member -> DeclaredMember` 表；`new` /
+`new_for_graphs` 签名不变，转发空列表，内建行为逐字节不改。
+
+分派顺序是先声明后内建：`cap` 的 `reference` 命中声明表时，`host_request` 投影为
+`HostOperation::Declared { reference, member }`，不再落进内建 `_` 分支；
+`response` 对声明成员走自己的映射——返回 `result<ok, family>` 时，`Ok(payload)`
+给出**裸** `CapabilityResponse::ok`（`ok` 包装由 VM 加，和内建 `fs.read` 的框法
+一致），`HostOutcome::DeclaredFailure(variant)` 给出
+`CapabilityResponse::err(VmValue::ResultErr { type_name: family, variant })`，
+变体不在 `DeclaredMember.errors` 里则拒绝而不是照单命名；其它返回类型按声明逐类
+核对（`text.utf8`/`fs.path`/`text.encoding`、`bytes`、`number.i64`、`bool`、
+`unit`、`list<text.utf8>`），不符仍是 `native-host-return-type-mismatch`。
+
+仍然处处 fail-closed：声明不能影子内建（建表时
+`native-host-bridge-declaration-invalid`），拿不到类型检查的声明类型是
+`native-host-bridge-declared-type-unsupported:<name>`，adapter 答
+`UnknownOperation` 仍是
+`native-host-bridge-operation-unsupported:<instance>.<member>`，未知成员、缺参、
+多参、参数类型不符分别沿用 `-declared-member-unknown:<reference>.<member>`、
+`-argument-missing`、`-argument-unknown:<name>`、`-argument-type-mismatch`；
+声明调用不记 `effect_committed`。新增
+`native/revia-core/tests/wp351_declared_host_dispatch.rs`（11 例，用 stub
+`HostAdapter` 覆盖成功/失败/列表与整数返回、未知成员、三类参数错误、未知错误
+变体、`UnknownOperation`、内建引用在带声明时行为不变、影子与不支持类型的构造
+期拒绝）。
+
+边界：`SystemHost` 与 `MemoryHost` 尚未实现声明成员，仍以
+`StdError::UnknownOperation` 回答 `Declared` 请求，所以运行期分派目前只能由测试
+stub 观察到；把 registry 接到 `run` 上会得到一串必然失败的
+`operation-unsupported`，因此留到下一包（WP-352）连同 CLI 旗标一起做。本包不改变
+research/preview 成熟度声明。
 
 ### WP-350 · exit-code legend matches the codes the CLI returns
 

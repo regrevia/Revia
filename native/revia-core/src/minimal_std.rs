@@ -14,6 +14,7 @@ use std::{
 use crate::{
     canonical_json::quote,
     digest::sha256_hex,
+    graph::{DeclaredMember, DeclaredSchema, split_result_halves},
     vm::{CapabilityBridge, CapabilityResponse, VmValue, serialize_vm_value},
 };
 
@@ -325,23 +326,30 @@ pub enum HostOperation {
     RandomBytes,
     LogEvent,
     TraceEvent,
+    /// A member declared by a schema registry at run time. The bridge owns the
+    /// request mapping; adapters answer it or refuse it with `UnknownOperation`.
+    Declared {
+        reference: String,
+        member: String,
+    },
     Unknown(String),
 }
 
 impl HostOperation {
-    fn name(&self) -> &str {
+    fn name(&self) -> String {
         match self {
-            Self::ProcessArgs => "process.args.read",
-            Self::StdoutWrite => "process.stdout.write",
-            Self::FileRead => "fs.read.read_file",
-            Self::FileWrite => "fs.write.write_file",
-            Self::EnvironmentRead => "config.read.read",
-            Self::SecretRead => "secret.read.read",
-            Self::ClockMonotonic => "clock.monotonic.now",
-            Self::RandomBytes => "random.bytes.read",
-            Self::LogEvent => "log.event.write",
-            Self::TraceEvent => "trace.event.write",
-            Self::Unknown(name) => name,
+            Self::ProcessArgs => "process.args.read".to_owned(),
+            Self::StdoutWrite => "process.stdout.write".to_owned(),
+            Self::FileRead => "fs.read.read_file".to_owned(),
+            Self::FileWrite => "fs.write.write_file".to_owned(),
+            Self::EnvironmentRead => "config.read.read".to_owned(),
+            Self::SecretRead => "secret.read.read".to_owned(),
+            Self::ClockMonotonic => "clock.monotonic.now".to_owned(),
+            Self::RandomBytes => "random.bytes.read".to_owned(),
+            Self::LogEvent => "log.event.write".to_owned(),
+            Self::TraceEvent => "trace.event.write".to_owned(),
+            Self::Declared { reference, member } => format!("declared:{reference}.{member}"),
+            Self::Unknown(name) => name.clone(),
         }
     }
 }
@@ -402,6 +410,24 @@ impl HostRequest {
         Self::new(HostOperation::Unknown(name.into()), "")
     }
 
+    /// The request for a registry-declared member.
+    ///
+    /// `argument` is the canonical JSON object of the declared parameters, so
+    /// an adapter sees the exact values the bridge type-checked.
+    pub fn declared(
+        reference: impl Into<String>,
+        member: impl Into<String>,
+        argument: impl Into<String>,
+    ) -> Self {
+        Self::new(
+            HostOperation::Declared {
+                reference: reference.into(),
+                member: member.into(),
+            },
+            argument,
+        )
+    }
+
     fn new(argument: HostOperation, value: impl Into<String>) -> Self {
         Self {
             schema: HOST_REQUEST_SCHEMA.to_owned(),
@@ -420,6 +446,10 @@ pub enum HostOutcome {
     Bytes(Vec<u8>),
     Int(String),
     Unit,
+    /// A declared member's own error variant, reported by an adapter that
+    /// understands the declaration. The bridge validates the variant against
+    /// the declared family before it becomes a capability error value.
+    DeclaredFailure(String),
 }
 
 pub trait HostAdapter {
@@ -570,6 +600,7 @@ impl HostAdapter for MemoryHost {
                     .push(format!("{}:{}", request.operation.name(), request.argument));
                 Ok(HostOutcome::Unit)
             }
+            HostOperation::Declared { .. } => Err(StdError::UnknownOperation),
             HostOperation::Unknown(_) => Err(StdError::UnknownOperation),
         }
     }
@@ -731,6 +762,7 @@ impl HostAdapter for SystemHost {
                 eprintln!("{}:{}", request.operation.name(), request.argument);
                 Ok(HostOutcome::Unit)
             }
+            HostOperation::Declared { .. } => Err(StdError::UnknownOperation),
             HostOperation::Unknown(_) => Err(StdError::UnknownOperation),
         }
     }
@@ -753,6 +785,9 @@ pub struct HostBackedBridge<A: HostAdapter> {
     capabilities_by_revision: BTreeMap<String, BTreeMap<String, String>>,
     active_capabilities: RefCell<Option<BTreeMap<String, String>>>,
     input_digest: String,
+    /// Registry declarations, keyed by schema reference then member name. The
+    /// graph only carries the reference; the declaration table travels here.
+    declared: BTreeMap<String, BTreeMap<String, DeclaredMember>>,
     observations: Vec<HostObservation>,
     host: HostEnvironment<A>,
 }
@@ -778,11 +813,23 @@ impl<A: HostAdapter> HostBackedBridge<A> {
         graph_revision: impl Into<String>,
         input_digest: impl Into<String>,
     ) -> Result<Self, String> {
-        Self::new_for_graphs(
+        Self::new_with_declarations(graph, host, graph_revision, input_digest, &[])
+    }
+
+    /// Like `new`, but the bridge also dispatches registry-declared members.
+    pub fn new_with_declarations(
+        graph: &crate::graph::Graph,
+        host: A,
+        graph_revision: impl Into<String>,
+        input_digest: impl Into<String>,
+        declared: &[DeclaredSchema],
+    ) -> Result<Self, String> {
+        Self::new_for_graphs_with_declarations(
             std::slice::from_ref(&graph),
             host,
             graph_revision,
             input_digest,
+            declared,
         )
     }
 
@@ -792,6 +839,19 @@ impl<A: HostAdapter> HostBackedBridge<A> {
         graph_revision: impl Into<String>,
         input_digest: impl Into<String>,
     ) -> Result<Self, String> {
+        Self::new_for_graphs_with_declarations(graphs, host, graph_revision, input_digest, &[])
+    }
+
+    /// Like `new_for_graphs`, but the bridge also dispatches registry-declared
+    /// members.
+    pub fn new_for_graphs_with_declarations(
+        graphs: &[&crate::graph::Graph],
+        host: A,
+        graph_revision: impl Into<String>,
+        input_digest: impl Into<String>,
+        declared: &[DeclaredSchema],
+    ) -> Result<Self, String> {
+        let declared = declared_table(declared)?;
         let graph_revision = graph_revision.into();
         let input_digest = input_digest.into();
         if graphs.is_empty() || !valid_digest(&graph_revision) || !valid_digest(&input_digest) {
@@ -835,6 +895,7 @@ impl<A: HostAdapter> HostBackedBridge<A> {
             capabilities_by_revision,
             active_capabilities: RefCell::new(Some(active_capabilities)),
             input_digest,
+            declared,
             observations: Vec::new(),
             host: HostEnvironment::new(host),
         })
@@ -865,7 +926,7 @@ impl<A: HostAdapter> HostBackedBridge<A> {
             instance: instance.to_owned(),
             member: member.to_owned(),
             invocation_id: invocation_id.to_owned(),
-            operation: request.operation.name().to_owned(),
+            operation: request.operation.name(),
             argument_digest: format!("sha256:{}", sha256_hex(request.argument.as_bytes())),
             payload_digest: format!("sha256:{}", sha256_hex(&request.payload)),
             outcome: outcome_name,
@@ -950,13 +1011,85 @@ impl<A: HostAdapter> HostBackedBridge<A> {
                 };
                 Ok(HostRequest::file_write(path, payload))
             }
-            _ => Err(format!(
-                "native-host-bridge-operation-unsupported:{instance}.{member}"
-            )),
+            _ => self.declared_request(instance, reference, member, arguments),
         }
     }
 
+    /// Map a declared member's arguments onto a `HostRequest`.
+    ///
+    /// Declarations never shadow a built-in reference, so a built-in reference
+    /// that reaches here was already rejected by the built-in arms above and
+    /// keeps its `operation-unsupported` failure.
+    fn declared_request(
+        &self,
+        instance: &str,
+        reference: &str,
+        member: &str,
+        arguments: &BTreeMap<String, VmValue>,
+    ) -> Result<HostRequest, String> {
+        let Some(members) = self.declared.get(reference) else {
+            return Err(format!(
+                "native-host-bridge-operation-unsupported:{instance}.{member}"
+            ));
+        };
+        let declaration = members.get(member).ok_or_else(|| {
+            format!("native-host-bridge-declared-member-unknown:{reference}.{member}")
+        })?;
+        for (name, type_name) in &declaration.parameters {
+            let value = arguments
+                .get(name)
+                .ok_or_else(|| "native-host-bridge-argument-missing".to_owned())?;
+            if !declared_parameter_accepts(type_name, value) {
+                return Err("native-host-bridge-argument-type-mismatch".to_owned());
+            }
+        }
+        if let Some(extra) = arguments.keys().find(|name| {
+            !declaration
+                .parameters
+                .iter()
+                .any(|(known, _)| known == *name)
+        }) {
+            return Err(format!("native-host-bridge-argument-unknown:{extra}"));
+        }
+        let argument = format!(
+            "{{{}}}",
+            declaration
+                .parameters
+                .iter()
+                .map(|(name, _)| format!(
+                    "{}:{}",
+                    quote(name),
+                    serialize_vm_value(&arguments[name])
+                ))
+                .collect::<Vec<_>>()
+                .join(",")
+        );
+        Ok(HostRequest::declared(
+            reference.to_owned(),
+            member.to_owned(),
+            argument,
+        ))
+    }
+
     fn response(
+        &self,
+        instance: &str,
+        reference: &str,
+        member: &str,
+        outcome: Result<HostOutcome, StdError>,
+    ) -> Result<CapabilityResponse, String> {
+        if let Some(members) = self.declared.get(reference) {
+            return match members.get(member) {
+                Some(declaration) => declared_response(instance, member, declaration, outcome),
+                None => Ok(CapabilityResponse::host_fault(format!(
+                    "native-host-bridge-operation-unsupported:{instance}.{member}"
+                ))),
+            };
+        }
+        Self::builtin_response(reference, member, outcome)
+    }
+
+    fn builtin_response(
         reference: &str,
         member: &str,
         outcome: Result<HostOutcome, StdError>,
@@ -1045,7 +1178,7 @@ impl<A: HostAdapter> CapabilityBridge for HostBackedBridge<A> {
         };
         let outcome = self.host.invoke(request.clone());
         self.record_observation(instance, member, &request, invocation_id, &outcome);
-        Self::response(&reference, member, outcome)
+        self.response(instance, &reference, member, outcome)
     }
 
     fn invoke_with_input(
@@ -1090,6 +1223,165 @@ fn declared_host_error(reference: &str, error: StdError) -> Result<(String, Stri
         _ => return Err("native-host-bridge-error-reference-unknown".to_owned()),
     };
     Ok((type_name.to_owned(), variant.to_owned()))
+}
+
+/// Build the run-time dispatch table for registry declarations.
+///
+/// The graph only carries `instance -> reference`; the declaration table is
+/// carried alongside it. Declarations that graph admission would reject, or
+/// whose types this bridge cannot type-check, are rejected here as well: the
+/// runtime must not expose a member it cannot honour.
+fn declared_table(
+    declared: &[DeclaredSchema],
+) -> Result<BTreeMap<String, BTreeMap<String, DeclaredMember>>, String> {
+    crate::graph::validate_declarations(declared)
+        .map_err(|_| "native-host-bridge-declaration-invalid".to_owned())?;
+    let mut table = BTreeMap::new();
+    for schema in declared {
+        let mut members = BTreeMap::new();
+        for member in &schema.members {
+            validate_declared_member(member)?;
+            members.insert(member.name.clone(), member.clone());
+        }
+        table.insert(schema.reference.clone(), members);
+    }
+    Ok(table)
+}
+
+fn validate_declared_member(member: &DeclaredMember) -> Result<(), String> {
+    for (_, type_name) in &member.parameters {
+        if !declared_type_supported(type_name) {
+            return Err(format!(
+                "native-host-bridge-declared-type-unsupported:{type_name}"
+            ));
+        }
+    }
+    if let Some(returns) = member.returns.as_deref()
+        && !declared_returns_supported(returns)
+    {
+        return Err(format!(
+            "native-host-bridge-declared-type-unsupported:{returns}"
+        ));
+    }
+    Ok(())
+}
+
+fn declared_type_supported(type_name: &str) -> bool {
+    matches!(
+        type_name,
+        "text.utf8" | "bytes" | "fs.path" | "text.encoding" | "number.i64" | "bool" | "unit"
+    ) || type_name == "list<text.utf8>"
+}
+
+fn declared_parameter_accepts(type_name: &str, value: &VmValue) -> bool {
+    match type_name {
+        "text.utf8" | "fs.path" | "text.encoding" => matches!(value, VmValue::Text(_)),
+        "bytes" => matches!(value, VmValue::Bytes(_)),
+        "number.i64" => matches!(value, VmValue::Int(_)),
+        "bool" => matches!(value, VmValue::Bool(_)),
+        "unit" => matches!(value, VmValue::Unit),
+        "list<text.utf8>" => matches!(
+            value,
+            VmValue::List(items) if items.iter().all(|item| matches!(item, VmValue::Text(_)))
+        ),
+        _ => false,
+    }
+}
+
+fn declared_result_halves(returns: &str) -> Option<(&str, &str)> {
+    let inner = returns.strip_prefix("result<")?.strip_suffix('>')?;
+    let (ok, family) = split_result_halves(inner)?;
+    Some((ok.trim(), family.trim()))
+}
+
+fn declared_returns_supported(returns: &str) -> bool {
+    if declared_type_supported(returns) {
+        return true;
+    }
+    let Some((ok, family)) = declared_result_halves(returns) else {
+        return false;
+    };
+    declared_type_supported(ok)
+        && !family.is_empty()
+        && !family.contains('@')
+        && !family.chars().any(char::is_whitespace)
+}
+
+/// Map an adapter outcome onto the value the declared return type promises.
+fn declared_returns_value(returns: Option<&str>, outcome: HostOutcome) -> Option<VmValue> {
+    let expected = returns.unwrap_or("unit");
+    match (expected, outcome) {
+        ("unit", HostOutcome::Unit) => Some(VmValue::Unit),
+        ("text.utf8" | "fs.path" | "text.encoding", HostOutcome::Text(value)) => {
+            Some(VmValue::Text(value))
+        }
+        ("bytes", HostOutcome::Bytes(value)) => Some(VmValue::Bytes(value)),
+        ("number.i64", HostOutcome::Int(value)) => value.parse::<i64>().ok().map(VmValue::Int),
+        ("bool", HostOutcome::Int(value)) => match value.as_str() {
+            "0" => Some(VmValue::Bool(false)),
+            "1" => Some(VmValue::Bool(true)),
+            _ => None,
+        },
+        ("list<text.utf8>", HostOutcome::Args(values)) => Some(VmValue::List(
+            values.into_iter().map(VmValue::Text).collect(),
+        )),
+        _ => None,
+    }
+}
+
+fn declared_response(
+    instance: &str,
+    member: &str,
+    declaration: &DeclaredMember,
+    outcome: Result<HostOutcome, StdError>,
+) -> Result<CapabilityResponse, String> {
+    match outcome {
+        Ok(HostOutcome::DeclaredFailure(variant)) => {
+            let Some((_, family)) = declaration
+                .returns
+                .as_deref()
+                .and_then(declared_result_halves)
+            else {
+                return Ok(CapabilityResponse::host_fault(
+                    "native-host-return-type-mismatch",
+                ));
+            };
+            if !declaration.errors.iter().any(|known| known == &variant) {
+                return Err(format!(
+                    "native-host-bridge-error-variant-unknown:{family}.{variant}"
+                ));
+            }
+            Ok(CapabilityResponse::err(VmValue::ResultErr {
+                type_name: family.to_owned(),
+                variant,
+            }))
+        }
+        Ok(value) => {
+            // A `result<ok, family>` return carries the success payload in the
+            // same unwrapped shape the built-in bridges use; the runtime wraps
+            // it into a result value.
+            let expected = match declaration
+                .returns
+                .as_deref()
+                .and_then(declared_result_halves)
+            {
+                Some((ok, _)) => Some(ok),
+                None => declaration.returns.as_deref(),
+            };
+            match declared_returns_value(expected, value) {
+                Some(value) => Ok(CapabilityResponse::ok(value)),
+                None => Ok(CapabilityResponse::host_fault(
+                    "native-host-return-type-mismatch",
+                )),
+            }
+        }
+        // An adapter that does not implement declared members fails closed with
+        // the same operation-unsupported code the boundary used before.
+        Err(StdError::UnknownOperation) => Ok(CapabilityResponse::host_fault(format!(
+            "native-host-bridge-operation-unsupported:{instance}.{member}"
+        ))),
+        Err(_) => Ok(CapabilityResponse::host_fault("native-host-host-fault")),
+    }
 }
 
 impl MinimalStdBridge {
@@ -1199,6 +1491,7 @@ fn host_outcome_name(outcome: &HostOutcome) -> &'static str {
         HostOutcome::Bytes(_) => "bytes",
         HostOutcome::Int(_) => "int",
         HostOutcome::Unit => "unit",
+        HostOutcome::DeclaredFailure(_) => "declared_failure",
     }
 }
 

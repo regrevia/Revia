@@ -27,9 +27,13 @@
 //! out-of-tree library definition can be loaded without being rewritten for
 //! this reader. Those fields are read by later slices, not this one.
 //!
-//! The registry only widens the check-time gates. A graph admitted here still
-//! fails closed at the runtime host boundary until the four runtime sites
-//! learn about the declaration; see `create_graph` sources for that split.
+//! Parsing produces only the declaration list: this module never touches the
+//! graph or the runtime. Since WP-351 a host bridge constructed with the same
+//! list (`HostBackedBridge::new_with_declarations`) dispatches a declared
+//! `(instance, member)` to its adapter, and still fails closed when the
+//! adapter answers `UnknownOperation`. `SystemHost` and `MemoryHost` do not
+//! answer declared members yet, so exposing the registry through the CLI is a
+//! later slice.
 
 use crate::{
     canonical_json::{JsonValue, canonicalize},
