@@ -529,6 +529,47 @@ bridge 侧错误串 `native-host-bridge-declared-type-unsupported:{name}` 保持
 一致，canonical 写入器不携带声明引用），`graph-check` 仍按检查命令语义对两条路线
 都校验。本包不改变 research/preview 成熟度声明，也不声称声明成员已经能真正执行。
 
+### WP-354 · a host that serves registry-declared members
+
+WP-352 与 WP-353 之后，声明已经能穿过整条流水线并抵达 host 边界，但生产命令
+使用的 `SystemHost`/`MemoryHost` 对 `Declared` 请求仍一律回答
+`UnknownOperation`，所以 `doc/12` §6 第 1 条所要求的「executes through
+`HostBackedBridge`」只被证明到「构造成功、请求到达边界」，没有被证明到「声明成员
+真正跑完一次 VM 执行」。本包用测试侧的 `ServingHost` 补上这一段证据，不改动任何
+生产 host 的 fail-closed 行为。
+
+`native/revia-core/tests/wp354_declared_host_serving.rs`（6 例）按 `wp278` 的
+同一管线跑完整条路径：`parse_compact_graph` →
+`check_graph_with_declared_schemas` → `translate_graph_with_declarations` →
+`serialize_bytecode_artifact` → `VmRequest::new` →
+`HostBackedBridge::new_with_declarations` → `execute_bytecode_with_declarations`。
+`ServingHost` 只是一张「`reference.member` → 处理函数」表，实现 `HostAdapter`
+要求的两个方法，命中声明成员就回答，未命中就返回 `UnknownOperation`。它拿到的是
+`HostOperation::Declared { reference, member }`，参数按声明里的名字规范化，例如
+`{"text":{"type":"text.utf8","value":"hi"}}`，证明请求映射由声明而不是调用点
+决定。
+
+六个用例分别固定：声明成员 `say` 跑完整个执行并落到 `process.exit(0)`；宿主回答
+`DeclaredFailure("empty")` 时落到程序的 `err` 分支（退出码 1，invocation outcome
+为 `err`）；在 bridge 表面直接断言错误族与变体 —— 成功负载原样透传为
+`ok(text.utf8)`，`empty` 映射为 `err(ResultErr { type_name: "demo.echo_error",
+variant: "empty" })`，而声明族之外的变体被具名拒绝为
+`native-host-bridge-error-variant-unknown:demo.echo_error.boom`；未被服务的成员仍
+fail closed —— 请求确实以声明操作抵达 adapter，adapter 拒绝后 bridge 报 host
+fault，VM 以 `native-vm-capability-failed` 失败；宿主返回错误形状（`Bytes` 对
+`result<text.utf8, …>`）同样以 `native-host-return-type-mismatch` 转成 VM 失败；
+以及该 fixture adapter 只应答声明操作，同一请求交给 `MemoryHost` 仍得到
+`UnknownOperation`（结构性断言，不是行为用例）。observation 记录的是 adapter 的
+实际回答（`text`/`declared_failure`/`error`/`bytes`），operation 标签为
+`declared:demo.echo@0.1.0.say`，且 `effect_committed` 恒为 false。
+
+范围说明：本包只增加测试与文档，不新增生产代码，也不把 `SystemHost`/
+`MemoryHost` 变宽松。CLI 的 `run`/`execute` 仍然因为生产 host 拒绝 `Declared`
+而以 `native-vm-capability-failed`/65 fail closed；§6 第 1 条的**执行半边**现在
+已有「可服务 adapter 在运行时接缝端到端跑通」的证据，而不是「CLI 已能执行任意
+声明成员」。
+本包不改变 research/preview 成熟度声明。
+
 ### WP-274 · native replay workload catalog
 
 增加 `re.native-replay-workload-catalog@0.1.0`、

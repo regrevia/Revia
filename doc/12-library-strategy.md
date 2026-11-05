@@ -238,6 +238,35 @@ unused-definition tolerance) and
 `compile` refuse a bad parameter and a bad return type with exit 65 and JSON on
 stdout, and an unused unsupported definition still checks).
 
+Partial progress, measured (WP-354): the execution half of §6 item 1 now has
+end-to-end evidence, on the runtime seam rather than through the CLI. A
+test-local `ServingHost` adapter — a `reference.member` handler table
+implementing only `HostAdapter::invoke` and `close_secrets` — drives the
+declaring program through
+`translate_graph_with_declarations` -> `serialize_bytecode_artifact` ->
+`VmRequest::new` -> `HostBackedBridge::new_with_declarations` ->
+`execute_bytecode_with_declarations`. The run completes at `process.exit(0)`,
+the adapter receives `HostOperation::Declared { reference, member }` with the
+argument object named by the declaration
+(`{"text":{"type":"text.utf8","value":"hi"}}`), `HostOutcome::DeclaredFailure`
+lands on the program's `err` branch with the declared family, and the
+observation carries `operation = "declared:demo.echo@0.1.0.say"` with
+`effect_committed` false. The error family is asserted where it actually
+appears, at the bridge: `empty` becomes
+`err(ResultErr { type_name: "demo.echo_error", variant: "empty" })`, the
+declared success payload is passed through unchanged, and a variant outside the
+declared family is refused by name
+(`native-host-bridge-error-variant-unknown:demo.echo_error.boom`) instead of
+being folded into the branch. Fail-closed is unchanged: a member the adapter does
+not serve is still answered `UnknownOperation`, becomes
+`native-host-bridge-operation-unsupported:<instance>.<member>` at the bridge,
+and fails the VM with `native-vm-capability-failed`; a wrong-shaped
+`HostOutcome` becomes `native-host-return-type-mismatch` and the same VM
+failure. This is evidence about the seam, not a production host: `SystemHost`
+and `MemoryHost` still refuse `Declared`, so `run`/`execute` still stop at the
+boundary. New `native/revia-core/tests/wp354_declared_host_serving.rs`
+(6 cases).
+
 Consequence: Route H costs a core edit at **each** of those eight sites, with a
 test per site — not the single enum change this document originally claimed, and
 not a two-edit change either. §6 item 1 is written against this table.
@@ -292,7 +321,8 @@ re-litigating the same library later.
    (`host_schema_registry`, `revia graph-check --schema-registry`), and WP-348
    carries each member's declared result type and error variants in that same
    artifact; WP-351 opens the four runtime sites for a bridge built with that
-   same list. The two parse-time helpers (positional argument naming and the
+   same list; WP-354 proves the execution half end to end with a serving test
+   adapter. The two parse-time helpers (positional argument naming and the
    literal fallback) still run before any declaration exists and stay
    hardcoded.
    Acceptance test: an out-of-tree schema and member declared through the
