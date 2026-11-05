@@ -4,6 +4,7 @@
   "tag": "v1.0.0-rc.2.2.1",
   "status": "measured-native",
   "source_commit": "b76dbfc23d8f72e5a727eabea51653de2d697020",
+  "source_inventory_digest": "sha256:81820891a6580b2ef2395259ef690e4721db0e8acbf8ef6fb17b374790e4aa2a",
   "license_sha256": "sha256:7156f38141cf6c48c73802b181f3e309d9b13db71eb2a2feab0b5f50c1a414cf",
   "targets": [
     "linux-x64",

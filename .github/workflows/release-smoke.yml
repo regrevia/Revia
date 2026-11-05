@@ -39,53 +39,99 @@ jobs:
         run: |
           set -euo pipefail
           version=$(sed -n '1p' VERSION)
+          work="${RUNNER_TEMP:-/tmp}/release-smoke"
+          mkdir -p "$work"
           if [ "$version" = '1.0.0-rc.1' ]; then
             if [ '${{ matrix.target }}' != 'darwin-arm64' ]; then
               set +e
-              ./bin/revia check examples/hello.re > pending-target.txt 2>&1
+              ./bin/revia check examples/hello.re > "$work/pending-target.txt" 2>&1
               status=$?
               set -e
               test "$status" -eq 69
-              grep -Fq 'pending target' pending-target.txt
+              grep -Fq 'pending target' "$work/pending-target.txt"
               exit 0
             fi
             ./bin/revia check experiments/rc1/kit/fixtures/hello-check/hello.re
             exit 0
           fi
-          ./bin/revia check examples/hello.re
-          test "$(./bin/revia run examples/hello.re)" = 'Hello, World!'
-          ./bin/revia manifest examples/hello.re | grep -Fq 'graph_revision'
-          set +e
-          ./bin/revia check --format json examples/diagnostic-error.re > diagnostic.json
-          status=$?
-          set -e
-          test "$status" -eq 65
-          grep -Fq 'unexpected-argument' diagnostic.json
+          ./bin/revia --help > "$work/help.out"
+          test "$(sed -n '1p' "$work/help.out")" = 'Revia native release CLI (versioned executable)'
+          asset_prefix="revia-$version-${{ matrix.target }}."
+          if awk -v p="$asset_prefix" 'index($2, p) == 1 { found = 1 } END { exit found ? 0 : 1 }' runtime/checksums.txt; then
+            ./bin/revia check examples/hello.re > "$work/check.out"
+            ./bin/revia manifest examples/hello.re > "$work/manifest.out"
+            grep -Fq 'graph_revision' "$work/manifest.out"
+            ./bin/revia compile examples/hello.re "$work/hello.artifact" > "$work/compile.out"
+            ./bin/revia run examples/hello.re "$work/hello.artifact" "sha256:$(printf 'd%.0s' {1..64})" > "$work/run.out"
+            grep -Fq '"program_stdout":"Hello, World!\n"' "$work/run.out"
+            set +e
+            ./bin/revia check examples/hello.re unexpected-argument > "$work/usage.out" 2>&1
+            status=$?
+            set -e
+            test "$status" -eq 64
+            grep -Fqi 'usage' "$work/usage.out"
+            missing="$work/missing-input.re"
+            rm -f "$missing"
+            set +e
+            ./bin/revia check "$missing" > "$work/missing.out" 2>&1
+            status=$?
+            set -e
+            test "$status" -eq 66
+          else
+            set +e
+            ./bin/revia check examples/hello.re > "$work/pending.out" 2>&1
+            status=$?
+            set -e
+            test "$status" -eq 70
+            grep -Fqi 'checksum' "$work/pending.out"
+          fi
       - name: Smoke release asset on Windows
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $version = (Get-Content -LiteralPath VERSION -TotalCount 1).Trim()
+          $work = Join-Path $env:RUNNER_TEMP 'release-smoke'
+          New-Item -ItemType Directory -Force -Path $work | Out-Null
           if ($version -eq '1.0.0-rc.1') {
             $powershell = Join-Path $PSHOME 'powershell.exe'
             $process = Start-Process -FilePath $powershell -ArgumentList @(
               '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', './bin/revia.ps1',
               'check', 'examples/hello.re'
-            ) -RedirectStandardOutput pending-target.stdout -RedirectStandardError pending-target.stderr -Wait -PassThru
+            ) -RedirectStandardOutput (Join-Path $work 'pending-target.stdout') -RedirectStandardError (Join-Path $work 'pending-target.stderr') -Wait -PassThru
             $pendingCode = $process.ExitCode
-            $pending = (Get-Content -LiteralPath pending-target.stdout -Raw) + (Get-Content -LiteralPath pending-target.stderr -Raw)
+            $pending = (Get-Content -LiteralPath (Join-Path $work 'pending-target.stdout') -Raw) + (Get-Content -LiteralPath (Join-Path $work 'pending-target.stderr') -Raw)
             if ($pendingCode -ne 69) { throw "expected pending target exit 69, got $pendingCode" }
             if ($pending -notmatch 'pending target') { throw 'pending target message missing' }
             exit 0
           }
-          ./bin/revia.ps1 check examples/hello.re
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          $hello = (./bin/revia.ps1 run examples/hello.re | Out-String).Trim()
-          if ($LASTEXITCODE -ne 0 -or $hello -ne 'Hello, World!') { throw 'hello smoke failed' }
-          $manifest = (./bin/revia.ps1 manifest examples/hello.re | Out-String)
-          if ($LASTEXITCODE -ne 0 -or $manifest -notmatch 'graph_revision') { throw 'manifest smoke failed' }
-          ./bin/revia.ps1 check --format json examples/diagnostic-error.re *> diagnostic.json
-          if ($LASTEXITCODE -ne 65) { throw "expected diagnostic exit 65, got $LASTEXITCODE" }
-          if ((Get-Content -Raw diagnostic.json) -notmatch 'unexpected-argument') { throw 'diagnostic smoke failed' }
+          ./bin/revia.ps1 --help > (Join-Path $work 'help.out')
+          $firstLine = Get-Content -LiteralPath (Join-Path $work 'help.out') -TotalCount 1
+          if ($firstLine -ne 'Revia native release CLI (versioned executable)') { throw 'native launcher banner smoke failed' }
+          $assetPrefix = "revia-$version-${{ matrix.target }}."
+          $measured = Get-Content -LiteralPath runtime/checksums.txt | Where-Object { $_.Contains($assetPrefix) }
+          if ($measured) {
+            ./bin/revia.ps1 check examples/hello.re > (Join-Path $work 'check.out')
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            ./bin/revia.ps1 manifest examples/hello.re > (Join-Path $work 'manifest.out')
+            if ($LASTEXITCODE -ne 0) { throw "manifest smoke failed: $LASTEXITCODE" }
+            if (-not (Select-String -LiteralPath (Join-Path $work 'manifest.out') -SimpleMatch 'graph_revision' -Quiet)) { throw 'manifest smoke failed' }
+            ./bin/revia.ps1 compile examples/hello.re (Join-Path $work 'hello.artifact') > (Join-Path $work 'compile.out')
+            if ($LASTEXITCODE -ne 0) { throw "compile smoke failed: $LASTEXITCODE" }
+            ./bin/revia.ps1 run examples/hello.re (Join-Path $work 'hello.artifact') ('sha256:' + ('d' * 64)) > (Join-Path $work 'run.out')
+            if ($LASTEXITCODE -ne 0) { throw "run smoke failed: $LASTEXITCODE" }
+            if (-not (Select-String -LiteralPath (Join-Path $work 'run.out') -SimpleMatch 'Hello, World!' -Quiet)) { throw 'run output smoke failed' }
+            ./bin/revia.ps1 check examples/hello.re unexpected-argument *> (Join-Path $work 'usage.out')
+            if ($LASTEXITCODE -ne 64) { throw "expected usage exit 64, got $LASTEXITCODE" }
+            if (-not (Select-String -LiteralPath (Join-Path $work 'usage.out') -SimpleMatch 'usage' -Quiet)) { throw 'usage smoke failed' }
+            $missing = Join-Path $work 'missing-input.re'
+            if (Test-Path -LiteralPath $missing) { Remove-Item -LiteralPath $missing }
+            ./bin/revia.ps1 check $missing *> (Join-Path $work 'missing.out')
+            if ($LASTEXITCODE -ne 66) { throw "expected unreadable exit 66, got $LASTEXITCODE" }
+          }
+          else {
+            ./bin/revia.ps1 check examples/hello.re *> (Join-Path $work 'pending.out')
+            if ($LASTEXITCODE -ne 70) { throw "expected fail-closed exit 70 for an unmeasured target, got $LASTEXITCODE" }
+            if (-not (Select-String -LiteralPath (Join-Path $work 'pending.out') -SimpleMatch 'checksum' -Quiet)) { throw 'fail-closed checksum message missing' }
+          }
           exit 0
