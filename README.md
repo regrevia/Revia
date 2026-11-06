@@ -30,6 +30,13 @@ checks do not silently change the tagged binaries. See
 [development status](docs/development-status.md) and
 [compatibility](docs/compatibility.md) for the version-specific evidence.
 
+The Linux x64 asset of that candidate requires **glibc 2.39** (it is built on the
+`ubuntu-24.04` runner), so any host below glibc 2.39 — including Ubuntu 20.04 and
+22.04, Debian 12 and RHEL 9 — cannot load it; build from source there instead (a source build on a host below
+glibc 2.39 has not been verified here). Only `ubuntu-24.04` was exercised by this project; other
+distributions at or above glibc 2.39 are expected to load it but were not measured.
+See [Linux x64 runtime baseline](docs/compatibility.md#linux-x64-runtime-baseline).
+
 At main commit `ca268c4`, source validation and native Linux x64 and Windows x64
 workflows pass, including the native `project-surface-check` gate and the
 bound Windows x64 runner artifact-integrity check. This is current-source

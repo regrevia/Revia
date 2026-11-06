@@ -19,6 +19,90 @@ complete language-output byte determinism.
 当前候选为 `v1.0.0-rc.2.2.1`，Linux x64 与 Windows x64 各自有独立原生证据。
 `measured-native` 仅适用于所列目标与记录中的候选，不证明 Stable V1.0 或所有语言产物均逐字节确定。
 
+## Linux x64 Runtime Baseline
+
+The `v1.0.0-rc.2.2.1` Linux x64 asset requires glibc **2.39**. The published binary (`revia-1.0.0-rc.2.2.1-linux-x64.tar.gz`, archive SHA-256
+`cee357cf80fe48068fa8c16dc59590ac1299fb0f992eb38f22e0be769c0631b9`; executable
+`revia`, SHA-256
+`7899d04f954fc83757866c35710bdbce7604f8c52a8fbc51a599563be65819ca`) requires the
+symbol version `GLIBC_2.39`, introduced in glibc 2.39, so 2.39 is the lowest
+libc that provides it. The candidate is
+published from GitHub's `ubuntu-24.04` runner, whose system libc is 2.39; the
+symbol version records which symbols the binary references, not the runner's
+whole libc. Since the dynamic loader only exposes the symbol versions of the
+host libc, any host below glibc 2.39 cannot load the binary; the loader reports
+the missing version at startup, before `--help` runs. That covers Ubuntu 20.04 (2.31)
+and 22.04 (2.35), Debian 12 (2.36), RHEL 9 and Amazon Linux 2023 (2.34), and
+Fedora 39 (2.38) and earlier releases, as well as any other host on an older
+libc: the requirement is on the libc version, not on Debian or Ubuntu
+specifically. musl-based distributions such as Alpine are excluded for a
+different reason: the binary is linked against glibc and no `-musl` variant
+exists, so it cannot load there either, and a `gcompat` layer is not a supported
+configuration. A load failure on a glibc 2.31 host has been reported externally;
+that host was not reproduced here. Independently of any report, the declared
+symbol floor alone means a libc below 2.39 cannot load the binary. The floor is the lowest libc that can load the binary, not a support
+matrix: only `ubuntu-24.04` has actually been exercised by this project, and hosts at or above
+glibc 2.39 on other distributions are expected to load it but were not measured
+here. Check a host with `getconf GNU_LIBC_VERSION` (or `ldd --version`) inside the
+environment the binary will actually run in: `LD_LIBRARY_PATH`, conda and
+containers can make the command report a libc other than the one the binary
+resolves. `ldd --version` reports the loader's glibc; to see the symbol versions
+a binary requires, use `objdump -T` or `readelf -V`. Ubuntu 23.10 (2.38) and
+openSUSE Leap 15.x sit below the floor.
+
+Building from source on a host below glibc 2.39 has not been verified here
+either; the `native/` toolchain requirements in `QUICKSTART.md` still apply, and
+an `--offline` build needs the vendored dependencies available on that host.
+A host that fails to load the binary reports a missing `GLIBC_2.39` version, for
+example `revia: /lib/x86_64-linux-gnu/libc.so.6: version 'GLIBC_2.39' not
+found`; the `libc.so.6` path differs by distribution (RHEL-family hosts usually
+use `/lib64/libc.so.6`), and a different path does not change the conclusion.
+
+No `-musl` or static variant is published for this candidate. On an older glibc
+baseline, either run the published binary inside a container whose distribution
+ships glibc >= 2.39 (when such an image is available), or build from source
+under `native/` on that host (or in a container matching its glibc) — building inside a newer-glibc container can only
+raise that floor, never lower it. Publishing a lower-baseline or
+`x86_64-unknown-linux-musl` asset is a build-infrastructure change, not a
+property of the current asset.
+
+`v1.0.0-rc.2.2.1` 的 Linux x64 资产要求 glibc **2.39** 或更新版本。已发布二进制
+（`revia-1.0.0-rc.2.2.1-linux-x64.tar.gz`，归档 SHA-256
+`cee357cf80fe48068fa8c16dc59590ac1299fb0f992eb38f22e0be769c0631b9`；可执行文件
+`revia`，SHA-256
+`7899d04f954fc83757866c35710bdbce7604f8c52a8fbc51a599563be65819ca`）需要符号版本
+`GLIBC_2.39`，该符号版本自 glibc 2.39 起引入，因此 2.39 是提供该符号版本的
+最低 libc。该候选从 GitHub `ubuntu-24.04` runner
+（系统 libc 2.39）发布；符号版本只记录二进制引用的符号，不代表 runner 整套 libc。
+动态加载器只提供主机 libc 的符号版本，所以任何低于 glibc 2.39 的主机都无法加载该二进制，
+加载器会在启动时、`--help` 之前报告缺失的版本。
+这包括 Ubuntu 20.04（2.31）与 22.04（2.35）、Debian 12（2.36）、RHEL 9 与
+Amazon Linux 2023（2.34）、以及 Fedora 39（2.38）及更早版本；限制在 libc 版本上，
+并非 Debian 或 Ubuntu 特有。musl 发行版（如 Alpine）另有原因：该二进制链接 glibc 且不提供
+`-musl` 变体，同样无法加载，`gcompat` 兼容层不属于受支持配置。glibc 2.31 的主机上有外部
+报告的加载失败，该主机未在本机复现；无论该报告存在与否，仅凭已声明的符号下限即可推出
+低于 2.39 的 libc 无法加载该二进制。该下限是最低可加载 libc，不是支持
+矩阵：本项目实际演练过的只有 `ubuntu-24.04`，其他发行版上 glibc >= 2.39 预期可加载但未在本机
+测量。可用 `getconf GNU_LIBC_VERSION` 或 `ldd --version` 检查主机（在目标二进制实际
+运行的环境里查：`LD_LIBRARY_PATH`、conda 或容器都可能让报告的不是它解析到的那份 libc；
+`ldd --version` 报告的是加载器版本，要看二进制要求的符号版本用 `objdump -T` 或 `readelf -V`）；Ubuntu 23.10（2.38）
+与 openSUSE Leap 15.x 低于下限。在低于 glibc 2.39 的主机上源码构建同样未在本机验证；
+`QUICKSTART.md` 里的 `native/` 工具链要求仍适用，`--offline` 构建还需要该主机上有
+可用的随附依赖。
+
+当前候选不提供 `-musl` 或静态变体。glibc 基线较旧时，可以在发行版 glibc >= 2.39 的容器里
+运行已发布二进制，或在该主机（或与它 glibc 一致的容器）里用 `native/` 源码构建（这样的镜像同样未必存在）——在更新
+glibc 的容器里构建只会抬高该下限，不会使其更低。发布更低基线或 `x86_64-unknown-linux-musl`
+资产属于构建基础设施改动，不是当前资产的性质。
+
+这类主机上的加载错误形如（外部报告的形状，不是本机复现的完整记录；
+`libc.so.6` 的路径因发行版而异，Debian/Ubuntu 是上面这个，RHEL 系通常形如
+`/lib64/libc.so.6`，路径不同不改变结论）：
+
+```
+revia: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.39' not found (required by ./revia)
+```
+
 ## Historical RC1 Distribution / 历史 RC1 发行
 
 `v1.0.0-rc.1` is measured-native only on macOS arm64. Its archive and binary

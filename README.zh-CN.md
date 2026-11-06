@@ -22,6 +22,12 @@ fixture。
 main 分支检查不会静默改变已打 tag 的二进制。按版本区分的证据见
 [开发状态](docs/development-status.md)和[兼容性](docs/compatibility.md)。
 
+该候选的 Linux x64 资产要求 **glibc 2.39**（构建于 `ubuntu-24.04` runner），
+低于 glibc 2.39 的主机（包括 Ubuntu 20.04 / 22.04、Debian 12、RHEL 9）无法加载，
+请在那些环境改用源码构建（低于 glibc 2.39 的主机上源码构建未在本机验证）。
+本项目实际演练过的只有 `ubuntu-24.04`；其他发行版上 glibc >= 2.39 预期可加载但未在本机测量。详见
+[Linux x64 运行时基线](docs/compatibility.md#linux-x64-runtime-baseline)。
+
 在 main commit `ca268c4` 上，Source validation、Linux x64 与 Windows x64 原生工作流均通过，
 包含 native `project-surface-check` 门禁和 Windows x64 绑定 runner 的发行产物完整性校验。这是当前源码证据，
 不是新的发行资产。

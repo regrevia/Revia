@@ -22,10 +22,25 @@ source test suite.
 The native toolchain is in `native/`:
 
 ```bash
+cd native
 cargo test --workspace --offline
 cargo fmt --all -- --check
 cargo clippy --workspace --offline -- -D warnings
 ```
+
+## Published candidate assets / 已发布候选资产
+
+The `v1.0.0-rc.2.2.1` Linux x64 asset requires **glibc 2.39** (it is built on the
+`ubuntu-24.04` runner), so hosts below glibc 2.39 — Ubuntu 20.04 / 22.04, Debian 12,
+RHEL 9, Amazon Linux 2023 — cannot load it. Only `ubuntu-24.04` was actually exercised by this project;
+other distributions at or above glibc 2.39 are expected to load it but were not measured.
+See [compatibility](docs/compatibility.md) before using a prebuilt asset.
+
+`v1.0.0-rc.2.2.1` 的 Linux x64 资产要求 **glibc 2.39**（构建于 `ubuntu-24.04` runner），
+低于 glibc 2.39 的主机（Ubuntu 20.04 / 22.04、Debian 12、RHEL 9、Amazon Linux 2023）
+无法加载。本项目实际演练过的只有 `ubuntu-24.04`；其他发行版上 glibc >= 2.39 预期可加载，
+但未在本机测量。
+使用预编译资产前请先看[兼容性](docs/compatibility.md)。
 
 ## Historical release assets / 历史发行资产
 
