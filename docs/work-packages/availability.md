@@ -405,6 +405,13 @@ It still changes language semantics and was not folded into Issues 1-3.
    replay bytes and the authority receipt are unchanged
    (`wp361_runtime_run_value_evidence_cli`, in
    [result-value-interface.md](result-value-interface.md) §5).
+9. WP-362 — closed: the boundary for the remaining execution family is measured
+   rather than assumed. `project-run` (and `project-execute*`) is refused the
+   flag outright, its flat envelope carries no per-invocation data, and
+   `project-run-verify` rejects both an added value member and an edited field,
+   so value evidence there requires a versioned envelope — recorded as deferred
+   item 1 in [result-value-interface.md](result-value-interface.md) §4
+   (`wp362_project_value_evidence_boundary_cli`).
 
 ## 8. Evidence rules
 

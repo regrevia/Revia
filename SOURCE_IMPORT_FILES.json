@@ -111,6 +111,7 @@
     "native/revia-cli/tests/wp358_policy_rejection_corpus.rs",
     "native/revia-cli/tests/wp359_run_value_evidence_cli.rs",
     "native/revia-cli/tests/wp361_runtime_run_value_evidence_cli.rs",
+    "native/revia-cli/tests/wp362_project_value_evidence_boundary_cli.rs",
     "native/revia-cli/tests/wp4_result_value_cli.rs",
     "native/revia-conformance/Cargo.toml",
     "native/revia-conformance/src/lib.rs",

@@ -164,8 +164,19 @@ prints a capability value) without pre-empting the version decision.
 ## 4. Deferred items / 遗留项
 
 1. **Schema revision** for `invocation_values`: today it is an opt-in additive
-   member under `@0.1.0`. A follow-up either versions the envelope or drops the
-   member; until then it must not be cited as a stable contract.
+   member under `@0.1.0`, printed by `execute`, `run`, and `runtime-run` only.
+   A follow-up either versions the envelope or drops the member; until then it
+   must not be cited as a stable contract. The project path cannot join those
+   three additively: `re.native-project-run@0.1.0` is a flat envelope with no
+   per-invocation data at all, its `run_digest` is computed over the whole
+   envelope body, and `project-run-verify` rejects an unknown member
+   (`unexpected-project-field`) as well as any edited field
+   (`native-project-run-digest-mismatch`). Extending `--print-values` to
+   `project-run` / `project-execute*` is therefore a versioned change (a new
+   envelope revision plus a new run digest), not an additive member — measured
+   in `wp362_project_value_evidence_boundary_cli` and recorded here instead of
+   being implemented under 0.1.0. The project path also refuses the flag
+   outright (exit 64) rather than accepting and ignoring it.
 2. **Non-`result` returns and binding type**: a `number.i64` from
    `clock.monotonic_nanos` comes back as a plain `ok` response, so `match` on
    it silently takes the `ok` branch and discards the value (§1 probe). Route A
@@ -182,7 +193,9 @@ prints a capability value) without pre-empting the version decision.
    any finer detail must be a versioned additive member. This work package does
    not change the code.
 4. **Node toolchain parity** for `--print-values` is not claimed: only the
-   native CLI path is measured here.
+   native CLI path is measured here, on `execute`, `run`, and `runtime-run`.
+   The Node CLI (`src/cli/re.js`) has neither `--print-values` nor
+   `runtime-run`, so no equivalence claim is possible in either direction.
 
 ## 5. Evidence / 证据
 
@@ -197,6 +210,9 @@ prints a capability value) without pre-empting the version decision.
 | `runtime-run --print-values` matches `execute --print-values` byte for byte | `cargo test --offline -p revia-cli --test wp361_runtime_run_value_evidence_cli runtime_run_print_values_matches_the_one_shot_execute_evidence` | `measured` |
 | the replay flag leaves the default output unchanged | same test, `runtime_run_without_the_flag_is_unchanged_and_prints_no_values` | `measured` |
 | the authority receipt binds the value-bearing bytes and the VM receipt digest does not move | same test, `runtime_run_print_values_does_not_move_the_authority_receipt` | `measured` |
+| the project run envelope carries no value evidence and is deterministic | `cargo test --offline -p revia-cli --test wp362_project_value_evidence_boundary_cli the_project_run_envelope_carries_no_value_evidence` | `measured` |
+| the project path refuses `--print-values` (exit 64) instead of ignoring it | same test file, `the_value_flag_is_refused_on_the_project_path` | `measured` |
+| the project envelope rejects an added value member and any field edit moves `run_digest` | same test file, `the_project_envelope_cannot_gain_a_value_member_without_a_version_change` | `measured` |
 | the grammar rejects `ok(%data)` | `revia check` probe, table in §1 | `measured` |
 | a non-`result` return takes the `ok` branch without a binding | `revia compile` + `revia execute` probe, table in §1 | `measured` |
 | route A cost (~700 LOC, 4 layers) | estimate from the table in §3.2 | `pending` |
