@@ -39,12 +39,12 @@ Availability labels used below:
 
 ## 2. Measured snapshot
 
-- Source: `b58a867` plus the uncommitted WP-354/WP-355 work in `native/`.
+- Source: `ee479ef` plus the WP-356 corpus change in section 5.
 - Rust gates on this tree: `cargo fmt --all -- --check`,
   `cargo check --workspace --offline`, and
   `cargo clippy --workspace --offline --all-targets -- -D warnings` pass.
-- `cargo test --workspace --offline` passes, including the two new declared
-  capability harnesses named in section 3.
+- `cargo test --workspace --offline` passes, including the declared capability
+  harnesses named in section 3 and the 14-case corpus in section 5.
 - `npm test` passes after the source import manifest is regenerated.
 - No production-readiness, cross-platform, or Stable V1.0 claim is made by this
   page.
@@ -195,23 +195,60 @@ Goal: make "the guest cannot escape the declared surface" a measured property.
 
 Not started. Depends on Issue 1 (boundary vocabulary) and its findings table.
 
-## 5. Issue 3 (P0, planned): conformance corpus for the declared surface
+## 5. Issue 3 (P0, closed): conformance corpus for the declared surface
 
 Goal: turn the WP-355 fixtures into a corpus other implementations can run.
 
-- Add the missing negatives listed in section 3.6 (unknown declared member,
-  wrong parameter type, non-`result` return type, unknown error variant, host
-  fault), each pinned at the CLI with the exact exit status and diagnostic.
-- Make the corpus data-driven: registry + policy + program + expected
-  exit/diagnostic triples, so a second implementation can consume the same
-  files.
-- Extend the comparison to the Node reference path where the surface overlaps,
-  and record where it does not (the native host adapter has no Node opposite
-  number yet).
-- Acceptance: the corpus runs in one command, has no fixture that is only a
-  unit test, and every case states what it would catch.
-
-Not started. Depends on Issue 1.
+- **Delivered as data.** `test/fixtures/declared-capability-execution-corpus.json`
+  (`re.declared-capability-execution-corpus@0.1.0`) carries 14 cases, each a
+  `(registry, policy, program, expected exit and diagnostic)` tuple plus a
+  `catches` line that states what an implementation change would break.
+  `registry` and `policy` are JSON artifacts; a policy may also be a raw string
+  so the non-JSON case is expressible. `expected` names the stream
+  (`stdout`/`stderr`), the result schema, the fragments that stream must carry,
+  and the stream that must stay empty.
+- **Consumed in one command.**
+  `cargo test -p revia-cli --test wp356_declared_capability_corpus --offline`
+  replays all 14 cases against `env!("CARGO_BIN_EXE_revia")`, one temp
+  directory per case, through `execute` (no prior `compile` artifact). Each
+  case is a CLI run: nothing in the corpus rests on a library-only test.
+- **Two planned negatives were wrong, and the page says so.** Section 3.6
+  proposed "non-`result` return type" and "unknown error variant" as negatives.
+  Both are legal declarations: `host_schema_registry.rs` reads error variants
+  from the definition's `types` table, not from a member's `errors` field, and
+  `validate_declarations` treats variant names as declaration-local rather than
+  a closed vocabulary, so a non-`result` return with an empty `errors` list is
+  well formed. The corpus therefore drops those two bullets instead of
+  inventing a rejection the checker does not and should not produce, and adds
+  the structurally malformed declarations that *are* refused:
+  a registry carrying another schema id, a duplicate declaration of one
+  reference, and an error family nothing references (the round-trip guard).
+- **Coverage of the section 3.6 list.** Unknown declared member
+  (`unknown-capability-member`), wrong parameter type
+  (`literal-type-mismatch`, with a well-formed literal of the wrong declared
+  type — an integer literal in a named-argument position dies in the parser,
+  so it cannot stand in for type checking), and host fault
+  (`host-fault-output-limit`, the 65,536-byte declared text budget surfacing as
+  `native-vm-capability-fault`) are all pinned at the CLI with exact exit codes
+  and diagnostics.
+- **Comparison with the Node reference path.** `src/host/` declares error
+  *variants* in its adapter contracts (`declaredError`, with
+  `undeclared-error-variant` as the refusal), but no Node module consumes
+  `revia.host-schema-definitions@0.1.0` or runs a declared call. The overlap is
+  the declaration vocabulary only; the execution path has no Node opposite
+  number, and this page does not claim parity.
+- **Acceptance evidence.** The corpus runs in one command; no case is a unit
+  test; every case states what it catches. The harness was also mutation
+  checked: flipping one expected channel makes the case fail, and restoring the
+  file makes it pass.
+- **Limits.** Declared-call return values cannot be bound or printed
+  (`ok(_)`/`err(_)` only), so CLI evidence stops at exit status and
+  diagnostics; value-level correctness rests on the 13 `declared_host` tests.
+  A denied member and every other bridge failure collapse to
+  `native-vm-capability-failed` at `vm.rs:417`, so the denial case can only
+  assert the collapsed code. The corpus does not enumerate one negative per
+  bridge error variant; that needs the `vm.rs` compatibility decision, not a
+  fixture.
 
 ## 6. Issue 4 (P1, planned): semantic interfaces for capability results
 
@@ -233,8 +270,8 @@ Issues 1-3.
 ## 7. Sequencing
 
 1. Issue 1 — closed (this page).
-2. Issue 3 — cheapest next step: it hardens the same boundary with negatives
-   and produces the corpus that Issue 2 will reuse.
+2. Issue 3 — closed (this page): the corpus and its negatives are in place for
+   Issue 2 to enumerate against.
 3. Issue 2 — the isolation claim needs the corpus to enumerate against.
 4. Issue 4 — last, because it is the only item that changes the language.
 
