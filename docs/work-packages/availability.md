@@ -391,6 +391,10 @@ It still changes language semantics and was not folded into Issues 1-3.
 5. WP-358 — closed: the section 3.5 policy vocabulary has a CLI negative for
    every text-reachable reason, and the two remaining boundaries are named
    rather than assumed.
+6. WP-359 — closed: the staged artifact path (`run`) carries the same opt-in
+   value evidence as `execute`, so the two paths cannot disagree about what a
+   capability call returned; the default staged result is unchanged and the
+   member stays outside every `receipt_digest`.
 
 ## 8. Evidence rules
 

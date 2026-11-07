@@ -88,11 +88,12 @@ revia run --schema-registry registry.json \
 - 策略文件读不出来是退出码 66，解析不了是 65。成功运行的 stdout 会输出
   `re.native-host-execution-result@0.1.0`，含 `invocations[]` 与 `trace[]`。
 
-`execute --print-values` 会在 `invocations` 旁增加一个可选成员
-`invocation_values[]`：顺序与长度都和 `invocations` 一致，每项是该次调用返回的
-带类型值（VM 值编码 `{"type":…,"value":…}`）；若桥接失败没有产生值则为 `null`。
-该成员是可选扩展：不加参数时输出不变，也不参与任何 `receipt_digest`，因此观察
-行为不会移动已固定的回执。详见
+`execute --print-values` 与 `run --print-values` 会在 `invocations` 旁增加一个
+可选成员 `invocation_values[]`：顺序与长度都和 `invocations` 一致，每项是该次调用
+返回的带类型值（VM 值编码 `{"type":…,"value":…}`）；若桥接失败没有产生值则为
+`null`。两条命令观察的是同一次执行，因此同一份源码加同一份产物会打印相同的证据；
+分阶段路径的区别只在于加载产物而不是现场翻译。该成员是可选扩展：不加参数时输出
+不变，也不参与任何 `receipt_digest`，因此观察行为不会移动已固定的回执。详见
 [work-packages/result-value-interface.md](work-packages/result-value-interface.md)。
 该成员是待 schema 修订的可选扩展，尚不是稳定契约。
 
