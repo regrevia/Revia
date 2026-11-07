@@ -92,15 +92,16 @@ Behavior is fail-closed and was tightened in WP-355:
   exit 65. Successful runs print `re.native-host-execution-result@0.1.0` with
   `invocations[]` and `trace[]` on stdout.
 
-`execute --print-values` and `run --print-values` add one optional member next
-to `invocations`: `invocation_values[]`, same order and length, each entry the
-typed value the call returned (`{"type":…,"value":…}` in the VM value
-encoding), or `null` for a bridge failure that produced no value. Both commands
-observe the same execution, so for one source and one artifact they print the
-same evidence; the staged path differs only in loading the artifact instead of
-translating it. It is opt-in and additive: without the flag the output is
-unchanged, and the member is not part of any `receipt_digest`, so an
-observation never moves a pinned receipt. See
+`execute --print-values`, `run --print-values`, and `runtime-run --print-values`
+add one optional member next to `invocations`: `invocation_values[]`, same order
+and length, each entry the typed value the call returned
+(`{"type":…,"value":…}` in the VM value encoding). A failed execution prints no
+host-execution result at all, so no `null` entry is reachable in this format.
+All three commands observe the same execution: for one source, one artifact, and
+one input digest they print the same bytes — the `runtime-run` path differs only
+in unpacking a bundle and its sandbox. It is opt-in and additive: without the
+flag the output is unchanged, and the member is not part of any
+`receipt_digest`, so an observation never moves a pinned receipt. See
 [work-packages/result-value-interface.md](work-packages/result-value-interface.md).
 The member is an additive extension pending a schema revision, not yet a stable
 contract.

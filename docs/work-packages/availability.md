@@ -399,6 +399,12 @@ It still changes language semantics and was not folded into Issues 1-3.
    shipped 0.1 contract, not a placeholder waiting to be split; a finer
    diagnosis may only arrive as a versioned additive member, and the record
    names what that forbids ([vm-failure-diagnostics.md](vm-failure-diagnostics.md)).
+8. WP-361 — closed: `runtime-run` accepts the opt-in `--print-values`, so all
+   three VM-backed CLI paths (`execute`, `run`, `runtime-run`) print the same
+   value evidence for the same source, artifact, and input digest; the default
+   replay bytes and the authority receipt are unchanged
+   (`wp361_runtime_run_value_evidence_cli`, in
+   [result-value-interface.md](result-value-interface.md) §5).
 
 ## 8. Evidence rules
 

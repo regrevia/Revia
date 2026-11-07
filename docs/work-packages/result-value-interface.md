@@ -61,6 +61,12 @@ Opt-in value-level evidence in the CLI, with no language change:
   `"invocation_values":[…]` next to `invocations`
   (`native/revia-cli/src/main.rs:1190`, `:8356-8390`), each entry the canonical
   VM value JSON (`serialize_vm_value`, `vm.rs:481`).
+- `revia run --print-values` (WP-359) and `revia runtime-run --print-values`
+  (WP-361) accept the same flag on the two other paths that execute a verified
+  artifact. For one source, one artifact, and one input digest, all three print
+  the same bytes; the replayed paths differ only in loading or unpacking the
+  artifact they were given. `runtime-run` was the last VM-backed CLI surface
+  that could not show what a capability call returned.
 
 Why this is additive and not a contract revision:
 
@@ -187,6 +193,10 @@ prints a capability value) without pre-empting the version decision.
 | receipt digest is identical with and without the flag | same test (digest equality assertion) | `measured` |
 | a refusal prints its typed value | same test, `print_values_distinguishes_a_refusal_value_from_its_exit_status` | `measured` |
 | usage text advertises the flag | same test, `the_usage_text_advertises_the_opt_in` | `measured` |
+| `run --print-values` matches the staged evidence byte for byte | `cargo test --offline -p revia-cli --test wp359_run_value_evidence_cli` | `measured` |
+| `runtime-run --print-values` matches `execute --print-values` byte for byte | `cargo test --offline -p revia-cli --test wp361_runtime_run_value_evidence_cli runtime_run_print_values_matches_the_one_shot_execute_evidence` | `measured` |
+| the replay flag leaves the default output unchanged | same test, `runtime_run_without_the_flag_is_unchanged_and_prints_no_values` | `measured` |
+| the authority receipt binds the value-bearing bytes and the VM receipt digest does not move | same test, `runtime_run_print_values_does_not_move_the_authority_receipt` | `measured` |
 | the grammar rejects `ok(%data)` | `revia check` probe, table in §1 | `measured` |
 | a non-`result` return takes the `ok` branch without a binding | `revia compile` + `revia execute` probe, table in §1 | `measured` |
 | route A cost (~700 LOC, 4 layers) | estimate from the table in §3.2 | `pending` |

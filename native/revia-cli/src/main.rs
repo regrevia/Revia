@@ -211,7 +211,7 @@ Commands:
   project-run-verify <run>
   project-run-receipt-verify <receipt> <run>
   project-run [--project-receipt <receipt>] <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest>
-  runtime-run [--authority-pin <pin> [--authority-receipt <receipt>]] <bundle> <input-digest> <sandbox>
+  runtime-run [--authority-pin <pin> [--authority-receipt <receipt>]] [--print-values] <bundle> <input-digest> <sandbox>
   task-request <config.json> <request.json> <sandbox> <bundle.json> <review.json>
   approval-authority <socket> <state-dir> <policy.json>
   task-run <bundle.json> <approval-socket> <sandbox>
@@ -262,18 +262,17 @@ const CLI_EXIT_CODES: &str = "Exit codes:\n  0  success\n  64 usage or unknown c
 
 fn main() {
     let mut arguments = env::args().skip(1).collect::<Vec<_>>();
-    // `--print-values` is accepted anywhere among `execute`'s and `run`'s
-    // arguments so the hand-written patterns below do not have to enumerate
-    // every combination of flags. It changes evidence output only: no guest
-    // value is stored, and the receipt digest is unchanged. Accepting it on
-    // `run` too keeps the artifact path's evidence identical to the one-shot
-    // path it reuses.
-    let print_values = arguments
-        .first()
-        .is_some_and(|command| command == "execute" || command == "run")
-        && arguments
-            .iter()
-            .any(|argument| argument == "--print-values");
+    // `--print-values` is accepted anywhere among `execute`'s, `run`'s, and
+    // `runtime-run`'s arguments so the hand-written patterns below do not have
+    // to enumerate every combination of flags. It changes evidence output only:
+    // no guest value is stored, and the receipt digest is unchanged. Accepting
+    // it on every path that executes a verified artifact keeps their evidence
+    // identical to the one-shot path they reuse.
+    let print_values = arguments.first().is_some_and(|command| {
+        command == "execute" || command == "run" || command == "runtime-run"
+    }) && arguments
+        .iter()
+        .any(|argument| argument == "--print-values");
     if print_values {
         arguments.retain(|argument| argument != "--print-values");
     }
@@ -360,7 +359,14 @@ fn main() {
             project_run_receipt_verify(receipt_path, run_path)
         }
         [command, bundle_path, input_digest, sandbox_path] if command == "runtime-run" => {
-            runtime_run(bundle_path, input_digest, sandbox_path, None, None)
+            runtime_run(
+                bundle_path,
+                input_digest,
+                sandbox_path,
+                None,
+                None,
+                print_values,
+            )
         }
         [
             command,
@@ -381,6 +387,7 @@ fn main() {
                 sandbox_path,
                 Some(authority_pin_path),
                 Some(receipt_path),
+                print_values,
             )
         }
         [
@@ -396,6 +403,7 @@ fn main() {
             sandbox_path,
             Some(authority_pin_path),
             None,
+            print_values,
         ),
         [command, bundle_path, input_digest, pin_path] if command == "runtime-authority-pin" => {
             runtime_authority_pin(bundle_path, input_digest, pin_path)
@@ -846,7 +854,7 @@ fn main() {
         }
         _ => {
             eprintln!(
-                "Usage: revia <check|lex|digest|canonical|manifest|translate> <file> | compile [--schema-registry <registry>] <source> <artifact> | execute [--schema-registry <registry>] [--capability-policy <policy>] [--print-values] <source> <input-digest> | runtime-package <source> <bundle> | runtime-verify <bundle> | runtime-authority-pin <bundle> <input-digest> <pin> | runtime-receipt-verify <pin> <receipt> <result> <stdout> | project-run-verify <run> | runtime-run <bundle> <input-digest> <sandbox> | capability-comparison <catalog> <output> | capability-project-comparison <catalog> <project> <cache> <build> <profile-digest> <toolchain-digest> <output> | conformance-run <source> <input-digest> <transcript> | cross-language-matrix <source> <input-digest> <transcript> <node-result> <output> | replay-catalog <catalog> <output> | comparison-catalog <catalog> <project> <output> | experiment-kit <catalog> <project> <output> | replay-fault-catalog <catalog> <output> | replay-fault-corpus <corpus> <output> | replay-fault-corpus-gate <corpus> <evidence> | verify [--schema-registry <registry>] <graph> <artifact> | run [--schema-registry <registry>] [--capability-policy <policy>] [--print-values] <graph> <artifact> <input-digest> | project-init <directory> | project-check <project> | project-test <project> | project-scale <project> | project-execute-plan <project> <plan> <profile-digest> <toolchain-digest> <input-digest> | project-execute-plan-direct <project> <plan> <profile-digest> <toolchain-digest> <input-digest> | project-execute-plan-cached <project> <plan> <execution-cache> <profile-digest> <toolchain-digest> <input-digest> | project-execute <project> <module> <profile-digest> <toolchain-digest> <input-digest> | project-benchmark <project> <module> <profile-digest> <toolchain-digest> <input-digest> <report> | project-translate <project> <cache> <build> <profile-digest> <toolchain-digest> <module> | project-run <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest> | project-run-sandbox <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest> <sandbox> | project-build <project> <cache> <build> <profile-digest> <toolchain-digest> | server-smoke | project-server-smoke <project> <module> <profile-digest> <toolchain-digest> <input-digest> | release-package <binary> <candidate> <target> <source-digest> <toolchain-digest> | release-verify <candidate> <target> <source-digest> <toolchain-digest> | release-install <candidate> <target> <source-digest> <toolchain-digest> | release-rollback <install> <target> <source-digest> <toolchain-digest> | release-matrix <target> <output> | node-free-gate <source> <project> <module> <report> | developer-gate <project> <module> <input-digest> <report> | toolchain-gate <source> <project> <module> <input-digest> <report> | release-evidence-gate <source> <project> <module> <fault-corpus> <evidence>"
+                "Usage: revia <check|lex|digest|canonical|manifest|translate> <file> | compile [--schema-registry <registry>] <source> <artifact> | execute [--schema-registry <registry>] [--capability-policy <policy>] [--print-values] <source> <input-digest> | runtime-package <source> <bundle> | runtime-verify <bundle> | runtime-authority-pin <bundle> <input-digest> <pin> | runtime-receipt-verify <pin> <receipt> <result> <stdout> | project-run-verify <run> | runtime-run [--print-values] <bundle> <input-digest> <sandbox> | capability-comparison <catalog> <output> | capability-project-comparison <catalog> <project> <cache> <build> <profile-digest> <toolchain-digest> <output> | conformance-run <source> <input-digest> <transcript> | cross-language-matrix <source> <input-digest> <transcript> <node-result> <output> | replay-catalog <catalog> <output> | comparison-catalog <catalog> <project> <output> | experiment-kit <catalog> <project> <output> | replay-fault-catalog <catalog> <output> | replay-fault-corpus <corpus> <output> | replay-fault-corpus-gate <corpus> <evidence> | verify [--schema-registry <registry>] <graph> <artifact> | run [--schema-registry <registry>] [--capability-policy <policy>] [--print-values] <graph> <artifact> <input-digest> | project-init <directory> | project-check <project> | project-test <project> | project-scale <project> | project-execute-plan <project> <plan> <profile-digest> <toolchain-digest> <input-digest> | project-execute-plan-direct <project> <plan> <profile-digest> <toolchain-digest> <input-digest> | project-execute-plan-cached <project> <plan> <execution-cache> <profile-digest> <toolchain-digest> <input-digest> | project-execute <project> <module> <profile-digest> <toolchain-digest> <input-digest> | project-benchmark <project> <module> <profile-digest> <toolchain-digest> <input-digest> <report> | project-translate <project> <cache> <build> <profile-digest> <toolchain-digest> <module> | project-run <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest> | project-run-sandbox <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest> <sandbox> | project-build <project> <cache> <build> <profile-digest> <toolchain-digest> | server-smoke | project-server-smoke <project> <module> <profile-digest> <toolchain-digest> <input-digest> | release-package <binary> <candidate> <target> <source-digest> <toolchain-digest> | release-verify <candidate> <target> <source-digest> <toolchain-digest> | release-install <candidate> <target> <source-digest> <toolchain-digest> | release-rollback <install> <target> <source-digest> <toolchain-digest> | release-matrix <target> <output> | node-free-gate <source> <project> <module> <report> | developer-gate <project> <module> <input-digest> <report> | toolchain-gate <source> <project> <module> <input-digest> <report> | release-evidence-gate <source> <project> <module> <fault-corpus> <evidence>"
             );
             Err(64)
         }
@@ -887,7 +895,7 @@ fn command_help(command: &str) -> Result<(), i32> {
             "revia runtime-verify <bundle>\n  Verify a native runtime bundle offline without running program effects.\n"
         }
         "runtime-run" => {
-            "revia runtime-run [--authority-pin <pin> [--authority-receipt <receipt>]] <bundle> <input-digest> <sandbox>\n  Verify and execute a native runtime bundle in an explicit filesystem sandbox.\n"
+            "revia runtime-run [--authority-pin <pin> [--authority-receipt <receipt>]] [--print-values] <bundle> <input-digest> <sandbox>\n  Verify and execute a native runtime bundle in an explicit filesystem sandbox.\n  --print-values reports the typed value each capability invocation returned.\n"
         }
         "runtime-authority-pin" => {
             "revia runtime-authority-pin <bundle> <input-digest> <pin>\n  Emit a canonical load-time authority pin for runtime-run.\n"
@@ -1465,6 +1473,7 @@ fn runtime_run(
     sandbox_path: &str,
     authority_pin_path: Option<&str>,
     authority_receipt_path: Option<&str>,
+    print_values: bool,
 ) -> Result<(), i32> {
     let bundle_bytes = fs::read(bundle_path).map_err(|_| {
         print_runtime_bundle_error("native-runtime-bundle-unreadable");
@@ -1539,19 +1548,21 @@ fn runtime_run(
             print_runtime_bundle_error(&code);
             65
         })?;
-    let result = execute_bytecode(
+    let execution = execute_bytecode_with_return_value_and_declarations(
         &graph,
         &bundle.artifact,
         &request,
         &mut bridge,
         VmLimits::default(),
+        &[],
     )
     .map_err(|error| {
         print_runtime_bundle_error(&error.code);
         65
     })?;
-    let (result_bytes, stdout_bytes) = host_vm_result_bytes(&result, None, &program_stdout)
-        .map_err(|code| {
+    let values = print_values.then_some(execution.invocation_values.as_slice());
+    let (result_bytes, stdout_bytes) =
+        host_vm_result_bytes(&execution.result, values, &program_stdout).map_err(|code| {
             print_runtime_bundle_error(&code);
             65
         })?;
