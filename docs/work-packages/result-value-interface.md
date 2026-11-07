@@ -166,10 +166,15 @@ prints a capability value) without pre-empting the version decision.
    must decide whether to bind such a return or reject the match; today the
    single-file path enforces no branch-subject type.
 3. **Collapsed bridge failures**: `native-vm-capability-failed` (`vm.rs:425-429`)
-   is still the single collapse point for `CheckFailure|HostFault`, so
-   `--print-values` prints `null` for those without saying which. The
-   compatibility decision from WP-357 is still open; this work package does not
-   change the code.
+   is still the single collapse point for `CheckFailure|HostFault`. Measured:
+   such a response terminates the execution in the `BranchResult` arm, so the
+   command prints the collapsed diagnostic and no result at all — the `null`
+   slot `invocation_values` records inside the VM (`vm.rs:393-397`) is
+   unreachable through the CLI under the current artifact shape. The
+   compatibility decision from WP-357 is now recorded in
+   [vm-failure-diagnostics.md](vm-failure-diagnostics.md): the token stays, and
+   any finer detail must be a versioned additive member. This work package does
+   not change the code.
 4. **Node toolchain parity** for `--print-values` is not claimed: only the
    native CLI path is measured here.
 

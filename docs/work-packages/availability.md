@@ -168,7 +168,7 @@ Binding and execution failures: `native-host-capability-policy-missing`,
 
 | Finding | Kind | Consequence |
 |---|---|---|
-| `vm.rs` collapses every non-value bridge failure into `native-vm-capability-failed` | fault-observed | An end-to-end caller cannot tell denial, wrong-argument, and host fault apart; the precise code is tested at the core boundary instead. Fixing this changes observable CLI output, so it needs its own compatibility decision. |
+| `vm.rs` collapses every non-value bridge failure into `native-vm-capability-failed` | fault-observed | An end-to-end caller cannot tell denial, wrong-argument, and host fault apart; the precise code is tested at the core boundary instead. Fixing this changes observable CLI output, so it needed its own compatibility decision: [vm-failure-diagnostics.md](vm-failure-diagnostics.md) records it — the collapse stays the shipped contract, and any finer detail must arrive as a versioned additive member, never as a changed token. |
 | `HostBackedBridge::observations()` is not exposed by the CLI | pending | Rich in-process host tracing exists but is not part of the shipped run output; `invocations[]` is the only trace surface a CLI caller sees. |
 | `wp354` adapter handlers ignore `request.argument` | verified-only | WP-354 pins dispatch, not the wire encoding. The typed encoding is now pinned by the WP-355 decoder tests and the CLI end-to-end path. |
 | No CLI negative for every bridge error variant | measured for the policy vocabulary; one variant stays core-only | WP-358 pins all 18 text-driven policy rejections end to end (section 3.5). `native-host-bridge-declared-member-unknown` is unreachable from the CLI by construction, so it remains pinned at the core boundary by `wp351_declared_host_dispatch`; its precise code is still collapsed to `native-vm-capability-failed` on the CLI path, which is the first row of this table. |
@@ -281,7 +281,7 @@ the permission.
 | Finding | Kind | Consequence |
 |---|---|---|
 | A refused filesystem path folds into the guest's own `err` branch (exit 2 here) while the CLI exits 0 | measured | There is no distinct diagnostic code for a path refusal; a caller reading only the exit status cannot tell refusal from a handled program error. |
-| An ungranted **served** declared member collapses into `native-vm-capability-failed` | fault-observed | Same VM diagnostic collapse as section 3.6; `declared-clock-ungranted` pins the collapsed code, not a precise denial. The fix still needs its own compatibility decision. |
+| An ungranted **served** declared member collapses into `native-vm-capability-failed` | fault-observed | Same VM diagnostic collapse as section 3.6; `declared-clock-ungranted` pins the collapsed code, not a precise denial. The compatibility decision is recorded in [vm-failure-diagnostics.md](vm-failure-diagnostics.md). |
 | `EnvironmentRead`, `SecretRead`, `RandomBytes`, `LogEvent`, `TraceEvent` exist in the adapter and in `MemoryHost` but are unreachable from program text | pending | They are unreachable today because the graph's builtin table has no member for them; the moment a language surface appears they become boundary items and need the same refusal evidence. |
 | The symlink forms are a Unix-only driver test, not corpus cases | measured (recorded) | The fixture format has no portable way to create a symlink, and the Windows runner lacks the privilege. Both directions (read and write) are asserted on Unix and the gap is named rather than hidden. |
 | `execute` derives its sandbox from the source path and cannot be pointed elsewhere | verified-only | Only `runtime-run` and `project-run-sandbox` take an explicit sandbox directory; the isolation measured above is the default path, and those two CLI paths are not covered by this corpus. |
@@ -395,6 +395,10 @@ It still changes language semantics and was not folded into Issues 1-3.
    value evidence as `execute`, so the two paths cannot disagree about what a
    capability call returned; the default staged result is unchanged and the
    member stays outside every `receipt_digest`.
+7. WP-360 — decision recorded: the `native-vm-capability-failed` collapse is the
+   shipped 0.1 contract, not a placeholder waiting to be split; a finer
+   diagnosis may only arrive as a versioned additive member, and the record
+   names what that forbids ([vm-failure-diagnostics.md](vm-failure-diagnostics.md)).
 
 ## 8. Evidence rules
 
