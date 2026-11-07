@@ -1,6 +1,6 @@
 # Availability Work Package: Declared Capability Execution Closure
 
-Status: in progress. Issue 1 is closed; Issues 2-4 are planned and not started.
+Status: in progress. Issues 1-3 are closed; Issue 4 is planned and not started.
 
 This page is the plan and the acceptance record for the next maturity slice of
 the native toolchain: what a declared host capability can actually do end to
@@ -39,12 +39,13 @@ Availability labels used below:
 
 ## 2. Measured snapshot
 
-- Source: `ee479ef` plus the WP-356 corpus change in section 5.
+- Source: `361de41` plus the WP-357 boundary change in section 4.
 - Rust gates on this tree: `cargo fmt --all -- --check`,
   `cargo check --workspace --offline`, and
   `cargo clippy --workspace --offline --all-targets -- -D warnings` pass.
 - `cargo test --workspace --offline` passes, including the declared capability
-  harnesses named in section 3 and the 14-case corpus in section 5.
+  harnesses named in section 3, the 14-case corpus in section 5, and the
+  22-case host boundary corpus in section 4.
 - `npm test` passes after the source import manifest is regenerated.
 - No production-readiness, cross-platform, or Stable V1.0 claim is made by this
   page.
@@ -177,23 +178,107 @@ referenced-declared graph without a policy *before* constructing a host. In
 asserts the absence of host construction; the tests pin the refusal, its
 diagnostic, and its exit status.
 
-## 4. Issue 2 (P0, planned): security isolation of the execution boundary
+## 4. Issue 2 (P0, closed): security isolation of the execution boundary
 
 Goal: make "the guest cannot escape the declared surface" a measured property.
 
-- Enumerate every host operation reachable by a program and pin each with a
-  fail-closed negative: filesystem, environment, secrets, clock, bytes,
-  integer limits.
-- Prove authorization cannot be widened by the artifact under test: a compiled
-  `.rebc` produced under one policy must not run under a policy that does not
-  grant its members, and a registry must not substitute for a grant.
-- Record the residual trust boundary: the adapter itself is trusted code; the
-  policy is an operator artifact, not a sandbox. Say so explicitly.
-- Acceptance: every enumerated operation has a test that shows refusal, and a
-  test that shows the granted case still works; the boundary claim in
-  `docs/load-time-authority.md` is updated to match the measured set.
+Closed with a 22-case corpus,
+[`test/fixtures/host-boundary-refusal-corpus.json`](../test/fixtures/host-boundary-refusal-corpus.json)
+(`re.host-boundary-refusal-corpus@0.1.0`), driven by
+[`native/revia-cli/tests/wp357_host_boundary_corpus.rs`](../native/revia-cli/tests/wp357_host_boundary_corpus.rs),
+plus one Unix-only driver test for the symlink forms. Each case carries a
+`catches` line stating what an implementation change would break, asserts the
+result schema and fragments on the stream that must carry them, and names the
+stream that must stay empty. The harness was flipped twice in review: mutating
+one case's expected exit, and inverting the absolute-write case's after-state to
+demand the file appeared. Both mutations failed the corpus at the mutated
+assertion, which is the evidence that the corpus bites rather than merely
+passes.
 
-Not started. Depends on Issue 1 (boundary vocabulary) and its findings table.
+### 4.1 What a program can reach, and what refuses it
+
+The language-visible host surface is exactly four builtin members plus the
+process status domain, and the declared families the registry/policy pair
+admits. A member outside the builtin table is not expressible from program
+text: the graph builder has no entry for it and rejects the reference as
+`unknown-capability-member` before a host exists (that diagnostic is covered by
+the graph tests, not by this corpus). Each reachable operation now has both
+directions measured:
+
+| Operation | Granted / positive case | Refusal case |
+|---|---|---|
+| `fs.read@0.1.0.read_file` | `builtin-read-granted` | `builtin-read-missing-file`, `builtin-read-relative-escape`, `builtin-read-absolute-path`, `builtin-read-size-limit`, and the driver's symlink read |
+| `fs.write@0.1.0.write_file` | `builtin-write-granted` | `builtin-write-relative-escape`, `builtin-write-absolute-path`, and the driver's symlink write |
+| `process.stdout@0.1.0.write` | `builtin-stdout-granted` (content visible in `program_stdout`) | `builtin-stdout-over-limit` (1,048,577 bytes) |
+| `process.args@0.1.0.read` | `builtin-args-empty` | none: the member returns the host's argument list, which `execute` pins to empty; that pinning is host configuration (4.2), so the case proves the member is served and accepted, not what it returns |
+| `process.exit@0.1.0.process.exit` | every case above exits through it | `exit-status-domain-refused` (status 256 refused while the artifact is built) |
+| `revia.clock@0.1.0.monotonic_nanos` | `declared-clock-granted`, `artifact-run-granted` | `declared-clock-ungranted`, `declared-family-without-registry-refused`, `declared-unsupported-family-refused` |
+| compiled artifact replay | `artifact-run-granted` | `artifact-run-without-grant`, `artifact-run-registry-not-grant` |
+
+### 4.2 The boundary is the host configuration, not the policy
+
+Measured, and recorded because the intuitive reading is the opposite:
+
+- A program using a builtin capability runs with **no** `--capability-policy`,
+  and runs again under a policy whose grant list is empty
+  (`policy-does-not-gate-builtins`). The policy neither widens nor narrows the
+  builtin surface.
+- A policy that *names* a builtin is itself refused, as
+  `native-host-capability-policy-not-served:fs.read@0.1.0.read_file`, exit 65
+  with empty stdout (`policy-naming-builtin-refused`,
+  `policy-naming-write-builtin-refused`). A policy can only authorize declared
+  families the host actually serves.
+- What holds is `SystemHost`: sandbox root = the `.re` source's parent
+  directory, empty argument/environment/secret maps, a 1 MiB read budget, a
+  lexical `validate_path` plus canonical-prefix check, and `symlink_metadata`
+  refusing symlinks on the write side. The read budget is measured by the
+  2 MiB refusal case; the identical `MAX_OUTPUT_BYTES = 1_048_576` constant
+  also guards the stdout write and the `fs.write` payload in host code, but
+  only the stdout limit is corpus-exercised, so the write payload limit stays
+  verified-only. The empty argument/environment/secret maps are host
+  configuration read from `system_host_bridge_with_policy`, not corpus
+  assertions. A refused path
+  survives as a program-visible `err` — the guest takes its own err branch and
+  the CLI still exits 0 with `"ok":true` and an empty stderr — so asserting a
+  host fault or exit 65 for those cases would pin the wrong behaviour.
+- The 0..=255 status domain is enforced while the bytecode is built, not by
+  the host: status 256 exits 65 with a graph-result
+  `bytecode-literal-type-invalid` on stdout before any host exists.
+
+The residual trust boundary is explicit: `SystemHost` and the
+`DeclaredCapabilityHost` around it are trusted code. The guest cannot escape
+them, and that is the measured claim; nothing here constrains host code
+itself. The policy artifact is an operator-side authorization record, not a
+sandbox, and it does not constrain the builtin surface at all.
+
+### 4.3 Compile-time authority is not carried by the artifact
+
+The widening probe is a corpus case rather than prose. `compile
+--schema-registry <registry> <source> <artifact>` has no policy flag; the same
+artifact is then replayed three ways. Under a granting policy: exit 0 with an
+`ok` invocation. Under a policy that grants only a sibling family: exit 65,
+`native-vm-capability-failed` on stderr. With no policy: exit 65,
+`native-host-capability-policy-missing`. A registry without a policy never
+authorizes anything (`artifact-run-registry-not-grant`). Authorization is
+re-derived on every `run`; the artifact carries the typed call shape, never
+the permission.
+
+### 4.4 Disclosed findings
+
+| Finding | Kind | Consequence |
+|---|---|---|
+| A refused filesystem path folds into the guest's own `err` branch (exit 2 here) while the CLI exits 0 | measured | There is no distinct diagnostic code for a path refusal; a caller reading only the exit status cannot tell refusal from a handled program error. |
+| An ungranted **served** declared member collapses into `native-vm-capability-failed` | fault-observed | Same VM diagnostic collapse as section 3.6; `declared-clock-ungranted` pins the collapsed code, not a precise denial. The fix still needs its own compatibility decision. |
+| `EnvironmentRead`, `SecretRead`, `RandomBytes`, `LogEvent`, `TraceEvent` exist in the adapter and in `MemoryHost` but are unreachable from program text | pending | They are unreachable today because the graph's builtin table has no member for them; the moment a language surface appears they become boundary items and need the same refusal evidence. |
+| The symlink forms are a Unix-only driver test, not corpus cases | measured (recorded) | The fixture format has no portable way to create a symlink, and the Windows runner lacks the privilege. Both directions (read and write) are asserted on Unix and the gap is named rather than hidden. |
+| `execute` derives its sandbox from the source path and cannot be pointed elsewhere | verified-only | Only `runtime-run` and `project-run-sandbox` take an explicit sandbox directory; the isolation measured above is the default path, and those two CLI paths are not covered by this corpus. |
+
+Acceptance for this issue: every enumerated operation has a refusal case and,
+where the boundary admits one, a granted case next to it (section 4.1); the
+artifact-widening claim is measured (4.3); the residual trust boundary is
+stated (4.2); and the boundary claim in
+[`docs/load-time-authority.md`](../load-time-authority.md) is updated to the
+measured set.
 
 ## 5. Issue 3 (P0, closed): conformance corpus for the declared surface
 
@@ -275,7 +360,8 @@ Issues 1-3.
 1. Issue 1 — closed (this page).
 2. Issue 3 — closed (this page): the corpus and its negatives are in place for
    Issue 2 to enumerate against.
-3. Issue 2 — the isolation claim needs the corpus to enumerate against.
+3. Issue 2 — closed (this page): the isolation claim is measured against the
+   corpus from Issue 3.
 4. Issue 4 — last, because it is the only item that changes the language.
 
 ## 8. Evidence rules

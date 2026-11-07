@@ -1,0 +1,722 @@
+{
+  "schema": "re.host-boundary-refusal-corpus@0.1.0",
+  "version": "0.1.0",
+  "input_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "cases": [
+    {
+      "id": "builtin-read-granted",
+      "catches": "if fs.read stopped being served for a relative sandbox path, this case fails: the program takes its ok branch only when the call is served and returns ok",
+      "mode": "execute",
+      "registry": null,
+      "policy": null,
+      "program": "re 0.1 compact\n\nunit @agent_read\n\ncap @input: fs.read@0.1.0\n\nfn @main() -> process.status {\n  %report = @input.read_file(path: \"in.txt\", encoding: text.encoding.utf8)\n  return match %report {\n    ok(_) => process.exit(0)\n    err(_) => process.exit(2)\n  }\n}\n",
+      "prepare": [
+        {
+          "where": "sandbox",
+          "path": "in.txt",
+          "kind": "file",
+          "content": "hello\n"
+        }
+      ],
+      "expected": {
+        "exit": 0,
+        "channel": "stdout",
+        "schema": "re.native-host-execution-result@0.1.0",
+        "contains": [
+          "\"member\":\"read_file\",\"outcome\":\"ok\"",
+          "\"outcome\":{\"code\":0",
+          "\"ok\":true"
+        ],
+        "silent": "stderr"
+      },
+      "after": [
+        {
+          "where": "sandbox",
+          "path": "in.txt",
+          "exists": true,
+          "content": "hello\n"
+        }
+      ]
+    },
+    {
+      "id": "builtin-read-missing-file",
+      "catches": "a missing file is a program-visible err, not a host crash and not a widened path",
+      "mode": "execute",
+      "registry": null,
+      "policy": null,
+      "program": "re 0.1 compact\n\nunit @agent_read\n\ncap @input: fs.read@0.1.0\n\nfn @main() -> process.status {\n  %report = @input.read_file(path: \"absent.txt\", encoding: text.encoding.utf8)\n  return match %report {\n    ok(_) => process.exit(0)\n    err(_) => process.exit(2)\n  }\n}\n",
+      "prepare": [],
+      "expected": {
+        "exit": 0,
+        "channel": "stdout",
+        "schema": "re.native-host-execution-result@0.1.0",
+        "contains": [
+          "\"member\":\"read_file\",\"outcome\":\"err\"",
+          "\"outcome\":{\"code\":2",
+          "\"ok\":true"
+        ],
+        "silent": "stderr"
+      },
+      "after": []
+    },
+    {
+      "id": "builtin-read-relative-escape",
+      "catches": "a parent-directory path is refused even when the file exists just outside the sandbox root",
+      "mode": "execute",
+      "registry": null,
+      "policy": null,
+      "program": "re 0.1 compact\n\nunit @agent_read\n\ncap @input: fs.read@0.1.0\n\nfn @main() -> process.status {\n  %report = @input.read_file(path: \"../outside.txt\", encoding: text.encoding.utf8)\n  return match %report {\n    ok(_) => process.exit(0)\n    err(_) => process.exit(2)\n  }\n}\n",
+      "prepare": [
+        {
+          "where": "parent",
+          "path": "outside.txt",
+          "kind": "file",
+          "content": "outside\n"
+        }
+      ],
+      "expected": {
+        "exit": 0,
+        "channel": "stdout",
+        "schema": "re.native-host-execution-result@0.1.0",
+        "contains": [
+          "\"member\":\"read_file\",\"outcome\":\"err\"",
+          "\"outcome\":{\"code\":2",
+          "\"ok\":true"
+        ],
+        "silent": "stderr"
+      },
+      "after": [
+        {
+          "where": "parent",
+          "path": "outside.txt",
+          "exists": true,
+          "content": "outside\n"
+        }
+      ]
+    },
+    {
+      "id": "builtin-read-absolute-path",
+      "catches": "an absolute path is refused before any filesystem access, so the sandbox root is never bypassed",
+      "mode": "execute",
+      "registry": null,
+      "policy": null,
+      "program": "re 0.1 compact\n\nunit @agent_read\n\ncap @input: fs.read@0.1.0\n\nfn @main() -> process.status {\n  %report = @input.read_file(path: \"/etc/passwd\", encoding: text.encoding.utf8)\n  return match %report {\n    ok(_) => process.exit(0)\n    err(_) => process.exit(2)\n  }\n}\n",
+      "prepare": [],
+      "expected": {
+        "exit": 0,
+        "channel": "stdout",
+        "schema": "re.native-host-execution-result@0.1.0",
+        "contains": [
+          "\"member\":\"read_file\",\"outcome\":\"err\"",
+          "\"outcome\":{\"code\":2",
+          "\"ok\":true"
+        ],
+        "silent": "stderr"
+      },
+      "after": []
+    },
+    {
+      "id": "builtin-read-size-limit",
+      "catches": "a file larger than the 1 MiB output budget is refused as err instead of being read into the guest",
+      "mode": "execute",
+      "registry": null,
+      "policy": null,
+      "program": "re 0.1 compact\n\nunit @agent_read\n\ncap @input: fs.read@0.1.0\n\nfn @main() -> process.status {\n  %report = @input.read_file(path: \"big.txt\", encoding: text.encoding.utf8)\n  return match %report {\n    ok(_) => process.exit(0)\n    err(_) => process.exit(2)\n  }\n}\n",
+      "prepare": [
+        {
+          "where": "sandbox",
+          "path": "big.txt",
+          "kind": "file",
+          "fill": {
+            "char": "a",
+            "count": 2097152
+          }
+        }
+      ],
+      "expected": {
+        "exit": 0,
+        "channel": "stdout",
+        "schema": "re.native-host-execution-result@0.1.0",
+        "contains": [
+          "\"member\":\"read_file\",\"outcome\":\"err\"",
+          "\"outcome\":{\"code\":2",
+          "\"ok\":true"
+        ],
+        "silent": "stderr"
+      },
+      "after": []
+    },
+    {
+      "id": "builtin-write-granted",
+      "catches": "if fs.write stopped writing inside the sandbox, the granted case would stop producing the file",
+      "mode": "execute",
+      "registry": null,
+      "policy": null,
+      "program": "re 0.1 compact\n\nunit @agent_write\n\ncap @out: fs.write@0.1.0\n\nfn @main() -> process.status {\n  %report = @out.write_file(data: \"hex:68656c6c6f\", path: \"written.txt\")\n  return match %report {\n    ok(_) => process.exit(0)\n    err(_) => process.exit(2)\n  }\n}\n",
+      "prepare": [],
+      "expected": {
+        "exit": 0,
+        "channel": "stdout",
+        "schema": "re.native-host-execution-result@0.1.0",
+        "contains": [
+          "\"member\":\"write_file\",\"outcome\":\"ok\"",
+          "\"outcome\":{\"code\":0",
+          "\"ok\":true"
+        ],
+        "silent": "stderr"
+      },
+      "after": [
+        {
+          "where": "sandbox",
+          "path": "written.txt",
+          "exists": true,
+          "content": "hello"
+        }
+      ]
+    },
+    {
+      "id": "builtin-write-relative-escape",
+      "catches": "a parent-directory write is refused and no file appears outside the sandbox root",
+      "mode": "execute",
+      "registry": null,
+      "policy": null,
+      "program": "re 0.1 compact\n\nunit @agent_write\n\ncap @out: fs.write@0.1.0\n\nfn @main() -> process.status {\n  %report = @out.write_file(data: \"hex:68656c6c6f\", path: \"../escape.txt\")\n  return match %report {\n    ok(_) => process.exit(0)\n    err(_) => process.exit(2)\n  }\n}\n",
+      "prepare": [],
+      "expected": {
+        "exit": 0,
+        "channel": "stdout",
+        "schema": "re.native-host-execution-result@0.1.0",
+        "contains": [
+          "\"member\":\"write_file\",\"outcome\":\"err\"",
+          "\"outcome\":{\"code\":2",
+          "\"ok\":true"
+        ],
+        "silent": "stderr"
+      },
+      "after": [
+        {
+          "where": "parent",
+          "path": "escape.txt",
+          "exists": false
+        }
+      ]
+    },
+    {
+      "id": "builtin-write-absolute-path",
+      "catches": "an absolute write path is refused, so the write side is not weaker than the read side; the after-state proves no file appeared beside the sandbox",
+      "mode": "execute",
+      "registry": null,
+      "policy": null,
+      "program": "re 0.1 compact\n\nunit @agent_write\n\ncap @out: fs.write@0.1.0\n\nfn @main() -> process.status {\n  %report = @out.write_file(data: \"hex:68656c6c6f\", path: \"__ABSOLUTE_TARGET__\")\n  return match %report {\n    ok(_) => process.exit(0)\n    err(_) => process.exit(2)\n  }\n}\n",
+      "prepare": [],
+      "expected": {
+        "exit": 0,
+        "channel": "stdout",
+        "schema": "re.native-host-execution-result@0.1.0",
+        "contains": [
+          "\"member\":\"write_file\",\"outcome\":\"err\"",
+          "\"outcome\":{\"code\":2",
+          "\"ok\":true"
+        ],
+        "silent": "stderr"
+      },
+      "after": [
+        {
+          "where": "parent",
+          "path": "absolute-target.txt",
+          "exists": false
+        }
+      ]
+    },
+    {
+      "id": "builtin-stdout-granted",
+      "catches": "the stdout budget is observable: a small write reaches program_stdout and exits 0",
+      "mode": "execute",
+      "registry": null,
+      "policy": null,
+      "program": "re 0.1 compact\n\nunit @agent_stdout\n\ncap @out: process.stdout@0.1.0\n\nfn @main() -> process.status {\n  %report = @out.write(data: \"hi there\")\n  return match %report {\n    ok(_) => process.exit(0)\n    err(_) => process.exit(2)\n  }\n}\n",
+      "prepare": [],
+      "expected": {
+        "exit": 0,
+        "channel": "stdout",
+        "schema": "re.native-host-execution-result@0.1.0",
+        "contains": [
+          "\"member\":\"write\",\"outcome\":\"ok\"",
+          "\"program_stdout\":\"hi there\"",
+          "\"ok\":true"
+        ],
+        "silent": "stderr"
+      },
+      "after": []
+    },
+    {
+      "id": "builtin-stdout-over-limit",
+      "catches": "a write above the 1 MiB budget is refused, and the refused bytes never reach program_stdout",
+      "mode": "execute",
+      "registry": null,
+      "policy": null,
+      "program": "re 0.1 compact\n\nunit @agent_stdout\n\ncap @out: process.stdout@0.1.0\n\nfn @main() -> process.status {\n  %report = @out.write(data: \"@@WP357_LARGE_WRITE@@\")\n  return match %report {\n    ok(_) => process.exit(0)\n    err(_) => process.exit(2)\n  }\n}\n",
+      "expand": [
+        {
+          "placeholder": "@@WP357_LARGE_WRITE@@",
+          "char": "a",
+          "count": 1048577
+        }
+      ],
+      "prepare": [],
+      "expected": {
+        "exit": 0,
+        "channel": "stdout",
+        "schema": "re.native-host-execution-result@0.1.0",
+        "contains": [
+          "\"member\":\"write\",\"outcome\":\"err\"",
+          "\"outcome\":{\"code\":2",
+          "\"program_stdout\":\"\"",
+          "\"ok\":true"
+        ],
+        "silent": "stderr"
+      },
+      "after": []
+    },
+    {
+      "id": "builtin-args-empty",
+      "catches": "if process.args stopped being served or stopped returning ok, this case fails; the empty argument list itself is host configuration recorded in 4.2, not asserted here",
+      "mode": "execute",
+      "registry": null,
+      "policy": null,
+      "program": "re 0.1 compact\n\nunit @agent_args\n\ncap @args: process.args@0.1.0\n\nfn @main() -> process.status {\n  %report = @args.read()\n  return match %report {\n    ok(_) => process.exit(0)\n    err(_) => process.exit(2)\n  }\n}\n",
+      "prepare": [],
+      "expected": {
+        "exit": 0,
+        "channel": "stdout",
+        "schema": "re.native-host-execution-result@0.1.0",
+        "contains": [
+          "\"member\":\"read\",\"outcome\":\"ok\"",
+          "\"outcome\":{\"code\":0",
+          "\"ok\":true"
+        ],
+        "silent": "stderr"
+      },
+      "after": []
+    },
+    {
+      "id": "policy-does-not-gate-builtins",
+      "catches": "a policy that grants nothing still lets a builtin capability run: the policy is not a sandbox for the builtin surface",
+      "mode": "execute",
+      "registry": null,
+      "policy": {
+        "schema": "revia.capability-policy@0.1.0",
+        "grants": []
+      },
+      "program": "re 0.1 compact\n\nunit @agent_read\n\ncap @input: fs.read@0.1.0\n\nfn @main() -> process.status {\n  %report = @input.read_file(path: \"in.txt\", encoding: text.encoding.utf8)\n  return match %report {\n    ok(_) => process.exit(0)\n    err(_) => process.exit(2)\n  }\n}\n",
+      "prepare": [
+        {
+          "where": "sandbox",
+          "path": "in.txt",
+          "kind": "file",
+          "content": "hello\n"
+        }
+      ],
+      "expected": {
+        "exit": 0,
+        "channel": "stdout",
+        "schema": "re.native-host-execution-result@0.1.0",
+        "contains": [
+          "\"member\":\"read_file\",\"outcome\":\"ok\"",
+          "\"outcome\":{\"code\":0",
+          "\"ok\":true"
+        ],
+        "silent": "stderr"
+      },
+      "after": []
+    },
+    {
+      "id": "policy-naming-builtin-refused",
+      "catches": "naming a builtin capability in a policy is refused as not-served instead of silently widening or narrowing it",
+      "mode": "execute",
+      "registry": null,
+      "policy": {
+        "schema": "revia.capability-policy@0.1.0",
+        "grants": [
+          {
+            "reference": "fs.read@0.1.0",
+            "members": [
+              "read_file"
+            ]
+          }
+        ]
+      },
+      "program": "re 0.1 compact\n\nunit @agent_read\n\ncap @input: fs.read@0.1.0\n\nfn @main() -> process.status {\n  %report = @input.read_file(path: \"in.txt\", encoding: text.encoding.utf8)\n  return match %report {\n    ok(_) => process.exit(0)\n    err(_) => process.exit(2)\n  }\n}\n",
+      "prepare": [
+        {
+          "where": "sandbox",
+          "path": "in.txt",
+          "kind": "file",
+          "content": "hello\n"
+        }
+      ],
+      "expected": {
+        "exit": 65,
+        "channel": "stderr",
+        "schema": "re.native-host-execution-result@0.1.0",
+        "contains": [
+          "native-host-capability-policy-not-served:fs.read@0.1.0.read_file",
+          "\"ok\":false"
+        ],
+        "silent": "stdout"
+      },
+      "after": []
+    },
+    {
+      "id": "policy-naming-write-builtin-refused",
+      "catches": "the write side is refused the same way, so the not-served rule is not read-only-specific",
+      "mode": "execute",
+      "registry": null,
+      "policy": {
+        "schema": "revia.capability-policy@0.1.0",
+        "grants": [
+          {
+            "reference": "fs.write@0.1.0",
+            "members": [
+              "write_file"
+            ]
+          }
+        ]
+      },
+      "program": "re 0.1 compact\n\nunit @agent_write\n\ncap @out: fs.write@0.1.0\n\nfn @main() -> process.status {\n  %report = @out.write_file(data: \"hex:68656c6c6f\", path: \"written.txt\")\n  return match %report {\n    ok(_) => process.exit(0)\n    err(_) => process.exit(2)\n  }\n}\n",
+      "prepare": [],
+      "expected": {
+        "exit": 65,
+        "channel": "stderr",
+        "schema": "re.native-host-execution-result@0.1.0",
+        "contains": [
+          "native-host-capability-policy-not-served:fs.write@0.1.0.write_file",
+          "\"ok\":false"
+        ],
+        "silent": "stdout"
+      },
+      "after": [
+        {
+          "where": "sandbox",
+          "path": "written.txt",
+          "exists": false
+        }
+      ]
+    },
+    {
+      "id": "exit-status-domain-refused",
+      "catches": "a process status outside 0..=255 is refused at compile stage, before the host is reached",
+      "mode": "execute",
+      "registry": null,
+      "policy": null,
+      "program": "re 0.1 compact\n\nunit @agent_stdout\n\ncap @out: process.stdout@0.1.0\n\nfn @main() -> process.status {\n  %report = @out.write(data: \"hi\")\n  return match %report {\n    ok(_) => process.exit(256)\n    err(_) => process.exit(2)\n  }\n}\n",
+      "prepare": [],
+      "expected": {
+        "exit": 65,
+        "channel": "stdout",
+        "schema": "re.native-graph-result@0.1.0",
+        "contains": [
+          "bytecode-literal-type-invalid",
+          "\"ok\":false"
+        ],
+        "silent": "stderr"
+      },
+      "after": []
+    },
+    {
+      "id": "declared-clock-granted",
+      "catches": "the third served declared member (clock) runs end to end once registry and policy agree",
+      "mode": "execute",
+      "registry": {
+        "schema": "revia.host-schema-definitions@0.1.0",
+        "definitions": [
+          {
+            "identity": "revia.clock",
+            "revision": "0.1.0",
+            "members": {
+              "monotonic_nanos": {
+                "params": [],
+                "returns": "number.i64"
+              }
+            }
+          }
+        ]
+      },
+      "policy": {
+        "schema": "revia.capability-policy@0.1.0",
+        "grants": [
+          {
+            "reference": "revia.clock@0.1.0",
+            "members": [
+              "monotonic_nanos"
+            ]
+          }
+        ]
+      },
+      "program": "re 0.1 compact\n\nunit @agent_clock\n\ncap @clock: revia.clock@0.1.0\n\nfn @main() -> process.status {\n  %report = @clock.monotonic_nanos()\n  return match %report {\n    ok(_) => process.exit(0)\n    err(_) => process.exit(3)\n  }\n}\n",
+      "prepare": [],
+      "expected": {
+        "exit": 0,
+        "channel": "stdout",
+        "schema": "re.native-host-execution-result@0.1.0",
+        "contains": [
+          "\"member\":\"monotonic_nanos\",\"outcome\":\"ok\"",
+          "\"outcome\":{\"code\":0",
+          "\"ok\":true"
+        ],
+        "silent": "stderr"
+      },
+      "after": []
+    },
+    {
+      "id": "declared-clock-ungranted",
+      "catches": "a registry that declares clock does not grant it: without the grant the run is refused as a capability failure",
+      "mode": "execute",
+      "registry": {
+        "schema": "revia.host-schema-definitions@0.1.0",
+        "definitions": [
+          {
+            "identity": "revia.clock",
+            "revision": "0.1.0",
+            "members": {
+              "monotonic_nanos": {
+                "params": [],
+                "returns": "number.i64"
+              }
+            }
+          }
+        ]
+      },
+      "policy": {
+        "schema": "revia.capability-policy@0.1.0",
+        "grants": [
+          {
+            "reference": "revia.strings@0.1.0",
+            "members": [
+              "concat"
+            ]
+          }
+        ]
+      },
+      "program": "re 0.1 compact\n\nunit @agent_clock\n\ncap @clock: revia.clock@0.1.0\n\nfn @main() -> process.status {\n  %report = @clock.monotonic_nanos()\n  return match %report {\n    ok(_) => process.exit(0)\n    err(_) => process.exit(3)\n  }\n}\n",
+      "prepare": [],
+      "expected": {
+        "exit": 65,
+        "channel": "stderr",
+        "schema": "re.native-host-execution-result@0.1.0",
+        "contains": [
+          "native-vm-capability-failed",
+          "\"ok\":false"
+        ],
+        "silent": "stdout"
+      },
+      "after": []
+    },
+    {
+      "id": "declared-unsupported-family-refused",
+      "catches": "a family a registry declares but this toolchain does not serve is refused as not-served instead of reaching a host adapter",
+      "mode": "execute",
+      "registry": {
+        "schema": "revia.host-schema-definitions@0.1.0",
+        "definitions": [
+          {
+            "identity": "demo.echo",
+            "revision": "0.1.0",
+            "members": {
+              "say": {
+                "errors": [
+                  "output_limit"
+                ],
+                "params": [
+                  {
+                    "name": "text",
+                    "type": "text.utf8"
+                  }
+                ],
+                "returns": "result<text.utf8, text.error>"
+              }
+            }
+          }
+        ]
+      },
+      "policy": {
+        "schema": "revia.capability-policy@0.1.0",
+        "grants": [
+          {
+            "reference": "demo.echo@0.1.0",
+            "members": [
+              "say"
+            ]
+          }
+        ]
+      },
+      "program": "re 0.1 compact\n\nunit @agent_echo\n\ncap @echo: demo.echo@0.1.0\n\nfn @main() -> process.status {\n  %report = @echo.say(text: \"hi\")\n  return match %report {\n    ok(_) => process.exit(0)\n    err(_) => process.exit(4)\n  }\n}\n",
+      "prepare": [],
+      "expected": {
+        "exit": 65,
+        "channel": "stderr",
+        "schema": "re.native-host-execution-result@0.1.0",
+        "contains": [
+          "native-host-capability-policy-not-served:demo.echo@0.1.0.say",
+          "\"ok\":false"
+        ],
+        "silent": "stdout"
+      },
+      "after": []
+    },
+    {
+      "id": "declared-family-without-registry-refused",
+      "catches": "without a registry the declared reference never resolves, so no declared call can be reached from source text",
+      "mode": "execute",
+      "registry": null,
+      "policy": {
+        "schema": "revia.capability-policy@0.1.0",
+        "grants": [
+          {
+            "reference": "revia.clock@0.1.0",
+            "members": [
+              "monotonic_nanos"
+            ]
+          }
+        ]
+      },
+      "program": "re 0.1 compact\n\nunit @agent_clock\n\ncap @clock: revia.clock@0.1.0\n\nfn @main() -> process.status {\n  %report = @clock.monotonic_nanos()\n  return match %report {\n    ok(_) => process.exit(0)\n    err(_) => process.exit(3)\n  }\n}\n",
+      "prepare": [],
+      "expected": {
+        "exit": 65,
+        "channel": "stdout",
+        "schema": "re.native-graph-result@0.1.0",
+        "contains": [
+          "unknown-schema-reference",
+          "\"actual\":\"revia.clock@0.1.0\"",
+          "\"ok\":false"
+        ],
+        "silent": "stderr"
+      },
+      "after": []
+    },
+    {
+      "id": "artifact-run-granted",
+      "catches": "an artifact compiled once by `compile` still runs under the policy that grants its member",
+      "mode": "run",
+      "registry": {
+        "schema": "revia.host-schema-definitions@0.1.0",
+        "definitions": [
+          {
+            "identity": "revia.clock",
+            "revision": "0.1.0",
+            "members": {
+              "monotonic_nanos": {
+                "params": [],
+                "returns": "number.i64"
+              }
+            }
+          }
+        ]
+      },
+      "policy": {
+        "schema": "revia.capability-policy@0.1.0",
+        "grants": [
+          {
+            "reference": "revia.clock@0.1.0",
+            "members": [
+              "monotonic_nanos"
+            ]
+          }
+        ]
+      },
+      "program": "re 0.1 compact\n\nunit @agent_clock\n\ncap @clock: revia.clock@0.1.0\n\nfn @main() -> process.status {\n  %report = @clock.monotonic_nanos()\n  return match %report {\n    ok(_) => process.exit(0)\n    err(_) => process.exit(3)\n  }\n}\n",
+      "prepare": [],
+      "expected": {
+        "exit": 0,
+        "channel": "stdout",
+        "schema": "re.native-host-execution-result@0.1.0",
+        "contains": [
+          "\"member\":\"monotonic_nanos\",\"outcome\":\"ok\"",
+          "\"outcome\":{\"code\":0",
+          "\"ok\":true"
+        ],
+        "silent": "stderr"
+      },
+      "after": []
+    },
+    {
+      "id": "artifact-run-without-grant",
+      "catches": "the same artifact under a policy that does not grant the member is refused, so the artifact carries no authority of its own",
+      "mode": "run",
+      "registry": {
+        "schema": "revia.host-schema-definitions@0.1.0",
+        "definitions": [
+          {
+            "identity": "revia.clock",
+            "revision": "0.1.0",
+            "members": {
+              "monotonic_nanos": {
+                "params": [],
+                "returns": "number.i64"
+              }
+            }
+          }
+        ]
+      },
+      "policy": {
+        "schema": "revia.capability-policy@0.1.0",
+        "grants": [
+          {
+            "reference": "revia.strings@0.1.0",
+            "members": [
+              "concat"
+            ]
+          }
+        ]
+      },
+      "program": "re 0.1 compact\n\nunit @agent_clock\n\ncap @clock: revia.clock@0.1.0\n\nfn @main() -> process.status {\n  %report = @clock.monotonic_nanos()\n  return match %report {\n    ok(_) => process.exit(0)\n    err(_) => process.exit(3)\n  }\n}\n",
+      "prepare": [],
+      "expected": {
+        "exit": 65,
+        "channel": "stderr",
+        "schema": "re.native-host-execution-result@0.1.0",
+        "contains": [
+          "native-vm-capability-failed",
+          "\"ok\":false"
+        ],
+        "silent": "stdout"
+      },
+      "after": []
+    },
+    {
+      "id": "artifact-run-registry-not-grant",
+      "catches": "the registry alone never authorizes a run: without a policy the artifact is refused as policy-missing",
+      "mode": "run",
+      "registry": {
+        "schema": "revia.host-schema-definitions@0.1.0",
+        "definitions": [
+          {
+            "identity": "revia.clock",
+            "revision": "0.1.0",
+            "members": {
+              "monotonic_nanos": {
+                "params": [],
+                "returns": "number.i64"
+              }
+            }
+          }
+        ]
+      },
+      "policy": null,
+      "program": "re 0.1 compact\n\nunit @agent_clock\n\ncap @clock: revia.clock@0.1.0\n\nfn @main() -> process.status {\n  %report = @clock.monotonic_nanos()\n  return match %report {\n    ok(_) => process.exit(0)\n    err(_) => process.exit(3)\n  }\n}\n",
+      "prepare": [],
+      "expected": {
+        "exit": 65,
+        "channel": "stderr",
+        "schema": "re.native-host-execution-result@0.1.0",
+        "contains": [
+          "native-host-capability-policy-missing",
+          "\"ok\":false"
+        ],
+        "silent": "stdout"
+      },
+      "after": []
+    }
+  ]
+}
