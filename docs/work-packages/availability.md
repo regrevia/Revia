@@ -148,6 +148,18 @@ branches in `CapabilityPolicy::parse` are defensive: `parse_json` collapses an
 object to unique keys, so text input cannot reach them. They are pinned by
 inspection, not by a test, and that is stated rather than papered over.
 
+Every reason above is pinned end to end by
+[`native/revia-cli/tests/wp358_policy_rejection_corpus.rs`](../native/revia-cli/tests/wp358_policy_rejection_corpus.rs):
+18 policies that differ only in their bytes, run over one program and one schema
+registry through the shipped `execute` path. Each case asserts exit status 65, a
+single stderr diagnostic, `ok:false`, the host-result schema, an empty stdout,
+and its reason token by exact equality rather than by substring. The same file
+checks that the tested vocabulary is still the documented one, so this paragraph
+and the corpus cannot drift apart silently. The one reason that is not reachable
+there, `native-host-bridge-declared-member-unknown`, stays at the core boundary:
+the CLI derives the bound host from the same registry the graph was checked
+against, so the declared sets cannot disagree through that entry point.
+
 Binding and execution failures: `native-host-capability-policy-missing`,
 `native-host-capability-policy-not-served:<reference>.<member>`,
 `native-host-bridge-capability-denied`, `native-host-bridge-declared-member-unknown`.
@@ -159,7 +171,7 @@ Binding and execution failures: `native-host-capability-policy-missing`,
 | `vm.rs` collapses every non-value bridge failure into `native-vm-capability-failed` | fault-observed | An end-to-end caller cannot tell denial, wrong-argument, and host fault apart; the precise code is tested at the core boundary instead. Fixing this changes observable CLI output, so it needs its own compatibility decision. |
 | `HostBackedBridge::observations()` is not exposed by the CLI | pending | Rich in-process host tracing exists but is not part of the shipped run output; `invocations[]` is the only trace surface a CLI caller sees. |
 | `wp354` adapter handlers ignore `request.argument` | verified-only | WP-354 pins dispatch, not the wire encoding. The typed encoding is now pinned by the WP-355 decoder tests and the CLI end-to-end path. |
-| No CLI negative for every bridge error variant | pending | Section 3.5 lists the exact remaining negatives; they are the first item of Issue 3. |
+| No CLI negative for every bridge error variant | measured for the policy vocabulary; one variant stays core-only | WP-358 pins all 18 text-driven policy rejections end to end (section 3.5). `native-host-bridge-declared-member-unknown` is unreachable from the CLI by construction, so it remains pinned at the core boundary by `wp351_declared_host_dispatch`; its precise code is still collapsed to `native-vm-capability-failed` on the CLI path, which is the first row of this table. |
 
 Issue 1 is closed on the four acceptance criteria it owned: the host is bound to
 the production path, undeclared/unauthorized calls are rejected at the
@@ -376,6 +388,9 @@ It still changes language semantics and was not folded into Issues 1-3.
    corpus from Issue 3.
 4. Issue 4 — closed (this page): the section 6 value interface
    shipped as route B, and the language change is scheduled there.
+5. WP-358 — closed: the section 3.5 policy vocabulary has a CLI negative for
+   every text-reachable reason, and the two remaining boundaries are named
+   rather than assumed.
 
 ## 8. Evidence rules
 
