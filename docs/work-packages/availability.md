@@ -1,6 +1,7 @@
 # Availability Work Package: Declared Capability Execution Closure
 
-Status: in progress. Issues 1-3 are closed; Issue 4 is planned and not started.
+Status: in progress. Issues 1-4 are closed; the section 6 language change
+(route A) is scheduled, and route B is delivered.
 
 This page is the plan and the acceptance record for the next maturity slice of
 the native toolchain: what a declared host capability can actually do end to
@@ -338,15 +339,16 @@ Goal: turn the WP-355 fixtures into a corpus other implementations can run.
   bridge error variant; that needs the `vm.rs` compatibility decision, not a
   fixture.
 
-## 6. Issue 4 (P1, planned): semantic interfaces for capability results
+## 6. Issue 4 (P1, closed): semantic interfaces for capability results
 
 Goal: let a program actually observe what a capability returned.
 
 - Specify binding a declared result to a value (`ok(%value)` / `err(%error)`)
   and rendering it, with the typed envelope preserved end to end.
 - Specify how a `number.i64` return (e.g. `scalar_count`) is stored in a
-  `result` binding; today a non-`result` return type cannot be stored, so the
-  VM fails even when the call is authorized.
+  `result` binding; today it has no value position: the response is a plain
+  `ok`, so matching it silently takes the `ok` branch and the value is dropped
+  (measured in `result-value-interface.md`, section 1).
 - Decide the stable way to print or compare a capability result so CLI evidence
   can be value-level instead of exit-status-level.
 - Acceptance: an impact analysis for the language change, a versioned grammar

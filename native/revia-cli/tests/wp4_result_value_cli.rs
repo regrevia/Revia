@@ -10,10 +10,10 @@
 //!
 //! The extension under test is opt-in and additive:
 //!
-//! - default output is byte-identical to the pinned
-//!   `re.native-host-execution-result@0.1.0` shape, and every
-//!   `receipt_digest` stays what it was — value observation is not part of the
-//!   receipt;
+//! - default output keeps the pinned `re.native-host-execution-result@0.1.0`
+//!   shape: the member is absent, the neighbouring fields keep their values,
+//!   and every `receipt_digest` stays what it was — value observation is not
+//!   part of the receipt;
 //! - `--print-values` adds an `invocation_values` array next to `invocations`,
 //!   same order and same length, each entry the typed payload of that call, in
 //!   the canonical JSON of the VM value encoding (`{"type":…,"value":…}`).
