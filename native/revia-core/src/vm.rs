@@ -182,6 +182,12 @@ pub struct VmResult {
 pub struct VmExecution {
     pub result: VmResult,
     pub returned_value: VmValue,
+    /// The typed payload of each invocation, in invocation order. A `Value`
+    /// response records its payload; a `CheckFailure` or `HostFault` response
+    /// has none and records `None`. These are observations for evidence
+    /// consumers: they are not part of the receipt digest, which still binds
+    /// invocation identity and outcome only.
+    pub invocation_values: Vec<Option<VmValue>>,
 }
 
 /// Declaration-blind entry point: it admits no registry declarations, so it is
@@ -241,14 +247,12 @@ pub fn execute_bytecode_with_return_value(
     )
 }
 
-/// The declaration-aware core both public entry points above delegate to. It
-/// stays private because no crate-external caller needs `VmExecution` together
-/// with declarations today: the CLI's `run`/`execute` routes take
-/// `execute_bytecode_with_declarations`, and the only `VmExecution` consumer is
-/// the project runtime, which has no registry to hand over. A caller that needs
-/// both should get a public `*_with_declarations` form added here rather than
-/// dropping declarations at one of the `&[]` doors.
-fn execute_bytecode_with_return_value_and_declarations(
+/// Declaration-aware twin of `execute_bytecode_with_return_value`: the entry
+/// point for a caller that needs the produced value *and* admits registry
+/// declarations. The CLI's `execute` route uses it to observe per-invocation
+/// values; dropping the declarations at one of the `&[]` doors instead would
+/// re-verify the artifact against an empty vocabulary and reject the graph.
+pub fn execute_bytecode_with_return_value_and_declarations(
     checked_graph: &Graph,
     artifact_source: &str,
     request: &VmRequest,
@@ -339,6 +343,7 @@ fn execute_verified(
     let mut steps = 0usize;
     let mut allocations = 0usize;
     let mut returned_value = None;
+    let mut invocation_values = Vec::<Option<VmValue>>::new();
 
     loop {
         if steps >= limits.max_steps {
@@ -387,6 +392,11 @@ fn execute_verified(
                 if let CapabilityResponse::Value { payload, .. } = &response {
                     returned_value = Some(payload.clone());
                 }
+                invocation_values.push(match &response {
+                    CapabilityResponse::Value { payload, .. } => Some(payload.clone()),
+                    CapabilityResponse::CheckFailure { .. }
+                    | CapabilityResponse::HostFault { .. } => None,
+                });
                 invocations.push(VmInvocation {
                     instance: instance.clone(),
                     member: member.clone(),
@@ -447,6 +457,7 @@ fn execute_verified(
                     },
                     returned_value: returned_value
                         .ok_or_else(|| GraphError::new("native-vm-return-value-missing"))?,
+                    invocation_values,
                 });
             }
         }

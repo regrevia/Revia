@@ -352,8 +352,18 @@ Goal: let a program actually observe what a capability returned.
 - Acceptance: an impact analysis for the language change, a versioned grammar
   note, and a CLI test that prints a capability value.
 
-Not started. It changes language semantics, so it must not be smuggled into
-Issues 1-3.
+Delivered as route B in
+[`result-value-interface.md`](result-value-interface.md): that page is the
+impact analysis, the versioned grammar note is in
+[`../language-reference.md`](../language-reference.md),
+and `native/revia-cli/tests/wp4_result_value_cli.rs` prints a capability value.
+
+Route B is CLI value-level evidence only: `revia execute --print-values` adds an
+additive, non-digest `invocation_values[]` for each invocation, with the default
+output and every `receipt_digest` unchanged. The language change (route A —
+`ok(%value)` / `err(%error)`, payload-carrying `BranchResult`, artifact
+`@0.2.0`) is **scheduled**, not implemented, which is what section 10 allows.
+It still changes language semantics and was not folded into Issues 1-3.
 
 ## 7. Sequencing
 
@@ -362,7 +372,8 @@ Issues 1-3.
    Issue 2 to enumerate against.
 3. Issue 2 — closed (this page): the isolation claim is measured against the
    corpus from Issue 3.
-4. Issue 4 — last, because it is the only item that changes the language.
+4. Issue 4 — closed (this page): the section 6 value interface
+   shipped as route B, and the language change is scheduled there.
 
 ## 8. Evidence rules
 
@@ -407,4 +418,5 @@ No finding required a code change; none contradicted the closure claim.
   test; residual trust statement published.
 - Issue 3: corpus runs in one command and includes the section 3.6 negatives.
 - Issue 4: impact analysis accepted; language change either scheduled or
-  explicitly rejected.
+  explicitly rejected. This page: scheduled (route A), route B delivered —
+  section 6 and `result-value-interface.md`.

@@ -1,6 +1,6 @@
 # Development Status / 开发进展
 
-Updated 2026-10-31.
+Updated 2026-11-08.
 
 ## Source And Runtime
 
@@ -37,6 +37,7 @@ Rust native 翻译器/VM 切片、项目与模块检查、确定性语义产物�
 | Current main source, `ca268c4` | Source validation, Linux x64 native conformance, and Windows x64 native conformance passed in GitHub Actions; bound Windows runner verified the downloaded executable digest before launch |
 | Native declared capability execution | `--schema-registry` + `--capability-policy` path, typed declared-call encoding, and fail-closed authorization boundary are covered by 13 core tests, 9 native CLI tests, and a 14-case CLI conformance corpus (`test/fixtures/declared-capability-execution-corpus.json`); plan and limits in [work-packages/availability.md](work-packages/availability.md) |
 | Native host execution boundary | Four builtin members plus three served declared members are the language-visible host surface; fail-closed refusals for path escapes, size limits, ungranted members, and status-domain overflows are pinned by a 22-case CLI corpus (`test/fixtures/host-boundary-refusal-corpus.json`) and a Unix-only symlink test, with the residual trust boundary stated in [work-packages/availability.md](work-packages/availability.md) section 4 |
+| Native result value evidence | `revia execute --print-values` prints one typed value per invocation (`invocation_values[]`); the member is additive, opt-in, and outside every `receipt_digest`, and the default output is unchanged. Language-level `ok(%value)` binding stays scheduled (artifact `@0.2.0`) in [work-packages/result-value-interface.md](work-packages/result-value-interface.md) |
 | Project surface on current main | Source and native `project-check`/`project-surface-check` gates passed; native build/run remain versioned-candidate scope |
 | Production readiness | Not claimed |
 | Complete A2A/MCP interoperability | Not claimed |

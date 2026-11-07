@@ -108,6 +108,7 @@
     "native/revia-cli/tests/wp355_declared_capability_policy_cli.rs",
     "native/revia-cli/tests/wp356_declared_capability_corpus.rs",
     "native/revia-cli/tests/wp357_host_boundary_corpus.rs",
+    "native/revia-cli/tests/wp4_result_value_cli.rs",
     "native/revia-conformance/Cargo.toml",
     "native/revia-conformance/src/lib.rs",
     "native/revia-conformance/src/main.rs",

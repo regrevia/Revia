@@ -92,6 +92,16 @@ Behavior is fail-closed and was tightened in WP-355:
   exit 65. Successful runs print `re.native-host-execution-result@0.1.0` with
   `invocations[]` and `trace[]` on stdout.
 
+`execute --print-values` adds one optional member next to `invocations`:
+`invocation_values[]`, same order and length, each entry the typed value the
+call returned (`{"type":…,"value":…}` in the VM value encoding), or `null` for
+a bridge failure that produced no value. It is opt-in and additive: without the
+flag the output is unchanged, and the member is not part of any
+`receipt_digest`, so an observation never moves a pinned receipt. See
+[work-packages/result-value-interface.md](work-packages/result-value-interface.md).
+The member is an additive extension pending a schema revision, not yet a stable
+contract.
+
 This is an operator authorization artifact, not a sandbox: the host adapter
 itself is trusted code. The full boundary and its measured limits are recorded
 in [work-packages/availability.md](work-packages/availability.md).

@@ -164,7 +164,10 @@ use revia_core::{
         server_gate_report_digest,
     },
     source::SourceText,
-    vm::{VmLimits, VmResult, execute_bytecode, execute_bytecode_with_declarations},
+    vm::{
+        VmLimits, VmResult, execute_bytecode, execute_bytecode_with_declarations,
+        execute_bytecode_with_return_value_and_declarations,
+    },
 };
 
 const CHECK_SCHEMA: &str = "re.native-parser-result@0.1.0";
@@ -201,7 +204,7 @@ Commands:
   manifest <file>
   translate <file>
   compile [--schema-registry <registry>] <source> <artifact>
-  execute [--schema-registry <registry>] [--capability-policy <policy>] <source> <input-digest>
+  execute [--schema-registry <registry>] [--capability-policy <policy>] [--print-values] <source> <input-digest>
   runtime-package <source> <bundle>
   runtime-verify <bundle>
   runtime-authority-pin <bundle> <input-digest> <pin>
@@ -259,7 +262,20 @@ Use `revia <command> --help` for a command's arguments.
 const CLI_EXIT_CODES: &str = "Exit codes:\n  0  success\n  64 usage or unknown command\n  65 source, project, or contract failure\n  66 input file unreadable\n  101 internal panic (a defect; report the input)\n";
 
 fn main() {
-    let arguments = env::args().skip(1).collect::<Vec<_>>();
+    let mut arguments = env::args().skip(1).collect::<Vec<_>>();
+    // `--print-values` is accepted anywhere among `execute`'s arguments so the
+    // hand-written patterns below do not have to enumerate every combination
+    // of flags. It changes evidence output only: no guest value is stored, and
+    // the receipt digest is unchanged.
+    let print_values = arguments
+        .first()
+        .is_some_and(|command| command == "execute")
+        && arguments
+            .iter()
+            .any(|argument| argument == "--print-values");
+    if print_values {
+        arguments.retain(|argument| argument != "--print-values");
+    }
     let result = match arguments.as_slice() {
         [command] if command == "--help" || command == "help" => cli_help(),
         [command, topic] if command == "help" => command_help(topic),
@@ -301,20 +317,33 @@ fn main() {
                 input_digest,
                 Some(registry_path),
                 Some(policy_path),
+                print_values,
             )
         }
         [command, flag, registry_path, source_path, input_digest]
             if command == "execute" && flag == "--schema-registry" =>
         {
-            execute(source_path, input_digest, Some(registry_path), None)
+            execute(
+                source_path,
+                input_digest,
+                Some(registry_path),
+                None,
+                print_values,
+            )
         }
         [command, flag, policy_path, source_path, input_digest]
             if command == "execute" && flag == "--capability-policy" =>
         {
-            execute(source_path, input_digest, None, Some(policy_path))
+            execute(
+                source_path,
+                input_digest,
+                None,
+                Some(policy_path),
+                print_values,
+            )
         }
         [command, source_path, input_digest] if command == "execute" => {
-            execute(source_path, input_digest, None, None)
+            execute(source_path, input_digest, None, None, print_values)
         }
         [command, source_path, bundle_path] if command == "runtime-package" => {
             runtime_package(source_path, bundle_path)
@@ -808,7 +837,7 @@ fn main() {
         }
         _ => {
             eprintln!(
-                "Usage: revia <check|lex|digest|canonical|manifest|translate> <file> | compile [--schema-registry <registry>] <source> <artifact> | execute [--schema-registry <registry>] [--capability-policy <policy>] <source> <input-digest> | runtime-package <source> <bundle> | runtime-verify <bundle> | runtime-authority-pin <bundle> <input-digest> <pin> | runtime-receipt-verify <pin> <receipt> <result> <stdout> | project-run-verify <run> | runtime-run <bundle> <input-digest> <sandbox> | capability-comparison <catalog> <output> | capability-project-comparison <catalog> <project> <cache> <build> <profile-digest> <toolchain-digest> <output> | conformance-run <source> <input-digest> <transcript> | cross-language-matrix <source> <input-digest> <transcript> <node-result> <output> | replay-catalog <catalog> <output> | comparison-catalog <catalog> <project> <output> | experiment-kit <catalog> <project> <output> | replay-fault-catalog <catalog> <output> | replay-fault-corpus <corpus> <output> | replay-fault-corpus-gate <corpus> <evidence> | verify [--schema-registry <registry>] <graph> <artifact> | run [--schema-registry <registry>] [--capability-policy <policy>] <graph> <artifact> <input-digest> | project-init <directory> | project-check <project> | project-test <project> | project-scale <project> | project-execute-plan <project> <plan> <profile-digest> <toolchain-digest> <input-digest> | project-execute-plan-direct <project> <plan> <profile-digest> <toolchain-digest> <input-digest> | project-execute-plan-cached <project> <plan> <execution-cache> <profile-digest> <toolchain-digest> <input-digest> | project-execute <project> <module> <profile-digest> <toolchain-digest> <input-digest> | project-benchmark <project> <module> <profile-digest> <toolchain-digest> <input-digest> <report> | project-translate <project> <cache> <build> <profile-digest> <toolchain-digest> <module> | project-run <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest> | project-run-sandbox <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest> <sandbox> | project-build <project> <cache> <build> <profile-digest> <toolchain-digest> | server-smoke | project-server-smoke <project> <module> <profile-digest> <toolchain-digest> <input-digest> | release-package <binary> <candidate> <target> <source-digest> <toolchain-digest> | release-verify <candidate> <target> <source-digest> <toolchain-digest> | release-install <candidate> <target> <source-digest> <toolchain-digest> | release-rollback <install> <target> <source-digest> <toolchain-digest> | release-matrix <target> <output> | node-free-gate <source> <project> <module> <report> | developer-gate <project> <module> <input-digest> <report> | toolchain-gate <source> <project> <module> <input-digest> <report> | release-evidence-gate <source> <project> <module> <fault-corpus> <evidence>"
+                "Usage: revia <check|lex|digest|canonical|manifest|translate> <file> | compile [--schema-registry <registry>] <source> <artifact> | execute [--schema-registry <registry>] [--capability-policy <policy>] [--print-values] <source> <input-digest> | runtime-package <source> <bundle> | runtime-verify <bundle> | runtime-authority-pin <bundle> <input-digest> <pin> | runtime-receipt-verify <pin> <receipt> <result> <stdout> | project-run-verify <run> | runtime-run <bundle> <input-digest> <sandbox> | capability-comparison <catalog> <output> | capability-project-comparison <catalog> <project> <cache> <build> <profile-digest> <toolchain-digest> <output> | conformance-run <source> <input-digest> <transcript> | cross-language-matrix <source> <input-digest> <transcript> <node-result> <output> | replay-catalog <catalog> <output> | comparison-catalog <catalog> <project> <output> | experiment-kit <catalog> <project> <output> | replay-fault-catalog <catalog> <output> | replay-fault-corpus <corpus> <output> | replay-fault-corpus-gate <corpus> <evidence> | verify [--schema-registry <registry>] <graph> <artifact> | run [--schema-registry <registry>] [--capability-policy <policy>] <graph> <artifact> <input-digest> | project-init <directory> | project-check <project> | project-test <project> | project-scale <project> | project-execute-plan <project> <plan> <profile-digest> <toolchain-digest> <input-digest> | project-execute-plan-direct <project> <plan> <profile-digest> <toolchain-digest> <input-digest> | project-execute-plan-cached <project> <plan> <execution-cache> <profile-digest> <toolchain-digest> <input-digest> | project-execute <project> <module> <profile-digest> <toolchain-digest> <input-digest> | project-benchmark <project> <module> <profile-digest> <toolchain-digest> <input-digest> <report> | project-translate <project> <cache> <build> <profile-digest> <toolchain-digest> <module> | project-run <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest> | project-run-sandbox <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest> <sandbox> | project-build <project> <cache> <build> <profile-digest> <toolchain-digest> | server-smoke | project-server-smoke <project> <module> <profile-digest> <toolchain-digest> <input-digest> | release-package <binary> <candidate> <target> <source-digest> <toolchain-digest> | release-verify <candidate> <target> <source-digest> <toolchain-digest> | release-install <candidate> <target> <source-digest> <toolchain-digest> | release-rollback <install> <target> <source-digest> <toolchain-digest> | release-matrix <target> <output> | node-free-gate <source> <project> <module> <report> | developer-gate <project> <module> <input-digest> <report> | toolchain-gate <source> <project> <module> <input-digest> <report> | release-evidence-gate <source> <project> <module> <fault-corpus> <evidence>"
             );
             Err(64)
         }
@@ -840,7 +869,7 @@ fn command_help(command: &str) -> Result<(), i32> {
             "revia compile [--schema-registry <registry>] <source> <artifact>\n  Write a verified native artifact.\n"
         }
         "execute" => {
-            "revia execute [--schema-registry <registry>] [--capability-policy <policy>] <source> <input-digest>\n  Check, translate, and execute one source file.\n"
+            "revia execute [--schema-registry <registry>] [--capability-policy <policy>] [--print-values] <source> <input-digest>\n  Check, translate, and execute one source file.\n  --print-values adds, for each invocation, the typed value it returned; the array has the same order and length as `invocations`.\n"
         }
         "runtime-package" => {
             "revia runtime-package <source> <bundle>\n  Package a verified graph and artifact into a movable native runtime bundle.\n"
@@ -1121,6 +1150,7 @@ fn execute(
     input_digest: &str,
     registry_path: Option<&str>,
     policy_path: Option<&str>,
+    print_values: bool,
 ) -> Result<(), i32> {
     let declared = read_declarations(registry_path)?;
     let graph = read_graph_with_declarations(source_path, &declared)?;
@@ -1145,7 +1175,7 @@ fn execute(
                 print_host_executor_error(&code);
                 65
             })?;
-    let result = execute_bytecode_with_declarations(
+    let execution = execute_bytecode_with_return_value_and_declarations(
         &graph,
         &artifact_source,
         &request,
@@ -1157,7 +1187,8 @@ fn execute(
         print_host_executor_error(&error.code);
         65
     })?;
-    print_host_vm_result(&result, &program_stdout).map_err(|code| {
+    let values = print_values.then_some(execution.invocation_values.as_slice());
+    print_host_vm_result(&execution.result, values, &program_stdout).map_err(|code| {
         print_host_executor_error(&code);
         65
     })?;
@@ -1510,8 +1541,8 @@ fn runtime_run(
         print_runtime_bundle_error(&error.code);
         65
     })?;
-    let (result_bytes, stdout_bytes) =
-        host_vm_result_bytes(&result, &program_stdout).map_err(|code| {
+    let (result_bytes, stdout_bytes) = host_vm_result_bytes(&result, None, &program_stdout)
+        .map_err(|code| {
             print_runtime_bundle_error(&code);
             65
         })?;
@@ -8117,7 +8148,7 @@ fn run(
         print_host_executor_error(&error.code);
         65
     })?;
-    print_host_vm_result(&result, &program_stdout).map_err(|code| {
+    print_host_vm_result(&result, None, &program_stdout).map_err(|code| {
         print_host_executor_error(&code);
         65
     })?;
@@ -8309,9 +8340,10 @@ fn native_random_reader() -> Result<Box<dyn Read>, String> {
 
 fn print_host_vm_result(
     result: &revia_core::vm::VmResult,
+    invocation_values: Option<&[Option<revia_core::vm::VmValue>]>,
     program_stdout: &SharedProgramStdout,
 ) -> Result<(), String> {
-    let (result_bytes, _) = host_vm_result_bytes(result, program_stdout)?;
+    let (result_bytes, _) = host_vm_result_bytes(result, invocation_values, program_stdout)?;
     print!(
         "{}",
         String::from_utf8(result_bytes).map_err(|_| "native-host-result-invalid-utf8".to_owned())?
@@ -8321,18 +8353,39 @@ fn print_host_vm_result(
 
 fn host_vm_result_bytes(
     result: &revia_core::vm::VmResult,
+    invocation_values: Option<&[Option<revia_core::vm::VmValue>]>,
     program_stdout: &SharedProgramStdout,
 ) -> Result<(Vec<u8>, Vec<u8>), String> {
     let stdout_bytes = program_stdout.snapshot()?;
     let text = String::from_utf8(stdout_bytes.clone())
         .map_err(|_| "native-host-stdout-invalid-utf8".to_owned())?;
+    // Opt-in only: the default evidence stays byte-identical to the pinned
+    // `re.native-host-execution-result@0.1.0` shape. When asked, the typed
+    // payload of every invocation is printed next to the invocation it came
+    // from, in the same order, with `null` for a response that carries none.
+    let invocation_values = if let Some(values) = invocation_values {
+        format!(
+            ",\"invocation_values\":[{}]",
+            values
+                .iter()
+                .map(|value| match value {
+                    Some(value) => revia_core::vm::serialize_vm_value(value),
+                    None => "null".to_owned(),
+                })
+                .collect::<Vec<_>>()
+                .join(",")
+        )
+    } else {
+        String::new()
+    };
     let result = format!(
-        "{{\"artifact_digest\":{},\"executor\":{},\"graph_revision\":{},\"host_profile\":{},\"input_digest\":{},\"invocations\":[{}],\"ok\":true,\"outcome\":{{\"code\":{},\"type\":{}}},\"profile\":{},\"program_stdout\":{},\"receipt_digest\":{},\"schema\":{},\"trace\":[{}]}}",
+        "{{\"artifact_digest\":{},\"executor\":{},\"graph_revision\":{},\"host_profile\":{},\"input_digest\":{}{},\"invocations\":[{}],\"ok\":true,\"outcome\":{{\"code\":{},\"type\":{}}},\"profile\":{},\"program_stdout\":{},\"receipt_digest\":{},\"schema\":{},\"trace\":[{}]}}",
         quote(&result.artifact_digest),
         quote(&result.executor),
         quote(&result.graph_revision),
         quote(revia_core::minimal_std::HOST_PROFILE),
         quote(&result.input_digest),
+        invocation_values,
         result
             .invocations
             .iter()

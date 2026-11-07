@@ -25,6 +25,52 @@ branch     ::= "ok" "(" wildcard ")" "=>" effect-call
 公开语法使用 `@name` 作为 unit、能力和函数标识，使用 `%name` 作为局部值标识。
 当前示例使用字符串字面量，并显式处理 `ok`/`err` 结果分支。
 
+### Grammar Note: Result Value Binding / 文法说明：结果值绑定
+
+Version gate: the productions above are `re 0.1 compact`, the surface every
+current native and Node toolchain accepts. The value-binding productions below
+are `re 0.2 compact`, scheduled and **not accepted by any current toolchain**.
+
+版本门限：上面的产生式是 `re 0.1 compact`，当前所有 native 与 Node 工具链都接受
+这一表面。下面的值绑定产生式属于 `re 0.2 compact`，已排期，**任何当前工具链都不接受**。
+
+```text
+# scheduled for re 0.2 compact / 已排期到 re 0.2 compact
+branch ::= "ok" "(" wildcard ")" "=>" effect-call
+         | "err" "(" wildcard ")" "=>" effect-call
+         | "ok" "(" binding ")" "=>" effect-call
+         | "err" "(" binding ")" "=>" effect-call
+```
+
+In `0.1` the wildcard has no binding position, so a matched value cannot be
+named or rendered; a branch body must also be an effect call, and every
+`process.status`-returning body is what makes the shape executable today.
+Measured: `revia check` on `ok(%data) => …` exits 65 with
+`re.native-parser-result@0.1.0`, `code:"unexpected-token"`, `expected:"_"`.
+The scheduled change moves the payload through `BranchResult` into a register,
+bumps the bytecode artifact schemas to `@0.2.0`, and leaves `ok(_)` / `err(_)`
+programs parsing and executing exactly as they do now.
+
+`0.1` 中通配符没有绑定位置，匹配到的值无法命名或渲染；分支体也必须是效果调用，
+返回 `process.status` 的效果调用正是当前可执行形状的前提。实测：对
+`ok(%data) => …` 执行 `revia check`，退出码 65，
+`re.native-parser-result@0.1.0`，`code:"unexpected-token"`，`expected:"_"`。
+排期中的变更会把 payload 经 `BranchResult` 送入寄存器，把字节码产物 schema 提到
+`@0.2.0`；现有 `ok(_)` / `err(_)` 程序的解析与执行保持不变。
+
+A non-`result` return (for example `number.i64` from `clock.monotonic_nanos`)
+has no value position either, and `0.1` cannot type it: the response is a plain
+`ok`, so `match` on it silently takes the `ok` branch and the value is dropped
+(measured: compile and execute exit 0, `outcome.code:0`). The `0.2` work covers
+the binding-type rule as well. Impact analysis and schedule:
+[`work-packages/result-value-interface.md`](work-packages/result-value-interface.md).
+
+非 `result` 返回（例如 `clock.monotonic_nanos` 的 `number.i64`）同样没有值位置，
+`0.1` 也不给它类型：响应是普通 `ok`，因此对它 `match` 会静默走进 `ok` 分支，
+值被丢弃（实测：compile 与 execute 均退出 0，`outcome.code:0`）。`0.2` 的工作
+同样覆盖该绑定类型规则。影响分析与排期见
+[`work-packages/result-value-interface.md`](work-packages/result-value-interface.md)。
+
 ## Capability Contracts / 能力契约
 
 | Capability | Signature | Result / 结果 |
