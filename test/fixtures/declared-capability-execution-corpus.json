@@ -4,9 +4,12 @@
       "catches": "A granted, implemented declared member reaching the host and answering ok: any regression in policy binding, member dispatch or the ok branch turns a successful run into an exit-65 diagnostic.",
       "expected": {
         "channel": "stdout",
-        "contains": [],
+        "contains": [
+          "\"ok\":true",
+          "\"code\":0"
+        ],
         "exit": 0,
-        "schema": "",
+        "schema": "re.native-host-execution-result@0.1.0",
         "silent": "stderr"
       },
       "id": "granted-concat-runs",
@@ -64,9 +67,12 @@
       "catches": "The second member of the same family runs under the same grant: a dispatcher keyed only to the first member name would fail this case.",
       "expected": {
         "channel": "stdout",
-        "contains": [],
+        "contains": [
+          "\"ok\":true",
+          "\"code\":0"
+        ],
         "exit": 0,
-        "schema": "",
+        "schema": "re.native-host-execution-result@0.1.0",
         "silent": "stderr"
       },
       "id": "granted-scalar-count-runs",

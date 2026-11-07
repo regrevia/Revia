@@ -205,8 +205,10 @@ Goal: turn the WP-355 fixtures into a corpus other implementations can run.
   `catches` line that states what an implementation change would break.
   `registry` and `policy` are JSON artifacts; a policy may also be a raw string
   so the non-JSON case is expressible. `expected` names the stream
-  (`stdout`/`stderr`), the result schema, the fragments that stream must carry,
-  and the stream that must stay empty.
+  (`stdout`/`stderr`), the result schema and fragments that stream must carry,
+  and the stream that must stay empty. The two granted cases assert exit 0, the
+  host-result schema, `"ok":true`, and an empty stderr; nothing wider, because
+  the return value is not observable.
 - **Consumed in one command.**
   `cargo test -p revia-cli --test wp356_declared_capability_corpus --offline`
   replays all 14 cases against `env!("CARGO_BIN_EXE_revia")`, one temp
@@ -239,14 +241,15 @@ Goal: turn the WP-355 fixtures into a corpus other implementations can run.
   number, and this page does not claim parity.
 - **Acceptance evidence.** The corpus runs in one command; no case is a unit
   test; every case states what it catches. The harness was also mutation
-  checked: flipping one expected channel makes the case fail, and restoring the
-  file makes it pass.
+  checked: flipping the expected channel of a negative case makes it fail, and
+  restoring the file makes it pass.
 - **Limits.** Declared-call return values cannot be bound or printed
   (`ok(_)`/`err(_)` only), so CLI evidence stops at exit status and
   diagnostics; value-level correctness rests on the 13 `declared_host` tests.
   A denied member and every other bridge failure collapse to
   `native-vm-capability-failed` at `vm.rs:417`, so the denial case can only
-  assert the collapsed code. The corpus does not enumerate one negative per
+  assert the collapsed code, and the granted cases carry no fragment about the
+  value they computed. The corpus does not enumerate one negative per
   bridge error variant; that needs the `vm.rs` compatibility decision, not a
   fixture.
 

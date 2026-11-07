@@ -15,8 +15,8 @@
 //! - Both diagnostic channels are asserted. Graph-stage refusals are written to
 //!   stdout as `re.native-graph-result@0.1.0`, host-boundary and runtime
 //!   refusals to stderr as `re.native-host-execution-result@0.1.0`. A check
-//!   never demands an empty stdout, because fail-closed runs may repeat the
-//!   object there.
+//!   never assumes emptiness by itself: a case states which stream must stay
+//!   empty, because a fail-closed run may repeat the object on stdout.
 //! - A negative only exists where the checked-in implementation has a real
 //!   vocabulary entry. An unknown error variant is not a negative: variant
 //!   names are declaration-local, so the corpus does not pretend otherwise.
@@ -121,15 +121,14 @@ fn the_declared_capability_execution_corpus_holds_its_cases() {
     let JsonValue::Array(cases) = field(&corpus, "cases") else {
         panic!("corpus cases must be an array");
     };
-    assert!(
-        cases.len() >= 12,
-        "the corpus must cover every negative the checked-in implementation can express"
-    );
-
-    let mut seen = Vec::new();
+    let mut seen: Vec<String> = Vec::new();
     for case in cases {
         let expected = field(case, "expected");
         let id = string(field(case, "id"));
+        assert!(
+            !seen.iter().any(|seen| seen == id),
+            "duplicate case id {id}"
+        );
         let catches = string(field(case, "catches"));
         assert!(
             !catches.trim().is_empty(),
@@ -201,7 +200,7 @@ fn the_declared_capability_execution_corpus_holds_its_cases() {
         seen.push(id.to_owned());
     }
 
-    for wanted in [
+    let wanted = [
         "granted-concat-runs",
         "granted-scalar-count-runs",
         "policy-absent",
@@ -216,7 +215,13 @@ fn the_declared_capability_execution_corpus_holds_its_cases() {
         "registry-schema-mismatch",
         "unused-error-family",
         "duplicate-declaration",
-    ] {
-        assert!(seen.iter().any(|id| id == wanted), "missing case {wanted}");
+    ];
+    for id in wanted {
+        assert!(seen.iter().any(|seen| seen == id), "missing case {id}");
     }
+    assert_eq!(
+        seen.len(),
+        wanted.len(),
+        "the corpus must hold exactly the cases this test knows"
+    );
 }
