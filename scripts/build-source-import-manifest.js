@@ -88,6 +88,7 @@ const EXPLICIT_PATHS = [
   'scripts/run-standalone-task-lifecycle-core.js',
   'scripts/run-task-runtime-lifecycle-benchmark.js',
   'scripts/test-cli-surface.ps1',
+  'scripts/release-contract-smoke.mjs',
   'scripts/run-tracked-tests.js',
   'scripts/validate-public-tree.sh',
 ]

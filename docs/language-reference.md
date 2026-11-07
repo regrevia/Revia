@@ -113,16 +113,23 @@ return match %printed {
 
 `check --format json` and `audit --format json` have independent, versioned
 contracts. They do not share a required envelope: `audit` deliberately has no
-`ok` field. For RC1, [`scripts/test-json-contract.sh`](../scripts/test-json-contract.sh)
-executes the RC1 binary with `check` and `manifest` fixtures and validates their
-native schemas. It does not treat static JSON files as execution evidence or
-claim that the broader Node-preview envelope is an RC1 interface.
+`ok` field. For RC1, the kit fixtures are exercised by the release smoke
+workflow, and
+[`wp253_checker_canonical.rs`](../native/revia-core/tests/wp253_checker_canonical.rs)
+pins the native `manifest` schema. The release contract
+[`scripts/release-contract-smoke.mjs`](../scripts/release-contract-smoke.mjs)
+asserts the parsed `check` result alongside the compiled and executed shapes of
+the native release executable. None of them treats static JSON files as
+execution evidence or claims that the broader Node-preview envelope is an RC1
+interface.
 
 `check --format json` 返回稳定、独立的命令契约；`audit --format json` 也有自己的
-版本化契约，并不共享一个强制封装，`audit` 输出刻意不包含 `ok` 字段。对于 RC1，
-[`scripts/test-json-contract.sh`](../scripts/test-json-contract.sh) 执行实际发行版二进制的
-`check` 与 `manifest`，而不是只读取静态 JSON 后返回成功。更宽的 Node preview JSON
-surface 不会被倒灌成 RC1 承诺。
+版本化契约，并不共享一个强制封装，`audit` 输出刻意不包含 `ok` 字段。对于 RC1，kit 夹具
+由 release smoke 工作流执行，原生 `manifest` 的 schema 由
+[`wp253_checker_canonical.rs`](../native/revia-core/tests/wp253_checker_canonical.rs) 固定；
+发行契约 [`scripts/release-contract-smoke.mjs`](../scripts/release-contract-smoke.mjs)
+验证原生发行可执行文件的解析 `check` 结果与编译、执行三段形状。它们都不会只读取静态 JSON
+后返回成功，更宽的 Node preview JSON surface 不会被倒灌成 RC1 承诺。
 
 ### `check` result / `check` 结果
 

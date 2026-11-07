@@ -420,6 +420,23 @@ It still changes language semantics and was not folded into Issues 1-3.
     commands still refuse the flag
     (`wp362_project_value_evidence_boundary_cli`, in
     [result-value-interface.md](result-value-interface.md) §5).
+11. WP-364 — closed: the release gate asserts the binary that actually ships.
+    `scripts/release-contract-smoke.mjs` is the single source of truth for the
+    executable contract (version banner, parsed `check` result, byte-identical
+    compiles across fresh processes, executed `run` envelope, exit `64` with a
+    `Usage: revia` diagnostic, exit `66` for unreadable input) and runs on every
+    target and both operating systems, replacing the POSIX-only shell contract.
+    All four gate surfaces — draft POSIX asset, draft Windows asset,
+    self-hosted Windows asset, published asset — delegate to it. The gate had
+    been asserting CLI shapes the native binary does not offer (`check --format
+    json`, single-argument `run`, a `65`-exit diagnostic sample that in fact
+    parses with `ok:true`), so the four helpers encoding the same assumptions
+    were retired as superseded by a stricter contract rather than silently
+    kept: `scripts/test-json-contract.sh`,
+    `scripts/test-compact-determinism.sh`, `scripts/test-compact-determinism.ps1`,
+    `scripts/test-compact-determinism-contract.sh`. The launcher-level release
+    smoke keeps its own assertions because `bin/revia` is a downloader, not a
+    passthrough. Guarded by `test/release-contract-gate.test.js`.
 
 ## 8. Evidence rules
 

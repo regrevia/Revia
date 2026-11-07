@@ -120,17 +120,7 @@ jobs:
           tar -xzf "assets/$asset" -C package
           test "$(shasum -a 256 package/revia | awk '{ print $1 }')" = "$expected_binary"
           chmod 755 package/revia
-          ./package/revia check examples/hello.re
-          test "$(./package/revia run examples/hello.re)" = 'Hello, World!'
-          ./package/revia manifest examples/hello.re | grep -Fq 'graph_revision'
-          REVIA_EXECUTABLE="$REVIA_EXECUTABLE" sh scripts/test-json-contract.sh
-          sh scripts/test-compact-determinism.sh --require
-          set +e
-          ./package/revia check --format json examples/diagnostic-error.re > diagnostic.json
-          status=$?
-          set -e
-          test "$status" -eq 65
-          grep -Fq 'unexpected-argument' diagnostic.json
+          node scripts/release-contract-smoke.mjs
       - name: Download Windows draft asset
         if: runner.os == 'Windows'
         env:
@@ -169,17 +159,8 @@ jobs:
           if ((Get-FileHash "assets/$asset" -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expectedArchive) { throw 'archive checksum mismatch' }
           Expand-Archive -LiteralPath "assets/$asset" -DestinationPath package
           if ((Get-FileHash package/revia.exe -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expectedBinary) { throw 'executable checksum mismatch' }
-          & ./package/revia.exe check examples/hello.re
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          $hello = (& ./package/revia.exe run examples/hello.re | Out-String).Trim()
-          if ($LASTEXITCODE -ne 0 -or $hello -ne 'Hello, World!') { throw 'hello smoke failed' }
-          $manifest = (& ./package/revia.exe manifest examples/hello.re | Out-String)
-          if ($LASTEXITCODE -ne 0 -or $manifest -notmatch 'graph_revision') { throw 'manifest smoke failed' }
-          ./scripts/test-compact-determinism.ps1 -Mode Require
-          if ($LASTEXITCODE -ne 0) { throw "compact determinism gate failed: $LASTEXITCODE" }
-          & ./package/revia.exe check --format json examples/diagnostic-error.re *> diagnostic.json
-          if ($LASTEXITCODE -ne 65) { throw "expected diagnostic exit 65, got $LASTEXITCODE" }
-          if ((Get-Content -Raw diagnostic.json) -notmatch 'unexpected-argument') { throw 'diagnostic smoke failed' }
+          node scripts/release-contract-smoke.mjs
+          if ($LASTEXITCODE -ne 0) { throw "release contract failed: $LASTEXITCODE" }
           exit 0
 
   windows-x64-native:
@@ -258,15 +239,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "version failed: $LASTEXITCODE" }
           & $exe --help
           if ($LASTEXITCODE -ne 0) { throw "help failed: $LASTEXITCODE" }
-          & $exe check examples/hello.re
-          if ($LASTEXITCODE -ne 0) { throw "check failed: $LASTEXITCODE" }
-          $manifest = & $exe manifest examples/hello.re | Out-String
-          if ($LASTEXITCODE -ne 0 -or $manifest -notmatch 'graph_revision') {
-            throw 'manifest smoke failed'
-          }
-          ./scripts/test-compact-determinism.ps1 -Mode Require
+          $env:REVIA_EXECUTABLE = (Resolve-Path -LiteralPath $exe).Path
+          node scripts/release-contract-smoke.mjs
           if ($LASTEXITCODE -ne 0) {
-            throw "compact determinism gate failed: $LASTEXITCODE"
+            throw "release contract failed: $LASTEXITCODE"
           }
 
   publish:
@@ -322,17 +298,21 @@ jobs:
           asset="revia-${version}-linux-x64.tar.gz"
           base="https://github.com/${repo}/releases/download/${TAG}"
           raw="https://raw.githubusercontent.com/${repo}/${TAG}"
-          mkdir -p public-assets public-package
+          mkdir -p public-assets/examples public-package contract
           curl --fail --location --retry 3 --connect-timeout 15 --max-time 120 --silent --show-error \
             "$base/$asset" --output "public-assets/$asset"
           curl --fail --location --retry 3 --connect-timeout 15 --max-time 120 --silent --show-error \
             "$raw/runtime/checksums.txt" --output public-assets/checksums.txt
           curl --fail --location --retry 3 --connect-timeout 15 --max-time 120 --silent --show-error \
-            "$raw/examples/hello.re" --output public-assets/hello.re
+            "$raw/examples/hello.re" --output public-assets/examples/hello.re
+          curl --fail --location --retry 3 --connect-timeout 15 --max-time 120 --silent --show-error \
+            "$raw/examples/diagnostic-error.re" --output public-assets/examples/diagnostic-error.re
+          curl --fail --location --retry 3 --connect-timeout 15 --max-time 120 --silent --show-error \
+            "$raw/scripts/release-contract-smoke.mjs" --output contract/release-contract-smoke.mjs
           expected=$(awk -v asset="$asset" '$2 == asset { print $1 }' public-assets/checksums.txt)
           test -n "$expected"
           test "$(sha256sum "public-assets/$asset" | awk '{ print $1 }')" = "$expected"
           tar -xzf "public-assets/$asset" -C public-package
-          ./public-package/revia check public-assets/hello.re
-          test "$(./public-package/revia run public-assets/hello.re)" = 'Hello, World!'
-          ./public-package/revia manifest public-assets/hello.re | grep -Fq 'graph_revision'
+          REVIA_CONTRACT_ROOT="$PWD/public-assets" \
+            REVIA_EXECUTABLE="$PWD/public-package/revia" \
+            node contract/release-contract-smoke.mjs

@@ -24,16 +24,20 @@ before publication. That historical package did not include the current
 可执行文件 SHA-256、`check`、`run`、`manifest`、compact 源确定性与结构化诊断。
 该历史资产不包含当前的 `projects/_template/project.json` 或 native 项目流程。
 
-The gate passes each downloaded draft executable to
-`scripts/test-compact-determinism.sh --require` on POSIX and
-`scripts/test-compact-determinism.ps1 -Mode Require` on Windows. It does not
-fall back to a previously published runtime. A candidate whose compact source
-produces different checked artifacts across fresh processes cannot pass.
+The gate passes each downloaded draft executable to the shared release
+contract, `node scripts/release-contract-smoke.mjs`, on every target and both
+operating systems. The contract asserts the executable's version banner, the
+parsed, compiled, and executed shapes, byte-identical compiles across fresh
+processes, exit `64` with a `Usage: revia` diagnostic for a rejected argument,
+and exit `66` for unreadable input. It does not fall back to a previously
+published runtime. A candidate whose compact source produces different checked
+artifacts across fresh processes cannot pass.
 
-门禁在 POSIX 将下载的草稿可执行文件传给
-`scripts/test-compact-determinism.sh --require`，在 Windows 传给
-`scripts/test-compact-determinism.ps1 -Mode Require`；不会回退到已发布运行时。
-同一 compact 源码在全新进程生成不同已检查产物的候选不能通过该门禁。
+门禁在每个目标、两种操作系统上都将下载的草稿可执行文件传给共享发行契约
+`node scripts/release-contract-smoke.mjs`。契约验证可执行文件的版本横幅，解析、编译、
+执行三段输出的形状，全新进程重复编译逐字节一致，被拒绝的参数返回退出码 `64` 并给出
+`Usage: revia` 诊断，不可读输入返回 `66`；不会回退到已发布运行时。同一 compact 源码在
+全新进程生成不同已检查产物的候选不能通过该门禁。
 历史 `0.1-preview.1` 没有验证项目模式的 `project-check` / `project-run`。
 
 The same gate publishes the draft only after every target passes. The
