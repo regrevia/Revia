@@ -56,5 +56,40 @@ npm run --silent re -- view --locale zh-CN --format html examples/agent-handoff-
 | `manifest` | 机器可读的能力、效果和路径事实 |
 | `view` | 人类可读的语义图 |
 
+## 声明能力的授权（native）
+
+native 的 `execute` 与 `run` 接受两个彼此独立的运维产物：
+
+```bash
+revia run --schema-registry registry.json \
+          --capability-policy policy.json \
+          program.re program.rebc sha256:<input-digest>
+```
+
+| 产物 | 回答什么 | 不回答什么 |
+|---|---|---|
+| `--schema-registry`（`revia.host-schema-definitions@0.1.0`） | member 的参数与返回类型是什么 | 本次运行能否调用它 |
+| `--capability-policy`（`revia.capability-policy@0.1.0`） | 本次运行可以调用哪些 `reference.member` | 宿主是否实现了它们 |
+
+策略是封闭对象：`{"schema": 1, "grants":
+[{"reference": "<schema>@<version>", "members": ["<member>", ...]}]}`。
+未知字段、缺失字段、重复 member、不支持的 schema 取值都会以
+`native-capability-policy-invalid:<reason>` 拒绝。
+
+行为一律 fail-closed，并在 WP-355 中收紧：
+
+- 图引用了声明 member 但没有 `--capability-policy`：在构建宿主之前就以
+  `native-host-capability-policy-missing` 拒绝（退出码 65）。只给 registry
+  不再能放行这类图；
+- 策略授予了本构建不提供的 member：绑定时以
+  `native-host-capability-policy-not-served:<reference>.<member>` 拒绝；
+- 已授权但本次策略未授予的调用：在宿主边界以
+  `native-host-bridge-capability-denied` 拒绝，边界后的 adapter 不会被调用；
+- 策略文件读不出来是退出码 66，解析不了是 65。成功运行的 stdout 会输出
+  `re.native-host-execution-result@0.1.0`，含 `invocations[]` 与 `trace[]`。
+
+这是运维授权产物，不是沙箱：宿主 adapter 本身仍是受信代码。完整边界与已测
+限制记录在 [work-packages/availability.md](work-packages/availability.md)。
+
 发行包是可运行入口。语言规则和输出 schema 分别见
 [语言](language.md) 与 [CLI 协议](protocol.md)。

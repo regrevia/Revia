@@ -11,6 +11,7 @@ pub mod capability_comparison;
 pub mod capability_project_comparison;
 pub mod comparison_catalog;
 pub mod cross_language;
+pub mod declared_host;
 pub mod diagnostic;
 pub mod digest;
 pub mod experiment_kit;

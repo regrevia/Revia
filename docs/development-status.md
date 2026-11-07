@@ -35,6 +35,7 @@ Rust native 翻译器/VM 切片、项目与模块检查、确定性语义产物�
 | RC2.2.1 Linux x64 asset | Native evidence and public-download checksum recorded in `runtime/rc2.2.1/` |
 | RC2.2.1 Windows x64 asset | Native evidence and public-download checksum recorded in `runtime/rc2.2.1/` |
 | Current main source, `ca268c4` | Source validation, Linux x64 native conformance, and Windows x64 native conformance passed in GitHub Actions; bound Windows runner verified the downloaded executable digest before launch |
+| Native declared capability execution | `--schema-registry` + `--capability-policy` path, typed declared-call encoding, and fail-closed authorization boundary are covered by 13 core tests and 9 native CLI tests; plan and limits in [work-packages/availability.md](work-packages/availability.md) |
 | Project surface on current main | Source and native `project-check`/`project-surface-check` gates passed; native build/run remain versioned-candidate scope |
 | Production readiness | Not claimed |
 | Complete A2A/MCP interoperability | Not claimed |

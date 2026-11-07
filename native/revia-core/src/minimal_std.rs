@@ -104,6 +104,7 @@ pub enum StdError {
     InvalidInteger,
     InvalidUtf8,
     UnknownOperation,
+    CapabilityDenied,
     HostAuthorityMismatch,
     HostRequestSchemaMismatch,
     PathOutsideSandbox,
@@ -1389,6 +1390,11 @@ fn declared_response(
         Err(StdError::UnknownOperation) => Ok(CapabilityResponse::host_fault(format!(
             "native-host-bridge-operation-unsupported:{instance}.{member}"
         ))),
+        // A policy refusal is its own boundary answer, not a host fault: the
+        // adapter was asked for a member this run is not authorized to invoke.
+        Err(StdError::CapabilityDenied) => Ok(CapabilityResponse::host_fault(format!(
+            "native-host-bridge-capability-denied:{instance}.{member}"
+        ))),
         // The only channel that names a declared variant is
         // `HostOutcome::DeclaredFailure`; a bare `StdError` carries no variant,
         // so promoting it into the member's family would have to invent one and
@@ -1508,13 +1514,15 @@ fn host_outcome_name(outcome: &HostOutcome) -> &'static str {
     }
 }
 
-fn host_operation_name(reference: &str, member: &str) -> &'static str {
+fn host_operation_name(reference: &str, member: &str) -> String {
     match (reference, member) {
-        ("process.args@0.1.0", "read") => "process.args.read",
-        ("process.stdout@0.1.0", "write") => "process.stdout.write",
-        ("fs.read@0.1.0", "read_file") => "fs.read.read_file",
-        ("fs.write@0.1.0", "write_file") => "fs.write.write_file",
-        _ => "unknown",
+        ("process.args@0.1.0", "read") => "process.args.read".to_owned(),
+        ("process.stdout@0.1.0", "write") => "process.stdout.write".to_owned(),
+        ("fs.read@0.1.0", "read_file") => "fs.read.read_file".to_owned(),
+        ("fs.write@0.1.0", "write_file") => "fs.write.write_file".to_owned(),
+        // A rejected declared request keeps its identity so the observation
+        // still names the member that was refused.
+        _ => format!("declared:{reference}.{member}"),
     }
 }
 
@@ -1529,6 +1537,7 @@ fn host_error_name(error: &StdError) -> &'static str {
         StdError::InvalidInteger => "invalid_integer",
         StdError::InvalidUtf8 => "invalid_utf8",
         StdError::UnknownOperation => "unknown_operation",
+        StdError::CapabilityDenied => "capability_denied",
         StdError::HostAuthorityMismatch => "host_authority_mismatch",
         StdError::HostRequestSchemaMismatch => "host_request_schema_mismatch",
         StdError::PathOutsideSandbox => "path_outside_sandbox",

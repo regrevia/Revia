@@ -58,6 +58,44 @@ artifact, and input digest.
 | `manifest` | Machine-readable capability, effect, and path facts |
 | `view` | Human-readable semantic graph |
 
+## Declared Capability Authorization (native)
+
+The native `execute` and `run` commands accept two separate operator artifacts:
+
+```bash
+revia run --schema-registry registry.json \
+          --capability-policy policy.json \
+          program.re program.rebc sha256:<input-digest>
+```
+
+| Artifact | Answers | Never answers |
+|---|---|---|
+| `--schema-registry` (`revia.host-schema-definitions@0.1.0`) | what the member's parameter and result types are | whether this run may call it |
+| `--capability-policy` (`revia.capability-policy@0.1.0`) | which `reference.member` pairs this run may call | whether the host implements them |
+
+The policy is a closed object: `{"schema": 1, "grants":
+[{"reference": "<schema>@<version>", "members": ["<member>", ...]}]}`.
+Unknown or missing fields, duplicate members, and an unsupported schema value
+are rejected with `native-capability-policy-invalid:<reason>`.
+
+Behavior is fail-closed and was tightened in WP-355:
+
+- a graph that references a declared member with no `--capability-policy` is
+  refused with `native-host-capability-policy-missing` (exit 65) before a host
+  is built. A registry alone no longer admits such a graph;
+- a policy that grants a member this build does not serve is refused at binding
+  time with `native-host-capability-policy-not-served:<reference>.<member>`;
+- an authorized call that the policy does not grant for this run is refused at
+  the host boundary with `native-host-bridge-capability-denied`, and the
+  adapter behind the boundary is not invoked;
+- a policy file that cannot be read is exit 66; one that cannot be parsed is
+  exit 65. Successful runs print `re.native-host-execution-result@0.1.0` with
+  `invocations[]` and `trace[]` on stdout.
+
+This is an operator authorization artifact, not a sandbox: the host adapter
+itself is trusted code. The full boundary and its measured limits are recorded
+in [work-packages/availability.md](work-packages/availability.md).
+
 The release package is the runnable entry point. Language rules and output
 schemas are documented separately in [Language](language.md) and
 [Protocol](protocol.md).

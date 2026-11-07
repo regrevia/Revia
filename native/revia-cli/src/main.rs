@@ -79,6 +79,10 @@ use revia_core::{
         build_cross_language_matrix, observed_replay_result_digest, parse_backend_result,
         serialize_cross_language_matrix,
     },
+    declared_host::{
+        CAPABILITY_POLICY_MISSING, CapabilityPolicy, DeclaredCapabilityHost,
+        referenced_declared_references,
+    },
     digest::sha256_hex,
     experiment_kit::{build_experiment_kit, serialize_experiment_kit},
     fault_corpus::{
@@ -197,7 +201,7 @@ Commands:
   manifest <file>
   translate <file>
   compile [--schema-registry <registry>] <source> <artifact>
-  execute [--schema-registry <registry>] <source> <input-digest>
+  execute [--schema-registry <registry>] [--capability-policy <policy>] <source> <input-digest>
   runtime-package <source> <bundle>
   runtime-verify <bundle>
   runtime-authority-pin <bundle> <input-digest> <pin>
@@ -221,7 +225,7 @@ Commands:
   replay-fault-corpus <corpus> <output>
   replay-fault-corpus-gate <corpus> <evidence>
   verify [--schema-registry <registry>] <graph> <artifact>
-  run [--schema-registry <registry>] <graph> <artifact> <input-digest>
+  run [--schema-registry <registry>] [--capability-policy <policy>] <graph> <artifact> <input-digest>
   project-init <directory>
   project-check <project>
   project-surface-check <project>
@@ -280,13 +284,37 @@ fn main() {
         [command, source_path, artifact_path] if command == "compile" => {
             compile(source_path, artifact_path, None)
         }
+        [
+            command,
+            flag,
+            registry_path,
+            policy_flag,
+            policy_path,
+            source_path,
+            input_digest,
+        ] if command == "execute"
+            && flag == "--schema-registry"
+            && policy_flag == "--capability-policy" =>
+        {
+            execute(
+                source_path,
+                input_digest,
+                Some(registry_path),
+                Some(policy_path),
+            )
+        }
         [command, flag, registry_path, source_path, input_digest]
             if command == "execute" && flag == "--schema-registry" =>
         {
-            execute(source_path, input_digest, Some(registry_path))
+            execute(source_path, input_digest, Some(registry_path), None)
+        }
+        [command, flag, policy_path, source_path, input_digest]
+            if command == "execute" && flag == "--capability-policy" =>
+        {
+            execute(source_path, input_digest, None, Some(policy_path))
         }
         [command, source_path, input_digest] if command == "execute" => {
-            execute(source_path, input_digest, None)
+            execute(source_path, input_digest, None, None)
         }
         [command, source_path, bundle_path] if command == "runtime-package" => {
             runtime_package(source_path, bundle_path)
@@ -413,14 +441,53 @@ fn main() {
             command,
             flag,
             registry_path,
+            policy_flag,
+            policy_path,
             graph_path,
             artifact_path,
             input_digest,
-        ] if command == "run" && flag == "--schema-registry" => {
-            run(graph_path, artifact_path, input_digest, Some(registry_path))
+        ] if command == "run"
+            && flag == "--schema-registry"
+            && policy_flag == "--capability-policy" =>
+        {
+            run(
+                graph_path,
+                artifact_path,
+                input_digest,
+                Some(registry_path),
+                Some(policy_path),
+            )
         }
+        [
+            command,
+            flag,
+            registry_path,
+            graph_path,
+            artifact_path,
+            input_digest,
+        ] if command == "run" && flag == "--schema-registry" => run(
+            graph_path,
+            artifact_path,
+            input_digest,
+            Some(registry_path),
+            None,
+        ),
+        [
+            command,
+            flag,
+            policy_path,
+            graph_path,
+            artifact_path,
+            input_digest,
+        ] if command == "run" && flag == "--capability-policy" => run(
+            graph_path,
+            artifact_path,
+            input_digest,
+            None,
+            Some(policy_path),
+        ),
         [command, graph_path, artifact_path, input_digest] if command == "run" => {
-            run(graph_path, artifact_path, input_digest, None)
+            run(graph_path, artifact_path, input_digest, None, None)
         }
         [command, project_path] if command == "project-check" => project_check(project_path),
         [command, project_path] if command == "project-surface-check" => {
@@ -741,7 +808,7 @@ fn main() {
         }
         _ => {
             eprintln!(
-                "Usage: revia <check|lex|digest|canonical|manifest|translate> <file> | compile [--schema-registry <registry>] <source> <artifact> | execute [--schema-registry <registry>] <source> <input-digest> | runtime-package <source> <bundle> | runtime-verify <bundle> | runtime-authority-pin <bundle> <input-digest> <pin> | runtime-receipt-verify <pin> <receipt> <result> <stdout> | project-run-verify <run> | runtime-run <bundle> <input-digest> <sandbox> | capability-comparison <catalog> <output> | capability-project-comparison <catalog> <project> <cache> <build> <profile-digest> <toolchain-digest> <output> | conformance-run <source> <input-digest> <transcript> | cross-language-matrix <source> <input-digest> <transcript> <node-result> <output> | replay-catalog <catalog> <output> | comparison-catalog <catalog> <project> <output> | experiment-kit <catalog> <project> <output> | replay-fault-catalog <catalog> <output> | replay-fault-corpus <corpus> <output> | replay-fault-corpus-gate <corpus> <evidence> | verify [--schema-registry <registry>] <graph> <artifact> | run [--schema-registry <registry>] <graph> <artifact> <input-digest> | project-init <directory> | project-check <project> | project-test <project> | project-scale <project> | project-execute-plan <project> <plan> <profile-digest> <toolchain-digest> <input-digest> | project-execute-plan-direct <project> <plan> <profile-digest> <toolchain-digest> <input-digest> | project-execute-plan-cached <project> <plan> <execution-cache> <profile-digest> <toolchain-digest> <input-digest> | project-execute <project> <module> <profile-digest> <toolchain-digest> <input-digest> | project-benchmark <project> <module> <profile-digest> <toolchain-digest> <input-digest> <report> | project-translate <project> <cache> <build> <profile-digest> <toolchain-digest> <module> | project-run <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest> | project-run-sandbox <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest> <sandbox> | project-build <project> <cache> <build> <profile-digest> <toolchain-digest> | server-smoke | project-server-smoke <project> <module> <profile-digest> <toolchain-digest> <input-digest> | release-package <binary> <candidate> <target> <source-digest> <toolchain-digest> | release-verify <candidate> <target> <source-digest> <toolchain-digest> | release-install <candidate> <target> <source-digest> <toolchain-digest> | release-rollback <install> <target> <source-digest> <toolchain-digest> | release-matrix <target> <output> | node-free-gate <source> <project> <module> <report> | developer-gate <project> <module> <input-digest> <report> | toolchain-gate <source> <project> <module> <input-digest> <report> | release-evidence-gate <source> <project> <module> <fault-corpus> <evidence>"
+                "Usage: revia <check|lex|digest|canonical|manifest|translate> <file> | compile [--schema-registry <registry>] <source> <artifact> | execute [--schema-registry <registry>] [--capability-policy <policy>] <source> <input-digest> | runtime-package <source> <bundle> | runtime-verify <bundle> | runtime-authority-pin <bundle> <input-digest> <pin> | runtime-receipt-verify <pin> <receipt> <result> <stdout> | project-run-verify <run> | runtime-run <bundle> <input-digest> <sandbox> | capability-comparison <catalog> <output> | capability-project-comparison <catalog> <project> <cache> <build> <profile-digest> <toolchain-digest> <output> | conformance-run <source> <input-digest> <transcript> | cross-language-matrix <source> <input-digest> <transcript> <node-result> <output> | replay-catalog <catalog> <output> | comparison-catalog <catalog> <project> <output> | experiment-kit <catalog> <project> <output> | replay-fault-catalog <catalog> <output> | replay-fault-corpus <corpus> <output> | replay-fault-corpus-gate <corpus> <evidence> | verify [--schema-registry <registry>] <graph> <artifact> | run [--schema-registry <registry>] [--capability-policy <policy>] <graph> <artifact> <input-digest> | project-init <directory> | project-check <project> | project-test <project> | project-scale <project> | project-execute-plan <project> <plan> <profile-digest> <toolchain-digest> <input-digest> | project-execute-plan-direct <project> <plan> <profile-digest> <toolchain-digest> <input-digest> | project-execute-plan-cached <project> <plan> <execution-cache> <profile-digest> <toolchain-digest> <input-digest> | project-execute <project> <module> <profile-digest> <toolchain-digest> <input-digest> | project-benchmark <project> <module> <profile-digest> <toolchain-digest> <input-digest> <report> | project-translate <project> <cache> <build> <profile-digest> <toolchain-digest> <module> | project-run <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest> | project-run-sandbox <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest> <sandbox> | project-build <project> <cache> <build> <profile-digest> <toolchain-digest> | server-smoke | project-server-smoke <project> <module> <profile-digest> <toolchain-digest> <input-digest> | release-package <binary> <candidate> <target> <source-digest> <toolchain-digest> | release-verify <candidate> <target> <source-digest> <toolchain-digest> | release-install <candidate> <target> <source-digest> <toolchain-digest> | release-rollback <install> <target> <source-digest> <toolchain-digest> | release-matrix <target> <output> | node-free-gate <source> <project> <module> <report> | developer-gate <project> <module> <input-digest> <report> | toolchain-gate <source> <project> <module> <input-digest> <report> | release-evidence-gate <source> <project> <module> <fault-corpus> <evidence>"
             );
             Err(64)
         }
@@ -773,7 +840,7 @@ fn command_help(command: &str) -> Result<(), i32> {
             "revia compile [--schema-registry <registry>] <source> <artifact>\n  Write a verified native artifact.\n"
         }
         "execute" => {
-            "revia execute [--schema-registry <registry>] <source> <input-digest>\n  Check, translate, and execute one source file.\n"
+            "revia execute [--schema-registry <registry>] [--capability-policy <policy>] <source> <input-digest>\n  Check, translate, and execute one source file.\n"
         }
         "runtime-package" => {
             "revia runtime-package <source> <bundle>\n  Package a verified graph and artifact into a movable native runtime bundle.\n"
@@ -842,7 +909,7 @@ fn command_help(command: &str) -> Result<(), i32> {
             "revia verify [--schema-registry <registry>] <graph> <artifact>\n  Verify a graph-bound artifact.\n"
         }
         "run" => {
-            "revia run [--schema-registry <registry>] <graph> <artifact> <input-digest>\n  Execute a verified artifact.\n"
+            "revia run [--schema-registry <registry>] [--capability-policy <policy>] <graph> <artifact> <input-digest>\n  Execute a verified artifact.\n"
         }
         "project-init" => {
             "revia project-init <directory>\n  Create a deterministic starter project.\n"
@@ -1049,9 +1116,15 @@ fn compile(source_path: &str, artifact_path: &str, registry_path: Option<&str>) 
     Ok(())
 }
 
-fn execute(source_path: &str, input_digest: &str, registry_path: Option<&str>) -> Result<(), i32> {
+fn execute(
+    source_path: &str,
+    input_digest: &str,
+    registry_path: Option<&str>,
+    policy_path: Option<&str>,
+) -> Result<(), i32> {
     let declared = read_declarations(registry_path)?;
     let graph = read_graph_with_declarations(source_path, &declared)?;
+    let policy = read_capability_policy(policy_path, &graph, &declared)?;
     let artifact = translate_graph_with_declarations(&graph, &declared).map_err(|error| {
         print_graph_error(&error);
         65
@@ -1067,7 +1140,7 @@ fn execute(source_path: &str, input_digest: &str, registry_path: Option<&str>) -
         input_digest,
     );
     let (mut bridge, program_stdout) =
-        system_host_bridge_with_declarations(&graph, source_path, input_digest, &declared)
+        system_host_bridge_with_policy(&graph, source_path, input_digest, &declared, &policy)
             .map_err(|code| {
                 print_host_executor_error(&code);
                 65
@@ -8010,9 +8083,11 @@ fn run(
     artifact_path: &str,
     input_digest: &str,
     registry_path: Option<&str>,
+    policy_path: Option<&str>,
 ) -> Result<(), i32> {
     let declared = read_declarations(registry_path)?;
     let graph = read_graph_with_declarations(graph_path, &declared)?;
+    let policy = read_capability_policy(policy_path, &graph, &declared)?;
     let artifact = fs::read_to_string(artifact_path).map_err(|_| 66)?;
     let loaded = revia_core::bytecode::load_bytecode_artifact(&artifact).map_err(|error| {
         print_graph_error(&error);
@@ -8025,12 +8100,11 @@ fn run(
         input_digest,
     );
     let (mut bridge, program_stdout) =
-        system_host_bridge_with_declarations(&graph, graph_path, input_digest, &declared).map_err(
-            |code| {
+        system_host_bridge_with_policy(&graph, graph_path, input_digest, &declared, &policy)
+            .map_err(|code| {
                 print_host_executor_error(&code);
                 65
-            },
-        )?;
+            })?;
     let result = execute_bytecode_with_declarations(
         &graph,
         &artifact,
@@ -8084,30 +8158,6 @@ impl Write for SharedProgramStdout {
     }
 }
 
-/// Builds the host bridge for `graph`, dispatching registry-declared members
-/// to the system host adapter. The declarations are the same list the graph was
-/// checked against.
-///
-/// There is deliberately no declaration-blind twin of this function. `run` and
-/// `execute` are its only callers and both hold a registry (empty when the flag
-/// is absent), so a `system_host_bridge(...)` wrapper would be dead code kept
-/// alive only for symmetry. The sandbox form below does keep its `&[]` twin,
-/// because sandbox execution still has a live caller that takes the
-/// pre-registry path unchanged.
-fn system_host_bridge_with_declarations(
-    graph: &revia_core::graph::Graph,
-    source_path: &str,
-    input_digest: &str,
-    declared: &[DeclaredSchema],
-) -> Result<(HostBackedBridge<SystemHost>, SharedProgramStdout), String> {
-    let source = absolute_input_path(Path::new(source_path))
-        .map_err(|_| "native-host-source-unreadable".to_owned())?;
-    let sandbox = source
-        .parent()
-        .ok_or_else(|| "native-host-sandbox-invalid".to_owned())?;
-    system_host_bridge_for_sandbox_with_declarations(graph, sandbox, input_digest, declared)
-}
-
 fn system_host_bridge_for_sandbox(
     graph: &revia_core::graph::Graph,
     sandbox: &Path,
@@ -8132,6 +8182,45 @@ fn system_host_bridge_for_sandbox_with_declarations(
         native_random_reader()?,
     )
     .map_err(|_| "native-host-initialization-failed".to_owned())?;
+    let revision =
+        graph_revision(graph).map_err(|_| "native-host-graph-revision-invalid".to_owned())?;
+    let bridge =
+        HostBackedBridge::new_with_declarations(graph, host, revision, input_digest, declared)?;
+    Ok((bridge, stdout))
+}
+
+/// Builds the executing host for a run: a policy-carrying adapter over the real
+/// system host. Declared members reach this adapter only after the registry
+/// declared them and the policy granted them.
+fn system_host_bridge_with_policy(
+    graph: &revia_core::graph::Graph,
+    source_path: &str,
+    input_digest: &str,
+    declared: &[DeclaredSchema],
+    policy: &CapabilityPolicy,
+) -> Result<
+    (
+        HostBackedBridge<DeclaredCapabilityHost<SystemHost>>,
+        SharedProgramStdout,
+    ),
+    String,
+> {
+    let source = absolute_input_path(Path::new(source_path))
+        .map_err(|_| "native-host-source-unreadable".to_owned())?;
+    let sandbox = source
+        .parent()
+        .ok_or_else(|| "native-host-sandbox-invalid".to_owned())?;
+    let stdout = SharedProgramStdout::default();
+    let host = SystemHost::new_with_random_reader(
+        sandbox,
+        Vec::new(),
+        BTreeMap::new(),
+        BTreeMap::new(),
+        Box::new(stdout.clone()),
+        native_random_reader()?,
+    )
+    .map_err(|_| "native-host-initialization-failed".to_owned())?;
+    let host = DeclaredCapabilityHost::new(host, policy.clone())?;
     let revision =
         graph_revision(graph).map_err(|_| "native-host-graph-revision-invalid".to_owned())?;
     let bridge =
@@ -8330,6 +8419,33 @@ fn read_declarations(registry_path: Option<&str>) -> Result<Vec<DeclaredSchema>,
             let source = fs::read_to_string(registry_path).map_err(|_| 66)?;
             parse_registry(&source).map_err(|error| {
                 print_graph_error(&error);
+                65
+            })
+        }
+    }
+}
+
+/// Reads the capability policy a run is authorized by.
+///
+/// A graph that names a declared capability may not execute without one: the
+/// registry declares a member's shape, it never authorizes the call. The
+/// refusal happens before the host is built, so no effect can be attempted.
+fn read_capability_policy(
+    policy_path: Option<&str>,
+    graph: &revia_core::graph::Graph,
+    declared: &[DeclaredSchema],
+) -> Result<CapabilityPolicy, i32> {
+    let referenced = referenced_declared_references(graph, declared);
+    match policy_path {
+        None if referenced.is_empty() => Ok(CapabilityPolicy::deny_all()),
+        None => {
+            print_host_executor_error(CAPABILITY_POLICY_MISSING);
+            Err(65)
+        }
+        Some(policy_path) => {
+            let source = fs::read_to_string(policy_path).map_err(|_| 66)?;
+            CapabilityPolicy::parse(&source).map_err(|code| {
+                print_host_executor_error(&code);
                 65
             })
         }

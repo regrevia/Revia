@@ -142,9 +142,10 @@ fn declared_member_reaches_the_host_boundary_with_a_registry() {
     ]);
     assert!(compile.status.success());
 
-    // `run` executes the artifact under the declarations, so verification and
-    // the VM hand the declared member on to the host adapter instead of
-    // rejecting it as unknown.
+    // WP-355 tightened this boundary: a registry declares a member's shape, it
+    // never authorizes the call. The graph references a declared member, so
+    // without an explicit `--capability-policy` the run is refused before a
+    // host is built instead of reaching the adapter and failing late in the VM.
     let staged = run([
         "run",
         "--schema-registry",
@@ -154,9 +155,8 @@ fn declared_member_reaches_the_host_boundary_with_a_registry() {
         INPUT_DIGEST,
     ]);
     assert_eq!(staged.status.code(), Some(65));
-    assert!(staged.stdout.is_empty());
     assert!(
-        String::from_utf8_lossy(&staged.stderr).contains("native-vm-capability-failed"),
+        String::from_utf8_lossy(&staged.stderr).contains("native-host-capability-policy-missing"),
         "{}",
         String::from_utf8_lossy(&staged.stderr)
     );
@@ -170,7 +170,7 @@ fn declared_member_reaches_the_host_boundary_with_a_registry() {
     ]);
     assert_eq!(one_shot.status.code(), Some(65));
     assert!(
-        String::from_utf8_lossy(&one_shot.stderr).contains("native-vm-capability-failed"),
+        String::from_utf8_lossy(&one_shot.stderr).contains("native-host-capability-policy-missing"),
         "{}",
         String::from_utf8_lossy(&one_shot.stderr)
     );
