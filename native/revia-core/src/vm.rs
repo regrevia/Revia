@@ -489,7 +489,7 @@ pub fn vm_value_digest(value: &VmValue) -> String {
     )
 }
 
-fn vm_value_json(value: &VmValue) -> JsonValue {
+pub(crate) fn vm_value_json(value: &VmValue) -> JsonValue {
     match value {
         VmValue::Unit => object(vec![
             ("type", JsonValue::String("unit".to_owned())),

@@ -412,6 +412,14 @@ It still changes language semantics and was not folded into Issues 1-3.
    so value evidence there requires a versioned envelope — recorded as deferred
    item 1 in [result-value-interface.md](result-value-interface.md) §4
    (`wp362_project_value_evidence_boundary_cli`).
+10. WP-363 — closed: value evidence on the project path arrives as an opt-in
+    versioned envelope, not as a widened `@0.1.0`. `project-run --print-values`
+    emits `re.native-project-run@0.2.0` (`@0.1.0` plus `invocation_values`),
+    `project-run-verify` and `project-run-receipt-verify` accept both schemas,
+    the default bytes and their digests are unchanged, and the other project
+    commands still refuse the flag
+    (`wp362_project_value_evidence_boundary_cli`, in
+    [result-value-interface.md](result-value-interface.md) §5).
 
 ## 8. Evidence rules
 

@@ -19,12 +19,13 @@ use crate::{
     vm::{
         CapabilityBridge, NATIVE_VM_PROFILE, VmLimits, VmRequest, VmResult, VmValue,
         execute_bytecode_with_input_value, execute_bytecode_with_return_value, serialize_vm_value,
-        verify_vm_receipt, vm_value_digest, vm_value_type_name,
+        verify_vm_receipt, vm_value_digest, vm_value_json, vm_value_type_name,
     },
 };
 
 pub const PROJECT_TRANSLATION_SCHEMA: &str = "re.native-project-translation@0.1.0";
 pub const PROJECT_RUN_SCHEMA: &str = "re.native-project-run@0.1.0";
+pub const PROJECT_RUN_SCHEMA_VALUED: &str = "re.native-project-run@0.2.0";
 pub const PROJECT_RUN_VERIFICATION_SCHEMA: &str = "re.native-project-run-verification@0.1.0";
 pub const PROJECT_EXECUTION_PLAN_SCHEMA: &str = "re.native-project-execution-plan@0.1.0";
 pub const PROJECT_EXECUTION_SCHEMA: &str = "re.native-project-execution@0.1.0";
@@ -70,6 +71,7 @@ pub struct NativeProjectRun {
     pub build_key: String,
     pub graph_revision: String,
     pub input_digest: String,
+    pub invocation_values: Option<Vec<Option<VmValue>>>,
     pub module: String,
     pub project_digest: String,
     pub run_digest: String,
@@ -274,6 +276,47 @@ pub fn execute_project_module(
     )
 }
 
+/// The invocation values recorded for a `project-run` execution: one slot per
+/// capability call, `None` for a refusal or a host fault. The whole value is
+/// `None` unless the caller opted in, which keeps the default envelope at
+/// `re.native-project-run@0.1.0`.
+type ProjectRunValues = Option<Vec<Option<VmValue>>>;
+
+/// A `project-run` execution: the run envelope, the returned value, and the
+/// invocation values the caller asked for.
+type ProjectRunExecution =
+    Result<(NativeProjectRun, VmValue, ProjectRunValues), ProjectRuntimeError>;
+
+#[allow(clippy::too_many_arguments)]
+pub fn execute_project_module_with_value_evidence(
+    project_directory: impl AsRef<Path>,
+    cache_directory: impl AsRef<Path>,
+    build_directory: impl AsRef<Path>,
+    profile_digest: &str,
+    toolchain_digest: &str,
+    module_name: &str,
+    supplied_translation: &NativeProjectTranslation,
+    input_digest: &str,
+    bridge: &mut dyn CapabilityBridge,
+    limits: VmLimits,
+    print_values: bool,
+) -> Result<(NativeProjectRun, ProjectRunValues), ProjectRuntimeError> {
+    execute_project_entry_with_value_evidence(
+        project_directory,
+        cache_directory,
+        build_directory,
+        profile_digest,
+        toolchain_digest,
+        module_name,
+        "main",
+        supplied_translation,
+        input_digest,
+        bridge,
+        limits,
+        print_values,
+    )
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn execute_project_entry(
     project_directory: impl AsRef<Path>,
@@ -288,6 +331,38 @@ pub fn execute_project_entry(
     bridge: &mut dyn CapabilityBridge,
     limits: VmLimits,
 ) -> Result<NativeProjectRun, ProjectRuntimeError> {
+    execute_project_entry_with_value_evidence(
+        project_directory,
+        cache_directory,
+        build_directory,
+        profile_digest,
+        toolchain_digest,
+        module_name,
+        entry_name,
+        supplied_translation,
+        input_digest,
+        bridge,
+        limits,
+        false,
+    )
+    .map(|(run, _)| run)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn execute_project_entry_with_value_evidence(
+    project_directory: impl AsRef<Path>,
+    cache_directory: impl AsRef<Path>,
+    build_directory: impl AsRef<Path>,
+    profile_digest: &str,
+    toolchain_digest: &str,
+    module_name: &str,
+    entry_name: &str,
+    supplied_translation: &NativeProjectTranslation,
+    input_digest: &str,
+    bridge: &mut dyn CapabilityBridge,
+    limits: VmLimits,
+    print_values: bool,
+) -> Result<(NativeProjectRun, ProjectRunValues), ProjectRuntimeError> {
     validate_translation(supplied_translation)?;
     let (project, build, trusted) = trusted_translation(
         project_directory,
@@ -303,27 +378,17 @@ pub fn execute_project_entry(
             "native-project-translation-mismatch",
         ));
     }
-    execute_trusted_project_entry(&project, &build, &trusted, input_digest, bridge, limits)
-}
-
-fn execute_trusted_project_entry(
-    project: &NativeProject,
-    build: &NativeBuildResult,
-    trusted: &TrustedTranslation,
-    input_digest: &str,
-    bridge: &mut dyn CapabilityBridge,
-    limits: VmLimits,
-) -> Result<NativeProjectRun, ProjectRuntimeError> {
-    execute_trusted_project_entry_with_value(
-        project,
-        build,
-        trusted,
+    execute_trusted_project_entry_evidence(
+        &project,
+        &build,
+        &trusted,
         input_digest,
         bridge,
         limits,
         None,
+        print_values,
     )
-    .map(|(run, _)| run)
+    .map(|(run, _, values)| (run, values))
 }
 
 fn execute_trusted_project_entry_with_value(
@@ -335,6 +400,30 @@ fn execute_trusted_project_entry_with_value(
     limits: VmLimits,
     input_value: Option<&VmValue>,
 ) -> Result<(NativeProjectRun, VmValue), ProjectRuntimeError> {
+    execute_trusted_project_entry_evidence(
+        project,
+        build,
+        trusted,
+        input_digest,
+        bridge,
+        limits,
+        input_value,
+        false,
+    )
+    .map(|(run, returned_value, _)| (run, returned_value))
+}
+
+#[allow(clippy::too_many_arguments)]
+fn execute_trusted_project_entry_evidence(
+    project: &NativeProject,
+    build: &NativeBuildResult,
+    trusted: &TrustedTranslation,
+    input_digest: &str,
+    bridge: &mut dyn CapabilityBridge,
+    limits: VmLimits,
+    input_value: Option<&VmValue>,
+    print_values: bool,
+) -> ProjectRunExecution {
     let request = VmRequest::new(
         trusted.translation.graph_revision.clone(),
         trusted.artifact.artifact_digest.clone(),
@@ -368,10 +457,14 @@ fn execute_trusted_project_entry_with_value(
             "native-project-run-authority-mismatch",
         ));
     }
-    Ok((
-        make_run(project, build, trusted.translation.clone(), vm.result),
-        vm.returned_value,
-    ))
+    let values = print_values.then(|| vm.invocation_values.clone());
+    let mut run = make_run(project, build, trusted.translation.clone(), vm.result);
+    if let Some(values) = values.as_ref() {
+        run.schema = PROJECT_RUN_SCHEMA_VALUED.to_owned();
+        run.invocation_values = Some(values.clone());
+        run.run_digest = run_digest(&run);
+    }
+    Ok((run, vm.returned_value, values))
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -702,7 +795,8 @@ pub fn serialize_project_translation(
 pub fn serialize_project_run(run: &NativeProjectRun) -> Result<String, ProjectRuntimeError> {
     validate_translation(&run.translation)?;
     verify_vm_receipt(&run.vm.receipt).map_err(|error| ProjectRuntimeError::new(&error.code))?;
-    if run.schema != PROJECT_RUN_SCHEMA
+    if (run.schema != PROJECT_RUN_SCHEMA && run.schema != PROJECT_RUN_SCHEMA_VALUED)
+        || run.invocation_values.is_some() != (run.schema == PROJECT_RUN_SCHEMA_VALUED)
         || run.module != run.translation.module
         || run.project_digest != run.translation.project_digest
         || run.graph_revision != run.translation.graph_revision
@@ -734,32 +828,47 @@ pub fn verify_project_run_serialized(
             return Err(ProjectRuntimeError::new("native-project-run-json-invalid"));
         }
     };
-    let entries = exact_object(
-        &value,
-        &[
-            "artifact_digest",
-            "build_key",
-            "build_manifest_digest",
-            "graph_revision",
-            "input_digest",
-            "module",
-            "module_artifact_digest",
-            "module_cache_key",
-            "outcome_code",
-            "outcome_type",
-            "project_digest",
-            "project_graph_revision",
-            "profile",
-            "profile_digest",
-            "run_digest",
-            "schema",
-            "toolchain_digest",
-            "translation_digest",
-            "vm_receipt_digest",
-        ],
-    )
-    .map_err(|error| ProjectRuntimeError::new(&error.code))?;
-    if required_string(&entries, "schema")? != PROJECT_RUN_SCHEMA {
+    let schema = fields
+        .iter()
+        .find(|(key, _)| key == "schema")
+        .and_then(|(_, value)| match value {
+            JsonValue::String(schema) => Some(schema.clone()),
+            _ => None,
+        })
+        .ok_or_else(|| ProjectRuntimeError::new("native-project-run-schema-mismatch"))?;
+    let mut expected_fields = vec![
+        "artifact_digest",
+        "build_key",
+        "build_manifest_digest",
+        "graph_revision",
+        "input_digest",
+        "module",
+        "module_artifact_digest",
+        "module_cache_key",
+        "outcome_code",
+        "outcome_type",
+        "project_digest",
+        "project_graph_revision",
+        "profile",
+        "profile_digest",
+        "run_digest",
+        "schema",
+        "toolchain_digest",
+        "translation_digest",
+        "vm_receipt_digest",
+    ];
+    match schema.as_str() {
+        PROJECT_RUN_SCHEMA => {}
+        PROJECT_RUN_SCHEMA_VALUED => expected_fields.push("invocation_values"),
+        _ => {
+            return Err(ProjectRuntimeError::new(
+                "native-project-run-schema-mismatch",
+            ));
+        }
+    }
+    let entries = exact_object(&value, &expected_fields)
+        .map_err(|error| ProjectRuntimeError::new(&error.code))?;
+    if schema == PROJECT_RUN_SCHEMA_VALUED && !entries.contains_key("invocation_values") {
         return Err(ProjectRuntimeError::new(
             "native-project-run-schema-mismatch",
         ));
@@ -1499,6 +1608,7 @@ fn make_run(
         build_key: build.manifest.build_key.clone(),
         graph_revision: translation.graph_revision.clone(),
         input_digest: vm.input_digest.clone(),
+        invocation_values: None,
         module: translation.module.clone(),
         project_digest: project.project_digest.clone(),
         run_digest: String::new(),
@@ -2053,7 +2163,7 @@ fn run_json_without_digest(run: &NativeProjectRun) -> JsonValue {
 }
 
 fn run_fields(run: &NativeProjectRun) -> Vec<(&'static str, JsonValue)> {
-    vec![
+    let mut fields = vec![
         (
             "artifact_digest",
             JsonValue::String(run.translation.artifact_digest.clone()),
@@ -2114,7 +2224,22 @@ fn run_fields(run: &NativeProjectRun) -> Vec<(&'static str, JsonValue)> {
             "vm_receipt_digest",
             JsonValue::String(run.vm.receipt.receipt_digest.clone()),
         ),
-    ]
+    ];
+    if let Some(values) = &run.invocation_values {
+        fields.push((
+            "invocation_values",
+            JsonValue::Array(
+                values
+                    .iter()
+                    .map(|value| match value {
+                        Some(value) => vm_value_json(value),
+                        None => JsonValue::Null,
+                    })
+                    .collect(),
+            ),
+        ));
+    }
+    fields
 }
 
 fn object(fields: Vec<(&'static str, JsonValue)>) -> JsonValue {
