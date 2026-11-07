@@ -595,6 +595,7 @@
     "test/project-translator.test.js",
     "test/public-ai-native-demo.test.js",
     "test/public-source-transition.test.js",
+    "test/release-compatibility-table.test.js",
     "test/release-platform-baseline.test.js",
     "test/release-provenance.test.js",
     "test/release-records.test.js",
