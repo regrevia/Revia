@@ -73,10 +73,18 @@ revia run --schema-registry registry.json \
 | `--schema-registry` (`revia.host-schema-definitions@0.1.0`) | what the member's parameter and result types are | whether this run may call it |
 | `--capability-policy` (`revia.capability-policy@0.1.0`) | which `reference.member` pairs this run may call | whether the host implements them |
 
-The policy is a closed object: `{"schema": 1, "grants":
-[{"reference": "<schema>@<version>", "members": ["<member>", ...]}]}`.
-Unknown or missing fields, duplicate members, and an unsupported schema value
-are rejected with `native-capability-policy-invalid:<reason>`.
+The policy is a closed object: `{"schema": "revia.capability-policy@0.1.0",
+"grants": [{"reference": "<schema>@<version>", "members": ["<member>", ...]}]}`.
+The schema value is text; the numeric form is rejected with
+`native-capability-policy-invalid:schema-not-text` (exit 65). Unknown or missing
+fields, duplicate members, and an unsupported schema value are rejected with
+`native-capability-policy-invalid:<reason>`.
+
+The policy admits declared host members only, so it is not a filesystem or
+process sandbox: built-in capabilities (`process.stdout`, `process.args`,
+`fs.read`, `fs.write`, `clock.monotonic_nanos`) execute under a policy that does
+not mention them, and what they may reach is bounded by the host sandbox instead
+(`runtime-run` takes an explicit sandbox root).
 
 Behavior is fail-closed and was tightened in WP-355:
 

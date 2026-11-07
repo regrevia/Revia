@@ -892,7 +892,7 @@ fn command_help(command: &str) -> Result<(), i32> {
             "revia compile [--schema-registry <registry>] <source> <artifact>\n  Write a verified native artifact.\n"
         }
         "execute" => {
-            "revia execute [--schema-registry <registry>] [--capability-policy <policy>] [--print-values] <source> <input-digest>\n  Check, translate, and execute one source file.\n  --print-values adds, for each invocation, the typed value it returned; the array has the same order and length as `invocations`.\n"
+            "revia execute [--schema-registry <registry>] [--capability-policy <policy>] [--print-values] <source> <input-digest>\n  Check, translate, and execute one source file.\n  --print-values adds, for each invocation, the typed value it returned; the array has the same order and length as `invocations`.\n  --capability-policy admits declared host members only; built-in capabilities (process.*, fs.*, clock.*) are bounded by the host sandbox instead.\n"
         }
         "runtime-package" => {
             "revia runtime-package <source> <bundle>\n  Package a verified graph and artifact into a movable native runtime bundle.\n"
@@ -961,7 +961,7 @@ fn command_help(command: &str) -> Result<(), i32> {
             "revia verify [--schema-registry <registry>] <graph> <artifact>\n  Verify a graph-bound artifact.\n"
         }
         "run" => {
-            "revia run [--schema-registry <registry>] [--capability-policy <policy>] [--print-values] <graph> <artifact> <input-digest>\n  Execute a verified artifact; --print-values reports capability values.\n"
+            "revia run [--schema-registry <registry>] [--capability-policy <policy>] [--print-values] <graph> <artifact> <input-digest>\n  Execute a verified artifact; --print-values reports capability values.\n  --capability-policy admits declared host members only; built-in capabilities (process.*, fs.*, clock.*) are bounded by the host sandbox instead.\n"
         }
         "project-init" => {
             "revia project-init <directory>\n  Create a deterministic starter project.\n"

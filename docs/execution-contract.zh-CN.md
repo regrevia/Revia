@@ -71,10 +71,17 @@ revia run --schema-registry registry.json \
 | `--schema-registry`（`revia.host-schema-definitions@0.1.0`） | member 的参数与返回类型是什么 | 本次运行能否调用它 |
 | `--capability-policy`（`revia.capability-policy@0.1.0`） | 本次运行可以调用哪些 `reference.member` | 宿主是否实现了它们 |
 
-策略是封闭对象：`{"schema": 1, "grants":
+策略是封闭对象：`{"schema": "revia.capability-policy@0.1.0", "grants":
 [{"reference": "<schema>@<version>", "members": ["<member>", ...]}]}`。
-未知字段、缺失字段、重复 member、不支持的 schema 取值都会以
+schema 取值是文本；数字形式会以
+`native-capability-policy-invalid:schema-not-text`（退出 65）拒绝。未知字段、
+缺失字段、重复 member、不支持的 schema 取值都会以
 `native-capability-policy-invalid:<reason>` 拒绝。
+
+策略只放行声明式宿主 member，因此它不是文件系统或进程沙箱：内置能力
+（`process.stdout`、`process.args`、`fs.read`、`fs.write`、
+`clock.monotonic_nanos`）在策略未提及它们时照常执行，其可达范围由宿主沙箱
+限制（`runtime-run` 显式接收沙箱根目录）。
 
 行为一律 fail-closed，并在 WP-355 中收紧：
 

@@ -437,6 +437,17 @@ It still changes language semantics and was not folded into Issues 1-3.
     `scripts/test-compact-determinism-contract.sh`. The launcher-level release
     smoke keeps its own assertions because `bin/revia` is a downloader, not a
     passthrough. Guarded by `test/release-contract-gate.test.js`.
+12. WP-365 — closed: the documented permission scope matches the measured one.
+    The execution contract had documented the policy as `{"schema": 1, ...}`
+    while the binary reads a text schema and rejects the numeric form with
+    `native-capability-policy-invalid:schema-not-text` (exit 65); both language
+    versions now show the shape the shipped toolchain accepts, and both `execute`
+    and `run` help state that the policy admits declared host members only, not
+    that it is a filesystem or process sandbox. Pinned by
+    `wp365_permission_scope_cli`, which also measures that a policy granting an
+    unrelated declared member leaves a built-in `fs.read` call executing with
+    `"ok":true` and `outcome.code: 0`, so no test or document can promote the
+    artifact into a general permission boundary.
 
 ## 8. Evidence rules
 
