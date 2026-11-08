@@ -102,6 +102,14 @@ test('the first-program tutorial runs as documented', async () => {
       broken.stderr,
       'scratch/broken.re:9:28: unexpected-argument (expected data, got message)\n',
     )
+
+    // The tutorial ends the rejection by putting the call back, so a reader
+    // learns that the verdict is about the edit and not about the file.
+    await writeFile(join(scratch, 'broken.re'), first)
+    const repaired = runCli(directory, 'check', 'scratch/broken.re')
+    assert.equal(repaired.status, 0)
+    assert.equal(repaired.stdout, 'OK scratch/broken.re\n')
+    assert.equal(repaired.stderr, '')
   } finally {
     await rm(directory, { recursive: true, force: true })
   }
@@ -116,6 +124,11 @@ test('documented command exit codes match the CLI', async () => {
   )
   assert.ok(english !== null, 'QUICKSTART.md must name the exit codes')
   assert.match(english[0], /`0`[\s\S]*`64`[\s\S]*`65`/u)
+
+  // The rejection section ends by repairing the edit; without that leg a
+  // reader can copy a failing program and stop there.
+  assert.ok(quickstart.includes('Put the call back'))
+  assert.ok(quickstart.includes('把调用改回原样'))
 
   const chinese = /命令自身的退出码为[^\n]*(?:\n[^\n]+)*/u.exec(quickstart)
   assert.ok(chinese !== null, 'the Chinese quickstart must carry the sentence')

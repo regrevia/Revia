@@ -42,8 +42,16 @@ npm run re -- check scratch/first.re
 # scratch/first.re:9:28: unexpected-argument (expected data, got message)
 ```
 
-That diagnostic goes to stderr and the command exits `65`. The same verdict is
-available as one machine-readable object: `npm run re -- check --format json
+That diagnostic goes to stderr and the command exits `65`. Put the call back the
+way it was — `@stdout.write("Hello, Revia!\n")` — and the same check passes:
+
+```bash
+npm run re -- check scratch/first.re
+# OK scratch/first.re
+```
+
+The command exits `0` again. The same verdict is available as one
+machine-readable object: `npm run re -- check --format json
 scratch/first.re` prints `schema`, `file`, `ok`, and `diagnostics`, and
 `npm run re -- manifest scratch/first.re` prints the review manifest with the
 declared capabilities, effect calls, and error paths of that file.
@@ -75,7 +83,15 @@ npm run re -- check scratch/first.re
 # scratch/first.re:9:28: unexpected-argument (expected data, got message)
 ```
 
-该诊断写到 stderr，命令退出码为 `65`。同样的判定还有机器可读形式：
+该诊断写到 stderr，命令退出码为 `65`。把调用改回原样
+`@stdout.write("Hello, Revia!\n")`，同一条检查就会通过：
+
+```bash
+npm run re -- check scratch/first.re
+# OK scratch/first.re
+```
+
+命令重新以 `0` 退出。同样的判定还有机器可读形式：
 `npm run re -- check --format json scratch/first.re` 输出含 `schema`、`file`、
 `ok`、`diagnostics` 的一个 JSON 对象；`npm run re -- manifest scratch/first.re`
 输出审阅清单，含该文件声明的能力、effect 调用与错误路径。

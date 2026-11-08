@@ -710,6 +710,15 @@ It still changes language semantics and was not folded into Issues 1-3.
     `test/docs-diagnostics.test.js` measures every code and both diagnostic
     forms against the CLI.
 
+33. (WP-385) The first-program tutorial showed the rejected edit and stopped:
+    the reader learned that `message:` exits `65` but not that putting the call
+    back returns the file to `0`, so a copy-pasted rejection had no way out.
+    `QUICKSTART.md` now ends the rejection with the repair — the restored
+    `@stdout.write("Hello, Revia!\n")` call, a passing `check`, and the
+    sentence that the command exits `0` again — in both languages, and
+    `test/quickstart-first-program.test.js` re-runs `check` after restoring the
+    source and pins `OK scratch/broken.re` with an empty stderr.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
