@@ -103,3 +103,26 @@ test('every relative link in shipped documentation resolves', () => {
   assert.deepEqual(failures, [])
   assert.ok(checked > 150, `expected the documentation link scan to cover the shipped pages, saw ${checked}`)
 })
+
+test('the documentation map reaches every page it indexes', () => {
+  const map = 'docs/README.md'
+  const source = withoutFencedBlocks(readFileSync(resolve(repositoryRoot, map), 'utf8'))
+  const linked = new Set()
+  for (const match of source.matchAll(LINK)) {
+    const target = match[1]
+    if (EXTERNAL.test(target)) continue
+    const path = target.split('#')[0]
+    if (path === '') continue
+    linked.add(relative(repositoryRoot, resolve(repositoryRoot, 'docs', path)))
+  }
+  // The map indexes the shipped top-level pages. Records under
+  // `docs/work-packages/` and the local promotion and planning notes are
+  // reached from the pages that cite them, not from the map.
+  const pages = readdirSync(resolve(repositoryRoot, 'docs'))
+    .filter((entry) => entry.endsWith('.md') && entry !== 'README.md')
+    .map((entry) => posix.join('docs', entry))
+    .sort()
+  const orphans = pages.filter((page) => !linked.has(page))
+  assert.deepEqual(orphans, [])
+  assert.ok(pages.length > 20, `expected the map to cover the shipped pages, saw ${pages.length}`)
+})

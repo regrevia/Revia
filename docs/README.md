@@ -29,9 +29,12 @@ under [`doc/`](../doc/).
 ### Language And Execution / 语言与执行
 
 - [`language.md`](language.md) and [`language-reference.md`](language-reference.md)
-- [`execution-contract.md`](execution-contract.md)
+- [`execution-contract.md`](execution-contract.md) and its
+  [Chinese mirror](execution-contract.zh-CN.md)
 - [`protocol.md`](protocol.md)
-- [`architecture.md`](architecture.md)
+- [`architecture.md`](architecture.md) and its
+  [Chinese mirror](architecture.zh-CN.md)
+- [`translation-rendering.md`](translation-rendering.md)
 - [`evolution.md`](evolution.md)
 
 ### Integration And Hosts / 集成与宿主

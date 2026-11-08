@@ -610,6 +610,17 @@ It still changes language semantics and was not folded into Issues 1-3.
     a link into a renamed or never-written section fails instead of opening
     the page at the top.
 
+22. (WP-374) `docs/README.md` presents itself as the map of the public
+    documentation but did not list three pages: `translation-rendering.md` was
+    reachable only by following a link out of the architecture page, and the
+    two Chinese mirrors (`architecture.zh-CN.md`, `execution-contract.zh-CN.md`)
+    appeared nowhere in the map at all. The map now names the translation and
+    rendering page and the two mirrors next to their English originals.
+    `test/docs-links.test.js` gained a second case: every top-level page under
+    `docs/` except the map itself must be linked from the map, so a page added
+    without an index entry fails instead of drifting out of reach. Records
+    under `docs/work-packages/` and the local promotion and planning notes stay
+    out of that rule, because they are reached from the pages that cite them.
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
