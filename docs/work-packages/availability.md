@@ -719,6 +719,14 @@ It still changes language semantics and was not folded into Issues 1-3.
     `test/quickstart-first-program.test.js` re-runs `check` after restoring the
     source and pins `OK scratch/broken.re` with an empty stderr.
 
+34. (WP-386) The failure path was descriptive but not actionable: the page
+    listed the facts a report needs, then pointed at a prose policy, leaving a
+    reader with nowhere concrete to file it even though
+    `.github/ISSUE_TEMPLATE/bug.yml` already asks for exactly those six fields.
+    `docs/diagnostics.md` and `docs/feedback-loop.md` now link the bug form,
+    and `test/docs-diagnostics.test.js` holds the checklist, the form ids and
+    labels, and the six required flags together so neither side can drift.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

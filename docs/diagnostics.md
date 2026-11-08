@@ -69,7 +69,10 @@ A report is actionable when it carries:
 - the smallest input that reproduces it, or the bytes you changed to get there;
 - what you saw and what you expected, including the exit code.
 
-[`feedback-loop.md`](feedback-loop.md) describes where a report goes.
+If you can open an issue, the repository's bug report form
+([`.github/ISSUE_TEMPLATE/bug.yml`](../.github/ISSUE_TEMPLATE/bug.yml)) asks for
+exactly these fields, so the report starts actionable.
+[`feedback-loop.md`](feedback-loop.md) describes the other report paths.
 
 中文摘要：诊断是一行 `文件:行:列: 代码 (期望, 实际)`，`--format json` 给出
 `re.check-result@0.1.0` 对象与 `diagnostics` 数组；源码 CLI 的退出码为 `0`

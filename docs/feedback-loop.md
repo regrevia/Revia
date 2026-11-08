@@ -29,6 +29,11 @@ Use `feedback/submissions/` for an experience report. Use
 and deserves a lifecycle record.
 体验报告放入 `feedback/submissions/`；具备稳定复现并值得跟踪生命周期的问题放入 `feedback/agent-discovered-issues/`。
 
+If you hit a reproducible failure instead of an experience report, open the
+[bug report form](../.github/ISSUE_TEMPLATE/bug.yml); it asks for the command,
+version, environment, minimal input, and both outputs that a maintainer needs to
+reproduce the run.
+
 ## Attribution / 署名
 
 Keep public handles and links when they are part of the public record. Quote

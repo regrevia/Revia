@@ -22,6 +22,14 @@ const diagnostics = await readFile(
 const source = await readFile(join(repositoryRoot, 'src', 'cli', 're.js'), 'utf8')
 const index = await readFile(join(repositoryRoot, 'docs', 'README.md'), 'utf8')
 const quickstart = await readFile(join(repositoryRoot, 'QUICKSTART.md'), 'utf8')
+const feedbackLoop = await readFile(
+  join(repositoryRoot, 'docs', 'feedback-loop.md'),
+  'utf8',
+)
+const bugForm = await readFile(
+  join(repositoryRoot, '.github', 'ISSUE_TEMPLATE', 'bug.yml'),
+  'utf8',
+)
 
 function runCli(cwd, ...arguments_) {
   return spawnSync(process.execPath, [cli, ...arguments_], {
@@ -73,6 +81,52 @@ test('the diagnostics page names the codes the CLI defines', () => {
     quickstart.split('(docs/diagnostics.md)').length - 1,
     2,
     'QUICKSTART.md must point at the page in both languages',
+  )
+})
+
+test('the reporting path asks for the fields a report needs', () => {
+  // docs/diagnostics.md promises the issue form asks for the same fields its
+  // checklist lists. Keep the two from drifting apart: a missing form field
+  // makes a report unactionable, and a missing bullet hides the requirement.
+  const requirements = [
+    'the command you ran',
+    'the version you ran it against',
+    'your OS and CPU architecture',
+    'the smallest input that reproduces it',
+    'what you saw and what you expected',
+  ]
+  for (const requirement of requirements) {
+    assert.ok(
+      diagnostics.includes(requirement),
+      `docs/diagnostics.md must keep the requirement: ${requirement}`,
+    )
+  }
+  assert.ok(diagnostics.includes('including the exit code'))
+  for (const [id, label] of [
+    ['version', 'Revia version and commit'],
+    ['environment', 'OS, architecture, shell'],
+    ['command', 'Command and exit status'],
+    ['input', 'Minimal `.re` input'],
+    ['observed', 'Observed output'],
+    ['expected', 'Expected behavior'],
+  ]) {
+    assert.ok(bugForm.includes(`id: ${id}`), `bug.yml must ask for ${id}`)
+    assert.ok(
+      bugForm.includes(label),
+      `bug.yml must label ${id} as ${label}`,
+    )
+  }
+  assert.ok(
+    (bugForm.match(/required: true/gu) ?? []).length >= 6,
+    'every reporting field must be required',
+  )
+  assert.ok(
+    diagnostics.includes('../.github/ISSUE_TEMPLATE/bug.yml'),
+    'the page must point at the issue form',
+  )
+  assert.ok(
+    feedbackLoop.includes('../.github/ISSUE_TEMPLATE/bug.yml'),
+    'the feedback loop must point at the issue form',
   )
 })
 
