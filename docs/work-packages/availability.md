@@ -525,6 +525,24 @@ It still changes language semantics and was not folded into Issues 1-3.
     audit above, which fails if a design document starts presenting an
     unexecuted shape as runnable.
 
+17. (WP-370) The third first-run walk ran every `examples/*.re` file from the
+    repository root, the directory `examples/README.md` tells a reader to use.
+    Nineteen of twenty settled as documented, but `read-check.re` and
+    `read-encoding.re` both exited `2` with empty streams: both call
+    `@input.read_file("input.txt")`, paths resolve relative to the program file,
+    and `examples/input.txt` did not exist, so the documented first-run command
+    took each program's own `err` branch. `examples/input.txt` now ships with
+    the line `example input for read-check.re`, both samples exit `0`, and the
+    README states the file each sample needs, the directory-relative rule, the
+    exit `2` that a removed input produces, and the `examples/output.txt` that
+    `write-check.re` writes (now Git-ignored). `test/examples-runnable.test.js`
+    copies the examples into a temporary directory, runs all twenty, and pins
+    the exact split: seven print a fixed report, six exit `0` silently, one
+    (`diagnostic-error.re`) exits `65` with `:9:28: unexpected-argument`, and
+    the six design fixtures (`cf-*`, `p0-demo-runtime.re`, `schema-ops.re`)
+    exit `65` with `unexpected-token`. An example missing from the tables fails
+    the test, so a new sample cannot reach a reader unclassified.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

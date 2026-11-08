@@ -36,6 +36,21 @@ with `{"diagnostics":[{"code":"unknown-argument"}],"ok":false,
 - [`read-encoding.re`](read-encoding.re): explicit text encoding / 显式文本编码
 - [`write-check.re`](write-check.re): exact bytes write / 精确 bytes 写入
 
+All four run from the repository root. The file-reading pair reads
+`input.txt` beside the program: paths resolve relative to the directory of the
+program file, not the directory the command starts in, so
+`node src/cli/re.js run examples/read-check.re` prints nothing and exits `0`,
+and removing `examples/input.txt` makes the same command exit `2` through the
+program's own `err` branch. `write-check.re` writes `examples/output.txt`, which
+is ignored by Git; the file holds the three bytes `41 00 42`.
+
+四个样例都可以从仓库根目录运行。读取文件的两个样例读的是程序文件旁边的
+`input.txt`：路径相对于程序文件所在目录解析，而不是命令启动的目录，所以
+`node src/cli/re.js run examples/read-check.re` 没有输出、退出码 `0`；删掉
+`examples/input.txt` 后同一命令退出 `2`，走的是程序自己的 `err` 分支。
+`write-check.re` 会写出 `examples/output.txt`，该文件已被 Git 忽略，内容是
+`41 00 42` 三个字节。
+
 ## Design Fixtures / 设计样例
 
 The following files document syntax and semantic candidates that are not

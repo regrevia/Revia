@@ -437,6 +437,7 @@
     "test/demo-runner.test.js",
     "test/deterministic-fuzz.test.js",
     "test/deterministic-identity.test.js",
+    "test/examples-runnable.test.js",
     "test/executable-grammar.test.js",
     "test/file-sandbox-adapter.test.js",
     "test/fixtures/agent-adapter-corpus.json",

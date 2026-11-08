@@ -19,3 +19,4 @@ diagnostic.json
 .env
 .env.*
 .git-credentials
+/examples/output.txt

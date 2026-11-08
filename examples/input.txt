@@ -1,0 +1,1 @@
+example input for read-check.re
