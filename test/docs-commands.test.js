@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import { cpSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, posix, resolve } from 'node:path'
 import test from 'node:test'
@@ -223,4 +223,92 @@ test('the feedback guide says which version and input a report needs', () => {
   assert.equal(rejected.status, 65)
   assert.equal(rejected.stdout, '')
   assert.match(rejected.stderr, /^.+:\d+:\d+: [a-z-]+ \(expected .+, got .+\)$/mu)
+})
+
+test('the integration guide runs the built artifact outside the repository', () => {
+  // docs/integration.md tells an integrator that `build` writes a directory
+  // plain Node can run. Re-run the two documented commands, then move the
+  // directory and run it from elsewhere with a PATH-only environment, so the
+  // page cannot claim portability the artifact does not have.
+  const directory = mkdtempSync(join(tmpdir(), 'revia-build-guide-'))
+  const out = join(directory, 'hello')
+  const result = spawnSync(
+    process.execPath,
+    [resolve(repositoryRoot, 'src/cli/re.js'), 'build', '--out', out, resolve(repositoryRoot, 'examples/hello.re')],
+    { encoding: 'utf8' }
+  )
+  assert.equal(result.status, 0, result.stderr)
+  assert.equal(result.stderr, '')
+  const envelope = JSON.parse(result.stdout)
+  assert.equal(envelope.schema, 're.build-result@0.1.0')
+  assert.equal(envelope.ok, true)
+  assert.equal(envelope.artifact.target_profile, 'node-demo-self-contained-preview@0.1.0')
+  assert.equal(envelope.artifact.runtime.kind, 'self-contained-node-demo-runtime')
+  assert.equal(envelope.artifact.runtime.entrypoint, 'run.mjs')
+
+  const files = readdirSync(out).sort()
+  assert.deepEqual(files, [
+    'checksums.sha256',
+    'manifest.json',
+    'program.re',
+    'release-lock.json',
+    'review-index.json',
+    'run.mjs',
+    'semantic-view.json'
+  ])
+  const checksums = readFileSync(join(out, 'checksums.sha256'), 'utf8')
+    .trim()
+    .split('\n')
+    .map((line) => line.split(/\s+/u)[1])
+  assert.deepEqual(checksums.sort(), files.filter((file) => file !== 'checksums.sha256'))
+
+  const shipped = join(directory, 'shipped')
+  cpSync(out, shipped, { recursive: true })
+  const run = spawnSync(process.execPath, [join(shipped, 'run.mjs')], {
+    cwd: directory,
+    encoding: 'utf8',
+    env: { PATH: process.env.PATH ?? '' }
+  })
+  assert.equal(run.status, 0, run.stderr)
+  assert.equal(run.stdout, 'Hello, World!\n')
+
+  const nonEmpty = spawnSync(
+    process.execPath,
+    [resolve(repositoryRoot, 'src/cli/re.js'), 'build', '--out', out, resolve(repositoryRoot, 'examples/hello.re')],
+    { encoding: 'utf8' }
+  )
+  assert.equal(nonEmpty.status, 65)
+  assert.deepEqual(JSON.parse(nonEmpty.stdout).diagnostics, [
+    { code: 'build-write-failed', reason: 'ENOTEMPTY' }
+  ])
+
+  const missingParent = spawnSync(
+    process.execPath,
+    [
+      resolve(repositoryRoot, 'src/cli/re.js'),
+      'build',
+      '--out',
+      join(directory, 'absent', 'hello'),
+      resolve(repositoryRoot, 'examples/hello.re')
+    ],
+    { encoding: 'utf8' }
+  )
+  assert.equal(missingParent.status, 65)
+  assert.deepEqual(JSON.parse(missingParent.stdout).diagnostics, [
+    { code: 'build-write-failed', reason: 'ENOENT' }
+  ])
+
+  const guide = readFileSync(resolve(repositoryRoot, 'docs/integration.md'), 'utf8')
+  assert.ok(guide.includes('node /tmp/revia-hello/run.mjs'))
+  assert.ok(
+    guide.includes('Hello, World!'),
+    'docs/integration.md must quote the artifact output'
+  )
+  assert.ok(guide.includes('`re.build-result@0.1.0`'))
+  assert.ok(guide.includes('`re.build-artifact@0.1.0`'))
+  assert.ok(guide.includes('`node-demo-self-contained-preview@0.1.0`'))
+  assert.ok(guide.includes('`shasum -a 256 -c checksums.sha256`'))
+  assert.ok(guide.includes('`ENOENT`'))
+  assert.ok(guide.includes('`ENOTEMPTY`'))
+  assert.ok(guide.includes('kind: self-contained-node-demo-runtime'))
 })

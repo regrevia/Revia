@@ -97,6 +97,48 @@ error kinds and absent evidence as explicit states.
 authority、profile 和幂等策略；不代表完整前端生成器或生产 SDK。手写 DTO、猜测式动态
 JSON 和 UI 框架约定不构成 Revia 语义。
 
+## Built Artifact / 构建产物
+
+`build` turns one checked source file into a directory that runs on plain
+Node, with no Revia checkout and no network:
+
+```bash
+node src/cli/re.js build --out /tmp/revia-hello examples/hello.re
+node /tmp/revia-hello/run.mjs
+```
+
+The first command exits `0` and writes a `re.build-result@0.1.0` envelope on
+stdout. The directory holds seven files: the five the envelope lists
+(`program.re`, `release-lock.json`, `run.mjs`, `review-index.json`,
+`semantic-view.json`) plus `manifest.json` and `checksums.sha256`.
+`manifest.json` is `re.build-artifact@0.1.0` with
+`target_profile: node-demo-self-contained-preview@0.1.0` and a runtime of
+`kind: self-contained-node-demo-runtime`, `entrypoint: run.mjs`. The second
+command prints the program's output and exits with its code:
+
+```text
+Hello, World!
+```
+
+Measured on a copy outside this repository, run from another working
+directory with a PATH-only environment: `run.mjs` reads only files beside it,
+so the artifact travels without the source tree or a Revia binary. Verify a
+copy with `shasum -a 256 -c checksums.sha256` (that file lists the other six,
+not itself).
+
+`--out` must name a directory that is absent or empty. A path whose parent
+does not exist, or a directory that already holds files, exits `65` with a
+`build-write-failed` diagnostic (`reason` `ENOENT` or `ENOTEMPTY`), so a
+rebuild starts by removing the previous directory.
+
+中文摘要：`build --out <dir> <file.re>` 把单个已检查的源文件打包成可在纯 Node
+下运行的目录，退出码 `0`，stdout 是 `re.build-result@0.1.0` 信封；目录共七个
+文件，另有 `manifest.json`（`re.build-artifact@0.1.0`，target profile
+`node-demo-self-contained-preview@0.1.0`）和 `checksums.sha256`。在仓库外、
+换工作目录、只留 PATH 的环境里跑 `node run.mjs` 仍输出程序结果，不读源码树
+或 Revia 二进制。`--out` 必须是空目录或不存在：父目录缺失或目录非空时退出 `65`，
+诊断码 `build-write-failed`。
+
 ## HTTP Adapter / HTTP 适配器
 
 The current public evidence is bounded HTTP/JSON/SQLite conformance using the

@@ -767,6 +767,16 @@ It still changes language semantics and was not folded into Issues 1-3.
     `--format json` returns; `test/docs-diagnostics.test.js` runs all four
     cases and requires the page to match.
 
+40. (WP-392) The integration guide showed a `build --out` invocation but
+    never said what the directory is for, so a reader could not tell that the
+    artifact runs on plain Node outside this repository. `docs/integration.md`
+    now documents the `re.build-result@0.1.0` envelope, the seven files, the
+    `re.build-artifact@0.1.0` profile, the measured `Hello, World!` output, the
+    checksum check and the `65`/`build-write-failed` refusal for an absent
+    parent or a non-empty directory; `test/docs-commands.test.js` builds the
+    artifact, copies it, runs it from another directory with a PATH-only
+    environment and re-runs both failure cases.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
