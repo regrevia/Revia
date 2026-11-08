@@ -44,7 +44,40 @@ node src/cli/re.js project-projection \
   examples/agent-expense-review
 ```
 
-It writes `types.ts`, `client.ts`, and `projection.json`. The contract is
+It writes `types.ts`, `client.ts`, and `projection.json`. Measured on
+`examples/agent-expense-review`, the exit status is `0`, and
+`projection.json` is a `re.interface-projection-manifest@0.1.0` envelope with
+four top-level keys: `contract`, `files`, `projection_digest`, `schema`.
+`files` lists the two generated sources with their digests, and
+`contract.operations` carries one routed operation, `POST /v1/expense/review`,
+whose `authority.graph_revision` equals the project's pinned revision.
+
+A consumer outside this repository needs only `projection.json` and plain
+Node to read the shape of that contract:
+
+```bash
+node -e 'const p = require("/tmp/revia-expense-client/projection.json");
+console.log(p.schema);
+console.log(p.files.map((f) => f.path).join(","));
+const operation = p.contract.operations[0];
+console.log(operation.route.method, operation.route.path)'
+```
+
+```text
+re.interface-projection-manifest@0.1.0
+client.ts,types.ts
+POST /v1/expense/review
+```
+
+中文摘要：`project-projection` 写出 `types.ts`、`client.ts` 与
+`projection.json`，退出码 `0`；`projection.json` 是
+`re.interface-projection-manifest@0.1.0` 信封，顶层键为 `contract`、`files`、
+`projection_digest`、`schema`。`files` 列出两个生成文件及其摘要，
+`contract.operations` 带路由 `POST /v1/expense/review`，其
+`authority.graph_revision` 等于项目固定的 revision。仓库外的消费者只需
+`projection.json` 与 Node 即可读取契约形状。
+
+The contract is
 derived from the checked manifest and route input; it is intentionally bounded
 and does not claim to be a complete frontend generator or production SDK.
 

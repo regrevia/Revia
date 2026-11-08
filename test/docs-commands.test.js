@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
-import { execFileSync } from 'node:child_process'
-import { readFileSync, readdirSync } from 'node:fs'
-import { posix, resolve } from 'node:path'
+import { execFileSync, spawnSync } from 'node:child_process'
+import { mkdtempSync, readFileSync, readdirSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join, posix, resolve } from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
@@ -122,4 +123,62 @@ test('documented invocations carry the arguments the CLI requires', () => {
   assert.ok(invocations >= 30, `documents carry ${invocations} invocations`)
   assert.ok(REQUIRED_ARGUMENTS.size >= 5, `rules cover ${REQUIRED_ARGUMENTS.size} subcommands`)
   assert.deepEqual(incomplete, [])
+})
+
+test('the integration guide quotes the projection a consumer reads', () => {
+  // docs/integration.md tells an outside consumer what `project-projection`
+  // writes and shows the three lines a plain Node reader gets. Re-run both so
+  // the envelope names, file list and route in the guide stay measured.
+  const directory = mkdtempSync(join(tmpdir(), 'revia-projection-guide-'))
+  const out = join(directory, 'client')
+  const result = spawnSync(
+    process.execPath,
+    [
+      resolve(repositoryRoot, 'src/cli/re.js'),
+      'project-projection',
+      '--routes',
+      resolve(repositoryRoot, 'examples/agent-expense-review/interface-routes.json'),
+      '--out',
+      out,
+      resolve(repositoryRoot, 'examples/agent-expense-review')
+    ],
+    { encoding: 'utf8' }
+  )
+  assert.equal(result.status, 0, result.stderr)
+
+  const projection = JSON.parse(readFileSync(join(out, 'projection.json'), 'utf8'))
+  assert.equal(projection.schema, 're.interface-projection-manifest@0.1.0')
+  assert.deepEqual(Object.keys(projection).sort(), [
+    'contract',
+    'files',
+    'projection_digest',
+    'schema'
+  ])
+  assert.deepEqual(projection.files.map((file) => file.path).sort(), ['client.ts', 'types.ts'])
+  const route = projection.contract.operations[0].route
+  assert.equal(`${route.method} ${route.path}`, 'POST /v1/expense/review')
+
+  const consumer = spawnSync(
+    process.execPath,
+    [
+      '-e',
+      'const p = require("./client/projection.json");\n' +
+        'console.log(p.schema);\n' +
+        'console.log(p.files.map((f) => f.path).join(","));\n' +
+        'const operation = p.contract.operations[0];\n' +
+        'console.log(operation.route.method, operation.route.path)'
+    ],
+    { cwd: directory, encoding: 'utf8' }
+  )
+  assert.equal(consumer.status, 0, consumer.stderr)
+  assert.equal(consumer.stdout, `${projection.schema}\nclient.ts,types.ts\nPOST /v1/expense/review\n`)
+
+  const guide = readFileSync(resolve(repositoryRoot, 'docs/integration.md'), 'utf8')
+  assert.ok(
+    guide.includes(consumer.stdout.trimEnd()),
+    'docs/integration.md must quote the consumer output as one block'
+  )
+  assert.ok(guide.includes('`re.interface-projection-manifest@0.1.0`'))
+  assert.ok(guide.includes('`projection.json`'))
+  assert.ok(guide.includes('`projection_digest`'))
 })

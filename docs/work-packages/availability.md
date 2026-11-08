@@ -734,6 +734,14 @@ It still changes language semantics and was not folded into Issues 1-3.
     added `cap @input: fs.read@0.1.0` grows it — and
     `test/examples-runnable.test.js` re-runs all three and quotes them.
 
+36. (WP-388) The integration guide named `project-projection` but never said
+    what a consumer outside the repository reads. `docs/integration.md` now
+    states the measured exit status, the
+    `re.interface-projection-manifest@0.1.0` envelope keys, the two generated
+    files, the routed operation, and the exact three lines a plain Node
+    consumer prints; `test/docs-commands.test.js` re-runs the projection and
+    the consumer, then requires the guide to quote that output as one block.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
