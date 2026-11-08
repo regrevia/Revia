@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, readdirSync } from 'node:fs'
+import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, posix, resolve } from 'node:path'
 import test from 'node:test'
@@ -181,4 +181,46 @@ test('the integration guide quotes the projection a consumer reads', () => {
   assert.ok(guide.includes('`re.interface-projection-manifest@0.1.0`'))
   assert.ok(guide.includes('`projection.json`'))
   assert.ok(guide.includes('`projection_digest`'))
+})
+
+test('the feedback guide says which version and input a report needs', () => {
+  // The bug form requires a version, commit and minimal input. The guide must
+  // name the commands that produce them, and the diagnostic shape it quotes
+  // must match a real rejection.
+  const guide = readFileSync(resolve(repositoryRoot, 'docs/feedback-loop.md'), 'utf8')
+  const { engines } = JSON.parse(readFileSync(resolve(repositoryRoot, 'package.json'), 'utf8'))
+  const version = /^version = "(.+)"$/mu
+    .exec(readFileSync(resolve(repositoryRoot, 'native/Cargo.toml'), 'utf8'))[1]
+
+  assert.ok(guide.includes('native/Cargo.toml'))
+  assert.ok(guide.includes('git rev-parse --short HEAD'))
+  assert.ok(guide.includes('`node --version`'))
+  assert.ok(guide.includes(`node ${engines.node}`))
+  assert.ok(
+    guide.includes(`release version (\`${version}\` in the current tree)`),
+    `docs/feedback-loop.md must quote ${version} from native/Cargo.toml`
+  )
+  assert.ok(guide.includes('`65`'))
+  assert.ok(guide.includes('path:line:column: code (expected …, got …)'))
+
+  const printed = execFileSync(
+    process.execPath,
+    [
+      '-p',
+      "require('fs').readFileSync('native/Cargo.toml', 'utf8').match(/^version = \"(.+)\"$/m)[1]"
+    ],
+    { cwd: repositoryRoot, encoding: 'utf8' }
+  )
+  assert.equal(printed.trim(), version)
+
+  const directory = mkdtempSync(join(tmpdir(), 'revia-report-guide-'))
+  writeFileSync(join(directory, 'broken.re'), 're 0.1 compact\nunit @broken\n')
+  const rejected = spawnSync(
+    process.execPath,
+    [resolve(repositoryRoot, 'src/cli/re.js'), 'check', join(directory, 'broken.re')],
+    { encoding: 'utf8' }
+  )
+  assert.equal(rejected.status, 65)
+  assert.equal(rejected.stdout, '')
+  assert.match(rejected.stderr, /^.+:\d+:\d+: [a-z-]+ \(expected .+, got .+\)$/mu)
 })

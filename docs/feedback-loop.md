@@ -34,6 +34,32 @@ If you hit a reproducible failure instead of an experience report, open the
 version, environment, minimal input, and both outputs that a maintainer needs to
 reproduce the run.
 
+## Before You Report / 报告之前
+
+A report is only actionable when a maintainer can run the same thing. Collect
+three facts from the clone before opening the form:
+
+```bash
+node -p "require('fs').readFileSync('native/Cargo.toml', 'utf8').match(/^version = \"(.+)\"$/m)[1]"
+git rev-parse --short HEAD
+node --version
+```
+
+The first prints the release version (`1.0.0-rc.2.2.1` in the current tree),
+the second the commit you tested, and the third your Node build; the package
+supports `node >=22.16.0`. Then copy the exact command and its exit status,
+and keep stdout and stderr separate. A rejected program exits `65` with no
+stdout and writes a diagnostic to stderr as
+`path:line:column: code (expected …, got …)`; paste that line instead of
+describing it. Include the smallest `.re` file that still fails, not the whole
+project.
+
+中文摘要：报告前从 clone 收集三项：`native/Cargo.toml` 的版本（当前树为
+`1.0.0-rc.2.2.1`）、`git rev-parse --short HEAD` 的 commit、`node --version`
+（包支持 `node >=22.16.0`）。贴出完整命令与退出码，stdout 与 stderr 分开贴；
+被拒绝的程序退出 `65`、没有 stdout，stderr 上的诊断形如
+`path:line:column: code (expected …, got …)`。给出仍会失败的最小 `.re` 文件。
+
 ## Attribution / 署名
 
 Keep public handles and links when they are part of the public record. Quote

@@ -742,6 +742,13 @@ It still changes language semantics and was not folded into Issues 1-3.
     consumer prints; `test/docs-commands.test.js` re-runs the projection and
     the consumer, then requires the guide to quote that output as one block.
 
+37. (WP-389) The bug form requires a version, commit and minimal input, but no
+    page said how to produce them. `docs/feedback-loop.md` now gives the three
+    measured commands (version from `native/Cargo.toml`, `git rev-parse
+    --short HEAD`, `node --version`), the supported Node range, and the exact
+    diagnostic shape a rejection prints; `test/docs-commands.test.js` re-runs
+    the version recipe and a real rejection and requires the guide to match.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
