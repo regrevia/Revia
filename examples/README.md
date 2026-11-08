@@ -9,8 +9,25 @@ to a complete Agent workflow.
 ## First Run / 第一次运行
 
 - [`hello.re`](hello.re): smallest successful program / 最小成功程序
-- [`diagnostic-error.re`](diagnostic-error.re): structured diagnostic and exit
-  `65` / 结构化诊断与退出码 `65`
+- [`diagnostic-error.re`](diagnostic-error.re): the argument-name diagnostic,
+  reported by the Node `check` and by the native `translate`/`compile` (see
+  below) / 参数名诊断，由 Node `check` 与原生 `translate`/`compile` 给出（见下）
+
+The two toolchains reach that diagnostic at different stages, so the command
+differs. The Node reference toolchain reports it from `check`:
+`npm run re -- check examples/diagnostic-error.re` exits `65` and prints one
+diagnostic line on stderr. The native toolchain's `revia check` is a parser only
+and answers with `re.native-parser-result@0.1.0`, `"ok": true`, exit `0`; there
+the diagnostic appears from `revia translate` or `revia compile`, which exit `65`
+with `{"diagnostics":[{"code":"unknown-argument"}],"ok":false,
+"schema":"re.native-graph-result@0.1.0"}`.
+
+两个工具链在不同阶段给出该诊断，命令因此不同：Node 参考工具链由 `check` 给出，
+`npm run re -- check examples/diagnostic-error.re` 退出 `65`，在 stderr 打印一行诊断；
+原生工具链的 `revia check` 只做解析，返回 `re.native-parser-result@0.1.0`、
+`"ok": true`、退出 `0`，诊断由 `revia translate` 或 `revia compile` 给出，
+退出 `65`，输出 `{"diagnostics":[{"code":"unknown-argument"}],"ok":false,
+"schema":"re.native-graph-result@0.1.0"}`。
 
 ## Capabilities And Control Flow / 能力与控制流
 
@@ -22,12 +39,13 @@ to a complete Agent workflow.
 ## Design Fixtures / 设计样例
 
 The following files document syntax and semantic candidates that are not
-currently executable. `re check` is expected to return exit `65` with an
-`unexpected-token` diagnostic for each; they are regression/design fixtures,
-not first-run programs.
+currently executable. Both `npm run re -- check` and `revia check` return exit
+`65` with an `unexpected-token` diagnostic for each; they are regression/design
+fixtures, not first-run programs.
 
-以下文件记录尚未可执行的语法与语义候选。每个文件使用 `re check` 时均预期返回退出码
-`65` 和 `unexpected-token` 诊断；它们是回归/设计 fixture，不是首次运行样例。
+以下文件记录尚未可执行的语法与语义候选。`npm run re -- check` 与 `revia check`
+对每个文件均返回退出码 `65` 和 `unexpected-token` 诊断；它们是回归/设计 fixture，
+不是首次运行样例。
 
 - [`cf-branch.re`](cf-branch.re): pending `match` lowering / 待定 `match` lowering
 - [`cf-loop.re`](cf-loop.re): pending `loop` lowering / 待定 `loop` lowering

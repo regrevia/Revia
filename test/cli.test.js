@@ -1671,7 +1671,7 @@ test('examples index matches executable and design-fixture check evidence', asyn
     designStart,
     nextHeading === -1 ? undefined : nextHeading,
   )
-  assert.match(designSection, /`re check` is expected to return exit `65`/u)
+  assert.match(designSection, /Both `npm run re -- check` and `revia check` return exit/u)
   assert.match(designSection, /`unexpected-token`/u)
   assert.deepEqual(
     [...designSection.matchAll(/\]\(([^)#]+\.re)\)/gu)].map(([, file]) => file),

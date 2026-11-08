@@ -449,6 +449,22 @@ It still changes language semantics and was not folded into Issues 1-3.
     `"ok":true` and `outcome.code: 0`, so no test or document can promote the
     artifact into a general permission boundary.
 
+13. WP-366 — closed: the examples index says which stage produces the
+    diagnostic. It called `examples/diagnostic-error.re` "structured diagnostic
+    and exit 65" without naming the toolchain; measured, the Node reference
+    `check` exits 65 with one diagnostic line on stderr, while the native
+    `revia check` is a parser only and answers `re.native-parser-result@0.1.0`
+    with `"ok":true` and exit 0, and the native diagnostic appears from
+    `translate` or `compile` as `unknown-argument` in
+    `re.native-graph-result@0.1.0` with exit 65. The index now gives the command
+    for each toolchain, and the design-fixture note states that both `check`
+    implementations reject those files with `unexpected-token`. The preview
+    command table in `docs/language.md` now says the same for the shipped
+    surface: `check` takes a bare file, so the preview forms `check --format
+    json` and `check --write` exit 64 with `Usage: revia` on stderr. Pinned by
+    `wp366_check_stage_cli`, which holds each stage to its measured exit code
+    and diagnostic so no later edit can present the parser as the checker.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

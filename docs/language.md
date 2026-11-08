@@ -55,11 +55,20 @@ revia translate --format json <file.re>
 revia view [--locale zh-CN|en-US] [--format html|svg] <file.re>
 ```
 
-The table above describes the historical preview surface. For `v1.0.0-rc.1`,
-run `revia --help` on macOS arm64 and use
+The table above describes the historical preview surface. On the current
+binary the surface is the one `revia --help` prints: `check` takes a bare file,
+so `revia check --format json <file.re>` and `revia check --write <file.re>` exit
+`64` with `Usage: revia` on stderr, and `revia check` answers with
+`re.native-parser-result@0.1.0` (it parses; argument-name diagnostics come from
+`revia translate` or `revia compile`). For `v1.0.0-rc.1`, run `revia --help` on
+macOS arm64 and use
 [`experiments/rc1/kit/trial-manifest.json`](../experiments/rc1/kit/trial-manifest.json)
 as the only deep-trial command contract.
-上表描述历史预览命令面。对于 `v1.0.0-rc.1`，请在 macOS arm64 运行 `revia --help`，并以
+上表描述历史预览命令面。当前二进制的命令面以 `revia --help` 为准：`check` 只接受一个
+文件，因此 `revia check --format json <file.re>` 和 `revia check --write <file.re>`
+会在 stderr 输出 `Usage: revia` 并以 `64` 退出；`revia check` 返回
+`re.native-parser-result@0.1.0`（只做解析，参数名诊断来自 `revia translate` 或
+`revia compile`）。对于 `v1.0.0-rc.1`，请在 macOS arm64 运行 `revia --help`，并以
 [`experiments/rc1/kit/trial-manifest.json`](../experiments/rc1/kit/trial-manifest.json)
 作为唯一的深度试用命令契约。
 
