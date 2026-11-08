@@ -777,6 +777,14 @@ It still changes language semantics and was not folded into Issues 1-3.
     artifact, copies it, runs it from another directory with a PATH-only
     environment and re-runs both failure cases.
 
+41. (WP-393) The diagnostics page explained a rejection line but never
+    showed a reader how to get from one back to an accepted file, which a
+    modification task needs. `docs/diagnostics.md` now pairs three measured
+    rejected edits — a header version this release does not accept, a deleted
+    `cap` line, and a capability revision the target does not provide — with
+    the position each diagnostic reports and the smallest repair that makes
+    `check` exit `0`; `test/docs-diagnostics.test.js` re-runs every pair.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

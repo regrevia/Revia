@@ -60,6 +60,54 @@ scratch/broken.re:9:28: unexpected-argument (expected data, got message)
 `check` and `run` produce the same line for the same file, because both reject
 before execution.
 
+## Repairing a rejected edit / 修复被拒绝的修改
+
+An edit is rejected before execution, so the diagnostic is the whole reply:
+exit `65`, one line naming the file, the position and a stable code. Each pair
+below is measured on a copy of `examples/hello.re`; the repair is the smallest
+edit that makes the same file exit `0`.
+
+Changing the header version:
+
+```bash
+node src/cli/re.js check scratch/re-0.2.re
+```
+
+```text
+scratch/re-0.2.re:1:4: unsupported-language-version (expected 0.1, got 0.2; phase header; rule header.language-version; repair choose 0.1)
+```
+
+The parenthesized clause names the rule and the value to choose; restore
+`re 0.1 compact` and the check passes. A version this release does not accept
+is not a forward-compatible extension.
+
+Deleting the `cap` line while the body still calls it:
+
+```text
+scratch/no-cap.re:8:14: unknown-capability-instance
+```
+
+The position is the call site, not the missing declaration. Restore the
+`cap @stdout: process.stdout@0.1.0` line and the check passes; `manifest`
+then reports that reference under `capabilities`.
+
+Naming a capability revision the target does not provide, such as
+`process.stdout@9.9.9`:
+
+```text
+scratch/bad-revision.re:6:1: missing-schema-revision
+```
+
+The position is the `cap` line. Use the reference the target provides —
+`process.stdout@0.1.0` here — and the check passes.
+
+中文摘要：被拒绝的修改不会运行，回复就是退出码 `65` 加一行诊断，指出文件、
+位置和稳定诊断码。上面三组都在 `examples/hello.re` 的副本上实测：改头部版本
+得到 `unsupported-language-version`，括号里已写明该选的 `0.1`；删掉 `cap` 行
+得到指向调用点的 `unknown-capability-instance`，补回声明即可；写目标不提供的
+能力版本得到指向 `cap` 行的 `missing-schema-revision`，改用目标提供的能力引用
+即可。每处修复都只是把那一行改回去或改对。
+
 ## Machine-readable form
 
 `--format json` prints one object with `schema: re.check-result@0.1.0`,

@@ -305,3 +305,65 @@ test('documented exit codes and diagnostics match the CLI', async () => {
     await rm(directory, { recursive: true, force: true })
   }
 })
+
+test('the diagnostics page repairs a rejected edit', async () => {
+  // The page pairs three rejected edits with the smallest repair. Run each
+  // case on a copy of the shipped example and require both the measured line
+  // and the repair to hold, so the page cannot drift from the parser.
+  const directory = await mkdtemp(join(tmpdir(), 'revia-repair-'))
+  try {
+    const accepted = await readFile(
+      join(repositoryRoot, 'examples', 'hello.re'),
+      'utf8',
+    )
+    const cases = [
+      {
+        name: 're-0.2.re',
+        source: accepted.replace(/^re 0\.1 compact$/mu, 're 0.2 compact'),
+        rejection:
+          'scratch/re-0.2.re:1:4: unsupported-language-version '
+          + '(expected 0.1, got 0.2; phase header; rule '
+          + 'header.language-version; repair choose 0.1)\n',
+        repair: accepted,
+      },
+      {
+        name: 'no-cap.re',
+        source: accepted.replace(/^cap @stdout: .+\n/mu, ''),
+        rejection: 'scratch/no-cap.re:8:14: unknown-capability-instance\n',
+        repair: accepted,
+      },
+      {
+        name: 'bad-revision.re',
+        source: accepted.replace(
+          'process.stdout@0.1.0',
+          'process.stdout@9.9.9',
+        ),
+        rejection: 'scratch/bad-revision.re:6:1: missing-schema-revision\n',
+        repair: accepted,
+      },
+    ]
+    await mkdir(join(directory, 'scratch'), { recursive: true })
+    for (const entry of cases) {
+      assert.notEqual(entry.source, accepted, `${entry.name} must be edited`)
+      await writeFile(join(directory, 'scratch', entry.name), entry.source)
+      const rejected = runCli(directory, 'check', `scratch/${entry.name}`)
+      assert.equal(rejected.status, code('EXIT_CHECK_FAILURE'))
+      assert.equal(rejected.stdout, '')
+      assert.equal(rejected.stderr, entry.rejection)
+      assert.ok(
+        diagnostics.includes(entry.rejection.trimEnd()),
+        `docs/diagnostics.md must quote ${entry.rejection.trimEnd()}`,
+      )
+      await writeFile(join(directory, 'scratch', entry.name), entry.repair)
+      const repaired = runCli(directory, 'check', `scratch/${entry.name}`)
+      assert.equal(repaired.status, 0)
+      assert.equal(repaired.stderr, '')
+    }
+    assert.ok(diagnostics.includes('## Repairing a rejected edit / 修复被拒绝的修改'))
+    assert.ok(diagnostics.includes('`unknown-capability-instance`'))
+    assert.ok(diagnostics.includes('`missing-schema-revision`'))
+    assert.ok(diagnostics.includes('`unsupported-language-version`'))
+  } finally {
+    await rm(directory, { recursive: true, force: true })
+  }
+})
