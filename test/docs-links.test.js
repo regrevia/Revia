@@ -39,6 +39,32 @@ function withoutFencedBlocks(source) {
 
 const LINK = /!?\[[^\]]*\]\(\s*<?([^)\s>]+)/gu
 const EXTERNAL = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/iu
+const HEADING = /^#{1,6}\s+(.*?)\s*$/u
+const EXPLICIT_ANCHOR = /<a\s+(?:id|name)\s*=\s*["']([^"']+)["']/giu
+
+// GitHub derives a fragment from the heading text: lowercase, punctuation
+// dropped, spaces turned into hyphens. Headings here mix English and Chinese,
+// so the rule keeps letters and digits of any script instead of ASCII only.
+function headingFragment(heading) {
+  return heading
+    .replace(/`/gu, '')
+    .replace(/[^\p{L}\p{N}\p{M}_\s-]/gu, '')
+    .trim()
+    .replace(/\s/gu, '-')
+    .toLowerCase()
+}
+
+function anchorFragments(source) {
+  const fragments = new Set()
+  for (const line of source.split(/\r?\n/u)) {
+    const heading = HEADING.exec(line)
+    if (heading !== null) fragments.add(headingFragment(heading[1]))
+  }
+  for (const match of source.matchAll(EXPLICIT_ANCHOR)) {
+    fragments.add(match[1].toLowerCase())
+  }
+  return fragments
+}
 
 test('every relative link in shipped documentation resolves', () => {
   const documents = [
@@ -54,17 +80,23 @@ test('every relative link in shipped documentation resolves', () => {
     const source = withoutFencedBlocks(readFileSync(resolve(repositoryRoot, document), 'utf8'))
     for (const match of source.matchAll(LINK)) {
       const target = match[1]
-      if (EXTERNAL.test(target) || target.startsWith('#')) continue
-      const path = target.split('#')[0]
-      if (path === '') continue
+      if (EXTERNAL.test(target)) continue
+      const [path, fragment] = target.split('#')
+      if (path === '' && fragment === undefined) continue
       checked += 1
-      const fromDocument = resolve(repositoryRoot, posix.dirname(document), path)
+      const fromDocument =
+        path === '' ? resolve(repositoryRoot, document) : resolve(repositoryRoot, posix.dirname(document), path)
       const insideRepository =
         fromDocument === repositoryRoot ||
         (relative(repositoryRoot, fromDocument).split(sep)[0] !== '..' &&
           !relative(repositoryRoot, fromDocument).startsWith(`..${sep}`))
       if (!insideRepository || !existsSync(fromDocument)) {
         failures.push(`${document} -> ${target}`)
+        continue
+      }
+      if (fragment === undefined || fragment === '') continue
+      if (!anchorFragments(readFileSync(fromDocument, 'utf8').replace(/^\uFEFF/u, '')).has(fragment.toLowerCase())) {
+        failures.push(`${document} -> ${target} (no such fragment)`)
       }
     }
   }

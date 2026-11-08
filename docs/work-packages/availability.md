@@ -597,6 +597,19 @@ It still changes language semantics and was not folded into Issues 1-3.
     the repository, and requires at least 150 resolved targets so a scan that
     silently stops walking the tree fails.
 
+21. (WP-373) Every release-notes link in the `docs/evolution.md` timeline
+    pointed at a fragment that does not exist. The three rows used
+    `#01-preview`, `#01-preview1`, and `#v100-rc1--deep-trial-`, while the
+    notes only carry `v1.0.0-rc.2.2.1`, `v1.0.0-rc.2.1`, `v1.0.0-rc.1`, and
+    `Historical Preview`: a reader following any of them landed at the top of
+    the file with no section in view. The notes now carry explicit
+    `<a id="...">` anchors for the two preview rows and for the rc.1 and
+    rc.2.2.1 sections, and the timeline links name those anchors.
+    `test/docs-links.test.js` now also resolves the fragment of every relative
+    link against the target page's heading fragments and explicit anchors, so
+    a link into a renamed or never-written section fails instead of opening
+    the page at the top.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

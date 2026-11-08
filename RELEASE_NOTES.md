@@ -1,5 +1,6 @@
 # Release Notes / 发行说明
 
+<a id="v1-0-0-rc-2-2-1"></a>
 ## v1.0.0-rc.2.2.1 — Linux and Windows x64 Native Candidate / Linux 与 Windows x64 原生候选
 
 The published `v1.0.0-rc.2.2.1` prerelease contains native Linux x64 and
@@ -67,6 +68,7 @@ pass.
   A2A/MCP interoperability.
 - The historical `v1.0.0-rc.1` assets and license remain unchanged.
 
+<a id="v1-0-0-rc-1"></a>
 ## v1.0.0-rc.1 — Deep Trial / 深度试用
 
 `v1.0.0-rc.1` is a source-closed, non-production developer-evaluation release.
@@ -130,6 +132,7 @@ status, stdout/stderr hash, and a minimal public fixture.
 试用命令和预期摘要见 [`experiments/rc1/kit/trial-manifest.json`](experiments/rc1/kit/trial-manifest.json)。
 提交反例时请包含版本、平台、资产 SHA-256、命令、退出状态、stdout/stderr 摘要与最小公开 fixture。
 
+<a id="historical-preview"></a>
 ## Historical Preview / 历史预览版
 
 `0.1-preview.1` remains a historical prerelease. Its six-platform evidence and

@@ -9,10 +9,10 @@ Revia 的公开演进按发行版本组织，每条记录都对应已发布产�
 
 | Version / 版本 | Focus / 重点 | Public evidence / 公开证据 |
 |---|---|---|
-| `0.1-preview` | Initial macOS Apple silicon CLI with `check`, `run`, `manifest`, `translate`, and `view` | [Release notes](../RELEASE_NOTES.md#01-preview) |
-| `0.1-preview.1` | Six-target distribution with native smoke coverage and deterministic archives | [Release notes](../RELEASE_NOTES.md#01-preview1) |
-| `1.0.0-rc.1` | Darwin arm64 deep trial with sealed evidence and seven bounded trials | [Release notes](../RELEASE_NOTES.md#v100-rc1--deep-trial-) |
-| `1.0.0-rc.2.2.1` | Linux x64 and Windows x64 native candidate assets | [Release notes](../RELEASE_NOTES.md) |
+| `0.1-preview` | Initial macOS Apple silicon CLI with `check`, `run`, `manifest`, `translate`, and `view` | [Release notes](../RELEASE_NOTES.md#historical-preview) |
+| `0.1-preview.1` | Six-target distribution with native smoke coverage and deterministic archives | [Release notes](../RELEASE_NOTES.md#historical-preview) |
+| `1.0.0-rc.1` | Darwin arm64 deep trial with sealed evidence and seven bounded trials | [Release notes](../RELEASE_NOTES.md#v1-0-0-rc-1) |
+| `1.0.0-rc.2.2.1` | Linux x64 and Windows x64 native candidate assets | [Release notes](../RELEASE_NOTES.md#v1-0-0-rc-2-2-1) |
 
 The current main source may contain fixes and evidence added after a published
 tag. Such changes do not alter the tagged archive or its license; they become
