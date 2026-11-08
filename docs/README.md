@@ -13,6 +13,7 @@ under [`doc/`](../doc/).
 |---|---|
 | Install and run the source toolchain / 安装并运行源码工具链 | [`../QUICKSTART.md`](../QUICKSTART.md) |
 | Understand the language / 了解语言 | [`../doc/README.md`](../doc/README.md) |
+| Read a diagnostic and its exit code / 阅读诊断与退出码 | [`diagnostics.md`](diagnostics.md) |
 | Check current claims and limits / 查看当前能力边界 | [`development-status.md`](development-status.md) |
 | Compare target support / 查看目标兼容性 | [`compatibility.md`](compatibility.md) |
 | Read the execution and CLI contracts / 阅读执行与 CLI 契约 | [`execution-contract.md`](execution-contract.md), [`protocol.md`](protocol.md) |
@@ -34,6 +35,7 @@ under [`doc/`](../doc/).
 - [`protocol.md`](protocol.md)
 - [`architecture.md`](architecture.md) and its
   [Chinese mirror](architecture.zh-CN.md)
+- [`diagnostics.md`](diagnostics.md)
 - [`translation-rendering.md`](translation-rendering.md)
 - [`evolution.md`](evolution.md)
 

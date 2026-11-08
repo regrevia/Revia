@@ -699,6 +699,17 @@ It still changes language semantics and was not folded into Issues 1-3.
     rejected) next to the note that `run` passes a program's exit code through,
     and `test/quickstart-first-program.test.js` measures each of those codes.
 
+32. (WP-384) A rejection's two halves — the message and the exit code — were
+    documented only in fragments: `QUICKSTART.md` gave one paragraph and
+    `docs/evidence.md` described release evidence, but no page said where a
+    diagnostic goes or which code belongs to the command rather than the
+    program. `docs/diagnostics.md` now shows the exit-code table (`0`, `64`,
+    `65`), the one-line `file:line:column: code (expected, got)` form, the
+    `re.check-result@0.1.0` JSON shape, and the facts a failure report needs;
+    `docs/README.md` and both language halves of `QUICKSTART.md` link it, and
+    `test/docs-diagnostics.test.js` measures every code and both diagnostic
+    forms against the CLI.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

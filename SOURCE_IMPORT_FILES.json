@@ -438,6 +438,7 @@
     "test/deterministic-fuzz.test.js",
     "test/deterministic-identity.test.js",
     "test/docs-commands.test.js",
+    "test/docs-diagnostics.test.js",
     "test/docs-links.test.js",
     "test/examples-runnable.test.js",
     "test/executable-grammar.test.js",
