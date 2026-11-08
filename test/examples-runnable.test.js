@@ -274,3 +274,34 @@ test('nested examples are accepted by the checker or by their project', async ()
   }
   assert.deepEqual(rejected, [], 'a nested example the checker rejects is one a reader cannot run')
 })
+
+test('the project example says its modules are not standalone programs', async () => {
+  // A reader who opens one module and runs the single-file checker gets a
+  // version diagnostic that looks like a broken tool. The example page has to
+  // name the rejection and point at the project checker instead.
+  const directory = join(examples, 'agent-expense-review')
+  const readme = await readFile(join(directory, 'README.md'), 'utf8')
+  // The documented diagnostic is relative, so the probe runs from the root.
+  const rejected = spawnSync(
+    process.execPath,
+    [cli, 'check', 'examples/agent-expense-review/modules/api.re'],
+    { cwd: repositoryRoot, encoding: 'utf8' }
+  )
+  assert.equal(rejected.status, 65)
+  assert.equal(rejected.stdout, '')
+  const diagnostic = rejected.stderr.trim().split('\n')[0]
+  assert.ok(
+    readme.includes(diagnostic),
+    'examples/agent-expense-review/README.md must quote the module rejection'
+  )
+  assert.match(readme, /a standalone program/u)
+  assert.match(readme, /都不是独立程序/u)
+  assert.ok(readme.includes('`project-check`'))
+
+  const checked = spawnSync(
+    process.execPath,
+    [cli, 'project-check', '--format', 'json', directory],
+    { encoding: 'utf8' }
+  )
+  assert.equal(checked.status, 0, checked.stderr)
+})

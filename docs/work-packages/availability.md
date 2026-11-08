@@ -749,6 +749,15 @@ It still changes language semantics and was not folded into Issues 1-3.
     diagnostic shape a rejection prints; `test/docs-commands.test.js` re-runs
     the version recipe and a real rejection and requires the guide to match.
 
+38. (WP-390) A reader who opens one module of the largest example project and
+    runs the single-file checker got `unsupported-language-version (expected
+    0.1, got 1.0; phase header; ...)` at `1:4` with exit `65`, which reads like
+    a broken tool. `examples/agent-expense-review/README.md` now says the six
+    files are project modules rather than standalone programs, quotes that
+    diagnostic verbatim, and points at `project-check`;
+    `test/examples-runnable.test.js` re-runs the rejection and the project
+    check and requires the page to quote both the diagnostic and the checker.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

@@ -19,6 +19,27 @@ expense-review workflow as six revision-pinned modules:
 - `approval.re`：批准状态转换；
 - `api.re`：面向服务的公开接口。
 
+None of those files is a standalone program: each carries the module header the
+project pins, so running the single-file checker on one exits `65` at `1:4` with
+this diagnostic. That is about the entry point, not the code.
+
+```text
+examples/agent-expense-review/modules/api.re:1:4: unsupported-language-version (expected 0.1, got 1.0; phase header; rule header.language-version; repair choose 0.1)
+```
+
+Judge these files with `project-check` below, which reads them through
+`project.json` and exits `0` when every pin and digest matches.
+
+这些文件都不是独立程序：它们带的是项目固定 pin 的模块头，所以对单个文件运行
+`check` 会在 `1:4` 以 `65` 退出，并报下面这条诊断。该诊断说的是入口，不是代码。
+
+```text
+examples/agent-expense-review/modules/api.re:1:4: unsupported-language-version (expected 0.1, got 1.0; phase header; rule header.language-version; repair choose 0.1)
+```
+
+请用下面的 `project-check` 判断这些文件；它通过 `project.json` 读取它们，所有
+pin 与摘要都对得上时退出 `0`。
+
 ## Verify / 验证
 
 Run from the repository root:
