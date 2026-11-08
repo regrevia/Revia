@@ -8,6 +8,16 @@ import { fileURLToPath } from 'node:url'
 const repositoryRoot = fileURLToPath(new URL('../', import.meta.url))
 const ROOT_DOCUMENTS = ['README.md', 'README.zh-CN.md', 'CONTRIBUTING.md', 'AGENTS.md', 'RELEASE_NOTES.md']
 
+function markdownFiles(directory) {
+  const files = []
+  for (const entry of readdirSync(resolve(repositoryRoot, directory), { withFileTypes: true })) {
+    const relativePath = posix.join(directory, entry.name)
+    if (entry.isDirectory()) files.push(...markdownFiles(relativePath))
+    else if (entry.name.endsWith('.md')) files.push(relativePath)
+  }
+  return files.sort()
+}
+
 function topLevelPages(directory) {
   return readdirSync(resolve(repositoryRoot, directory))
     .filter((entry) => entry.endsWith('.md') && entry !== 'README.md')
@@ -20,7 +30,9 @@ const documents = [
   'docs/README.md',
   'doc/README.md',
   ...topLevelPages('docs'),
-  ...topLevelPages('doc')
+  ...topLevelPages('doc'),
+  // The example pages are where a reader first types these commands.
+  ...markdownFiles('examples')
 ]
 
 function cliSubcommands() {

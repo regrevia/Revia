@@ -662,6 +662,12 @@ It still changes language semantics and was not folded into Issues 1-3.
     run from the repository root; the index now names them, and
     `test/examples-runnable.test.js` fails when a top-level `examples/*.re` is
     missing from the index.
+27. (WP-379) The command guard read the repository pages but not the pages
+    under `examples/`, although those are where a reader first types the commands:
+    `npm run re -- check ...`, `npm run re -- view ...`, `node src/cli/re.js
+    project-check ...`. The scan now covers `examples/**/*.md` too. The tree is
+    clean, and a command that is not one the CLI accepts fails the case with the
+    offending page and command.
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
