@@ -758,6 +758,15 @@ It still changes language semantics and was not folded into Issues 1-3.
     `test/examples-runnable.test.js` re-runs the rejection and the project
     check and requires the page to quote both the diagnostic and the checker.
 
+39. (WP-391) The diagnostics page said the source CLI exits with one of three
+    codes, but a host input the program needs can fail before it runs: `run
+    --format json --authority-pin` with a missing, non-JSON, or non-pin file
+    exits `70` and writes a `re.run-result@0.1.0` host-fault envelope to
+    stdout. `docs/diagnostics.md` now lists `70`, quotes that measured
+    envelope, names the three measured fault codes and the `64` a pin without
+    `--format json` returns; `test/docs-diagnostics.test.js` runs all four
+    cases and requires the page to match.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

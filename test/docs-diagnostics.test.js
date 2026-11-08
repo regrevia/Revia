@@ -48,6 +48,7 @@ test('the diagnostics page names the codes the CLI defines', () => {
   for (const [name, expected] of [
     ['EXIT_USAGE', 64],
     ['EXIT_CHECK_FAILURE', 65],
+    ['EXIT_HOST_FAULT', 70],
   ]) {
     assert.equal(code(name), expected)
     assert.ok(
@@ -60,7 +61,7 @@ test('the diagnostics page names the codes the CLI defines', () => {
   )
   assert.deepEqual(
     tableCodes,
-    [0, code('EXIT_USAGE'), code('EXIT_CHECK_FAILURE')],
+    [0, code('EXIT_USAGE'), code('EXIT_CHECK_FAILURE'), code('EXIT_HOST_FAULT')],
     'the exit-code table must list the measured codes in order',
   )
   assert.ok(diagnostics.includes('`process.exit(3)`'))
@@ -223,6 +224,83 @@ test('documented exit codes and diagnostics match the CLI', async () => {
     assert.equal(diagnostic.member, 'write')
     assert.deepEqual(diagnostic.expected, ['data'])
     assert.equal(diagnostic.actual, 'message')
+    const pinDirectory = join(directory, 'pin')
+    await mkdir(pinDirectory)
+    const malformedPin = join(pinDirectory, 'malformed.json')
+    await writeFile(malformedPin, '{not json')
+    const hello = join(repositoryRoot, 'examples', 'hello.re')
+    const malformed = runCli(
+      directory,
+      'run',
+      '--format',
+      'json',
+      '--authority-pin',
+      malformedPin,
+      hello,
+    )
+    assert.equal(malformed.status, code('EXIT_HOST_FAULT'))
+    assert.deepEqual(JSON.parse(malformed.stdout), {
+      outcome: {
+        fault: {
+          code: 'load-time-authority-pin-json-invalid',
+          phase: 'load-time-authority',
+        },
+        kind: 'host-fault',
+      },
+      program_stdout: '',
+      schema: 're.run-result@0.1.0',
+    })
+    assert.equal(malformed.stderr, '')
+    assert.ok(
+      diagnostics.includes(malformed.stdout.trim()),
+      'docs/diagnostics.md must quote the measured host-fault result',
+    )
+
+    const missingPin = runCli(
+      directory,
+      'run',
+      '--format',
+      'json',
+      '--authority-pin',
+      join(pinDirectory, 'missing.json'),
+      hello,
+    )
+    assert.equal(missingPin.status, code('EXIT_HOST_FAULT'))
+    assert.equal(
+      JSON.parse(missingPin.stdout).outcome.fault.code,
+      'load-time-authority-pin-unreadable',
+    )
+
+    const notAPin = join(pinDirectory, 'not-a-pin.json')
+    await writeFile(notAPin, '{"schema":"re.authority-pin@9.9.9"}')
+    const invalid = runCli(
+      directory,
+      'run',
+      '--format',
+      'json',
+      '--authority-pin',
+      notAPin,
+      hello,
+    )
+    assert.equal(invalid.status, code('EXIT_HOST_FAULT'))
+    assert.equal(
+      JSON.parse(invalid.stdout).outcome.fault.code,
+      'load-time-authority-pin-invalid',
+    )
+
+    const pinWithoutJson = runCli(directory, 'run', '--authority-pin', malformedPin, hello)
+    assert.equal(pinWithoutJson.status, code('EXIT_USAGE'))
+    assert.equal(pinWithoutJson.stdout, '')
+    assert.match(
+      pinWithoutJson.stderr,
+      /^Usage error: --authority-pin requires --format json\n/u,
+    )
+    assert.ok(
+      diagnostics.includes(
+        '`Usage error: --authority-pin requires --format json`',
+      ),
+      'docs/diagnostics.md must name the pin usage error',
+    )
   } finally {
     await rm(directory, { recursive: true, force: true })
   }

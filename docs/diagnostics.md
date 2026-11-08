@@ -5,17 +5,32 @@ goes, how to read it, and what to include when you report it.
 
 ## Command exit codes
 
-The source CLI exits with one of three codes:
+The source CLI exits with one of four codes:
 
 | Code | Meaning | Reach it with |
 |---|---|---|
 | `0` | the command completed | `node src/cli/re.js check examples/hello.re` |
 | `64` | usage error: the arguments do not name a command it runs | no arguments, or an unknown subcommand |
 | `65` | the source could not be read, or the check rejected it | `check` on a missing path, or on a rejected file |
+| `70` | host fault: a host input named on the command line could not be used | `run --format json --authority-pin` with a pin that is missing, not JSON, or not a pin |
 
 A `64` prints the usage banner to stderr and nothing to stdout. A `65` prints
 the diagnostic to stderr and nothing to stdout, so a pipeline that reads stdout
 only sees output from files that passed.
+
+A `70` is not the program failing: a host input it needs to start cannot be
+used. Under `--format json` the run result on stdout names the phase and the
+fault, and no program code runs:
+
+```text
+{"outcome":{"fault":{"code":"load-time-authority-pin-json-invalid","phase":"load-time-authority"},"kind":"host-fault"},"program_stdout":"","schema":"re.run-result@0.1.0"}
+```
+
+The measured codes on that path are `load-time-authority-pin-unreadable` for a
+missing file, `load-time-authority-pin-json-invalid` for bytes that are not
+JSON, and `load-time-authority-pin-invalid` for JSON that is not a pin. Asking
+for a pin without `--format json` is a usage error instead: stderr starts with
+`Usage error: --authority-pin requires --format json` and the exit is `64`.
 
 The native CLI and the Rust test harnesses have their own codes. This page
 describes the source CLI that `npm run re --` invokes.
@@ -76,5 +91,6 @@ exactly these fields, so the report starts actionable.
 
 中文摘要：诊断是一行 `文件:行:列: 代码 (期望, 实际)`，`--format json` 给出
 `re.check-result@0.1.0` 对象与 `diagnostics` 数组；源码 CLI 的退出码为 `0`
-完成、`64` 用法错误、`65` 读不到源码或被拒绝；`run` 会把程序自己的退出码原样传出。
+完成、`64` 用法错误、`65` 读不到源码或被拒绝、`70` host 故障（程序没有运行，
+故障原因写在 stdout 的 run 结果里）；`run` 会把程序自己的退出码原样传出。
 报告失败时附上命令、版本或提交、系统与架构、最小复现输入、实际与期望输出及退出码。
