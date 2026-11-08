@@ -638,6 +638,17 @@ It still changes language semantics and was not folded into Issues 1-3.
     records under `docs/work-packages/` are out of scope, because a past entry
     naming a script deleted later is faithful history rather than an
     instruction.
+24. (WP-376) Documentation told readers to run commands and named the command
+    surface by hand, so drift was invisible. `test/docs-commands.test.js` now
+    holds two invariants: every `npm run <name>` a shipped page shows must be a
+    script `package.json` declares, and every `node src/cli/re.js <name>` must be
+    a subcommand the CLI accepts. The subcommand set is read from `re --help`,
+    which prints usage to stderr and exits 64, so the test asserts both sets are
+    non-trivial (at least five scripts, at least ten subcommands) rather than
+    passing on an empty parse. At the time of writing the probe is clean: no
+    page names an unlisted script or an unknown subcommand. Appending
+    `npm run nosuchscript` or `node src/cli/re.js nosuchcommand` to
+    `docs/architecture.md` fails both cases.
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
