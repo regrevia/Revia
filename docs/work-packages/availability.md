@@ -682,6 +682,15 @@ It still changes language semantics and was not folded into Issues 1-3.
     that carry pages went unguarded. The index now names the page, and
     `test/examples-runnable.test.js` fails when a directory under `examples/` is
     not linked.
+30. (WP-382) `projects/README.md` listed the source command that verifies the
+    project template as `node src/cli/re.js project-check`, which the CLI rejects
+    with the usage exit code 64 because `project-check` only accepts
+    `--format json`; a reader copying the table could not reach the check it
+    names. The table and the surrounding prose now show the flag, and
+    `test/docs-commands.test.js` reads both documented invocation shapes, joins
+    backslash continuations, and fails when a documented invocation omits an
+    argument the CLI requires.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
