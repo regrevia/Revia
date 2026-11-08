@@ -655,6 +655,13 @@ It still changes language semantics and was not folded into Issues 1-3.
     `examples/**/*.md` as well. The tree is clean today, and appending a link to a
     page that does not exist fails the case with the offending document and
     target.
+26. (WP-378) `examples/README.md` is the first-run index of the sample
+    programs, but three tracked samples (`agent-business-starter.re`,
+    `agent-args-policy.re`, `agent-file-report.re`) were never named in it, so a
+    reader browsing `examples/` met files the index did not explain. All three
+    run from the repository root; the index now names them, and
+    `test/examples-runnable.test.js` fails when a top-level `examples/*.re` is
+    missing from the index.
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
