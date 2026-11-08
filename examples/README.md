@@ -88,6 +88,9 @@ fixtures, not first-run programs.
   suspected false pass / 疑似错误通过的反例接续
 - [`agent-release-check.re`](agent-release-check.re): blocked release outcome /
   明确阻塞的发行结果
+- [`agent-evidence-boundary/`](agent-evidence-boundary/): the same
+  evidence-boundary program with its run commands and review framing /
+  同一个证据边界程序，附带运行命令与审阅框架
 - [`agent-business-starter.re`](agent-business-starter.re): one decision line,
   the file to edit before inspecting the graph / 一行决策输出，先改写再查看图
 - [`agent-args-policy.re`](agent-args-policy.re): read process arguments

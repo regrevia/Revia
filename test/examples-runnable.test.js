@@ -152,8 +152,11 @@ test('the examples README names the input file it ships', async () => {
 test('the examples README names every example it ships', async () => {
   const readme = await readFile(join(examples, 'README.md'), 'utf8')
   const unnamed = []
-  for (const entry of await readdir(examples)) {
-    if (entry.endsWith('.re') && !readme.includes(`](${entry})`)) unnamed.push(entry)
+  for (const entry of await readdir(examples, { withFileTypes: true })) {
+    if (!entry.name.endsWith('.re') && !entry.isDirectory()) continue
+    // A directory is named with the trailing slash the README links use.
+    const linkedName = entry.isDirectory() ? `${entry.name}/` : entry.name
+    if (!readme.includes(`](${linkedName})`)) unnamed.push(linkedName)
   }
   assert.deepEqual(unnamed, [], 'an example the README does not name is one a reader cannot find')
 })

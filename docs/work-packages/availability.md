@@ -676,6 +676,12 @@ It still changes language semantics and was not folded into Issues 1-3.
     `agent-expense-review` fixture. The guard now walks the directory: a nested
     program must pass `check`, and a module of a project fixture must pass the
     fixture's `project-check`.
+29. (WP-381) `examples/agent-evidence-boundary/README.md` explains the
+    program's run commands and review framing, but no shipped page linked it, and
+    the index only linked top-level `.re` files, so the six example directories
+    that carry pages went unguarded. The index now names the page, and
+    `test/examples-runnable.test.js` fails when a directory under `examples/` is
+    not linked.
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
