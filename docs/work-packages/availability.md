@@ -486,6 +486,17 @@ It still changes language semantics and was not folded into Issues 1-3.
     clone has no `target/`. The CI workflows already build the release binaries
     before testing; `QUICKSTART.md` and `AGENTS.md` now say so, and the focused
     test keeps the build step ahead of `cargo test`.
+15. (WP-368) The same walk found the native block in `README.md`,
+    `README.zh-CN.md`, and `CONTRIBUTING.md` with the same two defects plus a
+    third: the block never changes into `native/`, so its first command is
+    `cargo test --workspace --offline` from the repository root, which exits 101
+    with "could not find `Cargo.toml`". All three documents now `cd native`,
+    build the release binary first, and then test; `test/quickstart-first-program.test.js`
+    asserts the order in all four documents and that the three block-bearing
+    documents change into `native/`. `README.md` and `README.zh-CN.md` also
+    stated current-source evidence at main commit `ca268c4`; both now name
+    `45e6e66` as the commit that was passing when the file was last updated and
+    say the evidence does not extend to later commits.
 
 ## 8. Evidence rules
 

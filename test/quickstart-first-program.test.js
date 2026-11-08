@@ -8,7 +8,10 @@ import test from 'node:test'
 
 // The first-program section of QUICKSTART.md is executable documentation. This
 // test runs the documented flow in a temporary directory and pins the output it
-// promises, so the tutorial cannot drift away from the CLI.
+// promises, so the tutorial cannot drift away from the CLI. It also holds the
+// native commands in README.md, README.zh-CN.md, QUICKSTART.md, and
+// CONTRIBUTING.md to the order a fresh checkout needs: from `native/`, build
+// the release binary before running the tests that execute it.
 
 const repositoryRoot = fileURLToPath(new URL('../', import.meta.url))
 const cli = join(repositoryRoot, 'src', 'cli', 're.js')
@@ -115,4 +118,34 @@ test('the native first-run block builds the release binary before testing', () =
     build < tests,
     'the release build must be documented before cargo test',
   )
+})
+
+const DOCUMENTED_NATIVE_FILES = [
+  'README.md',
+  'README.zh-CN.md',
+  'QUICKSTART.md',
+  'CONTRIBUTING.md',
+]
+
+test('documented native commands build the release binary before testing', async () => {
+  const build = 'cargo build --workspace --release --offline'
+  const tests = 'cargo test --workspace --offline'
+  for (const file of DOCUMENTED_NATIVE_FILES) {
+    const text = await readFile(join(repositoryRoot, file), 'utf8')
+    const buildIndex = text.indexOf(build)
+    const testIndex = text.indexOf(tests)
+    assert.notEqual(buildIndex, -1, `${file} must document ${build}`)
+    assert.notEqual(testIndex, -1, `${file} must document ${tests}`)
+    assert.ok(
+      buildIndex < testIndex,
+      `${file} must document ${build} before ${tests}`,
+    )
+  }
+  for (const file of ['README.md', 'README.zh-CN.md', 'QUICKSTART.md']) {
+    const text = await readFile(join(repositoryRoot, file), 'utf8')
+    assert.ok(
+      text.slice(text.indexOf('cd native')).includes(build),
+      `${file} must run the native commands from native/`,
+    )
+  }
 })

@@ -18,8 +18,11 @@ source is licensed under [MPL-2.0](LICENSE).
 - Code, schema, corpus, or test changes must include focused verification.
 - Run `git diff --check`.
 - Run `npm test` for Node toolchain changes.
-- Run `cargo test --workspace --offline`, `cargo fmt --all -- --check`, and
-  `cargo clippy --workspace --offline -- -D warnings` for native changes.
+- For native changes, build the release binary in `native/` first with
+  `cargo build --workspace --release --offline` (the release-evidence test
+  executes `native/target/release/revia`), then run
+  `cargo test --workspace --offline`, `cargo fmt --all -- --check`, and
+  `cargo clippy --workspace --offline -- -D warnings`.
 - Do not claim production readiness, full protocol interoperability,
   cross-platform equivalence, or Stable V1.0 from a bounded test result.
 

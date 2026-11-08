@@ -37,10 +37,12 @@ glibc 2.39 has not been verified here). Only `ubuntu-24.04` was exercised by thi
 distributions at or above glibc 2.39 are expected to load it but were not measured.
 See [Linux x64 runtime baseline](docs/compatibility.md#linux-x64-runtime-baseline).
 
-At main commit `ca268c4`, source validation and native Linux x64 and Windows x64
-workflows pass, including the native `project-surface-check` gate and the
-bound Windows x64 runner artifact-integrity check. This is current-source
-evidence, not a new release asset.
+When this file was last updated, `main` commit `45e6e66` passed source
+validation and the native Linux x64 and Windows x64 workflows, including the
+native `project-surface-check` gate and the bound Windows x64 runner
+artifact-integrity check. That is evidence for that commit, not for later
+commits and not for a new release asset; check the commit you are reading in
+the Actions history.
 
 These capabilities are bounded evidence, not claims of a production backend,
 complete language implementation, cross-platform equivalence, full A2A/MCP
@@ -79,9 +81,13 @@ Run its conformance suite:
 npm test
 ```
 
-The Rust implementation lives in `native/`:
+The Rust implementation lives in `native/`. Build the release binary before
+running the tests: the release-evidence test executes
+`native/target/release/revia`, and a fresh checkout has no `target/` yet.
 
 ```bash
+cd native
+cargo build --workspace --release --offline
 cargo test --workspace --offline
 cargo fmt --all -- --check
 cargo clippy --workspace --offline -- -D warnings

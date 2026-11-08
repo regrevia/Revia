@@ -28,9 +28,10 @@ main 分支检查不会静默改变已打 tag 的二进制。按版本区分的�
 本项目实际演练过的只有 `ubuntu-24.04`；其他发行版上 glibc >= 2.39 预期可加载但未在本机测量。详见
 [Linux x64 运行时基线](docs/compatibility.md#linux-x64-runtime-baseline)。
 
-在 main commit `ca268c4` 上，Source validation、Linux x64 与 Windows x64 原生工作流均通过，
-包含 native `project-surface-check` 门禁和 Windows x64 绑定 runner 的发行产物完整性校验。这是当前源码证据，
-不是新的发行资产。
+本文最后更新时，main commit `45e6e66` 通过 Source validation、Linux x64 与 Windows x64
+原生工作流，包含 native `project-surface-check` 门禁和 Windows x64 绑定 runner 的发行产物
+完整性校验。这是该提交的证据，不代表之后的提交，也不是新的发行资产；请以你正在阅读的
+提交在 Actions 记录中的结果为准。
 
 这些内容是有边界的实现证据，不代表 production backend、完整语言实现、跨平台
 等价、完整 A2A/MCP 互操作或 Stable V1.0。详见
@@ -67,9 +68,13 @@ npm run re -- run examples/hello.re
 npm test
 ```
 
-Rust 原生实现位于 `native/`：
+Rust 原生实现位于 `native/`。先构建 release 二进制再跑测试：
+release-evidence 测试会执行 `native/target/release/revia`，而全新检出的仓库还没有
+`target/`。
 
 ```bash
+cd native
+cargo build --workspace --release --offline
 cargo test --workspace --offline
 cargo fmt --all -- --check
 cargo clippy --workspace --offline -- -D warnings
