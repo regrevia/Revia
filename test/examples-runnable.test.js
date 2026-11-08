@@ -157,3 +157,53 @@ test('the examples README names every example it ships', async () => {
   }
   assert.deepEqual(unnamed, [], 'an example the README does not name is one a reader cannot find')
 })
+
+// A nested `.re` file is an example too, and the top-level tables above cannot
+// see it. Each one is either a standalone program the checker accepts, or a
+// module of a project fixture, which only the project checker can judge.
+async function nestedPrograms(directory) {
+  const found = []
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const entryPath = join(directory, entry.name)
+    if (entry.isDirectory()) found.push(...(await nestedPrograms(entryPath)))
+    else if (entry.name.endsWith('.re') && entryPath !== join(examples, entry.name)) found.push(entryPath)
+  }
+  return found.sort()
+}
+
+async function hasProjectFile(directory) {
+  try {
+    await readFile(join(directory, 'project.json'))
+    return true
+  } catch {
+    return false
+  }
+}
+
+test('nested examples are accepted by the checker or by their project', async () => {
+  const fixtures = new Set()
+  for (const program of await nestedPrograms(examples)) {
+    let directory = join(program, '..')
+    while (directory.startsWith(examples) && directory !== examples && !(await hasProjectFile(directory))) {
+      directory = join(directory, '..')
+    }
+    if (await hasProjectFile(directory)) fixtures.add(directory)
+  }
+
+  for (const fixture of [...fixtures].sort()) {
+    const checked = spawnSync(process.execPath, [cli, 'project-check', '--format', 'json', fixture], {
+      encoding: 'utf8'
+    })
+    assert.equal(checked.status, 0, `${fixture} does not pass project-check: ${checked.stderr}`)
+  }
+
+  const rejected = []
+  for (const program of await nestedPrograms(examples)) {
+    let insideFixture = false
+    for (const fixture of fixtures) if (program.startsWith(`${fixture}/`)) insideFixture = true
+    if (insideFixture) continue
+    const checked = spawnSync(process.execPath, [cli, 'check', program], { encoding: 'utf8' })
+    if (checked.status !== 0) rejected.push(`${program}: ${checked.stderr.trim().split('\n')[0]}`)
+  }
+  assert.deepEqual(rejected, [], 'a nested example the checker rejects is one a reader cannot run')
+})

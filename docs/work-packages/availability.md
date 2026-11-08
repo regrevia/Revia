@@ -668,6 +668,14 @@ It still changes language semantics and was not folded into Issues 1-3.
     project-check ...`. The scan now covers `examples/**/*.md` too. The tree is
     clean, and a command that is not one the CLI accepts fails the case with the
     offending page and command.
+28. (WP-380) The runnable-example guard copied only the top-level `*.re`
+    files, so the twelve programs below the top level were never checked: six
+    standalone programs (`adversarial-review/case-0{1,2,3}/main.re`,
+    `agent-handoff-review/main.re`, `agent-review/main.re`,
+    `reviewed-file-plan/plan.re`) and the six modules of the
+    `agent-expense-review` fixture. The guard now walks the directory: a nested
+    program must pass `check`, and a module of a project fixture must pass the
+    fixture's `project-check`.
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
