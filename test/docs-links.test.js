@@ -91,6 +91,9 @@ test('every relative link in shipped documentation resolves', () => {
     ...markdownFiles('docs'),
     'doc/README.md',
     ...markdownFiles('doc'),
+    // The example pages are first-run documentation too: they are reached from
+    // the shipped pages and tell a reader what to run.
+    ...markdownFiles('examples'),
   ]
   const failures = []
   let checked = 0

@@ -649,6 +649,12 @@ It still changes language semantics and was not folded into Issues 1-3.
     page names an unlisted script or an unknown subcommand. Appending
     `npm run nosuchscript` or `node src/cli/re.js nosuchcommand` to
     `docs/architecture.md` fails both cases.
+25. (WP-377) The link guard read the repository pages but not the pages under
+    `examples/`, although those are first-run documentation: a reader is sent to
+    them from the shipped pages and they say what to run. The scan now covers
+    `examples/**/*.md` as well. The tree is clean today, and appending a link to a
+    page that does not exist fails the case with the offending document and
+    target.
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
