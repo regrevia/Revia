@@ -36,12 +36,16 @@ UTF-8 .re source / project manifest
 
 原生 workspace 位于 `native/`：
 
-- `native/revia-core`：无 host I/O 的 source、diagnostic、canonical、digest、graph、types。
-- `native/revia-compiler`：checker、module linker、bytecode translator、artifact verifier。
-- `native/revia-vm`：value model、interpreter、structured scheduler、receipt/trace。
-- `native/revia-server`：显式 capability adapter；Core/VM 不直接读取环境或打开资源。
+部分角色合并在一个 crate 内，按模块划分，而不是各自独立的 crate：
+
+- `native/revia-core`：无 host I/O 的 source、diagnostic、canonical、digest、graph、
+  types；checker、module linker、bytecode translator、artifact verifier（`parser`、
+  `bytecode` 模块）；value model、interpreter、structured scheduler、receipt/trace
+  （`vm`、`task_runtime` 模块）；显式 capability adapter（`server` 模块），Core/VM 不直接
+  读取环境或打开资源。
 - `native/revia-cli`：参数、文件边界、命令 envelope 与 exit code。
 - `native/revia-conformance`：Node oracle 差分和最终 Node-free gate；不被 release binary 依赖。
+- `native/revia-macos-identity`：macOS Unix socket peer 身份查询，供 host 边界校验连接来源。
 
 所有内部集合在 canonical 或 diagnostic 输出前显式按 UTF-8 bytes 排序。所有 public artifact 使用自实现、已知向量验证的 SHA-256 和 canonical JSON；不得使用 Rust `HashMap` 迭代顺序形成语义或 digest。
 

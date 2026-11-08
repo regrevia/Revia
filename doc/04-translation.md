@@ -134,7 +134,7 @@ checked graph / audit
   → text / HTML / SVG
 ```
 
-大型项目默认只返回 project/package/module 摘要，再按 symbol/path/node 展开；不得要求首次查看就扫描或输出整张 graph。不同语言和介质必须保留相同 fact ID 与 semantic-fact digest，节点可回链到 UID/evidence。WP-166 已提供 `re.project-translation@0.1.0` 的 checked-project artifact：它从同一 Semantic View IR 生成 JSON、text、HTML、SVG，缺少 project/module/Agent lifecycle/task/capability/resource/error/execution-order 任一事实类别时 fail closed；`re project-translate` 不执行 capability、不读取 secret、不触发 Agent task。实现路线和完成门见 `docs/superpowers/plans/2026-08-10-re-agent-project-roadmap.md`。
+大型项目默认只返回 project/package/module 摘要，再按 symbol/path/node 展开；不得要求首次查看就扫描或输出整张 graph。不同语言和介质必须保留相同 fact ID 与 semantic-fact digest，节点可回链到 UID/evidence。WP-166 已提供 `re.project-translation@0.1.0` 的 checked-project artifact：它从同一 Semantic View IR 生成 JSON、text、HTML、SVG，缺少 project/module/Agent lifecycle/task/capability/resource/error/execution-order 任一事实类别时 fail closed；`re project-translate` 不执行 capability、不读取 secret、不触发 Agent task。实现路线和完成门记录在内部项目路线计划中，该计划不属于公开树。
 
 样例输出（hello）：
 

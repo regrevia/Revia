@@ -54,6 +54,24 @@ function headingFragment(heading) {
     .toLowerCase()
 }
 
+// A named path resolves when it exists, or when it is the documented shorthand
+// for a sibling file such as `doc/04` standing for `doc/04-translation.md`.
+function namedPathResolves(target) {
+  if (existsSync(resolve(repositoryRoot, target))) return true
+  const parent = posix.dirname(target)
+  const base = posix.basename(target)
+  const parentPath = resolve(repositoryRoot, parent)
+  if (!existsSync(parentPath) || !statSync(parentPath).isDirectory()) return false
+  return readdirSync(parentPath).some((entry) => entry.startsWith(base))
+}
+
+function topLevelPages(directory) {
+  return readdirSync(resolve(repositoryRoot, directory))
+    .filter((entry) => entry.endsWith('.md') && entry !== 'README.md')
+    .map((entry) => posix.join(directory, entry))
+    .sort()
+}
+
 function anchorFragments(source) {
   const fragments = new Set()
   for (const line of source.split(/\r?\n/u)) {
@@ -118,11 +136,33 @@ test('the documentation map reaches every page it indexes', () => {
   // The map indexes the shipped top-level pages. Records under
   // `docs/work-packages/` and the local promotion and planning notes are
   // reached from the pages that cite them, not from the map.
-  const pages = readdirSync(resolve(repositoryRoot, 'docs'))
-    .filter((entry) => entry.endsWith('.md') && entry !== 'README.md')
-    .map((entry) => posix.join('docs', entry))
-    .sort()
+  const pages = topLevelPages('docs')
   const orphans = pages.filter((page) => !linked.has(page))
   assert.deepEqual(orphans, [])
   assert.ok(pages.length > 20, `expected the map to cover the shipped pages, saw ${pages.length}`)
+})
+
+test('every repository path named in shipped documentation exists', () => {
+  const documents = [
+    ...ROOT_DOCUMENTS,
+    'docs/README.md',
+    'doc/README.md',
+    ...topLevelPages('docs'),
+    ...topLevelPages('doc')
+  ]
+  const NAMED_PATH =
+    /`((?:docs|doc|examples|src|native|scripts|test\/fixtures|projects|feedback)\/[^`\s]+)`/gu
+  const missing = []
+  for (const document of documents) {
+    const source = withoutFencedBlocks(readFileSync(resolve(repositoryRoot, document), 'utf8'))
+    for (const match of source.matchAll(NAMED_PATH)) {
+      const target = match[1].replace(/[.,]+$/u, '').replace(/:\d+(?:-\d+)?$/u, '')
+      // Glob patterns describe a whole set, `<...>` names a shape rather than a
+      // path, and build output is described in prose but only exists after a
+      // local build.
+      if (target.includes('*') || target.includes('<') || target.startsWith('native/target/')) continue
+      if (!namedPathResolves(target)) missing.push(`${document} -> ${target}`)
+    }
+  }
+  assert.deepEqual(missing, [])
 })

@@ -621,6 +621,23 @@ It still changes language semantics and was not folded into Issues 1-3.
     without an index entry fails instead of drifting out of reach. Records
     under `docs/work-packages/` and the local promotion and planning notes stay
     out of that rule, because they are reached from the pages that cite them.
+23. (WP-375) Two pages described a repository shape that does not exist.
+    `doc/04-translation.md` pointed at an internal roadmap under
+    `docs/superpowers/plans/`, a path that is not in the public tree, so the
+    citation now names the plan without pretending it ships. `doc/11-node-free-
+    milestone-0.1.md` listed `native/revia-compiler`, `native/revia-vm` and
+    `native/revia-server` as workspace crates; the workspace has four crates
+    (`revia-core`, `revia-cli`, `revia-conformance`, `revia-macos-identity`),
+    and the compiler, VM and server roles live inside `revia-core` as modules.
+    The layout list now matches the tree and names the macOS identity crate.
+    `test/docs-links.test.js` gained a third case: every repository path written
+    in inline code on a shipped page has to exist, either itself or as the
+    documented shorthand for a sibling file (`doc/04` for
+    `doc/04-translation.md`). Glob patterns, `<...>` shape descriptions,
+    `native/target/` build output and file:line suffixes are exempt. Historical
+    records under `docs/work-packages/` are out of scope, because a past entry
+    naming a script deleted later is faithful history rather than an
+    instruction.
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
