@@ -1,5 +1,10 @@
 # 00 · 设计理念与定位
 
+> 本文记录设计理念与取舍。文中的 `re 0.1 compact` 片段来自早期草案与方向示意，
+> 不是当前工具链可执行的程序：对其中任意一段执行 `re check` 都以退出码 `65`
+> 拒绝，[01-syntax.md](01-syntax.md) 第 8 节的形态示意同样如此。可直接运行的样例见 [QUICKSTART](../QUICKSTART.md)、
+> [examples](../examples/README.md) 与 [语言参考](../docs/language-reference.md)。
+
 ## 1. 它是什么
 
 RE 是一种 **AI 原生语法**。它的正典（ground truth）不是文本，而是**带类型的语义图谱**：

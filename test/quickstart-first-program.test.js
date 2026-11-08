@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -147,5 +147,120 @@ test('documented native commands build the release binary before testing', async
       text.slice(text.indexOf('cd native')).includes(build),
       `${file} must run the native commands from native/`,
     )
+  }
+})
+
+const SECOND_PROGRAM = /cat > scratch\/read\.re <<'RE'\n([\s\S]*?)\nRE\n/u
+
+test('the second-program tutorial runs as documented', async () => {
+  const captured = SECOND_PROGRAM.exec(quickstart)
+  assert.ok(
+    captured !== null,
+    'QUICKSTART.md must create scratch/read.re with a heredoc',
+  )
+  const program = captured[1]
+  assert.match(program, /cap @files: fs\.read@0\.1\.0/u)
+  assert.match(program, /@files\.read_file\(path: "input\.txt"\)/u)
+  assert.match(
+    quickstart,
+    /Paths resolve relative to\s+the directory of the program file/u,
+    'QUICKSTART.md must document where file paths resolve',
+  )
+  assert.ok(
+    quickstart.includes('path: "../README.md"'),
+    'QUICKSTART.md must name a path outside the sandbox',
+  )
+
+  const directory = await mkdtemp(join(tmpdir(), 'revia-second-program-'))
+  try {
+    const scratch = join(directory, 'scratch')
+    await mkdir(scratch, { recursive: true })
+    await writeFile(join(scratch, 'input.txt'), 'hello from input\n')
+    await writeFile(join(scratch, 'read.re'), program)
+
+    const check = runCli(directory, 'check', 'scratch/read.re')
+    assert.equal(check.status, 0)
+    assert.equal(check.stdout, 'OK scratch/read.re\n')
+    assert.equal(check.stderr, '')
+
+    const run = runCli(directory, 'run', 'scratch/read.re')
+    assert.equal(run.status, 0)
+    assert.equal(run.stdout, '')
+    assert.equal(run.stderr, '')
+
+    // The program's own directory is the sandbox: a path that leaves it still
+    // passes `check` and takes the error branch at run time instead.
+    const outside = program.replace('"input.txt"', '"../README.md"')
+    await writeFile(join(scratch, 'read-outside.re'), outside)
+    const outsideCheck = runCli(directory, 'check', 'scratch/read-outside.re')
+    assert.equal(outsideCheck.status, 0)
+    assert.equal(outsideCheck.stdout, 'OK scratch/read-outside.re\n')
+    const outsideRun = runCli(directory, 'run', 'scratch/read-outside.re')
+    assert.equal(outsideRun.status, 3)
+    assert.equal(outsideRun.stdout, '')
+    assert.equal(outsideRun.stderr, '')
+  } finally {
+    await rm(directory, { recursive: true, force: true })
+  }
+})
+
+const DESIGN_DOCS = ['doc', 'docs']
+
+// Every code fence in the design documents that opens with the program header is
+// classified by running it, not by reading the surrounding prose. One document
+// ships a runnable sample; the rest are historical or illustrative shapes and
+// carry a note that says so, so a reader cannot copy them as working code.
+test('design documents separate runnable samples from illustrations', async () => {
+  const fence = /```[^\n]*\n([\s\S]*?)```/gu
+  const programs = []
+  for (const directory of DESIGN_DOCS) {
+    const names = (await readdir(join(repositoryRoot, directory))).sort()
+    for (const name of names) {
+      if (!name.endsWith('.md')) continue
+      const file = `${directory}/${name}`
+      if (file.startsWith('docs/') && !/^docs\/language[^/]*\.md$/u.test(file)) {
+        continue
+      }
+      const text = await readFile(join(repositoryRoot, file), 'utf8')
+      for (const match of text.matchAll(fence)) {
+        if (match[1].startsWith('re 0.1 compact')) {
+          programs.push({ body: match[1], file })
+        }
+      }
+    }
+  }
+  assert.ok(programs.length > 0, 'the design documents must embed samples')
+
+  const directory = await mkdtemp(join(tmpdir(), 'revia-design-samples-'))
+  try {
+    const runnable = []
+    const rejected = []
+    for (const [index, program] of programs.entries()) {
+      const path = join(directory, `sample-${index}.re`)
+      await writeFile(path, program.body)
+      const check = runCli(directory, 'check', path)
+      if (check.status === 0) {
+        runnable.push(program.file)
+      } else {
+        assert.equal(check.status, 65, `${program.file} must be rejected with 65`)
+        rejected.push(program.file)
+      }
+    }
+    assert.deepEqual(runnable, ['docs/language.md'])
+    assert.deepEqual(rejected, [
+      'doc/00-overview.md',
+      'doc/00-overview.md',
+      'doc/01-syntax.md',
+    ])
+
+    for (const file of ['doc/00-overview.md', 'doc/01-syntax.md']) {
+      const text = await readFile(join(repositoryRoot, file), 'utf8')
+      assert.ok(
+        /不是当前工具链可执行的程序|不是可执行样例/u.test(text),
+        `${file} must say its samples are not runnable`,
+      )
+    }
+  } finally {
+    await rm(directory, { recursive: true, force: true })
   }
 })

@@ -144,6 +144,11 @@ Header、compact lexer 与 parser 的 source error 使用 `re.source-diagnostic@
 
 ## 8. canonical 形态示意
 
+> 本节两段是形态示意，不是可执行样例：对 compact 段执行 `re check` 会以退出码
+> `65` 拒绝（`expected =, got :`）。可直接运行的程序见
+> [QUICKSTART](../QUICKSTART.md) 与 [examples](../examples/README.md)。
+
+
 compact：
 
 ```re

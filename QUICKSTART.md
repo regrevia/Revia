@@ -73,6 +73,74 @@ npm run re -- check scratch/first.re
 `ok`、`diagnostics` 的一个 JSON 对象；`npm run re -- manifest scratch/first.re`
 输出审阅清单，含该文件声明的能力、effect 调用与错误路径。
 
+### Your second program / 第二个程序
+
+`0.1` programs branch on what an effect returns. This one reads a file next to
+the program and turns the outcome into a status code:
+
+```bash
+mkdir -p scratch
+printf 'hello from input\n' > scratch/input.txt
+cat > scratch/read.re <<'RE'
+re 0.1 compact
+unit @read_demo
+cap @files: fs.read@0.1.0
+
+fn @main() -> process.status {
+  %contents = @files.read_file(path: "input.txt")
+  return match %contents {
+    ok(_) => process.exit(0)
+    err(_) => process.exit(3)
+  }
+}
+RE
+npm run re -- check scratch/read.re
+# OK scratch/read.re
+npm run re -- run scratch/read.re
+# no output, exit code 0
+```
+
+`read_file` takes `path:` and an optional `encoding: text.encoding.utf8`; the
+short positional form `@files.read_file("input.txt")` reads UTF-8 by default.
+Paths resolve relative to the directory of the program file, so
+`path: "../README.md"` is outside the sandbox: `check` still passes, and `run`
+takes the `err` branch — exit `3` here, with no output and no stack trace. In
+`0.1` a matched value cannot be named, so the program can branch on the contents
+but cannot print them yet; that binding is scheduled for `re 0.2 compact` in the
+[language reference](docs/language-reference.md#grammar-note-result-value-binding--文法说明结果值绑定).
+
+`0.1` 程序可以根据 effect 的返回值分支。下面这个程序读取与自己同目录的文件，
+把结果变成退出码：
+
+```bash
+mkdir -p scratch
+printf 'hello from input\n' > scratch/input.txt
+cat > scratch/read.re <<'RE'
+re 0.1 compact
+unit @read_demo
+cap @files: fs.read@0.1.0
+
+fn @main() -> process.status {
+  %contents = @files.read_file(path: "input.txt")
+  return match %contents {
+    ok(_) => process.exit(0)
+    err(_) => process.exit(3)
+  }
+}
+RE
+npm run re -- check scratch/read.re
+# OK scratch/read.re
+npm run re -- run scratch/read.re
+# 无输出，退出码 0
+```
+
+`read_file` 用 `path:` 加可选的 `encoding: text.encoding.utf8`；位置参数短写法
+`@files.read_file("input.txt")` 默认按 UTF-8 读取。路径相对程序文件所在目录解析，
+因此 `path: "../README.md"` 在沙箱之外：`check` 仍然通过，`run` 走进 `err` 分支——
+这里的退出码是 `3`，没有输出也没有堆栈。`0.1` 无法命名匹配到的值，所以程序能根据
+内容分支，但还不能把内容打印出来；该绑定已排期到 `re 0.2 compact`，见
+[语言参考](docs/language-reference.md#grammar-note-result-value-binding--文法说明结果值绑定)。
+
 The native toolchain is in `native/`. Build the release binary before the tests:
 the release-evidence test runs `native/target/release/revia`, so a fresh clone
 that goes straight to `cargo test` stops there with exit `101`.

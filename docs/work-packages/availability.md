@@ -498,6 +498,33 @@ It still changes language semantics and was not folded into Issues 1-3.
     `45e6e66` as the commit that was passing when the file was last updated and
     say the evidence does not extend to later commits.
 
+16. (WP-369) The first-run walk also checked the opposite direction: every
+    `re 0.1 compact` sample embedded in `doc/` and `docs/` was extracted and run
+    through `node src/cli/re.js check`. Four fences open with the program header
+    and three of them are rejected with exit `65`: `doc/00-overview.md` twice
+    (the original Hello World draft and a later `process.exit(0, after: …)`
+    sketch) and `doc/01-syntax.md` section 8 (the compact half of a
+    compact/canonical illustration). Only `docs/language.md` embeds a runnable
+    program. None of the three was rewritten: they are design history, and the
+    two documents now say at the top of the sample that the shape is not
+    executable and point at `QUICKSTART.md` and `examples/` for runnable code.
+    The same walk found the tutorial's missing second step. `QUICKSTART.md` now
+    has "Your second program": it creates `scratch/input.txt` and a `fs.read`
+    program with `@files.read_file(path: "input.txt")`, then
+    `npm run re -- check scratch/read.re` answers `OK scratch/read.re` and
+    `npm run re -- run scratch/read.re` exits 0 with empty stdout and stderr.
+    Two properties of that surface are now written down because a reader would
+    otherwise discover them as a surprise: file paths resolve relative to the
+    directory of the program file, and a path that leaves it still passes
+    `check` but takes the `err` branch at run time (exit `3` in the sample, with
+    empty streams, no stack trace), and a `0.1` match cannot name the value it
+    matched, so the program can branch on the read but cannot print it until
+    `re 0.2 compact`. Pinned by two tests in
+    `test/quickstart-first-program.test.js`: the tutorial flow, extracted from
+    the documented heredoc and replayed in a temporary directory, and the fence
+    audit above, which fails if a design document starts presenting an
+    unexecuted shape as runnable.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
