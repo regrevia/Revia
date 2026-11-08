@@ -20,8 +20,9 @@ Revia repository.
    test.
 3. Add or update a focused test before changing behavior.
 4. Run the focused test, then `npm test` for shared Node behavior.
-5. For Rust changes, run `cargo test --workspace --offline`,
-   `cargo fmt --all -- --check`, and
+5. For Rust changes, run `cargo build --workspace --release --offline` first
+   (the release-evidence test executes `native/target/release/revia`), then
+   `cargo test --workspace --offline`, `cargo fmt --all -- --check`, and
    `cargo clippy --workspace --offline --all-targets -- -D warnings`.
 6. Run `git diff --check`, `npm run source:manifest`, and the secret/privacy
    scan before submitting.

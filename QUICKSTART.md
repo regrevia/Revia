@@ -19,10 +19,67 @@ The Node reference toolchain requires Node.js 22.16.0 or newer and uses only the
 standard library. No credentials or network service are required for the
 source test suite.
 
-The native toolchain is in `native/`:
+### Your first program / 第一个程序
+
+`scratch/` is ignored by Git, so experiments there never reach a commit:
+
+```bash
+mkdir -p scratch
+cp examples/hello.re scratch/first.re
+# replace "Hello, World!" inside @stdout.write("...") with "Hello, Revia!"
+npm run re -- run scratch/first.re
+# Hello, Revia!
+npm run re -- check scratch/first.re
+# OK scratch/first.re
+```
+
+`check` reads the program without running it. Rename the argument and it stops
+before anything executes:
+
+```bash
+# @stdout.write(message: "Hello, Revia!")
+npm run re -- check scratch/first.re
+# scratch/first.re:9:28: unexpected-argument (expected data, got message)
+```
+
+That diagnostic goes to stderr and the command exits `65`. The same verdict is
+available as one machine-readable object: `npm run re -- check --format json
+scratch/first.re` prints `schema`, `file`, `ok`, and `diagnostics`, and
+`npm run re -- manifest scratch/first.re` prints the review manifest with the
+declared capabilities, effect calls, and error paths of that file.
+
+`scratch/` 被 Git 忽略，放实验文件不会进入提交：
+
+```bash
+mkdir -p scratch
+cp examples/hello.re scratch/first.re
+# 把 @stdout.write("...") 里的 "Hello, World!" 换成 "Hello, Revia!"
+npm run re -- run scratch/first.re
+# Hello, Revia!
+npm run re -- check scratch/first.re
+# OK scratch/first.re
+```
+
+`check` 只读取程序、不执行。改掉参数名，它会在执行前停下：
+
+```bash
+# @stdout.write(message: "Hello, Revia!")
+npm run re -- check scratch/first.re
+# scratch/first.re:9:28: unexpected-argument (expected data, got message)
+```
+
+该诊断写到 stderr，命令退出码为 `65`。同样的判定还有机器可读形式：
+`npm run re -- check --format json scratch/first.re` 输出含 `schema`、`file`、
+`ok`、`diagnostics` 的一个 JSON 对象；`npm run re -- manifest scratch/first.re`
+输出审阅清单，含该文件声明的能力、effect 调用与错误路径。
+
+The native toolchain is in `native/`. Build the release binary before the tests:
+the release-evidence test runs `native/target/release/revia`, so a fresh clone
+that goes straight to `cargo test` stops there with exit `101`.
 
 ```bash
 cd native
+cargo build --workspace --release --offline
 cargo test --workspace --offline
 cargo fmt --all -- --check
 cargo clippy --workspace --offline -- -D warnings

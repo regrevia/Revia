@@ -465,6 +465,28 @@ It still changes language semantics and was not folded into Issues 1-3.
     `wp366_check_stage_cli`, which holds each stage to its measured exit code
     and diagnostic so no later edit can present the parser as the checker.
 
+14. WP-367 — closed: the first-run path teaches a program, not just a command.
+    `QUICKSTART.md` ran `examples/hello.re` and then jumped to the full test
+    suites, so a reader never met the diagnostic themselves. The new "Your first
+    program" section copies `examples/hello.re` into the Git-ignored `scratch/`,
+    changes the literal, and records the measured output of `npm run re -- run
+    scratch/first.re` (`Hello, Revia!`), `npm run re -- check scratch/first.re`
+    (`OK scratch/first.re`), the argument-name diagnostic
+    `scratch/first.re:9:28: unexpected-argument (expected data, got message)` on
+    stderr with exit 65, and the machine-readable forms: `check --format json`
+    answers `re.check-result@0.1.0` with `schema`, `file`, `ok`, and
+    `diagnostics`, and `manifest` answers `re.review-manifest@0.1.0` with the
+    declared capability, effect calls, and error paths. Pinned by
+    `quickstart-first-program`, which runs the same flow in a temporary
+    directory and asserts those outputs, so the tutorial cannot drift from the
+    CLI. The same fresh-clone walk found the native block unusable as written:
+    `cd native && cargo test --workspace --offline` exits 101 with
+    "build the release binary before this test", because
+    `wp283_release_evidence_cli` executes `native/target/release/revia` and a
+    clone has no `target/`. The CI workflows already build the release binaries
+    before testing; `QUICKSTART.md` and `AGENTS.md` now say so, and the focused
+    test keeps the build step ahead of `cargo test`.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

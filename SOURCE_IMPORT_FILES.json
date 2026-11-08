@@ -607,6 +607,7 @@
     "test/project-translator.test.js",
     "test/public-ai-native-demo.test.js",
     "test/public-source-transition.test.js",
+    "test/quickstart-first-program.test.js",
     "test/release-compatibility-table.test.js",
     "test/release-contract-gate.test.js",
     "test/release-platform-baseline.test.js",
