@@ -11,6 +11,7 @@ function read(relativePath) {
 }
 
 const gate = read('docs/stable-release-gate.md')
+const notes = read('RELEASE_NOTES.md')
 const policy = read('docs/release-policy.md')
 
 test('the stable release gate measures its own snapshot instead of freezing one', () => {
@@ -51,4 +52,15 @@ test('the release policy names one commit for the code-validation snapshot', () 
   assert.ok(chinese, 'release policy must name the Chinese snapshot commit')
   assert.equal(english[1], chinese[1])
   assert.equal(gate.includes(english[1]), false)
+})
+
+test('the release notes describe the later snapshot the same way', () => {
+  assert.doesNotMatch(notes, /current main source/u)
+  assert.doesNotMatch(notes, /当前 main 源码/u)
+  assert.doesNotMatch(notes, /project-surface-check gate/u)
+  assert.match(notes, /`ca268c4`/u)
+  assert.match(notes, /`docs\/release-policy\.md`/u)
+  assert.match(notes, /`cargo test --workspace`/u)
+  assert.match(notes, /re-verified the digest of the\s+executable/u)
+  assert.match(notes, /核对自己构建的\s*可执行文件摘要/u)
 })

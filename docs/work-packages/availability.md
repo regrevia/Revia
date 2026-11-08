@@ -567,6 +567,21 @@ It still changes language semantics and was not folded into Issues 1-3.
     stops verifying its digest, or if the release policy stops naming the same
     snapshot in English and Chinese.
 
+19. (WP-371) The RC2.2.1 release notes repeated the same two mistakes one
+    document further out. `RELEASE_NOTES.md` said "The current main source
+    later passed" CI at `ca268c4`, which stops being true at the next green
+    commit and reads as a live claim about whatever main is, and it called
+    `project-surface-check` a "gate" as if a workflow of that name existed.
+    The notes now say a later main snapshot, `ca268c4`, passed that CI, point
+    at `docs/release-policy.md` as the place recording the snapshot, credit the
+    `project-check` and `project-surface-check` tests to that CI's
+    `cargo test --workspace`, keep the Windows digest re-verification, and say
+    the checks neither belong to the published RC2.2.1 assets nor extend to
+    later commits. The fourth case in `test/release-gate-evidence.test.js`
+    fails if the notes revert to "current main source" (English or Chinese),
+    drop the snapshot hash point at the policy, lose the workspace-suite credit
+    or the digest re-verification, or call the subcommand check a gate again.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

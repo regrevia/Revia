@@ -7,10 +7,12 @@ Windows x64 assets with target-specific evidence in
 [`runtime/rc2.2.1/`](runtime/rc2.2.1/). The tag points to `35ae4ed`; it is a
 candidate, not Stable V1.0 or a production-readiness claim.
 
-The current main source later passed Source validation and native Linux x64 and
-Windows x64 CI at `ca268c4`, including the native project-surface-check gate
-and the bound Windows x64 artifact-integrity check.
-Those checks are not part of the existing published RC2.2.1 assets.
+A later main snapshot, `ca268c4`, passed Source validation and native Linux x64
+and Windows x64 CI; `docs/release-policy.md` records that snapshot. The native
+`project-check` and `project-surface-check` tests ran inside that CI's
+`cargo test --workspace`, and the Windows job re-verified the digest of the
+executable it built before launching it. Those checks are not part of the
+existing published RC2.2.1 assets and do not extend to later commits.
 
 The RC2.2.1 export includes `LICENSE-RC.md`, whose text applies only to RC1.
 Do not infer RC2.2.1 binary usage or redistribution terms from that RC1 license
@@ -21,9 +23,10 @@ clarification.
 [`runtime/rc2.2.1/`](runtime/rc2.2.1/)。该 tag 指向 `35ae4ed`；它是候选版本，不是 Stable V1.0，
 也不代表生产就绪。
 
-当前 main 源码随后在 `ca268c4` 通过 Source validation、Linux x64 与 Windows x64 native CI，
-包括 native project-surface-check 门禁和 Windows x64 绑定 runner 的发行产物完整性校验。这些检查不属于现有
-已发布的 RC2.2.1 资产。
+其后的 main 快照 `ca268c4` 通过了 Source validation 与 Linux x64、Windows x64 native CI，
+该快照记录于 `docs/release-policy.md`。native `project-check` 与 `project-surface-check`
+测试在该 CI 的 `cargo test --workspace` 中运行，Windows 任务在启动前核对自己构建的
+可执行文件摘要。这些检查不属于现有已发布的 RC2.2.1 资产，也不延伸到之后的提交。
 
 RC2.2.1 导出包包含一份文本适用范围仅为 RC1 的 `LICENSE-RC.md`。不得从 RC1 许可或源码
 MPL-2.0 推断 RC2.2.1 二进制的使用/再分发条款；二进制的版本专属条款仍需澄清。
