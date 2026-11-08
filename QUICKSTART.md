@@ -48,6 +48,12 @@ scratch/first.re` prints `schema`, `file`, `ok`, and `diagnostics`, and
 `npm run re -- manifest scratch/first.re` prints the review manifest with the
 declared capabilities, effect calls, and error paths of that file.
 
+The command's own exit code is `0` when it completes, `64` when the arguments
+do not name a command it runs, and `65` when the source cannot be read or the
+check rejects it. Those codes describe the command: `run` passes the exit code
+the program asks for through unchanged, so the second program below returns `3`
+from its `err` branch.
+
 `scratch/` 被 Git 忽略，放实验文件不会进入提交：
 
 ```bash
@@ -72,6 +78,10 @@ npm run re -- check scratch/first.re
 `npm run re -- check --format json scratch/first.re` 输出含 `schema`、`file`、
 `ok`、`diagnostics` 的一个 JSON 对象；`npm run re -- manifest scratch/first.re`
 输出审阅清单，含该文件声明的能力、effect 调用与错误路径。
+
+命令自身的退出码为：正常完成时 `0`，参数不指向它能运行的命令时 `64`，
+源码读不到或被检查拒绝时 `65`。这些码描述的是命令本身：`run` 会把程序自己
+要求的退出码原样传出，所以下面第二个程序在其 `err` 分支返回 `3`。
 
 ### Your second program / 第二个程序
 

@@ -691,6 +691,14 @@ It still changes language semantics and was not folded into Issues 1-3.
     backslash continuations, and fails when a documented invocation omits an
     argument the CLI requires.
 
+31. (WP-383) `QUICKSTART.md` showed a rejected program exiting `65` and a
+    second program exiting `3` without saying which code belongs to the command
+    and which to the program, so a reader could not tell a usage mistake from a
+    program's own verdict. The first-program section now states the command's
+    codes (`0` complete, `64` unknown command line, `65` unreadable or
+    rejected) next to the note that `run` passes a program's exit code through,
+    and `test/quickstart-first-program.test.js` measures each of those codes.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

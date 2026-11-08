@@ -107,6 +107,49 @@ test('the first-program tutorial runs as documented', async () => {
   }
 })
 
+test('documented command exit codes match the CLI', async () => {
+  // The tutorial separates the command's own exit codes from the code a
+  // program chooses. Both halves are pinned to measured behaviour so a reader
+  // can tell "my arguments are wrong" from "my program said so".
+  const english = /The command's own exit code is[^\n]*(?:\n[^\n]+)*/u.exec(
+    quickstart,
+  )
+  assert.ok(english !== null, 'QUICKSTART.md must name the exit codes')
+  assert.match(english[0], /`0`[\s\S]*`64`[\s\S]*`65`/u)
+
+  const chinese = /命令自身的退出码为[^\n]*(?:\n[^\n]+)*/u.exec(quickstart)
+  assert.ok(chinese !== null, 'the Chinese quickstart must carry the sentence')
+  assert.match(chinese[0], /`0`[\s\S]*`64`[\s\S]*`65`/u)
+
+  const directory = await mkdtemp(join(tmpdir(), 'revia-exit-codes-'))
+  try {
+    const usage = runCli(directory)
+    assert.equal(usage.status, 64)
+    assert.equal(usage.stdout, '')
+    assert.match(usage.stderr, /^Usage: re check /u)
+
+    const missing = runCli(directory, 'check', 'scratch/missing.re')
+    assert.equal(missing.status, 65)
+    assert.equal(missing.stdout, '')
+    assert.equal(
+      missing.stderr,
+      'scratch/missing.re: unable to read file (ENOENT)\n',
+    )
+
+    await mkdir(join(directory, 'scratch'), { recursive: true })
+    await writeFile(
+      join(directory, 'scratch', 'accepted.re'),
+      await readFile(join(repositoryRoot, 'examples', 'hello.re'), 'utf8'),
+    )
+    const accepted = runCli(directory, 'check', 'scratch/accepted.re')
+    assert.equal(accepted.status, 0)
+    assert.equal(accepted.stdout, 'OK scratch/accepted.re\n')
+    assert.equal(accepted.stderr, '')
+  } finally {
+    await rm(directory, { recursive: true, force: true })
+  }
+})
+
 test('the native first-run block builds the release binary before testing', () => {
   // A fresh clone has no native/target, and wp283_release_evidence_cli panics
   // unless native/target/release/revia exists, so the build must come first.
