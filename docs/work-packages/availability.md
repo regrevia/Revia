@@ -727,6 +727,13 @@ It still changes language semantics and was not folded into Issues 1-3.
     and `test/docs-diagnostics.test.js` holds the checklist, the form ids and
     labels, and the six required flags together so neither side can drift.
 
+35. (WP-387) The examples index never told a reader how to tell whether an
+    edit changed a program's contract. `examples/README.md` now documents the
+    three measured comparisons on `hello.re` — a comment leaves
+    `graph_revision` alone, a reworded string leaves `capabilities` alone, an
+    added `cap @input: fs.read@0.1.0` grows it — and
+    `test/examples-runnable.test.js` re-runs all three and quotes them.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

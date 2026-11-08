@@ -112,6 +112,39 @@ fixtures, not first-run programs.
 
 Run commands from the repository root. / 请在仓库根目录运行命令。
 
+## After You Edit / 修改之后
+
+`check` answers whether an edit is still accepted. `manifest` answers the next
+question: did the edit change what the program is allowed to do? Run it on one
+file and read `capabilities` and `graph_revision`:
+
+```bash
+npm run re -- manifest examples/hello.re
+```
+
+The reply is `re.review-manifest@0.1.0` with `capabilities`, the list of
+capability references the program may reach, and `graph_revision`, a digest of
+the whole graph. Measured on `examples/hello.re`, whose only capability is
+`process.stdout@0.1.0`:
+
+- appending a comment line leaves `graph_revision` at
+  `sha256:fbc879084d06d619f700d640826bebd4e758489171e269d162c57f1c26a19083`;
+- changing the message to `"Hello, Revia!"` keeps `capabilities` at
+  `["process.stdout@0.1.0"]` but moves `graph_revision` to
+  `sha256:13812e45bdcf3f513372b389dca1f594bc5594286d98b46a73cb07d588055049`;
+- adding `cap @input: fs.read@0.1.0` beside the existing `cap` line grows
+  `capabilities` to `["process.stdout@0.1.0","fs.read@0.1.0"]` and moves
+  `graph_revision` to
+  `sha256:59e348b0bb514769f56397d97a18a2636a19496f4b94d330434e18e39d87c45e`.
+
+A changed `capabilities` list is the review question; a moved
+`graph_revision` on its own is not.
+
+中文摘要：修改后先跑 `check` 判断是否仍被接受，再跑 `manifest` 看契约有没有变。
+只追加注释时 `graph_revision` 不变；只改字符串时 `capabilities` 不变而
+`graph_revision` 改变；新增 `cap @input: fs.read@0.1.0` 会让 `capabilities`
+增加 `fs.read@0.1.0`。审阅要问的是 `capabilities` 的变化。
+
 ## Suggested Progression / 建议路径
 
 1. Run [`hello.re`](hello.re), then inspect

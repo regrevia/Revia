@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { cp, mkdtemp, readFile, readdir, rm, unlink } from 'node:fs/promises'
+import { cp, mkdtemp, readFile, readdir, rm, unlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -82,6 +82,70 @@ async function copyExamples(destination) {
     }
   }
 }
+
+test('examples/README.md explains how a manifest answers an edit', async () => {
+  // The README teaches three measured comparisons on hello.re. Re-run them so
+  // the page cannot drift from the CLI: a comment must leave the graph
+  // revision alone, a text edit must leave the capability list alone, and an
+  // added capability must grow that list.
+  const directory = await mkdtemp(join(tmpdir(), 'revia-edit-'))
+  try {
+    await copyExamples(directory)
+    const manifest = (name) => {
+      const result = runCli(repositoryRoot, 'manifest', join(directory, name))
+      assert.equal(result.status, 0, `manifest ${name}: ${result.stderr}`)
+      return JSON.parse(result.stdout).manifest
+    }
+    const references = (entry) => entry.capabilities.map((capability) => capability.reference)
+    const readme = await readFile(join(examples, 'README.md'), 'utf8')
+    const original = await readFile(join(directory, 'hello.re'), 'utf8')
+
+    const baseline = manifest('hello.re')
+    assert.deepEqual(references(baseline), ['process.stdout@0.1.0'])
+
+    await writeFile(join(directory, 'edited.re'), `${original}// A second comment.\n`)
+    const commented = manifest('edited.re')
+    assert.deepEqual(references(commented), references(baseline))
+    assert.equal(commented.graph_revision, baseline.graph_revision)
+
+    await writeFile(
+      join(directory, 'reworded.re'),
+      original.replace('Hello, World!', 'Hello, Revia!'),
+    )
+    const reworded = manifest('reworded.re')
+    assert.deepEqual(references(reworded), references(baseline))
+    assert.notEqual(reworded.graph_revision, baseline.graph_revision)
+
+    await writeFile(
+      join(directory, 'widened.re'),
+      original.replace(
+        'cap @stdout: process.stdout@0.1.0',
+        'cap @stdout: process.stdout@0.1.0\ncap @input: fs.read@0.1.0',
+      ),
+    )
+    const widened = manifest('widened.re')
+    assert.deepEqual(references(widened), ['process.stdout@0.1.0', 'fs.read@0.1.0'])
+    assert.notEqual(widened.graph_revision, baseline.graph_revision)
+
+    assert.ok(readme.includes('## After You Edit / 修改之后'))
+    assert.ok(readme.includes('修改之后'))
+    assert.ok(readme.includes('`check` answers whether an edit is still accepted'))
+    assert.ok(readme.includes('A changed `capabilities` list is the review question'))
+    for (const revision of [
+      baseline.graph_revision,
+      reworded.graph_revision,
+      widened.graph_revision,
+    ]) {
+      assert.ok(
+        readme.includes(revision),
+        `examples/README.md must quote the measured ${revision}`,
+      )
+    }
+    assert.ok(readme.includes('["process.stdout@0.1.0","fs.read@0.1.0"]'))
+  } finally {
+    await rm(directory, { recursive: true, force: true })
+  }
+})
 
 test('every example runs as examples/README.md classifies it', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'revia-examples-'))
