@@ -79,7 +79,7 @@ return %status
 
 ## 5. 控制流
 
-控制流原语已收敛（见 [BOOTSTRAP.md §6 Q-cf](../BOOTSTRAP.md)），compact 层与 canonical 层分层：
+控制流原语已收敛（见内部设计记录 `BOOTSTRAP.md` §6 Q-cf；该文件不在公开仓库中），compact 层与 canonical 层分层：
 
 - **函数调用**：V1 调用图必须为 DAG；直接或相互递归稳定拒绝，且不与 Module dependency cycle 共用诊断。需要递归遍历时使用显式 worklist + `loop(state)`，让进度、资源上限与取消点留在图中。
 - **分支**：compact 唯一入口是穷尽式 `match`（可带 guard：纯 bool 谓词、first-match、必有无 guard 穷尽兜底）；canonical 用 structural `region`（每 arm 一 region）+ `merge` 汇合。guard 的 case 序是 structural priority，非 runtime order edge，不参与 R-det-3。

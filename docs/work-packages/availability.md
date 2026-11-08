@@ -149,7 +149,7 @@ object to unique keys, so text input cannot reach them. They are pinned by
 inspection, not by a test, and that is stated rather than papered over.
 
 Every reason above is pinned end to end by
-[`native/revia-cli/tests/wp358_policy_rejection_corpus.rs`](../native/revia-cli/tests/wp358_policy_rejection_corpus.rs):
+[`native/revia-cli/tests/wp358_policy_rejection_corpus.rs`](../../native/revia-cli/tests/wp358_policy_rejection_corpus.rs):
 18 policies that differ only in their bytes, run over one program and one schema
 registry through the shipped `execute` path. Each case asserts exit status 65, a
 single stderr diagnostic, `ok:false`, the host-result schema, an empty stdout,
@@ -196,9 +196,9 @@ diagnostic, and its exit status.
 Goal: make "the guest cannot escape the declared surface" a measured property.
 
 Closed with a 22-case corpus,
-[`test/fixtures/host-boundary-refusal-corpus.json`](../test/fixtures/host-boundary-refusal-corpus.json)
+[`test/fixtures/host-boundary-refusal-corpus.json`](../../test/fixtures/host-boundary-refusal-corpus.json)
 (`re.host-boundary-refusal-corpus@0.1.0`), driven by
-[`native/revia-cli/tests/wp357_host_boundary_corpus.rs`](../native/revia-cli/tests/wp357_host_boundary_corpus.rs),
+[`native/revia-cli/tests/wp357_host_boundary_corpus.rs`](../../native/revia-cli/tests/wp357_host_boundary_corpus.rs),
 plus one Unix-only driver test for the symlink forms. Each case carries a
 `catches` line stating what an implementation change would break, asserts the
 result schema and fragments on the stream that must carry them, and names the
@@ -581,6 +581,21 @@ It still changes language semantics and was not folded into Issues 1-3.
     fails if the notes revert to "current main source" (English or Chinese),
     drop the snapshot hash point at the policy, lose the workspace-suite credit
     or the digest re-verification, or call the subcommand check a gate again.
+
+20. (WP-372) Three links in this file and eight in the `doc/` design pages
+    pointed at paths that do not resolve from where they are written.
+    `docs/work-packages/availability.md` wrote `../native/...` and
+    `../test/...` links, which land in `docs/native` and `docs/test`; the
+    targets were one directory further up and are now `../../native/...` and
+    `../../test/...`. `doc/05-execution.md` and `doc/06-open-questions.md`
+    linked to `BOOTSTRAP.md` and `V1-DESIGN.md` as siblings in the repository
+    root, but those are internal design records that are not part of the
+    public tree: the references now name them as such and are no longer
+    links. `test/docs-links.test.js` scans the root documents, every
+    `docs/**/*.md` page, and the `doc/` pages, ignores fenced code and
+    external or pure-anchor targets, rejects any relative target that escapes
+    the repository, and requires at least 150 resolved targets so a scan that
+    silently stops walking the tree fails.
 
 ## 8. Evidence rules
 

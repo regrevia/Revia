@@ -1,6 +1,6 @@
 # 06 · 待打磨项（open questions）
 
-本文件保留各议题的详细候选、反例和验证线索。V1.0 的优先级、裁决状态、冻结门与实现顺序以根目录 [V1-DESIGN.md](../V1-DESIGN.md) 的 `V1-P0-01..13` 为唯一控制面；本文件不再单独宣称某项已经冻结。
+本文件保留各议题的详细候选、反例和验证线索。V1.0 的优先级、裁决状态、冻结门与实现顺序以根目录内部设计记录 `V1-DESIGN.md` 的 `V1-P0-01..13` 为唯一控制面；`V1-DESIGN.md` 与下文 `BOOTSTRAP.md` 均为内部设计记录，不在公开仓库中。本文件不再单独宣称某项已经冻结。
 
 退出条件不是模型口头“统一认可”，而是 P0 规则获得可执行 grammar/schema/corpus/test 证据，并通过独立反例审计。下面的问题仍可用于展开细节，但评审结论必须按对应 `V1-P0-xx` 回写。
 
@@ -12,7 +12,7 @@
 
 **为什么最优先**：直线代码任何设计都好看。RE 能不能立住，取决于分支/循环/并发/错误重试下 compact 是否仍轻、图是否仍清晰。
 
-**已收敛**（详见 [BOOTSTRAP.md §6 Q-cf](../BOOTSTRAP.md)）：
+**已收敛**（详见 `BOOTSTRAP.md` §6 Q-cf）：
 - 分支 = compact 穷尽式 `match`（可带 guard：纯谓词 + first-match + 穷尽兜底），canonical 用 structural `region`/`merge`；guard 的 case 序=structural priority，非 runtime order edge。
 - 循环 = `loop(state)` 双终结器 `next(state)`/`done(value)`，禁 continue/break/back 多套；循环体不能普通 return；`done` 经 loop-exit merge 后由显式 return 消费；backedge 隐含迭代序。
 - 状态机 = closed `State` + closed `Event` + pure transition；transition 返回 next/done/error 与 typed effect commands，effect result 再作为 event 输入。它只服务有时间/生命周期语义的 workflow/protocol/resource，不替代普通 bool/data `match`。
@@ -149,13 +149,13 @@ capability instance
 
 **为什么关键**：[03-serialization.md](03-serialization.md) 给了主框架，但以下边界仍需拍死，任一项含糊都会让 diff 翻车。
 
-**已收敛**（详见 [BOOTSTRAP.md §6 Q-serial](../BOOTSTRAP.md)）：
+**已收敛**（详见 `BOOTSTRAP.md` §6 Q-serial）：
 - 三容器语义：`map`（键字典序）/ `sequence`（有序邻接，canonical 不输出 ordinal）/ `set`（按 schema `canonical_key` bytewise）。
 - set `canonical_key`：schema 声明的完整唯一、与节点身份无关的 key；`opkind+参数名集合` 非全序（会碰撞）仅作拓扑并列启发式；匿名节点无 key 时 v1 禁止入 set。
 - sequence 有序邻接：稳定元素身份 + 邻接关系，patch 用 `insert_before/after(anchor_uid)`，不带 ordinal；`cases[3]` 类位置路径不得作 patch 身份。
 - alias 若需进 canonical，必须使用节点族的显式 serializer 字段并 round-trip 保留；不得伪装成注释。等价判断与 patch 引用忽略 alias。
 - V1 compact 注释经词法检查后直接丢弃，不进 token/CST/图谱/canonical/sidecar；canonical 禁止注释。
-- 身份 = uid/cid/label/alias 四层（见 [BOOTSTRAP.md §6 Q-ident](../BOOTSTRAP.md)），doc/03 §2 已重写。
+- 身份 = uid/cid/label/alias 四层（见 `BOOTSTRAP.md` §6 Q-ident），doc/03 §2 已重写。
 
 **已路由/仍开放**：
 - Q-num/Q-type 的 V1 Core value 已由 `V1-P0-04` 收敛：任意精度 `int`、精确 `decimal<0..255>`，不含 float；future foreign float 只在 `V1-P0-07` adapter/schema seam 讨论，不重开 Core canonical。
@@ -175,13 +175,13 @@ capability instance
 
 ### Q-type：类型系统能力边界
 
-**V1 Discussion 已收敛**：nominal record/product、closed sum、newtype、`result`、`option`、immutable collection、opaque resource handle、productive same-declaration recursion 与受限显式参数化类型进入 V1；禁止隐式转换和猜测式 overload，trait、继承、反射、float 与隐式协议解析后置。规范和证据以 [V1-DESIGN.md V1-P0-04](../V1-DESIGN.md)、[02-semantics.md §9](02-semantics.md) 与机器 corpus 为准，等待独立 Reviewer，不再由 BOOTSTRAP 接龙重复裁决。
+**V1 Discussion 已收敛**：nominal record/product、closed sum、newtype、`result`、`option`、immutable collection、opaque resource handle、productive same-declaration recursion 与受限显式参数化类型进入 V1；禁止隐式转换和猜测式 overload，trait、继承、反射、float 与隐式协议解析后置。规范和证据以 `V1-DESIGN.md` V1-P0-04、[02-semantics.md §9](02-semantics.md) 与机器 corpus 为准，等待独立 Reviewer，不再由 BOOTSTRAP 接龙重复裁决。
 
 ### Q-syntax：`@x` 是否过载
 
 **问题**：`@x` 当前一身三用——unit/cap/fn/导出身份、annotation（`@deprecated`）、capability 引用（`@stdout.write`）。
 
-**当前状态**：不得冻结现有三用。候选 S1 保留 `@name` 作为 module symbol/capability 并把 annotation 改为 `#[...]`；候选 S2 使用 bare semantic symbol、`$cap`、`%compact_alias`、`#u...` canonical label、`@revision` 与 `#[...]`，实现严格词法隔离。S2 暂时领先，但必须通过 executable grammar、歧义/fuzz corpus 与多模型 cold-start benchmark；统一裁决见 [BOOTSTRAP.md §8.3](../BOOTSTRAP.md)。
+**当前状态**：不得冻结现有三用。候选 S1 保留 `@name` 作为 module symbol/capability 并把 annotation 改为 `#[...]`；候选 S2 使用 bare semantic symbol、`$cap`、`%compact_alias`、`#u...` canonical label、`@revision` 与 `#[...]`，实现严格词法隔离。S2 暂时领先，但必须通过 executable grammar、歧义/fuzz corpus 与多模型 cold-start benchmark；统一裁决见 `BOOTSTRAP.md` §8.3。
 
 ### Q-string：字符串形态
 
@@ -233,4 +233,4 @@ capability instance
 3. 拿修订后文档征求各大模型反馈，记录分歧。
 4. 分歧收敛到「统一认可」后，冻结规则，进入翻译器/运行器实现阶段。
 
-> 当前状态：Demo host、creation transaction、Hello canonical round-trip、revision-pinned patch 与最小 Review manifest 已有实现证据。自 2026-07-30 起工作中心转为 [BOOTSTRAP.md §8](../BOOTSTRAP.md) 的 V1 Design Freeze Candidate：依次收敛 syntax/token、package/module/type、effect/resource/structured concurrency、foreign/adapter/distributed/observability，再发布 RE Language Agent Kit Preview。旧 Demo 接龙不再决定当前优先级。
+> 当前状态：Demo host、creation transaction、Hello canonical round-trip、revision-pinned patch 与最小 Review manifest 已有实现证据。自 2026-07-30 起工作中心转为 `BOOTSTRAP.md` §8 的 V1 Design Freeze Candidate：依次收敛 syntax/token、package/module/type、effect/resource/structured concurrency、foreign/adapter/distributed/observability，再发布 RE Language Agent Kit Preview。旧 Demo 接龙不再决定当前优先级。
