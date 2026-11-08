@@ -611,6 +611,7 @@
     "test/quickstart-first-program.test.js",
     "test/release-compatibility-table.test.js",
     "test/release-contract-gate.test.js",
+    "test/release-gate-evidence.test.js",
     "test/release-platform-baseline.test.js",
     "test/release-provenance.test.js",
     "test/release-records.test.js",

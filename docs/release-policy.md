@@ -64,11 +64,13 @@ The latest published candidate is `v1.0.0-rc.2.2.1`. Its target matrix records
 native Linux x64 and Windows x64 evidence; the other four
 desktop targets remain pending. The tag points to `35ae4ed`.
 
-The latest code-validation snapshot is public main commit `ca268c4`. Source
-validation and native Linux/Windows CI pass on that commit, including the
-native project-surface-check workflow. These source checks do not change the
-published RC2.2.1 binaries. A new versioned candidate must carry the project
-template, rerun the release gate, and publish evidence bound to its own tag.
+The code-validation snapshot recorded in this policy is public main commit
+`ca268c4`. Source validation and native Linux/Windows CI pass on that commit,
+including the `project-check` and `project-surface-check` native tests that its
+`cargo test --workspace` run executes. That evidence does not extend to later
+commits. These source checks do not change the published RC2.2.1 binaries. A
+new versioned candidate must carry the project template, rerun the release
+gate, and publish evidence bound to its own tag.
 
 The RC2.2.1 export manifest includes `LICENSE-RC.md`, but that document says it
 applies only to `v1.0.0-rc.1`. Do not infer RC2.2.1 binary terms from this RC1
@@ -85,9 +87,11 @@ published evidence and are explicitly excluded from republishing by this gate.
 最新已发布候选为 `v1.0.0-rc.2.2.1`。其目标矩阵记录 Linux x64 与 Windows x64
 原生证据，其余四个桌面目标仍为 pending；该 tag 指向 `35ae4ed`。
 
-最新代码验证快照为公开 main commit `ca268c4`。该 commit 上的 source validation 与 Linux/Windows
-native CI 通过，包含仓库内项目模板流程；这些源码检查不会
-改变已发布的 RC2.2.1 二进制。新版本候选必须带上项目模板、重新运行发行门禁，并将证据绑定到新 tag。
+本策略记录的代码验证快照为公开 main commit `ca268c4`。该 commit 上的 source
+validation 与 Linux/Windows native CI 通过，其中包含该 commit 的
+`cargo test --workspace` 所执行的 `project-check` 与 `project-surface-check` native
+测试；该证据不延伸到之后的提交。这些源码检查不会改变已发布的 RC2.2.1 二进制。
+新版本候选必须带上项目模板、重新运行发行门禁，并将证据绑定到新 tag。
 
 RC2.2.1 导出 manifest 包含 `LICENSE-RC.md`，但该文件声明只适用于 `v1.0.0-rc.1`。
 不得从 RC1 许可或源码 MPL-2.0 推断 RC2.2.1 二进制条款；该二进制许可范围需按版本澄清。

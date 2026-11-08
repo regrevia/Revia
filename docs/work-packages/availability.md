@@ -543,6 +543,30 @@ It still changes language semantics and was not folded into Issues 1-3.
     exit `65` with `unexpected-token`. An example missing from the tables fails
     the test, so a new sample cannot reach a reader unclassified.
 
+18. (WP-370b) The gate document carried its own frozen copy of the
+    code-validation snapshot and mislabelled the evidence. `docs/stable-release-gate.md`
+    named `ca268c4` in the template row and in both prose languages, and called
+    `project-surface-check` a workflow although no workflow of that name exists:
+    it is a native CLI subcommand, exercised by
+    `native/revia-cli/tests/project_template.rs` inside every
+    `cargo test --workspace` pass. The gate now names the mechanism instead of a
+    hash (the native test suite in all three validating jobs, plus the Windows
+    job verifying the digest of the executable it built before launching it),
+    points at `docs/release-policy.md` for the measured snapshot, says the
+    evidence does not extend to later commits, and states the real remaining
+    condition: a versioned candidate must rebuild the template natively, run
+    `revia project-check` and `revia project-surface-check` against that build,
+    and bind the result to its own tag. `docs/release-policy.md` now describes
+    the same evidence the same way: it owns the one snapshot hash (`ca268c4`),
+    says the `project-check` and `project-surface-check` tests come from that
+    commit's `cargo test --workspace` run rather than a non-existent workflow,
+    and says the evidence does not extend to later commits.
+    `docs/development-status.md` keeps its deliberate fixed snapshot. `test/release-gate-evidence.test.js` fails if the
+    gate pins a commit hash again, drops the mechanism or either subcommand, if
+    a named workflow stops running `cargo test --workspace`, if the Windows job
+    stops verifying its digest, or if the release policy stops naming the same
+    snapshot in English and Chinese.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
