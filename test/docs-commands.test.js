@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
-import { cpSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, posix, resolve } from 'node:path'
 import test from 'node:test'
@@ -397,4 +397,51 @@ test('the expense-review example runs its checked fixture', () => {
     value.case = 'agent.expense.intake.missing'
     return value
   }), [{ code: 'project-run-case-not-found' }])
+})
+
+test('the project example documents its module-digest repair path', () => {
+  // The README's modification steps send a reader to a scratch copy, then to
+  // the native surface check. Re-run the stale-digest failure and, when the
+  // release binary exists, the surface envelope the page promises.
+  const example = resolve(repositoryRoot, 'examples/agent-expense-review')
+  const readme = readFileSync(join(example, 'README.md'), 'utf8')
+  assert.ok(readme.includes('`project-module-source-digest-mismatch`'))
+  assert.ok(readme.includes('`native/target/release/revia project-surface-check`'))
+  assert.ok(readme.includes('`re.native-project-surface-result@0.1.0`'))
+  assert.ok(readme.includes('`interface-routes.json`'))
+
+  const scratch = mkdtempSync(join(tmpdir(), 'revia-project-module-'))
+  const copy = join(scratch, 'agent-expense-review')
+  cpSync(example, copy, { recursive: true })
+  const modulePath = join(copy, 'modules', 'api.re')
+  writeFileSync(modulePath, `${readFileSync(modulePath, 'utf8')}\n`)
+
+  const stale = spawnSync(
+    process.execPath,
+    [resolve(repositoryRoot, 'src/cli/re.js'), 'project-check', '--format', 'json', copy],
+    { encoding: 'utf8' }
+  )
+  assert.equal(stale.status, 65, stale.stderr)
+  const body = JSON.parse(stale.stdout)
+  assert.equal(body.schema, 're.project-check-result@0.1.0')
+  assert.equal(body.ok, false)
+  assert.equal(body.diagnostics.length, 1)
+  assert.equal(body.diagnostics[0].code, 'project-module-source-digest-mismatch')
+  assert.equal(body.diagnostics[0].module, 'agent.expense.api')
+  assert.equal(body.diagnostics[0].path, 'modules/api.re')
+  assert.match(body.diagnostics[0].expected, /^sha256:[0-9a-f]{64}$/u)
+  assert.match(body.diagnostics[0].actual, /^sha256:[0-9a-f]{64}$/u)
+
+  const binary = resolve(repositoryRoot, 'native/target/release/revia')
+  if (!existsSync(binary)) return
+  const native = spawnSync(binary, ['project-surface-check', example], { encoding: 'utf8' })
+  assert.equal(native.status, 0, native.stderr)
+  const surface = JSON.parse(native.stdout)
+  assert.equal(surface.schema, 're.native-project-surface-result@0.1.0')
+  assert.equal(surface.ok, true)
+  assert.equal(surface.module_count, 6)
+  const pinned = JSON.parse(
+    readFileSync(join(example, 'interface-routes.json'), 'utf8')
+  ).graph_revision
+  assert.notEqual(surface.graph_revision, pinned)
 })

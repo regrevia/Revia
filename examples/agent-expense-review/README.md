@@ -130,8 +130,19 @@ process exits `65`, and `diagnostics` carries one code —
 
 ## What To Inspect / 审阅重点
 
-1. Change one module source and update only its declared source digest.
-2. Run `project-surface-check` and record the first diagnostic.
+1. Copy the example to a scratch tree (`cp -R examples/agent-expense-review
+   scratch/agent-expense-review`) so the checked-in pins stay untouched, then
+   change one module source and update only its declared source digest. Skip
+   the digest update and `npm run re -- project-check --format json
+   scratch/agent-expense-review` exits `65` with
+   `project-module-source-digest-mismatch`, naming the module, its path, and
+   the expected and actual digests.
+2. Build the native binary once (`cd native && cargo build --workspace
+   --release --offline`), then run
+   `native/target/release/revia project-surface-check` on the scratch copy and
+   record its `re.native-project-surface-result@0.1.0` line. That line's
+   `graph_revision` is a native digest over the module surfaces, so it does not
+   equal the Node-pinned `graph_revision` in `interface-routes.json`.
 3. Mutate a function capability call, its effect edge, or adapter binding
    (UID, reference, resource instance or access), update the source digests, and
    confirm the native surface check fails closed.
@@ -140,8 +151,18 @@ process exits `65`, and `diagnostics` carries one code —
 5. Submit one focused project or reproducible report under `projects/` or
    `feedback/submissions/`.
 
-1. 修改一个模块源码，并只更新对应的源码摘要。
-2. 运行 `project-surface-check`，记录第一个诊断。
+1. 先把示例复制到 scratch 树（`cp -R examples/agent-expense-review
+   scratch/agent-expense-review`），让仓库内的固定 pin 保持不变；在副本里修改
+   一个模块源码，并只更新对应的源码摘要。若漏掉摘要更新，
+   `npm run re -- project-check --format json scratch/agent-expense-review` 会以
+   `65` 退出并给出 `project-module-source-digest-mismatch`，指明模块、路径、
+   期望与实际摘要。
+2. 先构建一次 native 二进制（`cd native && cargo build --workspace --release
+   --offline`），再运行
+   `native/target/release/revia project-surface-check` 检查该副本，记录其
+   `re.native-project-surface-result@0.1.0` 输出行。该行的 `graph_revision`
+   是 native 对模块 surface 求的摘要，因此不等于 `interface-routes.json`
+   中 Node 固定的 `graph_revision`。
 3. 修改函数 capability call、对应 effect edge 或 adapter 绑定（UID、引用、资源实例或访问方向），同步更新源码摘要，并确认 native surface check 会 fail closed。
 4. 对比 `zh-CN` 与 `en-US` 的 `project-translate`；文字可以变化，但语义身份和 fact ID
    不应变化。
