@@ -1062,6 +1062,13 @@ It still changes language semantics and was not folded into Issues 1-3.
     no longer produces. The runner suite now holds the page to the exported
     schema constant and to the workflow's artifact name.
 
+76. `docs/agent-workflow.md` is the first instruction an outside evaluator
+    follows, and it lists the evaluate commands as bare backticked words, so
+    the documented-invocation scan never saw them. A renamed subcommand would
+    leave the page telling a reader to run a command the CLI rejects. The
+    command suite now resolves every command the evaluate step names against
+    the usage text.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

@@ -126,6 +126,21 @@ test('documented invocations carry the arguments the CLI requires', () => {
   assert.deepEqual(incomplete, [])
 })
 
+// The agent entry page is the first instruction an outside evaluator follows.
+// It lists the evaluate commands as bare backticked words instead of
+// documented invocations, so the scan above never saw them; a renamed
+// subcommand left the page telling a reader to run a command the CLI rejects.
+test('the agent workflow names commands the CLI exposes', () => {
+  const page = readFileSync(resolve(repositoryRoot, 'docs/agent-workflow.md'), 'utf8')
+  const step = page.match(/^2\. Run (.+)$/mu)
+  assert.ok(step, 'docs/agent-workflow.md no longer lists the evaluate commands')
+  const named = [...step[1].matchAll(/`([a-z][a-z-]+)`/gu)].map((match) => match[1])
+  assert.ok(named.length >= 4, `the evaluate step names ${named.length} commands`)
+  const subcommands = cliSubcommands()
+  const unknown = named.filter((name) => !subcommands.has(name))
+  assert.deepEqual(unknown, [], 'the evaluate step names a command the CLI does not expose')
+})
+
 test('the integration guide quotes the projection a consumer reads', () => {
   // docs/integration.md tells an outside consumer what `project-projection`
   // writes and shows the three lines a plain Node reader gets. Re-run both so
