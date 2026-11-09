@@ -32,13 +32,13 @@ fixture hashes, target, exit status, and expected output or result hash.
 
 ## What This Does Not Prove / 本证据不证明什么
 
-- Any native behavior on the five pending targets.
+- Any native behavior on the pending targets.
 - Full output byte determinism for every language surface.
 - TLS/authentication, production database operations, distributed execution, or
   commercial hosting.
 - Signing, SBOM, attestation, immutable releases, or Stable V1.0.
 
-- 其余五个 pending 目标上的任何原生行为。
+- 其余 pending 目标上的任何原生行为。
 - 每个语言命令面的完整产物逐字节确定性。
 - TLS/认证、生产数据库操作、分布式执行或商业托管。
 - 签名、SBOM、attestation、immutable releases 或 Stable V1.0。

@@ -861,6 +861,15 @@ It still changes language semantics and was not folded into Issues 1-3.
     all three, catches the reverted exit code, and requires the compatibility
     page to state both codes.
 
+49. `docs/compatibility.md` and `docs/evidence.md` still told readers the
+    candidate had "five pending targets", but
+    `runtime/rc2.2.1/target-matrix.json` and the table above it list four
+    pending rows and two `measured-native` rows; no test read the number, so the
+    prose drifted when the matrix settled. Both pages now say "the pending
+    targets" without a count, and `release-compatibility-table` binds any
+    spoken or written count of pending targets in those two pages to the row
+    set, in English and Chinese, so a re-added count has to be correct.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

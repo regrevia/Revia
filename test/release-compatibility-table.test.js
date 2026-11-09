@@ -258,3 +258,37 @@ test('both launchers keep the pending-target and damaged-record paths', async ()
   assert.match(compatibility, /`bin\/revia` reports\s+`pending target` and exits 69/u)
   assert.match(compatibility, /Exit 70 means the checkout's\s+release records are damaged/u)
 })
+
+// Two pages told readers that the candidate had "five pending targets" after
+// the published matrix had already settled at four, and no test read the
+// number. A count in prose is a claim about the matrix, so bind every explicit
+// count to the pending row set instead of trusting it.
+const NUMBER_WORDS = {
+  one: 1, two: 2, three: 3, four: 4, five: 5,
+  six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+}
+const CN_NUMERALS = {
+  一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10,
+}
+const COUNTED_DOCUMENTS = ['docs/compatibility.md', 'docs/evidence.md']
+
+test('prose counts of pending targets match the release matrix', async () => {
+  const pending = EXPECTED_ROWS.filter((row) => row.state === 'pending').length
+  for (const relativePath of COUNTED_DOCUMENTS) {
+    const text = await read(relativePath)
+    for (const match of text.matchAll(/\b(one|two|three|four|five|six|seven|eight|nine|ten) pending targets\b/giu)) {
+      assert.equal(
+        NUMBER_WORDS[match[1].toLowerCase()],
+        pending,
+        `${relativePath} says "${match[0]}" but ${pending} rows are pending`,
+      )
+    }
+    for (const match of text.matchAll(/([一二三四五六七八九十])个 pending 目标/gu)) {
+      assert.equal(
+        CN_NUMERALS[match[1]],
+        pending,
+        `${relativePath} says "${match[0]}" but ${pending} rows are pending`,
+      )
+    }
+  }
+})

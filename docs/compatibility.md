@@ -149,7 +149,7 @@ Historical RC1 target status must not be substituted for the current matrix.
 
 ## Not Claimed / 未声明能力
 
-- Native equivalence on the five pending targets.
+- Native equivalence on the pending targets.
 - TLS, authentication, HTTP/2 or HTTP/3, production database lifecycle,
   scheduler, commercial hosting, or production SLA.
 - Signed release/checksums, SBOM, attestation, immutable Stable release, or
@@ -157,7 +157,7 @@ Historical RC1 target status must not be substituted for the current matrix.
 - General byte-for-byte identity for all language outputs across fresh processes.
 - Browser profile, complete A2A/MCP adapters, and production backend.
 
-- 其余五个 pending 目标的原生等价性。
+- 其余 pending 目标的原生等价性。
 - TLS、认证、HTTP/2/HTTP/3、生产数据库生命周期、调度器、商业托管或生产 SLA。
 - 签名 release/checksums、SBOM、attestation、immutable Stable release 或 Stable V1.0 许可。
 - 所有语言产物在全新进程间普遍逐字节一致。
