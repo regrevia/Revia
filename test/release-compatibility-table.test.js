@@ -12,6 +12,7 @@ import {
 } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import test from 'node:test'
 
 // `docs/compatibility.md` is what a reader uses to decide whether their target
@@ -336,3 +337,20 @@ test('prose counts of pending targets match a published matrix', async () => {
     }
   }
 })
+
+// `scripts/test-launchers.sh` is the hand-run launcher contract: it exercises
+// the real `./bin/revia` entry point, including the pending-target refusal. It
+// is not part of the tracked Node population, so without this case nothing
+// would notice when the script stops matching the launcher.
+test(
+  'the launcher shell contract script passes',
+  { skip: process.platform === 'win32' ? 'requires a POSIX shell' : false },
+  () => {
+    const result = spawnSync('sh', [fileURLToPath(new URL('../scripts/test-launchers.sh', import.meta.url))], {
+      cwd: fileURLToPath(repository),
+      encoding: 'utf8',
+    })
+    assert.equal(result.status, 0, result.stderr || result.stdout)
+    assert.match(result.stdout, /launcher checks passed/u)
+  },
+)

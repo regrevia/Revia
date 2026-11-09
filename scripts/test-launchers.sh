@@ -8,63 +8,43 @@ version=$(./bin/revia --version)
 test "$version" = "revia $(sed -n '1p' VERSION)"
 
 help=$(./bin/revia --help)
-printf '%s\n' "$help" | grep -Fq 'Usage: revia <command>'
-case "$(sed -n '1p' VERSION)" in
-  0.1-preview.1)
-    if printf '%s\n' "$help" | grep -Fq 'project-check'; then
-      printf '%s\n' 'project-check must not be listed in public launcher help.' >&2
-      exit 1
-    fi
-    if printf '%s\n' "$help" | grep -Fq 'project-run'; then
-      printf '%s\n' 'project-run must not be listed in public launcher help.' >&2
-      exit 1
-    fi
-    check_help=$(./bin/revia check --help)
-    test "$check_help" = 'Usage: revia check [--format json | --write] <file.re>'
-    ;;
-  1.0.0-rc.1)
-    printf '%s\n' "$help" | grep -Fq 'project-check'
-    printf '%s\n' "$help" | grep -Fq 'only on macOS arm64'
-    ;;
-esac
+printf '%s\n' "$help" | grep -Fq 'Usage: revia '
+printf '%s\n' "$help" | grep -Fq 'project-check <project-dir>'
+printf '%s\n' "$help" | grep -Fq 'project-run <project-dir>'
+printf '%s\n' "$help" | grep -Fq 'project-translate <project>'
+printf '%s\n' "$help" | grep -Fq '[Additional versioned runtime, project, and evidence commands]'
+printf '%s\n' "$help" | grep -Fq 'This launcher invokes the versioned native executable. It does not invoke Node.'
+printf '%s\n' "$help" | grep -Fq 'The Node reference CLI has a separate source-oriented surface:'
 
 link_dir=$(mktemp -d "${TMPDIR:-/tmp}/revia-launcher-test.XXXXXX")
-cache_dir=$(mktemp -d "${TMPDIR:-/tmp}/revia-launcher-cache.XXXXXX")
-tool_dir=$(mktemp -d "${TMPDIR:-/tmp}/revia-launcher-path.XXXXXX")
-trap 'rm -rf "$link_dir" "$cache_dir" "$tool_dir"' EXIT HUP INT TERM
+pending_output=$(mktemp "${TMPDIR:-/tmp}/revia-pending-target.XXXXXX")
+trap 'rm -rf "$link_dir" "$pending_output"' EXIT HUP INT TERM
 ln -s "$ROOT/bin/revia" "$link_dir/revia"
 test "$("$link_dir/revia" --version)" = "revia $(sed -n '1p' VERSION)"
 
-case "$(sed -n '1p' VERSION)" in
-  0.1-preview.1)
-    for tool in awk dirname mktemp rm sed shasum uname; do
-      source=$(command -v "$tool")
-      ln -s "$source" "$tool_dir/$tool"
-    done
+case "$(uname -s):$(uname -m)" in
+  Darwin:arm64) platform=darwin-arm64 ;;
+  Darwin:x86_64) platform=darwin-x64 ;;
+  Linux:aarch64|Linux:arm64) platform=linux-arm64 ;;
+  Linux:x86_64) platform=linux-x64 ;;
+  *) platform=unknown ;;
+esac
+
+asset="revia-$(sed -n '1p' VERSION)-$platform"
+if [ "$platform" != 'unknown' ] &&
+  ! awk -v asset="$asset" '$2 == asset { found = 1 } END { exit !found }' runtime/checksums.txt; then
+  # No published asset for this host: the launcher must refuse before any
+  # download. The rc.1 candidate is the exception, measured on darwin-arm64.
+  if [ "$(sed -n '1p' VERSION)" != '1.0.0-rc.1' ] || [ "$platform" != 'darwin-arm64' ]; then
     set +e
-    XDG_CACHE_HOME="$cache_dir" PATH="$tool_dir" ./bin/revia check examples/agent-review/main.re >/tmp/revia-no-curl.out 2>&1
+    ./bin/revia check examples/agent-review/main.re >"$pending_output" 2>&1
     status=$?
     set -e
-    test "$status" -eq 70
-    grep -Fq 'Revia requires curl' /tmp/revia-no-curl.out
-    ;;
-  1.0.0-rc.1)
-    case "$(uname -s):$(uname -m)" in
-      Darwin:arm64)
-        # Native dispatch requires the unpublished release asset; its download is
-        # exercised by the macOS RC release gate, not this tree contract test.
-        ;;
-      *)
-        set +e
-        ./bin/revia check examples/agent-review/main.re >/tmp/revia-pending-target.out 2>&1
-        status=$?
-        set -e
-        test "$status" -eq 69
-        grep -Fqi 'pending target' /tmp/revia-pending-target.out
-        ;;
-    esac
-    ;;
-esac
+    test "$status" -eq 69
+    grep -Fqi 'pending target' "$pending_output"
+    grep -Fq 'docs/compatibility.md' "$pending_output"
+  fi
+fi
 
 grep -Fq 'while [ -h "$SOURCE" ]' bin/revia
 grep -Fq "command -v curl" bin/revia

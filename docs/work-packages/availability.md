@@ -911,6 +911,15 @@ It still changes language semantics and was not folded into Issues 1-3.
     the `pending target` outcome, the build-from-`native/` alternative, and
     links the compatibility matrix; the same test guards all five.
 
+55. `scripts/test-launchers.sh` still asserted the rc.1 usage line
+    `Usage: revia <command>` and versioned only for `0.1-preview.1` and
+    `1.0.0-rc.1`, so on the current candidate it failed at its second
+    assertion. It now checks the current help surface, derives this host's
+    asset from `runtime/checksums.txt`, and expects exit `69` with
+    `pending target` and the compatibility pointer when no row exists. The
+    release compatibility test runs the script on POSIX hosts, so drift fails
+    the suite instead of waiting for a hand run.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
