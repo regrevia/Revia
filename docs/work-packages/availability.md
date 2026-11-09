@@ -953,6 +953,12 @@ It still changes language semantics and was not folded into Issues 1-3.
     lives in the contract only; the compatibility test now runs the verifier,
     so a later edit to a sealed fixture fails on a push instead of on a tag.
 
+60. `experiments/rc1/README.md` told readers to install the accepted binary at
+    `kit/bin/revia`, but the kit tree ships no `bin/` directory and the runner
+    reads `REVIA_EXECUTABLE`, so the instruction named a path nothing loads.
+    The guide now sends readers to an installed path and the contract; the
+    compatibility test rejects the old sentence.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

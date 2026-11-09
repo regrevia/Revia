@@ -343,6 +343,12 @@ test('both launchers keep the pending-target and damaged-record paths', async ()
     kitVerification.stdout,
     /RC1 trial kit verified: 1\.0\.0-rc\.1 darwin-arm64 [0-9a-f]{64}/u,
   )
+
+  // The kit tree itself ships no `bin/` directory, so the surrounding guide
+  // has to name an install path the runner actually reads.
+  const rc1Guide = await read('experiments/rc1/README.md')
+  assert.match(rc1Guide, /`REVIA_EXECUTABLE`/u)
+  assert.doesNotMatch(rc1Guide, /at `kit\/bin\/revia`/u)
 })
 
 // The count was not bound to any matrix, so it could not tell a reader which

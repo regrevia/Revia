@@ -29,7 +29,10 @@ result hashes. Use a writable copy of `kit/`, not the repository copy itself.
 ## Safety Boundary / 安全边界
 
 - Non-production evaluation only; see [`LICENSE-RC.md`](../../LICENSE-RC.md).
-- Install only the verified Darwin arm64 RC binary at `kit/bin/revia`.
+- Install only the verified Darwin arm64 RC binary outside the repository,
+  and pass its path as `REVIA_EXECUTABLE`; the runner copies it to
+  `./bin/revia` inside its temporary run directory. See the
+  [kit contract](../../docs/rc1-trial-kit-contract.md).
 - SQLite and loopback HTTP are bounded test dependencies, not a hosting claim.
 - Do not publish credentials, private source, personal data, or the executable.
 - A failure is valuable when it includes the trial id, exact command, platform,
