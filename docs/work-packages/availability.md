@@ -1103,6 +1103,12 @@ It still changes language semantics and was not folded into Issues 1-3.
     understating what the runtime executes. The new guard derives the families
     from `src/toolchain/checker.js` and requires the page to list exactly them.
 
+82. The rc.2.2.1 candidate manifest and public export are written by separate
+    steps, and no test compared their archives. The export could ship one
+    measured target and omit another while every record still claimed both.
+    The new guard requires the export to list the candidate targets and an
+    archive whose digest and size match each candidate row.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
