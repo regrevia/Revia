@@ -275,6 +275,22 @@ test('both launchers keep the pending-target and damaged-record paths', async ()
   assert.match(examplesIndex, /reports\s+`pending target` and exits `69`/u)
   assert.match(examplesIndex, /\[compatibility matrix\]\(\.\.\/docs\/compatibility\.md\)/u)
 
+  for (const relativePath of [
+    'examples/adversarial-review/case-01-two-sum/README.md',
+    'examples/adversarial-review/case-02-retry-counter/README.md',
+    'examples/adversarial-review/case-03-handoff-report/README.md',
+    'examples/challenges/README.md',
+    'examples/reviewed-file-plan/README.md',
+  ]) {
+    const page = await read(relativePath)
+    assert.match(page, /report[s]?\s+`pending target` and exits? `69`/u, relativePath)
+    assert.match(
+      page,
+      /\[compatibility matrix\]\(\.\.\/(?:\.\.\/){1,2}docs\/compatibility\.md\)/u,
+      relativePath,
+    )
+  }
+
   const languageReference = await read('docs/language-reference.md')
   assert.match(languageReference, /reports\s+`pending target` and exits `69`/u)
   assert.match(languageReference, /\[compatibility matrix\]\(compatibility\.md\)/u)

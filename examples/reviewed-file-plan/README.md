@@ -20,6 +20,13 @@ REVIA_EXECUTABLE=./bin/revia ./scripts/run-reviewed-file-plan.sh \
 test -z "$(find "$sandbox" -mindepth 1 -print -quit)"
 ```
 
+On a target with no release asset for this candidate the script's launcher
+reports `pending target` and exits `69`; see the
+[compatibility matrix](../../docs/compatibility.md) and build `native/` instead.
+若当前目标的发布资产未记录在该候选中，脚本使用的启动器会报告 `pending target`
+并以 `69` 退出；请先看[兼容性矩阵](../../docs/compatibility.md)，或改为构建
+`native/`。
+
 Then use the approval bound to the current source:
 
 ```bash

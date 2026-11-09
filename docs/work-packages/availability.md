@@ -904,6 +904,13 @@ It still changes language semantics and was not folded into Issues 1-3.
     the build-from-`native/` alternative, and links the compatibility matrix;
     `release-compatibility-table` guards the exit code and the link.
 
+54. The five example landing pages that drive `./bin/revia` — the three
+    adversarial-review cases, `examples/challenges/`, and
+    `examples/reviewed-file-plan/` — repeated the launcher commands without
+    saying that an unpublished target stops at exit `69`. Each page now states
+    the `pending target` outcome, the build-from-`native/` alternative, and
+    links the compatibility matrix; the same test guards all five.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

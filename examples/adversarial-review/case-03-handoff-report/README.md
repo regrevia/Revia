@@ -17,6 +17,13 @@ DIGEST="$(./bin/revia digest examples/adversarial-review/case-03-handoff-report/
 ./bin/revia manifest examples/adversarial-review/case-03-handoff-report/main.re
 ```
 
+On a target with no release asset for this candidate the first command
+reports `pending target` and exits `69`; see the
+[compatibility matrix](../../../docs/compatibility.md) and build `native/`
+instead.
+若当前目标的发布资产未记录在该候选中，第一条命令会报告 `pending target` 并以 `69`
+退出；请先看[兼容性矩阵](../../../docs/compatibility.md)，或改为构建 `native/`。
+
 `translate` emits the public bytecode text format rather than JSON; `compile`,
 `execute`, and `manifest` emit machine-readable JSON or artifacts as described
 by the current CLI. / `translate` 输出公开字节码文本格式而非 JSON；`compile`、

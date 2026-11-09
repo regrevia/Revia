@@ -70,6 +70,12 @@ For the current native RC command surface, run from the repository root:
 ./bin/revia translate examples/<case>.re
 ```
 
+On a target with no release asset for this candidate these commands report
+`pending target` and exit `69`; see the
+[compatibility matrix](../../docs/compatibility.md) and build `native/` instead.
+若当前目标的发布资产未记录在该候选中，这些命令会报告 `pending target` 并以 `69`
+退出；请先看[兼容性矩阵](../../docs/compatibility.md)，或改为构建 `native/`。
+
 These commands inspect and translate the single-file review workloads; they do
 not claim that the current RC exposes a generic `run <file.re>` workflow.
 For execution evidence, use the fixed commands and fixtures documented in
