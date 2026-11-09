@@ -271,6 +271,10 @@ test('both launchers keep the pending-target and damaged-record paths', async ()
   const executionContractZh = await read('docs/execution-contract.zh-CN.md')
   assert.match(executionContractZh, /`pending target` 并以 `69` 退出/u)
 
+  const examplesIndex = await read('examples/README.md')
+  assert.match(examplesIndex, /reports\s+`pending target` and exits `69`/u)
+  assert.match(examplesIndex, /\[compatibility matrix\]\(\.\.\/docs\/compatibility\.md\)/u)
+
   const languageReference = await read('docs/language-reference.md')
   assert.match(languageReference, /reports\s+`pending target` and exits `69`/u)
   assert.match(languageReference, /\[compatibility matrix\]\(compatibility\.md\)/u)

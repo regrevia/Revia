@@ -897,6 +897,13 @@ It still changes language semantics and was not folded into Issues 1-3.
     `release-compatibility-table` asserts the English exit code and link plus
     the Chinese exit code.
 
+53. `examples/README.md` told readers to run the challenge and review
+    directories from the repository root without saying that several of them
+    drive `./bin/revia`. On a pending target the first launcher command exits
+    `69` with `pending target`, so the index now states the release-asset rule,
+    the build-from-`native/` alternative, and links the compatibility matrix;
+    `release-compatibility-table` guards the exit code and the link.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

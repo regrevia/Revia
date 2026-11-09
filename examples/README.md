@@ -112,6 +112,16 @@ fixtures, not first-run programs.
 
 Run commands from the repository root. / 请在仓库根目录运行命令。
 
+The challenge and review directories below drive `./bin/revia` to produce
+their evidence. That launcher resolves only a candidate whose release asset is
+recorded in `runtime/checksums.txt`: on a pending target it reports
+`pending target` and exits `69`. Build the native toolchain from `native/`, or
+read the [compatibility matrix](../docs/compatibility.md) before you start.
+下面这些挑战与审阅目录用 `./bin/revia` 生成证据。该启动器只解析
+`runtime/checksums.txt` 中记录了发布资产的那个候选：在 pending 目标上它报告
+`pending target` 并以 `69` 退出。可以改为从 `native/` 构建原生工具链，或先看
+[兼容性矩阵](../docs/compatibility.md)。
+
 ## After You Edit / 修改之后
 
 `check` answers whether an edit is still accepted. `manifest` answers the next
