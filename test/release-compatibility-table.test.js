@@ -693,3 +693,32 @@ test('the target expansion contract names the gate runners', async () => {
     `the contract does not place linux-arm64 on ${armRunner}`,
   )
 })
+// The load-time authority page tells readers that four builtin members are the
+// whole language-visible surface, but nothing compared that promise with the
+// checker's supported-operation table. A fifth accepted operation would leave
+// the page understating what the runtime executes.
+test('the load-time authority page lists the builtin table', async () => {
+  const page = await read('docs/load-time-authority.md')
+  const checker = await read('src/toolchain/checker.js')
+  const table = checker.slice(checker.indexOf('function isSupportedDemoOperation'))
+  const pairs = [
+    ...table.slice(0, table.indexOf('\n}\n')).matchAll(
+      /\(reference === '([^']+)' && member === '([^']+)'\)/gu,
+    ),
+  ].map((match) => match[1].replace(/@[^@]+$/u, ''))
+  assert.equal(pairs.length, 4)
+  const families = [...new Set(pairs)].sort()
+
+  const listed = page.slice(
+    page.indexOf('Four builtin members ('),
+    page.indexOf(') plus the `process.exit` status domain'),
+  )
+  assert.notEqual(listed, '')
+  const named = listed
+    .slice(listed.indexOf('(') + 1)
+    .split(',')
+    .map((name) => name.trim().replace(/^`|`$/gu, ''))
+    .sort()
+  assert.deepEqual(named, families)
+  assert.match(page, /Four builtin members \(/u)
+})

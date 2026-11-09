@@ -1097,6 +1097,12 @@ It still changes language semantics and was not folded into Issues 1-3.
     build the target. The new guard checks the page's English and Chinese
     runner assignments against the matrix and the native workflows.
 
+81. `docs/load-time-authority.md` says four builtin members are the whole
+    language-visible surface, but no test compared the page with the checker's
+    supported-operation table. A fifth accepted operation would leave the page
+    understating what the runtime executes. The new guard derives the families
+    from `src/toolchain/checker.js` and requires the page to list exactly them.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
