@@ -275,3 +275,30 @@ test('the RC1 license summary lists every restriction the license states', () =>
     )
   })
 })
+
+// The sealed RC1 export manifest is the record that shipped with the release.
+// Six of its entries are files the public tree still carries, but only
+// LICENSE-RC.md was checked against its digest: a renamed or edited record
+// would leave the sealed manifest describing a file that is no longer here.
+test('the sealed RC1 export agrees with the records the tree still ships', () => {
+  const exportManifest = JSON.parse(readFileSync(join(
+    ROOT,
+    'runtime/rc1/export-manifest.json',
+  ), 'utf8'))
+  const shipped = [
+    'candidate-manifest.json',
+    'capability-evidence.json',
+    'multi-module-evidence.json',
+    'native-evidence.json',
+    'server-evidence.json',
+    'target-matrix.json',
+  ]
+  const entries = new Map(exportManifest.files.map((entry) => [entry.path, entry]))
+  for (const path of shipped) {
+    const entry = entries.get(path)
+    assert.ok(entry, `the sealed export no longer lists ${path}`)
+    const contents = readFileSync(join(ROOT, 'runtime/rc1', path))
+    assert.equal(entry.size, contents.length, `${path} changed size`)
+    assert.equal(entry.sha256, digest(contents), `${path} changed contents`)
+  }
+})

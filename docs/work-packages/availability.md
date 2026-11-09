@@ -1123,6 +1123,12 @@ It still changes language semantics and was not folded into Issues 1-3.
     and per-target run ids, which must agree across the records, to the
     candidate manifest and the measured matrix rows.
 
+85. The sealed RC1 export manifest lists six records the public tree still
+    carries, but only `LICENSE-RC.md` was checked against its digest: a renamed
+    or edited record would leave the sealed manifest describing a file that is
+    no longer there. The new guard requires each shipped record's size and
+    SHA-256 to match the sealed entry.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
