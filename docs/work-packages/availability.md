@@ -1115,6 +1115,14 @@ It still changes language semantics and was not folded into Issues 1-3.
     pending target could carry a measured record. The new guard requires the
     matrix rows and the evidence files to name the same targets.
 
+84. `capability-evidence.json`, `multi-module-evidence.json`, and
+    `server-evidence.json` record the measured conformance runs, but no test
+    read them: a candidate bump, or a matrix that measured another target,
+    would leave the records naming a run for a release or target that no
+    longer exists. The new guard binds their version, source commit, scope,
+    and per-target run ids, which must agree across the records, to the
+    candidate manifest and the measured matrix rows.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

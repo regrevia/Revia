@@ -746,3 +746,45 @@ test('the rc.2.2.1 matrix marks exactly the targets with native evidence', async
     assert.equal(record.version, matrix.version)
   }
 })
+// `capability-evidence.json`, `multi-module-evidence.json`, and
+// `server-evidence.json` record the measured conformance runs inside the
+// candidate release, but no test read them: a candidate bump, or a matrix that
+// measured another target, would leave the records naming a run for a release
+// or target that no longer exists.
+test('the capability records cover exactly the measured targets', async () => {
+  const canonical = await readJson(`${EVIDENCE_DIRECTORY}/candidate-manifest.json`)
+  const matrix = await readJson(`${EVIDENCE_DIRECTORY}/target-matrix.json`)
+  const measured = matrix.targets
+    .filter((row) => row.status === 'measured-native')
+    .map((row) => row.target)
+    .sort()
+  let scope
+  const runs = {}
+  for (const name of [
+    'capability-evidence.json',
+    'multi-module-evidence.json',
+    'server-evidence.json',
+  ]) {
+    const record = await readJson(`${EVIDENCE_DIRECTORY}/${name}`)
+    assert.equal(record.version, canonical.version)
+    assert.equal(record.source_commit, canonical.source_commit)
+    assert.equal(record.status, 'measured-native')
+    scope ??= record.scope
+    assert.equal(record.scope, scope, `${name} describes another conformance scope`)
+    const workflows = Object.keys(record)
+      .filter((key) => key.endsWith('_workflow'))
+      .sort()
+    assert.deepEqual(
+      workflows,
+      measured.map((target) => `${target.replace(/-/gu, '_')}_workflow`),
+    )
+    for (const key of workflows) {
+      assert.ok(Number.isInteger(record[key]) && record[key] > 0, `${name}.${key} is not a run id`)
+      if (key in runs) {
+        assert.equal(record[key], runs[key], `${name}.${key} names another run`)
+      } else {
+        runs[key] = record[key]
+      }
+    }
+  }
+})
