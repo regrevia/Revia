@@ -46,13 +46,16 @@ fixture hashes, target, exit status, and expected output or result hash.
 ## Reproduce Or Challenge / 复现或挑战
 
 Use a writable copy of [`experiments/rc1/kit`](../experiments/rc1/kit/), install
-the verified Darwin arm64 binary at `bin/revia`, and execute the exact arrays in
-`trial-manifest.json`. A high-value report includes the candidate version,
-archive SHA-256, platform, trial id, command, exit code, stdout/stderr hashes,
-and the smallest public fixture that differs.
+the verified Darwin arm64 binary outside the repository, pass its path as
+`REVIA_EXECUTABLE`, and execute the exact arrays in `trial-manifest.json`; the
+runner copies that binary to `bin/revia` in its own run directory. A high-value
+report includes the candidate version, archive SHA-256, platform, trial id,
+command, exit code, stdout/stderr hashes, and the smallest public fixture that
+differs.
 
-使用 [`experiments/rc1/kit`](../experiments/rc1/kit/) 的可写副本，将已校验 Darwin arm64
-二进制安装到 `bin/revia`，并执行 `trial-manifest.json` 中精确记录的命令数组。高价值报告应包含
+使用 [`experiments/rc1/kit`](../experiments/rc1/kit/) 的可写副本，将已校验的 Darwin arm64
+二进制安装在仓库之外，通过 `REVIA_EXECUTABLE` 传入路径，并执行 `trial-manifest.json` 中
+精确记录的命令数组；运行器会把该二进制复制到自己运行目录的 `bin/revia`。高价值报告应包含
 候选版本、归档 SHA-256、平台、试验 ID、命令、退出码、stdout/stderr 摘要及最小可公开差异 fixture。
 
 ## Stable Boundary / Stable 边界

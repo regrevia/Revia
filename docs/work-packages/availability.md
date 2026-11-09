@@ -959,6 +959,12 @@ It still changes language semantics and was not folded into Issues 1-3.
     The guide now sends readers to an installed path and the contract; the
     compatibility test rejects the old sentence.
 
+61. `docs/evidence.md` repeated the same dead install instruction in both
+    languages: it told readers to put the accepted binary at `bin/revia`, which
+    no script loads. Both paragraphs now install outside the repository and
+    pass the path as `REVIA_EXECUTABLE`, matching the contract; the
+    compatibility test covers this page too.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

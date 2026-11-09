@@ -344,11 +344,14 @@ test('both launchers keep the pending-target and damaged-record paths', async ()
     /RC1 trial kit verified: 1\.0\.0-rc\.1 darwin-arm64 [0-9a-f]{64}/u,
   )
 
-  // The kit tree itself ships no `bin/` directory, so the surrounding guide
-  // has to name an install path the runner actually reads.
-  const rc1Guide = await read('experiments/rc1/README.md')
-  assert.match(rc1Guide, /`REVIA_EXECUTABLE`/u)
-  assert.doesNotMatch(rc1Guide, /at `kit\/bin\/revia`/u)
+  // The kit tree itself ships no `bin/` directory, so the pages around it
+  // have to name an install path the runner actually reads.
+  for (const guide of ['experiments/rc1/README.md', 'docs/evidence.md']) {
+    const text = await read(guide)
+    assert.match(text, /`REVIA_EXECUTABLE`/u, guide)
+    assert.doesNotMatch(text, /at `(?:kit\/)?bin\/revia`/u, guide)
+    assert.doesNotMatch(text, /安装到 `bin\/revia`/u, guide)
+  }
 })
 
 // The count was not bound to any matrix, so it could not tell a reader which
