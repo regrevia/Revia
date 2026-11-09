@@ -439,3 +439,40 @@ test('deep-trial guide counts match the manifest and the rc.1 matrix', async () 
   assert.match(guide, new RegExp(`其他${cnOf(pending)}个目标仍为 \`pending\``, 'u'))
   assert.match(guide, /`darwin-arm64`/u)
 })
+
+// `docs/cross-platform-evidence.md` restates the RC1 matrix and republishes the
+// rc.2.1 digests, but no test read the page: a matrix row, a status, or a record
+// could change while the evidence procedure kept quoting the old values.
+test('cross-platform evidence matches the rc.1 matrix and the rc.2.1 record', async () => {
+  const matrix = JSON.parse(await read('runtime/rc1/target-matrix.json'))
+  const evidence = JSON.parse(await read('runtime/rc2.1/native-evidence.json'))
+  const exportManifest = JSON.parse(await read('runtime/rc2.1/export-manifest.json'))
+  assert.equal(exportManifest.target, evidence.target)
+  const guide = await read('docs/cross-platform-evidence.md')
+
+  const OS_KEYS = { macOS: 'darwin', Linux: 'linux', Windows: 'windows' }
+  const section = guide.split('## RC1 Matrix')[1].split('## RC2.1')[0]
+  const rows = [
+    ...section.matchAll(/^\| (macOS|Linux|Windows) ([a-z0-9]+) \| `([^`]+)` \| `([a-z-]+)` \|$/gmu),
+  ]
+  assert.equal(rows.length, matrix.targets.length)
+  const published = new Map(rows.map(([, os, arch, runner, status]) => [
+    `${OS_KEYS[os]}-${arch}`,
+    { runner, status },
+  ]))
+  for (const row of matrix.targets) {
+    const publishedRow = published.get(row.target)
+    assert.ok(publishedRow, `the RC1 table omits ${row.target}`)
+    assert.equal(publishedRow.runner.length > 0, true, `${row.target} names no runner`)
+    assert.equal(publishedRow.status, row.status, `the RC1 table gives ${row.target} the wrong state`)
+  }
+
+  assert.ok(guide.includes(`\`${evidence.archive_sha256.replace(/^sha256:/u, '')}\``))
+  assert.ok(guide.includes(`\`${evidence.binary_sha256.replace(/^sha256:/u, '')}\``))
+
+  const count = matrix.targets.length
+  const word = Object.entries(NUMBER_WORDS).find(([, value]) => value === count)[0]
+  const cn = Object.entries(CN_NUMERALS).find(([, value]) => value === count)[0]
+  assert.match(guide, new RegExp(`this ${word}-target matrix`, 'u'))
+  assert.match(guide, new RegExp(`此${cn}目标矩阵`, 'u'))
+})

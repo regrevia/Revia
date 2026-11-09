@@ -989,6 +989,14 @@ It still changes language semantics and was not folded into Issues 1-3.
     counts now derive from `kit/trial-manifest.json` and
     `runtime/rc1/target-matrix.json` in the release-compatibility suite.
 
+66. `docs/cross-platform-evidence.md` restated the RC1 matrix table and the
+    rc.2.1 archive and executable digests, and no test read the page: a status,
+    a row, or a published digest could change while the evidence procedure kept
+    quoting the old value. The suite now compares every table row to
+    `runtime/rc1/target-matrix.json`, both digests to
+    `runtime/rc2.1/native-evidence.json`, and the six-target count to the
+    matrix length.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
