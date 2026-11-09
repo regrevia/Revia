@@ -260,4 +260,18 @@ test('the RC1 license summary lists every restriction the license states', () =>
       `the summary omits restriction ${index + 1} ("${topic}")`,
     )
   })
+
+  // The page also carries a Chinese one-line abstract of the same list, and it
+  // drifts on its own: a reader of the abstract alone must not see a shorter
+  // set of prohibited uses than a reader of the English bullets.
+  const abstract = page.match(/^> 中文摘要：.*$/mu)?.[0]
+  assert.ok(abstract, 'the license page has no Chinese abstract')
+  const CJK_TOPICS = ['生产', '商业', '分发', '逆向', '声明', '绕过', '背书']
+  assert.equal(CJK_TOPICS.length, restrictions.length)
+  CJK_TOPICS.forEach((topic, index) => {
+    assert.ok(
+      abstract.includes(topic),
+      `the Chinese abstract omits restriction ${index + 1} ("${topic}")`,
+    )
+  })
 })

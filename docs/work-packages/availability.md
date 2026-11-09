@@ -1048,6 +1048,13 @@ It still changes language semantics and was not folded into Issues 1-3.
     summary bullet carrying each restriction's topic, so a dropped bullet or
     a reworded license fails.
 
+74. The RC1 license page opens with a Chinese one-line abstract, and it kept
+    its own shorter list: after the English bullets covered every restriction
+    the abstract still named four. Nothing read the abstract, so the two
+    mirrors could diverge unnoticed. The source-transition suite now requires
+    the abstract to carry a topic for each restriction the license states, and
+    the abstract names the removed-notice, control, and endorsement limits.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

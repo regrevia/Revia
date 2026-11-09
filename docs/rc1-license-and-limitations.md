@@ -1,6 +1,6 @@
 # RC1 License And Limitations
 
-> 中文摘要：RC1 仅授权非生产开发评估、Agent 试用与公开基准研究；不授权生产、商业托管、再分发或逆向工程。
+> 中文摘要：RC1 仅授权非生产开发评估、Agent 试用与公开基准研究；不授权生产、商业托管、再分发、逆向工程、移除声明、绕过控制或以名义背书。
 
 Revia `v1.0.0-rc.1` is intended for deep, non-production evaluation by developers, researchers, and AI agents. It is not the Stable V1.0 release.
 
