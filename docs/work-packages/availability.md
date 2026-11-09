@@ -1149,6 +1149,15 @@ It still changes language semantics and was not folded into Issues 1-3.
     to equal the manifest's files plus the manifest itself, with matching
     digests, and rejects duplicate or malformed lines.
 
+89. The RC1 trial kit names the binary it ran and the evidence record each
+    trial refreshes, but neither was tied to the candidate or the sealed
+    export: the kit could claim a runner or an evidence file the release never
+    made, and a trial could point every step at one record while another shipped
+    record went stale. The new guard requires the published runner digest to
+    match the candidate file, every `evidence_ref` to be in the sealed export,
+    each record to name the candidate version, and every shipped evidence record
+    to be refreshed by at least one trial.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

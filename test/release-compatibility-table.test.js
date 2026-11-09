@@ -848,3 +848,28 @@ test('the RC1 trial checksums restate the manifest digests', async () => {
     assert.equal(published.get(path), sum, `${path} does not match its manifest digest`)
   }
 })
+
+// The trial manifest names the binary it ran and the evidence record each
+// trial refreshes. Neither was tied to the RC1 candidate or the sealed export,
+// so the kit could claim a runner or an evidence file the release never made.
+test('the RC1 trial kit names the released runner and evidence records', async () => {
+  const manifest = JSON.parse(await read('experiments/rc1/kit/trial-manifest.json'))
+  const candidate = JSON.parse(await read('runtime/rc1/candidate-manifest.json'))
+  const exportManifest = JSON.parse(await read('runtime/rc1/export-manifest.json'))
+  assert.equal(manifest.target, candidate.target)
+  assert.equal(manifest.runner, './bin/revia')
+  const runner = candidate.files.find((file) => file.path === manifest.runner.replace(/^\.\/bin\//u, ''))
+  assert.ok(runner, 'the candidate does not ship the trial runner')
+  assert.equal(manifest.runner_binary_sha256, runner.digest.replace(/^sha256:/u, ''), 'the trial runner digest moved')
+  const sealed = new Set(exportManifest.files.map((entry) => entry.path))
+  const refreshed = new Map()
+  for (const trial of manifest.trials) {
+    assert.ok(sealed.has(trial.evidence_ref), `the sealed export omits ${trial.evidence_ref}`)
+    const record = JSON.parse(await read(`runtime/rc1/${trial.evidence_ref}`))
+    assert.equal(record.version, candidate.version, `${trial.evidence_ref} names another version`)
+    refreshed.set(trial.evidence_ref, (refreshed.get(trial.evidence_ref) ?? 0) + 1)
+  }
+  for (const shipped of ['capability-evidence.json', 'multi-module-evidence.json', 'native-evidence.json', 'server-evidence.json']) {
+    assert.ok(refreshed.get(shipped) > 0, `no trial refreshes ${shipped}`)
+  }
+})
