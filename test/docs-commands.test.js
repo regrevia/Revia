@@ -622,3 +622,38 @@ test('every schema identifier a current page quotes exists in the tree', () => {
     )
   }
 })
+
+// The rendering page said `view` supported the text form, but the command
+// answers `--format text` with the usage block: the page listed a capability
+// the CLI rejects. The format list is a claim about the CLI, so derive it from
+// the shipped usage line and check the rejection instead of trusting prose.
+test('the rendering page names exactly the formats the view command accepts', () => {
+  const page = readFileSync(resolve(repositoryRoot, 'docs/translation-rendering.md'), 'utf8')
+  const cli = readFileSync(resolve(repositoryRoot, 'src/cli/re.js'), 'utf8')
+  const usage = cli.match(/re view \[--locale (zh-CN)\|(en-US)\] \[--format ([a-z|]+)\] <file\.re>/u)
+  assert.ok(usage, 'the view usage line changed shape')
+  const [, firstLocale, secondLocale, formatList] = usage
+  const formats = formatList.split('|')
+  const rendered = formats.map((format) => format.toUpperCase()).join(' and ')
+  assert.match(
+    page,
+    new RegExp(
+      `The \`view\` command supports \`${firstLocale}\` and \`${secondLocale}\` for ${rendered}\\.`,
+      'u',
+    ),
+  )
+
+  const source = resolve(repositoryRoot, 'examples/adversarial-review/case-01-two-sum/main.re')
+  const run = (format) =>
+    spawnSync(
+      process.execPath,
+      ['src/cli/re.js', 'view', '--locale', firstLocale, '--format', format, source],
+      { cwd: repositoryRoot, encoding: 'utf8' },
+    )
+  for (const format of formats) {
+    assert.notEqual(run(format).status, 64, `view rejects the documented ${format} format`)
+  }
+  const rejected = run('text')
+  assert.equal(rejected.status, 64, 'view accepted a format the page does not document')
+  assert.match(rejected.stderr, /re view \[--locale zh-CN\|en-US\] \[--format html\|svg\]/u)
+})

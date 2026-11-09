@@ -1024,6 +1024,14 @@ It still changes language semantics and was not folded into Issues 1-3.
     tracked non-page, non-test file. `doc/` (retired pre-public tree) and
     `docs/work-packages/` (plans) stay out of scope.
 
+71. The rendering page listed the text form as a format the `view` command
+    supports, and the command answers `--format text` with the usage block:
+    nothing compared the page's format list to the shipped CLI. The docs suite
+    now derives the accepted formats and locales from the `view` usage line in
+    `src/cli/re.js`, requires the page to state exactly that list, and checks
+    that every documented format runs while an undocumented one still fails
+    with the usage exit code.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

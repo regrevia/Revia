@@ -15,7 +15,7 @@ human-readable view can be traced back to the machine-readable contract.
 
 ## Locale Contract / 语言契约
 
-The `view` command supports `zh-CN` and `en-US` for text, HTML, and SVG.
+The `view` command supports `zh-CN` and `en-US` for HTML and SVG.
 Locale applies to the complete presentation layer, including document language,
 titles, section and column labels, empty states, accessibility text, and
 fact-summary phrasing. Machine-facing values such as fact IDs, UIDs, graph
