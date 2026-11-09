@@ -971,6 +971,12 @@ It still changes language semantics and was not folded into Issues 1-3.
     the checked-in `VERSION` and keeps an `unsupported VERSION` fallback, and
     `scripts/validate-public-tree.sh` runs it on every push.
 
+63. `scripts/test-public-tree-worktree-contract.sh` asserted an
+    `--exclude=.git` argument the tree validator no longer passes; the
+    validator stopped walking the filesystem and now delegates to the
+    source-import manifest, whose `SOURCE_ROOTS` never include `.git`. The
+    obsolete guard is removed rather than kept failing.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
