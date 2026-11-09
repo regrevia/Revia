@@ -937,6 +937,15 @@ It still changes language semantics and was not folded into Issues 1-3.
     exits `70` with `Release checksums have no entries for …`, an unreadable
     file `70` with `Release checksums file is unavailable.`.
 
+58. The rc.1 trial kit README and its contract both told a reader to put the
+    accepted Darwin arm64 candidate at `./bin/revia` and run the trials with
+    `REVIA_EXECUTABLE=./bin/revia`. In the repository that path is the launcher
+    for the current candidate, so the documented run stops at `runner binary
+    digest mismatch`, and following the README literally would overwrite a
+    tracked file. Both pages now install the candidate outside the repository
+    and pass its path, and say that the manifest's `./bin/revia` runner names
+    the copy the runner makes in its temporary run directory.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

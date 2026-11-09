@@ -24,8 +24,14 @@ Use the static verifier first, then execute every measured step:
 
 ```bash
 ./scripts/verify-rc1-trial-kit.sh experiments/rc1/kit runtime/rc1/export-manifest.json
-REVIA_EXECUTABLE=./bin/revia ./scripts/run-public-trials.sh experiments/rc1/kit
+REVIA_EXECUTABLE=/path/to/revia-1.0.0-rc.1-darwin-arm64 \
+  ./scripts/run-public-trials.sh experiments/rc1/kit
 ```
+
+The repository's `bin/revia` is the launcher for the current candidate, not
+the rc.1 binary, so pointing the runner at it stops at `runner binary digest
+mismatch`. The runner copies the executable you name into a temporary run
+directory, so the `./bin/revia` runner in the manifest names that copy.
 
 The verifier and runner reject unsafe paths, symlinks, empty step sets, legacy
 1.0 command-only trials, digest drift, missing result files, and fixture

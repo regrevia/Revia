@@ -312,6 +312,18 @@ test('both launchers keep the pending-target and damaged-record paths', async ()
   assert.match(diagnostics, /\| `69` \|[^\n]*pending/u)
   assert.match(diagnostics, /pending target/u)
   assert.match(diagnostics, /\[compatibility matrix\]\(compatibility\.md\)/u)
+
+  // The rc.1 kit names its runner `./bin/revia` because the runner copies the
+  // binary it is given into its own directory. The repository path of that
+  // name is the launcher for the current candidate, so the contract has to
+  // send readers to an installed path instead.
+  const trialContract = await read('docs/rc1-trial-kit-contract.md')
+  assert.match(
+    trialContract,
+    /REVIA_EXECUTABLE=\/path\/to\/revia-1\.0\.0-rc\.1-darwin-arm64/u,
+  )
+  assert.match(trialContract, /runner binary digest\s+mismatch/u)
+  assert.doesNotMatch(trialContract, /REVIA_EXECUTABLE=\.\/bin\/revia/u)
 })
 
 // The count was not bound to any matrix, so it could not tell a reader which
