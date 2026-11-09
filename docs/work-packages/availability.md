@@ -1005,6 +1005,12 @@ It still changes language semantics and was not folded into Issues 1-3.
     `test/fixtures/host-boundary-refusal-corpus.json` and rejects a fixture
     that repeats a case id.
 
+68. `docs/protocol.md` published the exit-status table that users branch on,
+    but no test compared it to the code: a renumbered `EXIT_*` constant or a
+    new launcher status would leave the page quoting a set that no longer
+    exists. The docs suite now derives the documented set from `src/cli/re.js`
+    and `bin/revia` and requires the table to match it exactly.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

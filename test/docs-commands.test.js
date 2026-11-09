@@ -512,3 +512,23 @@ test('the project example documents its module-digest repair path', () => {
   ).graph_revision
   assert.notEqual(surface.graph_revision, pinned)
 })
+
+// The protocol page is the only place users read the status numbers, and no
+// test compared them to the code that emits them: a renumbered constant or a
+// new launcher status could leave the page quoting a set that no longer exists.
+test('the protocol page lists the statuses the CLI and the launcher emit', () => {
+  const page = readFileSync(resolve(repositoryRoot, 'docs/protocol.md'), 'utf8')
+  const documented = [...page.matchAll(/^\| `(\d+)` \|/gmu)].map((match) => Number(match[1]))
+  assert.equal(new Set(documented).size, documented.length, 'the protocol table repeats a status')
+  const cli = readFileSync(resolve(repositoryRoot, 'src/cli/re.js'), 'utf8')
+  const launcher = readFileSync(resolve(repositoryRoot, 'bin/revia'), 'utf8')
+  const emitted = new Set([
+    0,
+    ...[...cli.matchAll(/const EXIT_[A-Z_]+ = (\d+)/gu)].map((match) => Number(match[1])),
+    ...[...launcher.matchAll(/\bexit (\d+)/gu)].map((match) => Number(match[1])),
+  ])
+  assert.deepEqual(
+    [...documented].sort((left, right) => left - right),
+    [...emitted].sort((left, right) => left - right)
+  )
+})
