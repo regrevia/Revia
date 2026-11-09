@@ -1055,6 +1055,13 @@ It still changes language semantics and was not folded into Issues 1-3.
     the abstract to carry a topic for each restriction the license states, and
     the abstract names the removed-notice, control, and endorsement limits.
 
+75. `docs/test-population-evidence.md` is what an evaluator reads before
+    trusting a population report, and it names the schema id the runner emits
+    and the CI artifact that carries it. No test read the page, so a schema
+    bump or an upload rename would leave it describing evidence the repository
+    no longer produces. The runner suite now holds the page to the exported
+    schema constant and to the workflow's artifact name.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

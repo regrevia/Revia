@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url'
 
 import {
   MINIMUM_NODE_VERSION,
+  TRACKED_TEST_RUNNER_SCHEMA,
   parseExecutedTestFiles,
   runTrackedTests,
   selectTrackedTests,
@@ -79,6 +80,29 @@ test('Node validation uploads machine population and execution evidence', () => 
   assert.match(workflow, /if: always\(\)/u)
   assert.match(workflow, /node-test-population-\$\{\{ matrix\.node-version \}\}/u)
   assert.match(workflow, /\$\{\{\s*runner\.temp\s*\}\}\/revia-node-test-population\/node-test-population\.json[\s\S]*?\$\{\{\s*runner\.temp\s*\}\}\/revia-node-test-population\/node-test-execution\.log[\s\S]*?\$\{\{\s*runner\.temp\s*\}\}\/revia-node-test-population\/node-test-runner\.error/u)
+})
+
+// `docs/test-population-evidence.md` is the page an evaluator reads before
+// trusting a population report, and it names both the schema id and the CI
+// artifact. Neither was read by a test, so a schema bump or an upload rename
+// would leave the page describing evidence the repository no longer emits.
+test('population evidence page names the schema and artifact the repository emits', () => {
+  const page = readFileSync(join(ROOT, 'docs/test-population-evidence.md'), 'utf8')
+  const workflow = readFileSync(join(ROOT, '.github/workflows/validate.yml'), 'utf8')
+  assert.ok(
+    page.includes(`\`${TRACKED_TEST_RUNNER_SCHEMA}\``),
+    `the page does not name the ${TRACKED_TEST_RUNNER_SCHEMA} schema`,
+  )
+  const upload = workflow.match(/name: (node-test-population-\$\{\{ matrix\.node-version \}\})/u)
+  assert.ok(upload, 'the workflow uploads no population artifact')
+  assert.ok(
+    page.includes('`node-test-population-<version>`'),
+    'the page does not name the population artifact',
+  )
+  assert.ok(
+    upload[1].startsWith('node-test-population-'),
+    `the workflow artifact ${upload[1]} is not the population artifact`,
+  )
 })
 
 test('population evidence corpus fixes clean, truncated, missing-report, and subset controls', () => {
