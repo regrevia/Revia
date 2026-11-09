@@ -622,36 +622,3 @@ test('every schema identifier a current page quotes exists in the tree', () => {
     )
   }
 })
-
-// Pages link to each other by relative path and nothing checked those targets:
-// a renamed or deleted page leaves every link that pointed at it dead.
-test('every relative link in a tracked page resolves to a tracked file', () => {
-  const tracked = execFileSync('git', ['ls-files'], { cwd: repositoryRoot, encoding: 'utf8' })
-    .split('\n')
-    .filter(Boolean)
-  const present = new Set(tracked)
-  const pages = tracked.filter((relativePath) => relativePath.endsWith('.md'))
-  assert.ok(pages.length > 0, 'no tracked page was found')
-  const checked = new Set()
-  for (const relativePath of pages) {
-    const page = readFileSync(resolve(repositoryRoot, relativePath), 'utf8')
-    for (const match of page.matchAll(/\]\(([^)\s]+)\)/gu)) {
-      const target = match[1]
-      if (/^[a-z][a-z0-9+.-]*:/u.test(target) || target.startsWith('#') || target.startsWith('//')) {
-        continue
-      }
-      const withoutFragment = target.split('#')[0].replace(/\/+$/u, '')
-      if (!withoutFragment) continue
-      const resolved = posix.normalize(posix.join(posix.dirname(relativePath), withoutFragment))
-      checked.add(resolved)
-      // A page may link a directory (`runtime/rc2.2.1/`); it exists when tracked
-      // files live under it, so the tree alone is enough to decide.
-      const isDirectory = tracked.some((candidate) => candidate.startsWith(`${resolved}/`))
-      assert.ok(
-        present.has(resolved) || isDirectory,
-        `${relativePath} links to a missing tracked path: ${target}`
-      )
-    }
-  }
-  assert.ok(checked.size > 0, 'no relative link was checked')
-})

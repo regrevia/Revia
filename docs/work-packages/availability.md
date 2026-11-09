@@ -1024,12 +1024,6 @@ It still changes language semantics and was not folded into Issues 1-3.
     tracked non-page, non-test file. `doc/` (retired pre-public tree) and
     `docs/work-packages/` (plans) stay out of scope.
 
-71. Pages link to each other by relative path and nothing resolved those
-    targets: renaming or deleting a page left every link that pointed at it
-    dead, and a reader only found out by clicking. The docs suite now requires
-    each relative link in a tracked page to name a tracked path, treating a
-    directory link as present when tracked files live under it.
-
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
