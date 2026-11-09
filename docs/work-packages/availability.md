@@ -785,6 +785,13 @@ It still changes language semantics and was not folded into Issues 1-3.
     the position each diagnostic reports and the smallest repair that makes
     `check` exit `0`; `test/docs-diagnostics.test.js` re-runs every pair.
 
+42. (WP-394) A reader looking for the modification path had no entry point:
+    the documentation map listed running, reading diagnostics, and contributing
+    but not changing an example. `docs/README.md` now links the
+    `After You Edit` section, and `examples/README.md` links the diagnostic
+    page so a rejected edit has a stated next step; `test/docs-links.test.js`
+    resolves every fragment these links name.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

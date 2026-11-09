@@ -140,6 +140,10 @@ the whole graph. Measured on `examples/hello.re`, whose only capability is
 A changed `capabilities` list is the review question; a moved
 `graph_revision` on its own is not.
 
+If the edit is rejected instead,
+[`../docs/diagnostics.md#repairing-a-rejected-edit--修复被拒绝的修改`](../docs/diagnostics.md#repairing-a-rejected-edit--修复被拒绝的修改)
+reads the rejection line and pairs the common ones with their repair.
+
 中文摘要：修改后先跑 `check` 判断是否仍被接受，再跑 `manifest` 看契约有没有变。
 只追加注释时 `graph_revision` 不变；只改字符串时 `capabilities` 不变而
 `graph_revision` 改变；新增 `cap @input: fs.read@0.1.0` 会让 `capabilities`
