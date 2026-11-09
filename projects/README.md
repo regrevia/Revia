@@ -33,13 +33,31 @@ source CLI's `project-check --format json`; projects with Agent or business
 facts can also use `project-translate`. Native
 `project-build`/`project-run` require the versioned candidate contract and
 target evidence. Do not replace its digests by hand.
-`project-init <directory>` creates a fresh deterministic starter project with
-the same project schema.
+`project-init <directory>` is a native command, not a source subcommand: build
+the release binary once (`cd native && cargo build --workspace --release
+--offline`) and run `native/target/release/revia project-init <directory>`,
+which exits `0` with `re.native-project-init@0.1.0`. The starter it writes is
+sealed to a `re 0.1 compact` module, so the source CLI's
+`project-check --format json` rejects it with exit `65` and
+`unsupported-module-surface-header`, and the native surface check rejects it
+with `native-project-module-surface-header-unsupported`. Verify the generated
+starter with `native/target/release/revia project-check <directory>` (exit `0`,
+`re.native-project-graph@0.1.0`). Do not rewrite its module header by hand: the
+pinned module digest then stops matching, and no reseal command ships.
 
 仓库内 `_template` 是可检查的项目起始项目。使用源码 CLI 的 `project-check --format json` 验证；
 包含 Agent 或业务事实的项目还可以使用 `project-translate`。native
 `project-build`/`project-run` 需要版本化候选契约与目标证据。不要手工替换摘要。
-`project-init <directory>` 会用相同 project schema 创建全新且确定的起始项目。
+`project-init <directory>` 是 native 命令，不是源码子命令：先构建一次 release
+二进制（`cd native && cargo build --workspace --release --offline`），再运行
+`native/target/release/revia project-init <directory>`，它以 `0` 退出并给出
+`re.native-project-init@0.1.0`。它写出的起始项目封存的是 `re 0.1 compact` 模块，
+因此源码 CLI 的 `project-check --format json` 会以 `65` 退出并给出
+`unsupported-module-surface-header`，native surface check 也会以
+`native-project-module-surface-header-unsupported` 拒绝它。请用
+`native/target/release/revia project-check <directory>` 验证生成的起始项目（以 `0`
+退出，schema 为 `re.native-project-graph@0.1.0`）。不要手工改写它的模块头：固定的
+模块摘要随后会对不上，而当前不提供重新封存的命令。
 
 ## Command Evidence / 命令证据边界
 

@@ -18,16 +18,22 @@ INPUT=sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
 node src/cli/re.js project-check --format json "$PROJECT"
 ```
 
-The native candidate also exposes a surface-only authority check:
+The native candidate also exposes a surface-only authority check. Build it
+once (`cd native && cargo build --workspace --release --offline`), then use the
+release binary; on this template it exits `0` with
+`re.native-project-surface-result@0.1.0`:
 
 ```bash
-revia project-surface-check "$PROJECT"
+native/target/release/revia project-surface-check "$PROJECT"
 ```
 
-native 候选还提供只检查 module-surface authority 的命令：
+native 候选还提供只检查 module-surface authority 的命令。先构建一次 release
+二进制（`cd native && cargo build --workspace --release --offline`），再使用该
+release 二进制；对当前模板它以 `0` 退出并给出
+`re.native-project-surface-result@0.1.0`：
 
 ```bash
-revia project-surface-check "$PROJECT"
+native/target/release/revia project-surface-check "$PROJECT"
 ```
 
 The current public source workflow exposes `project-check` for this minimal
