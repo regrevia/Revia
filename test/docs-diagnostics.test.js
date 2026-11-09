@@ -56,14 +56,22 @@ test('the diagnostics page names the codes the CLI defines', () => {
       `docs/diagnostics.md must name exit code ${expected}`,
     )
   }
-  const tableCodes = [...diagnostics.matchAll(/^\| `(\d+)` \|/gmu)].map(
+  // The page carries a second table for the launcher, whose codes overlap the
+  // source CLI's numbers without meaning the same thing. Read each table on
+  // its own so neither can drift into the other.
+  const [sourceTable, launcherTable = ''] = diagnostics.split(
+    '## Launcher exit codes',
+  )
+  const tableCodes = [...sourceTable.matchAll(/^\| `(\d+)` \|/gmu)].map(
     (match) => Number(match[1]),
   )
   assert.deepEqual(
     tableCodes,
     [0, code('EXIT_USAGE'), code('EXIT_CHECK_FAILURE'), code('EXIT_HOST_FAULT')],
-    'the exit-code table must list the measured codes in order',
+    'the source CLI exit-code table must list the measured codes in order',
   )
+  assert.match(launcherTable, /^\| `69` \|/mu)
+  assert.match(launcherTable, /^\| `70` \|/mu)
   assert.ok(diagnostics.includes('`process.exit(3)`'))
   assert.ok(diagnostics.includes('`re.check-result@0.1.0`'))
   assert.ok(diagnostics.includes('`input-file-unreadable`'))

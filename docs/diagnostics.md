@@ -35,6 +35,20 @@ for a pin without `--format json` is a usage error instead: stderr starts with
 The native CLI and the Rust test harnesses have their own codes. This page
 describes the source CLI that `npm run re --` invokes.
 
+## Launcher exit codes
+
+`bin/revia` is a launcher around a released binary, not the source CLI, so it
+adds codes the table above does not cover:
+
+| Code | Meaning | Reach it with |
+|---|---|---|
+| `69` | the candidate has no release asset for this platform | any command on a `pending` target |
+| `70` | a release record it reads is missing or damaged | an unreadable `runtime/checksums.txt`, or a record with no rows for this version |
+
+A `69` prints `pending target` and points at the
+[compatibility matrix](compatibility.md). Rebuild `native/` and run it
+directly to get past it; the launcher itself has nothing to download.
+
 ## Program exit codes
 
 `run` passes the code the program asks for through unchanged. A program whose

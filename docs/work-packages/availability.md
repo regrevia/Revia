@@ -928,6 +928,15 @@ It still changes language semantics and was not folded into Issues 1-3.
     reader actually runs. The release compatibility test holds both the
     pointer and the retired phrasing.
 
+57. `docs/diagnostics.md` is where an exit code gets looked up, and it covered
+    only the source CLI's `0`, `64`, `65`, and `70`. A reader who hit the
+    launcher's `pending target` refusal found no row for `69` and could not
+    tell that code's `70` from the source CLI's host fault. The page now has a
+    launcher table for both codes, the measured messages behind each, and the
+    compatibility pointer. Measured on this host: no rows for the version
+    exits `70` with `Release checksums have no entries for …`, an unreadable
+    file `70` with `Release checksums file is unavailable.`.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

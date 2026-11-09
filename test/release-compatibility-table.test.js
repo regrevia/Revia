@@ -305,6 +305,13 @@ test('both launchers keep the pending-target and damaged-record paths', async ()
   assert.match(languageGuide, /rc\.1 的深度试用命令契约/u)
   assert.doesNotMatch(languageGuide, /For `v1\.0\.0-rc\.1`, run `revia --help`/u)
   assert.doesNotMatch(languageGuide, /对于 `v1\.0\.0-rc\.1`，请在 macOS arm64 运行/u)
+
+  // The diagnostics page is where an exit code is looked up. It describes the
+  // source CLI, so the launcher's own codes need their own row and pointer.
+  const diagnostics = await read('docs/diagnostics.md')
+  assert.match(diagnostics, /\| `69` \|[^\n]*pending/u)
+  assert.match(diagnostics, /pending target/u)
+  assert.match(diagnostics, /\[compatibility matrix\]\(compatibility\.md\)/u)
 })
 
 // The count was not bound to any matrix, so it could not tell a reader which
