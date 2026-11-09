@@ -977,6 +977,12 @@ It still changes language semantics and was not folded into Issues 1-3.
     source-import manifest, whose `SOURCE_ROOTS` never include `.git`. The
     obsolete guard is removed rather than kept failing.
 
+64. The Linux baseline test pinned five host patterns and the floor, so the
+    section's other parenthesised glibc numbers — `Ubuntu 23.10 (2.38)` in both
+    language halves among them — could be edited silently. It now collects every
+    host/glibc pair in each half, requires the recorded set, and rejects any pair
+    at or above the stated floor.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

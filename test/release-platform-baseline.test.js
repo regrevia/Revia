@@ -108,6 +108,26 @@ test('linux-x64 runtime baseline matches the published binary', async () => {
   ]) {
     assert.match(flatSection, host, `the baseline section must name hosts matching ${host}`)
   }
+  // Every parenthesised glibc number in the section, not only the five hosts
+  // the statements above name: a silent edit to an unlisted pair (Ubuntu 23.10
+  // is one) must fail here rather than stay green.
+  const expectedPairs = ['2.31', '2.34', '2.35', '2.36', '2.38', '2.38']
+  for (const [name, half] of [['English', english], ['Chinese', chinese]]) {
+    const pairs = [...half.matchAll(/[\(（](2\.\d+)[\)）]/gu)].map((match) => match[1])
+    assert.deepEqual(
+      [...pairs].sort(),
+      expectedPairs,
+      `${name} half must carry exactly the baseline section's host glibc pairs`,
+    )
+    for (const pair of pairs) {
+      assert.ok(
+        Number(pair.slice(2)) < Number(REQUIRED_GLIBC_MINOR),
+        `${name} half must not place ${pair} at or above the stated floor`,
+      )
+    }
+    assert.match(half, /Ubuntu 23\.10\s*[\(（]2\.38[\)）]/u)
+    assert.match(half, /openSUSE Leap 15\.x/u)
+  }
   assert.match(flatSection, /getconf GNU_LIBC_VERSION/u)
   assert.match(flatSection, /No `-musl` or static variant is published/u)
   // Only the glibc 2.31 host was externally reported; do not pin the report to
