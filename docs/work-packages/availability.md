@@ -1011,6 +1011,12 @@ It still changes language semantics and was not folded into Issues 1-3.
     exists. The docs suite now derives the documented set from `src/cli/re.js`
     and `bin/revia` and requires the table to match it exactly.
 
+69. `docs/evolution.md` is the only page linking into the explicit `<a id>`
+    anchors in `RELEASE_NOTES.md`, and no test resolved them: renaming an
+    anchor or retitling the section under it left a dead timeline link. The
+    docs suite now checks every cited anchor exists, precedes the heading for
+    its version, and appears once per version.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

@@ -532,3 +532,43 @@ test('the protocol page lists the statuses the CLI and the launcher emit', () =>
     [...emitted].sort((left, right) => left - right)
   )
 })
+
+// The evolution timeline is the only page that links into `RELEASE_NOTES.md`
+// anchors. Those anchors are explicit `<a id>` tags, so a renamed or moved id
+// silently produces a dead timeline link; nothing read them.
+test('the evolution timeline links resolve to release-note anchors', () => {
+  const tracked = execFileSync('git', ['ls-files', '*.md'], { cwd: repositoryRoot, encoding: 'utf8' })
+    .split('\n')
+    .filter(Boolean)
+  const notes = readFileSync(resolve(repositoryRoot, 'RELEASE_NOTES.md'), 'utf8')
+  const anchored = new Map()
+  for (const match of notes.matchAll(/<a id="([^"]+)"><\/a>\s*\n(#+ [^\n]+)/gu)) {
+    anchored.set(match[1], match[2])
+  }
+  for (const relativePath of tracked) {
+    const page = readFileSync(resolve(repositoryRoot, relativePath), 'utf8')
+    for (const match of page.matchAll(/\]\((?:[^)\s]*?)RELEASE_NOTES\.md#([^)\s]+)\)/gu)) {
+      assert.ok(
+        anchored.has(match[1]),
+        `${relativePath} links to a missing RELEASE_NOTES.md anchor: ${match[1]}`
+      )
+    }
+  }
+  const evolution = readFileSync(resolve(repositoryRoot, 'docs/evolution.md'), 'utf8')
+  const rows = [...evolution.matchAll(/^\| `([0-9][0-9a-z.-]*)` \|.*RELEASE_NOTES\.md#([^)\s]+)\) \|$/gmu)]
+  assert.ok(rows.length > 0, 'the evolution timeline has no version rows')
+  const versions = rows.map((match) => match[1])
+  assert.equal(new Set(versions).size, versions.length, 'the evolution timeline repeats a version')
+  for (const match of rows) {
+    const version = match[1]
+    const heading = anchored.get(match[2])
+    assert.ok(heading, `docs/evolution.md cites ${version} without a ${match[2]} anchor`)
+    // Both historical preview releases share one section by design; every
+    // later release has its own version-named section.
+    const historical = version.startsWith('0.1-preview') && heading.includes('Historical Preview')
+    assert.ok(
+      historical || heading.includes(`v${version}`),
+      `the ${match[2]} anchor does not precede the ${version} heading`
+    )
+  }
+})
