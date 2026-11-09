@@ -107,6 +107,13 @@ usage banner and exits `64`. The receipt is a preview project-run contract bound
 to this fixture; it is not a production backend and does not extend the
 single-file Node runtime.
 
+A fixture that does not match the project is rejected the same way each time:
+the result schema stays `re.project-run-result@0.1.0`, `"ok"` is `false`, the
+process exits `65`, and `diagnostics` carries one code —
+`missing-project-run-selection-field` for an empty object,
+`project-run-graph-revision-mismatch` for an edited `graph_revision`, and
+`project-run-case-not-found` for an unknown `case`.
+
 仓库内固定的 `agent-expense-review-run.json` 驱动一次有界 `project-run`，该参数必填。
 命令以 `0` 退出并输出一行 JSON：`"ok":true`、schema 为
 `re.project-run-result@0.1.0`，receipt 的 schema 为 `re.project-run-receipt@0.3.0`。
@@ -114,6 +121,12 @@ single-file Node runtime.
 `typed_outcome.value.approved` 为 `true`。缺少 `--fixture` 时 CLI 打印 usage 并以
 `64` 退出。该 receipt 是绑定此 fixture 的预览 project-run 契约，不是生产后端，也不扩展
 单文件 Node 运行时。
+
+与项目不匹配的 fixture 每次都以同样方式被拒绝：结果 schema 仍为
+`re.project-run-result@0.1.0`，`"ok"` 为 `false`，进程以 `65` 退出，`diagnostics`
+带一个稳定 code——空对象为 `missing-project-run-selection-field`，被改动的
+`graph_revision` 为 `project-run-graph-revision-mismatch`，未知 `case` 为
+`project-run-case-not-found`。
 
 ## What To Inspect / 审阅重点
 

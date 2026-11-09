@@ -362,4 +362,39 @@ test('the expense-review example runs its checked fixture', () => {
   assert.ok(readme.includes('`attempts: 2`'))
   assert.ok(readme.includes('`typed_outcome.value.approved`'))
   assert.ok(readme.includes('`--fixture`'))
+  assert.ok(readme.includes('`missing-project-run-selection-field`'))
+  assert.ok(readme.includes('`project-run-graph-revision-mismatch`'))
+  assert.ok(readme.includes('`project-run-case-not-found`'))
+
+  const scratch = mkdtempSync(join(tmpdir(), 'revia-project-run-'))
+  const selection = JSON.parse(
+    readFileSync(resolve(repositoryRoot, 'examples/agent-expense-review-run.json'), 'utf8')
+  )
+  const rejected = (name, mutate) => {
+    const path = join(scratch, name)
+    writeFileSync(path, JSON.stringify(mutate(structuredClone(selection))))
+    const result = spawnSync(
+      process.execPath,
+      [resolve(repositoryRoot, 'src/cli/re.js'), 'project-run', '--fixture', path, example],
+      { encoding: 'utf8' }
+    )
+    assert.equal(result.status, 65, result.stderr)
+    const body = JSON.parse(result.stdout)
+    assert.equal(body.schema, 're.project-run-result@0.1.0')
+    assert.equal(body.ok, false)
+    assert.equal(body.fixture, path)
+    return body.diagnostics
+  }
+
+  assert.deepEqual(rejected('empty.json', () => ({})), [
+    { code: 'missing-project-run-selection-field' }
+  ])
+  assert.deepEqual(rejected('stale.json', (value) => {
+    value.graph_revision = `sha256:${'0'.repeat(64)}`
+    return value
+  }), [{ code: 'project-run-graph-revision-mismatch' }])
+  assert.deepEqual(rejected('unknown-case.json', (value) => {
+    value.case = 'agent.expense.intake.missing'
+    return value
+  }), [{ code: 'project-run-case-not-found' }])
 })
