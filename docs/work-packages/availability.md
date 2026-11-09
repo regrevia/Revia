@@ -965,6 +965,12 @@ It still changes language semantics and was not folded into Issues 1-3.
     pass the path as `REVIA_EXECUTABLE`, matching the contract; the
     compatibility test covers this page too.
 
+62. `scripts/test-rc1-validate-contract.sh` still asserted the retired
+    `0.1-preview.1` branch and workflow anchors, so running it always failed,
+    and nothing invoked it. It now checks that the tree validator still names
+    the checked-in `VERSION` and keeps an `unsupported VERSION` fallback, and
+    `scripts/validate-public-tree.sh` runs it on every push.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
