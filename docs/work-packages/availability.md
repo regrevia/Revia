@@ -1090,6 +1090,13 @@ It still changes language semantics and was not folded into Issues 1-3.
     `runtime/rc1/export-manifest.json` (ten payloads plus the manifest itself)
     and the target matrix to the measured `darwin-arm64` row.
 
+80. `docs/rc2-target-expansion-contract.md` names a hosted runner for each
+    desktop target, but no test compared the page with the gate matrix. A
+    runner image bump in `release-gate.yml`, or a native conformance workflow
+    on another image, would leave the contract describing machines that never
+    build the target. The new guard checks the page's English and Chinese
+    runner assignments against the matrix and the native workflows.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

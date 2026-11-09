@@ -646,3 +646,50 @@ test('the sealed export contract lists the manifest payloads', async () => {
     `the contract does not publish ${matrixWord} target records`,
   )
 })
+// The expansion contract promises each desktop target a hosted runner, but no
+// test compared those promises with the gate matrix. A runner image bump in
+// release-gate.yml, or a native conformance workflow on a different image,
+// would leave the page describing machines that never build the target.
+test('the target expansion contract names the gate runners', async () => {
+  const page = await read('docs/rc2-target-expansion-contract.md')
+  const gate = await read('.github/workflows/release-gate.yml')
+  const matrix = gate.slice(gate.indexOf('matrix:'))
+  const runners = new Map(
+    [...matrix.matchAll(/- runner: (\S+)\n\s+target: (\S+)/gu)].map(
+      (match) => [match[2], match[1]],
+    ),
+  )
+  assert.equal(runners.size, 6)
+
+  const native = [
+    ['linux-x64', '.github/workflows/linux-native.yml'],
+    ['windows-x64', '.github/workflows/windows-native.yml'],
+  ]
+  const chinese = page.slice(page.indexOf('下一次原生接收顺序'))
+  for (const [target, workflowPath] of native) {
+    const runner = runners.get(target)
+    assert.ok(runner, `${target} is missing from the gate matrix`)
+    const workflow = await read(workflowPath)
+    assert.match(
+      workflow,
+      new RegExp(`^\\s+runs-on: ${runner}$`, 'mu'),
+      `${workflowPath} no longer runs on ${runner}`,
+    )
+    assert.ok(
+      page.includes(`\`${target}\` on GitHub-hosted \`${runner}\``),
+      `the contract does not place ${target} on ${runner}`,
+    )
+    assert.match(
+      chinese,
+      new RegExp(`\`${runner}\` 上的\\s+\`${target}\``, 'u'),
+      `the Chinese contract does not place ${target} on ${runner}`,
+    )
+  }
+
+  const armRunner = runners.get('linux-arm64')
+  assert.match(gate, new RegExp(`- runner: ${armRunner}\\n\\s+target: linux-arm64`, 'u'))
+  assert.ok(
+    page.includes(`\`linux-arm64\` on GitHub-hosted \`${armRunner}\``),
+    `the contract does not place linux-arm64 on ${armRunner}`,
+  )
+})
