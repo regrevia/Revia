@@ -572,3 +572,53 @@ test('the evolution timeline links resolve to release-note anchors', () => {
     )
   }
 })
+
+// Documentation quotes schema identifiers that consumers branch on. Nothing
+// compared them to the tree, so a renamed identifier left the page telling
+// readers to switch on a string no command emits.
+test('every schema identifier a current page quotes exists in the tree', () => {
+  const tracked = execFileSync('git', ['ls-files', '*.md'], { cwd: repositoryRoot, encoding: 'utf8' })
+    .split('\n')
+    .filter(Boolean)
+  // `doc/` is the retired pre-public design tree and `docs/work-packages/`
+  // records plans, so neither is a statement about the current tree.
+  const pages = tracked.filter(
+    (relativePath) =>
+      !relativePath.startsWith('doc/') && !relativePath.startsWith('docs/work-packages/')
+  )
+  const identifier = /`((?:re|revia)\.[a-z0-9.-]+@[0-9]+\.[0-9]+\.[0-9]+)`/gu
+  const quoted = new Map()
+  for (const relativePath of pages) {
+    const page = readFileSync(resolve(repositoryRoot, relativePath), 'utf8')
+    for (const match of page.matchAll(identifier)) {
+      if (!quoted.has(match[1])) quoted.set(match[1], new Set())
+      quoted.get(match[1]).add(relativePath)
+    }
+  }
+  assert.ok(quoted.size > 0, 'no current page quotes a schema identifier')
+  // `git grep` reads POSIX ERE, so the search pattern drops the markdown
+  // backticks and the non-capturing group used for parsing a page.
+  const present = new Set(
+    execFileSync(
+      'git',
+      [
+        'grep',
+        '-IhoE',
+        '(re|revia)\\.[a-z0-9.-]+@[0-9]+\\.[0-9]+\\.[0-9]+',
+        '--',
+        ':(exclude)*.md',
+        // A test asserting an identifier is not the product emitting it.
+        ':(exclude)test/**',
+      ],
+      { cwd: repositoryRoot, encoding: 'utf8' }
+    )
+      .split('\n')
+      .filter(Boolean)
+  )
+  for (const [schema, sources] of quoted) {
+    assert.ok(
+      present.has(schema),
+      `${[...sources].sort().join(', ')} quotes a schema identifier no tracked file emits: ${schema}`
+    )
+  }
+})

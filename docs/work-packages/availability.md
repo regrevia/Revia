@@ -1017,6 +1017,13 @@ It still changes language semantics and was not folded into Issues 1-3.
     docs suite now checks every cited anchor exists, precedes the heading for
     its version, and appears once per version.
 
+70. Current pages quote schema identifiers that consumers branch on, and no
+    test compared them to the tree: renaming an identifier left a page telling
+    readers to switch on a string no command emits. The docs suite now
+    requires every backticked identifier in a current page to appear in a
+    tracked non-page, non-test file. `doc/` (retired pre-public tree) and
+    `docs/work-packages/` (plans) stay out of scope.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
