@@ -564,3 +564,39 @@ test('the android contract leaves the desktop matrix untouched', async () => {
   assert.match(page, new RegExp(`the ${word} desktop\\s+\\w+ requirements`, 'u'))
   assert.match(page, new RegExp(`的${cn}桌面目标`, 'u'))
 })
+// `docs/server-conformance.md` publishes the bounded Server slice as measured
+// evidence, but no test read `runtime/rc1/server-evidence.json`: the page could
+// keep describing a two-module Darwin arm64 rc.1 slice after the evidence moved
+// to another target, version, or module count, or after the matrix measured a
+// second target the page still calls out of scope.
+test('server conformance page matches the rc.1 server evidence', async () => {
+  const evidence = await readJson('runtime/rc1/server-evidence.json')
+  const matrix = await readJson('runtime/rc1/target-matrix.json')
+  const page = await read('docs/server-conformance.md')
+
+  assert.equal(evidence.status, 'measured-native')
+  const measured = matrix.targets.filter((row) => row.status === evidence.status)
+  assert.deepEqual(
+    measured.map((row) => row.target),
+    [evidence.target],
+    'the rc.1 matrix measures targets the server evidence does not cover',
+  )
+
+  assert.equal(evidence.target, 'darwin-arm64')
+  assert.ok(page.includes('Darwin arm64'), 'the page does not bind the evidence target')
+  assert.ok(
+    page.includes(`\`v${evidence.version}\``),
+    'the page does not name the evidence version',
+  )
+  assert.match(page, /measured native bounded Server\s+slice/u)
+
+  const word = Object.entries(NUMBER_WORDS).find(([, value]) => value === evidence.module_count)?.[0]
+  assert.ok(word, `no number word is recorded for ${evidence.module_count}`)
+  const english = `${word[0].toUpperCase()}${word.slice(1)}-module`
+  assert.ok(page.includes(english), `the page does not publish ${english}`)
+  const CN_LIANG = { '两': 2 }
+  const cn = [...Object.entries(CN_LIANG), ...Object.entries(CN_NUMERALS)]
+    .find(([, value]) => value === evidence.module_count)?.[0]
+  assert.ok(cn, `no Chinese numeral is recorded for ${evidence.module_count}`)
+  assert.ok(page.includes(`${cn}模块`), `the page does not publish ${cn}模块`)
+})

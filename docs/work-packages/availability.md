@@ -1076,6 +1076,13 @@ It still changes language semantics and was not folded into Issues 1-3.
     holds the page to the current matrix's target set and count in both
     languages.
 
+78. `docs/server-conformance.md` publishes the bounded Server slice as measured
+    evidence, but no test read `runtime/rc1/server-evidence.json`. The page
+    could keep describing a two-module Darwin arm64 rc.1 slice after the
+    evidence moved, or after the rc.1 matrix measured a second target the page
+    still calls out of scope, so the compatibility suite now holds the page to
+    the evidence version, target, module count, and the matrix's measured set.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
