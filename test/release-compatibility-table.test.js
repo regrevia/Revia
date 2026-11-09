@@ -600,3 +600,49 @@ test('server conformance page matches the rc.1 server evidence', async () => {
   assert.ok(cn, `no Chinese numeral is recorded for ${evidence.module_count}`)
   assert.ok(page.includes(`${cn}模块`), `the page does not publish ${cn}模块`)
 })
+// The sealed export contract is the only accepted bridge from private
+// development, yet no test read it: its eleven-file inventory, manifest
+// identity, and six-target matrix were prose only. An export that shipped a
+// different payload set, schema, tag, or measured target would leave the
+// contract describing a bridge that no longer exists.
+test('the sealed export contract lists the manifest payloads', async () => {
+  const page = await read('docs/rc1-sealed-export-contract.md')
+  const manifest = await readJson('runtime/rc1/export-manifest.json')
+  const matrix = await readJson('runtime/rc1/target-matrix.json')
+
+  assert.equal(manifest.schema, 'revia.public-rc-export@1.0.0')
+  for (const value of [manifest.schema, manifest.tag, manifest.version, manifest.target]) {
+    assert.ok(page.includes(value), `the contract does not name ${value}`)
+  }
+
+  const inventory = page.slice(page.indexOf('exactly these eleven regular files'))
+  const block = inventory.match(/```text\n([\s\S]*?)```/u)
+  assert.ok(block, 'the contract no longer shows a file inventory')
+  const names = block[1].trim().split('\n').map((line) => line.trim())
+  assert.equal(names.length, 11)
+  assert.ok(names.includes('export-manifest.json'))
+  const payloads = names.filter((name) => name !== 'export-manifest.json').sort()
+  assert.deepEqual(
+    manifest.files.map((file) => file.path).sort(),
+    payloads,
+    'the manifest ships a payload set the contract does not list',
+  )
+  const countWord = Object.entries(NUMBER_WORDS)
+    .find(([, value]) => value === payloads.length)?.[0]
+  assert.ok(countWord, `no number word is recorded for ${payloads.length}`)
+  assert.ok(
+    page.includes(`describes the other ${countWord} payloads`),
+    `the contract does not describe the other ${countWord} payloads`,
+  )
+
+  assert.equal(matrix.schema, 'revia.public-target-matrix@1.0.0')
+  const measured = matrix.targets.filter((row) => row.status === 'measured-native')
+  assert.deepEqual(measured.map((row) => row.target), [manifest.target])
+  const matrixWord = Object.entries(NUMBER_WORDS)
+    .find(([, value]) => value === matrix.targets.length)?.[0]
+  assert.ok(matrixWord, `no number word is recorded for ${matrix.targets.length}`)
+  assert.ok(
+    page.includes(`exactly ${matrixWord} target records`),
+    `the contract does not publish ${matrixWord} target records`,
+  )
+})

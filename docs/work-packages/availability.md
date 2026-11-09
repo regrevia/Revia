@@ -1083,6 +1083,13 @@ It still changes language semantics and was not folded into Issues 1-3.
     still calls out of scope, so the compatibility suite now holds the page to
     the evidence version, target, module count, and the matrix's measured set.
 
+79. `docs/rc1-sealed-export-contract.md` is the only accepted bridge from
+    private development, but no test read it: the eleven-file inventory, the
+    manifest identity fields, and the six-target matrix were prose the export
+    could silently outgrow. The compatibility suite now binds the inventory to
+    `runtime/rc1/export-manifest.json` (ten payloads plus the manifest itself)
+    and the target matrix to the measured `darwin-arm64` row.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
