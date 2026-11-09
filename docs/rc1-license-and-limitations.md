@@ -23,6 +23,6 @@ The controlling terms are in [LICENSE-RC.md](../LICENSE-RC.md). This page is an 
 
 ## Initial RC boundary
 
-The first RC asset is planned for native macOS arm64 only. The evaluated slice includes the native CLI, project workflow, explicit capability evidence, explicit multi-module execution, and a bounded HTTP/JSON/SQLite Server profile. It does not claim TLS, authentication, general production hosting, cross-request scheduling, arbitrary database drivers, full cross-platform support, signed provenance, or Stable V1.0.
+The first RC asset covers native macOS arm64 only; every other target in [`runtime/rc1/target-matrix.json`](../runtime/rc1/target-matrix.json) stays `pending`. The evaluated slice includes the native CLI, project workflow, explicit capability evidence, explicit multi-module execution, and a bounded HTTP/JSON/SQLite Server profile. It does not claim TLS, authentication, general production hosting, cross-request scheduling, arbitrary database drivers, full cross-platform support, signed provenance, or Stable V1.0.
 
 The release must remain blocked until a sealed development handoff passes the public exact-inventory verifier. Documentation readiness alone is not release evidence.

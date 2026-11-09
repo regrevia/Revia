@@ -1032,6 +1032,14 @@ It still changes language semantics and was not folded into Issues 1-3.
     that every documented format runs while an undocumented one still fails
     with the usage exit code.
 
+72. The RC1 license page described the first RC asset as still planned for
+    one native target while the matrix recorded it measured, and no test read
+    the page: a matrix row could change, or the page could announce a target
+    early, without the boundary moving. The compatibility suite now derives
+    every target state from `runtime/rc1/target-matrix.json`, requires the
+    page to name exactly the measured target and no pending one, and rejects
+    the stale planned wording.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

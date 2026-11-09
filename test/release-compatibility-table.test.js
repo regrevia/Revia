@@ -498,3 +498,50 @@ test('development status corpus counts match the conformance fixtures', async ()
     )
   }
 })
+
+// `docs/rc1-license-and-limitations.md` tells a reader which targets the first
+// RC asset covers, but no test read the page: the matrix could measure another
+// target, or the page could announce one early, while the boundary stayed
+// unbound and described the shipped asset as still planned.
+test('the rc.1 license page covers only the targets the matrix measures', async () => {
+  const matrix = JSON.parse(await read('runtime/rc1/target-matrix.json'))
+  const page = await read('docs/rc1-license-and-limitations.md')
+  const section = page.split('## Initial RC boundary')[1]
+  assert.ok(section, 'the license page has no initial RC boundary section')
+
+  const LABELS = {
+    'darwin-arm64': 'macOS arm64',
+    'darwin-x64': 'macOS x64',
+    'linux-arm64': 'Linux arm64',
+    'linux-x64': 'Linux x64',
+    'windows-arm64': 'Windows arm64',
+    'windows-x64': 'Windows x64',
+  }
+  const labelOf = (target) => {
+    const label = LABELS[target]
+    assert.ok(label, `no page label is recorded for ${target}`)
+    return label
+  }
+  assert.equal(
+    matrix.targets.length,
+    Object.keys(LABELS).length,
+    'the rc.1 matrix and the label table disagree on the target set',
+  )
+  for (const row of matrix.targets) {
+    const label = labelOf(row.target)
+    if (row.status === 'measured-native') {
+      assert.match(section, new RegExp(`native ${label} only`, 'u'))
+    } else {
+      assert.equal(
+        section.includes(label),
+        false,
+        `the boundary claims unmeasured ${row.target}`,
+      )
+    }
+  }
+  assert.equal(
+    section.includes('is planned for'),
+    false,
+    'the boundary still calls the shipped asset planned',
+  )
+})
