@@ -870,6 +870,16 @@ It still changes language semantics and was not folded into Issues 1-3.
     spoken or written count of pending targets in those two pages to the row
     set, in English and Chinese, so a re-added count has to be correct.
 
+50. `QUICKSTART.md` described the published candidate assets only by libc
+    floor, so a macOS `arm64` reader following it would reach the source
+    launcher and get an unexplained refusal: measured here, `bin/revia check`
+    exits `69` with `pending target` because RC2.2.1 publishes no darwin asset.
+    The section now says the launcher runs a command only for a target with a
+    recorded release asset, names the four pending targets, and points at
+    `native/target/release/revia` as the supported path there.
+    `release-compatibility-table` asserts the quickstart keeps that wording
+    next to the compatibility matrix.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

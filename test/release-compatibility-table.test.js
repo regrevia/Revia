@@ -257,6 +257,13 @@ test('both launchers keep the pending-target and damaged-record paths', async ()
   const compatibility = await readFile(new URL('../docs/compatibility.md', import.meta.url), 'utf8')
   assert.match(compatibility, /`bin\/revia` reports\s+`pending target` and exits 69/u)
   assert.match(compatibility, /Exit 70 means the checkout's\s+release records are damaged/u)
+
+  // A reader who starts from the quickstart must learn the same exit code
+  // before they hit it on a pending host.
+  const quickstart = await read('QUICKSTART.md')
+  assert.match(quickstart, /bin\/revia` runs a command only for a target/u)
+  assert.match(quickstart, /it exits `69`\s+with `pending target`/u)
+  assert.match(quickstart, /native\/target\/release\/revia/u)
 })
 
 // Two pages told readers that the candidate had "five pending targets" after

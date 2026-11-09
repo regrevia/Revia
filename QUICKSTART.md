@@ -216,11 +216,23 @@ RHEL 9, Amazon Linux 2023 — cannot load it. Only `ubuntu-24.04` was actually e
 other distributions at or above glibc 2.39 are expected to load it but were not measured.
 See [compatibility](docs/compatibility.md) before using a prebuilt asset.
 
+The native launcher `bin/revia` runs a command only for a target whose release
+asset is recorded in `runtime/checksums.txt`. On the pending targets — macOS
+`arm64` and `x86_64`, Linux `arm64`, Windows `arm64` for RC2.2.1 — it exits `69`
+with `pending target` and points back at that table instead of reporting a
+broken checkout. Build `native/` from source and call
+`native/target/release/revia` directly on those hosts.
+
 `v1.0.0-rc.2.2.1` 的 Linux x64 资产要求 **glibc 2.39**（构建于 `ubuntu-24.04` runner），
 低于 glibc 2.39 的主机（Ubuntu 20.04 / 22.04、Debian 12、RHEL 9、Amazon Linux 2023）
 无法加载。本项目实际演练过的只有 `ubuntu-24.04`；其他发行版上 glibc >= 2.39 预期可加载，
 但未在本机测量。
 使用预编译资产前请先看[兼容性](docs/compatibility.md)。
+
+原生启动器 `bin/revia` 只在 `runtime/checksums.txt` 记录了对应目标发布资产时才执行命令。
+对 RC2.2.1 的 pending 目标（macOS `arm64` / `x86_64`、Linux `arm64`、Windows `arm64`），
+它以 `69` 退出并报告 `pending target`，同时指回该兼容性表，而不会误报仓库损坏。
+在这些主机上请从源码构建 `native/` 并直接调用 `native/target/release/revia`。
 
 ## Historical release assets / 历史发行资产
 
