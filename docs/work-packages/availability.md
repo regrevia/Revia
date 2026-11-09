@@ -1069,6 +1069,13 @@ It still changes language semantics and was not folded into Issues 1-3.
     command suite now resolves every command the evaluate step names against
     the usage text.
 
+77. `docs/android-termux-experimental-contract.md` promises Android stays an
+    additive experimental target that neither satisfies nor weakens the desktop
+    set, but no test read the page. Promoting Android in the matrix would leave
+    the boundary still calling it additive, so the compatibility suite now
+    holds the page to the current matrix's target set and count in both
+    languages.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

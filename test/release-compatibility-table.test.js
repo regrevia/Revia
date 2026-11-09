@@ -545,3 +545,22 @@ test('the rc.1 license page covers only the targets the matrix measures', async 
     'the boundary still calls the shipped asset planned',
   )
 })
+
+// `docs/android-termux-experimental-contract.md` tells a reader Android is an
+// additive experimental target that neither satisfies nor weakens the desktop
+// set, but no test read the page: a matrix that grew an Android row, or lost a
+// desktop target, would leave the boundary quoting a count it no longer has.
+test('the android contract leaves the desktop matrix untouched', async () => {
+  const matrix = await readJson(`${EVIDENCE_DIRECTORY}/target-matrix.json`)
+  const page = await read('docs/android-termux-experimental-contract.md')
+  assert.match(page, /`android-arm64`/u)
+  const android = matrix.targets.filter((row) => row.target.startsWith('android-'))
+  assert.deepEqual(android, [], 'the desktop matrix carries an android target')
+  const count = matrix.targets.length
+  const word = Object.entries(NUMBER_WORDS).find(([, value]) => value === count)?.[0]
+  assert.ok(word, `no number word is recorded for ${count}`)
+  const cn = Object.entries(CN_NUMERALS).find(([, value]) => value === count)?.[0]
+  assert.ok(cn, `no Chinese numeral is recorded for ${count}`)
+  assert.match(page, new RegExp(`the ${word} desktop\\s+\\w+ requirements`, 'u'))
+  assert.match(page, new RegExp(`的${cn}桌面目标`, 'u'))
+})
