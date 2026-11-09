@@ -722,3 +722,27 @@ test('the load-time authority page lists the builtin table', async () => {
   assert.deepEqual(named, families)
   assert.match(page, /Four builtin members \(/u)
 })
+// The rc.2.2.1 matrix is what readers quote as target readiness, while the
+// native evidence files are what was measured. No test paired the two: a row
+// could stay `measured-native` after its evidence moved to another version, or
+// a pending target could carry a measured record.
+test('the rc.2.2.1 matrix marks exactly the targets with native evidence', async () => {
+  const matrix = await readJson(`${EVIDENCE_DIRECTORY}/target-matrix.json`)
+  const entries = await readdir(new URL(`${EVIDENCE_DIRECTORY}/`, repository))
+  const records = await Promise.all(
+    entries
+      .filter((name) => name.endsWith('native-evidence.json'))
+      .map((name) => readJson(`${EVIDENCE_DIRECTORY}/${name}`)),
+  )
+  const withEvidence = records.map((record) => record.target).sort()
+  assert.equal(withEvidence.length, new Set(withEvidence).size)
+  const measured = matrix.targets
+    .filter((row) => row.status === 'measured-native')
+    .map((row) => row.target)
+    .sort()
+  assert.deepEqual(withEvidence, measured)
+  for (const record of records) {
+    assert.equal(record.status, 'measured-native')
+    assert.equal(record.version, matrix.version)
+  }
+})

@@ -1109,6 +1109,12 @@ It still changes language semantics and was not folded into Issues 1-3.
     The new guard requires the export to list the candidate targets and an
     archive whose digest and size match each candidate row.
 
+83. The rc.2.2.1 target matrix is what readers quote as readiness, while the
+    native evidence files record what was measured. No test paired them, so a
+    row could stay `measured-native` after its evidence changed version, or a
+    pending target could carry a measured record. The new guard requires the
+    matrix rows and the evidence files to name the same targets.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
