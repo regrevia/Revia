@@ -132,20 +132,27 @@ process exits `65`, and `diagnostics` carries one code —
 
 1. Copy the example to a scratch tree (`cp -R examples/agent-expense-review
    scratch/agent-expense-review`) so the checked-in pins stay untouched, then
-   change one module source and update only its declared source digest. Skip
-   the digest update and `npm run re -- project-check --format json
-   scratch/agent-expense-review` exits `65` with
-   `project-module-source-digest-mismatch`, naming the module, its path, and
-   the expected and actual digests.
+   change one module source, then run
+   `npm run re -- project-check --format json scratch/agent-expense-review`:
+   it exits `65` with `project-module-source-digest-mismatch`, naming the
+   module, its path, and the expected and actual digests. Set that actual
+   digest as the module's `source_sha256`; the same command then exits `65`
+   with `project-module-implementation-digest-mismatch` for the same module
+   until its `implementation_digest` in `package_manifest` carries that value
+   too. With both pins updated it exits `0`.
 2. Build the native binary once (`cd native && cargo build --workspace
    --release --offline`), then run
    `native/target/release/revia project-surface-check` on the scratch copy and
    record its `re.native-project-surface-result@0.1.0` line. That line's
    `graph_revision` is a native digest over the module surfaces, so it does not
    equal the Node-pinned `graph_revision` in `interface-routes.json`.
-3. Mutate a function capability call, its effect edge, or adapter binding
-   (UID, reference, resource instance or access), update the source digests, and
-   confirm the native surface check fails closed.
+3. Change a function capability call, its effect edge, or adapter binding
+   (UID, reference, resource instance or access direction) and update the same
+   two pins. `project-check` and the native surface check both still exit `0`,
+   so the closed gate is the run: `npm run re -- project-run --fixture
+   examples/agent-expense-review-run.json scratch/agent-expense-review` exits
+   `65` with `project-run-graph-revision-mismatch`, because the fixture pins the
+   pre-edit `graph_revision`.
 4. Compare `project-translate --locale zh-CN` and `--locale en-US`; wording may
    change, but semantic identity and fact IDs must not.
 5. Submit one focused project or reproducible report under `projects/` or
@@ -153,17 +160,20 @@ process exits `65`, and `diagnostics` carries one code —
 
 1. 先把示例复制到 scratch 树（`cp -R examples/agent-expense-review
    scratch/agent-expense-review`），让仓库内的固定 pin 保持不变；在副本里修改
-   一个模块源码，并只更新对应的源码摘要。若漏掉摘要更新，
-   `npm run re -- project-check --format json scratch/agent-expense-review` 会以
-   `65` 退出并给出 `project-module-source-digest-mismatch`，指明模块、路径、
-   期望与实际摘要。
+   一个模块源码，再运行
+   `npm run re -- project-check --format json scratch/agent-expense-review`：
+   它以 `65` 退出并给出 `project-module-source-digest-mismatch`，指明模块、路径、
+   期望与实际摘要。把实际摘要写进该模块的 `source_sha256`；同一条命令仍会以 `65`
+   退出，并对同一模块给出 `project-module-implementation-digest-mismatch`，直到
+   `package_manifest` 里对应的 `implementation_digest` 也写入同一值。两处 pin 都
+   更新后它以 `0` 退出。
 2. 先构建一次 native 二进制（`cd native && cargo build --workspace --release
    --offline`），再运行
    `native/target/release/revia project-surface-check` 检查该副本，记录其
    `re.native-project-surface-result@0.1.0` 输出行。该行的 `graph_revision`
    是 native 对模块 surface 求的摘要，因此不等于 `interface-routes.json`
    中 Node 固定的 `graph_revision`。
-3. 修改函数 capability call、对应 effect edge 或 adapter 绑定（UID、引用、资源实例或访问方向），同步更新源码摘要，并确认 native surface check 会 fail closed。
+3. 修改函数 capability call、对应 effect edge 或 adapter 绑定（UID、引用、资源实例或访问方向），并更新同样两处 pin。`project-check` 与 native surface check 都以 `0` 退出，真正拦下来的是运行：`npm run re -- project-run --fixture examples/agent-expense-review-run.json scratch/agent-expense-review` 会以 `65` 退出并给出 `project-run-graph-revision-mismatch`，因为 fixture 固定的是修改前的 `graph_revision`。
 4. 对比 `zh-CN` 与 `en-US` 的 `project-translate`；文字可以变化，但语义身份和 fact ID
    不应变化。
 5. 在 `projects/` 或 `feedback/submissions/` 提交一个聚焦项目或可复现报告。

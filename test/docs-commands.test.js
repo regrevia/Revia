@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, posix, resolve } from 'node:path'
@@ -409,6 +410,8 @@ test('the project example documents its module-digest repair path', () => {
   assert.ok(readme.includes('`native/target/release/revia project-surface-check`'))
   assert.ok(readme.includes('`re.native-project-surface-result@0.1.0`'))
   assert.ok(readme.includes('`interface-routes.json`'))
+  assert.ok(readme.includes('`project-module-implementation-digest-mismatch`'))
+  assert.ok(readme.includes('`project-run-graph-revision-mismatch`'))
 
   const scratch = mkdtempSync(join(tmpdir(), 'revia-project-module-'))
   const copy = join(scratch, 'agent-expense-review')
@@ -431,6 +434,70 @@ test('the project example documents its module-digest repair path', () => {
   assert.equal(body.diagnostics[0].path, 'modules/api.re')
   assert.match(body.diagnostics[0].expected, /^sha256:[0-9a-f]{64}$/u)
   assert.match(body.diagnostics[0].actual, /^sha256:[0-9a-f]{64}$/u)
+
+  // The page promises a two-pin repair: the stale digest names the module, and
+  // writing the actual digest into both pinned fields reopens the check.
+  const manifestPath = join(copy, 'project.json')
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+  const name = body.diagnostics[0].module
+  const actual = body.diagnostics[0].actual
+  const entry = manifest.modules.find((module) => module.name === name)
+  assert.ok(entry)
+  entry.source_sha256 = actual
+  const packaged = manifest.package_manifest.modules.find((module) => module.name === name)
+  assert.ok(packaged)
+  packaged.implementation_digest = actual
+  writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
+  const repaired = spawnSync(
+    process.execPath,
+    [resolve(repositoryRoot, 'src/cli/re.js'), 'project-check', '--format', 'json', copy],
+    { encoding: 'utf8' }
+  )
+  assert.equal(repaired.status, 0, repaired.stdout)
+  assert.equal(JSON.parse(repaired.stdout).ok, true)
+
+  // A change to a capability binding is not rejected by the checks themselves;
+  // the run gate closes because the fixture pins the pre-edit graph revision.
+  const policyPath = join(copy, 'modules', 'policy.re')
+  const policy = readFileSync(policyPath, 'utf8')
+  const capability = 'capability agent.expense.policy.db write db.write@0.1.0'
+  assert.ok(policy.includes(capability))
+  const edited = policy.replace(
+    capability,
+    'capability agent.expense.policy.db read db.read@0.1.0'
+  )
+  writeFileSync(policyPath, edited)
+  const editedDigest = `sha256:${createHash('sha256').update(edited).digest('hex')}`
+  const rebound = JSON.parse(readFileSync(manifestPath, 'utf8'))
+  rebound.modules.find((module) => module.name === 'agent.expense.policy').source_sha256 =
+    editedDigest
+  rebound.package_manifest.modules.find(
+    (module) => module.name === 'agent.expense.policy'
+  ).implementation_digest = editedDigest
+  writeFileSync(manifestPath, `${JSON.stringify(rebound, null, 2)}\n`)
+  const reboundCheck = spawnSync(
+    process.execPath,
+    [resolve(repositoryRoot, 'src/cli/re.js'), 'project-check', '--format', 'json', copy],
+    { encoding: 'utf8' }
+  )
+  assert.equal(reboundCheck.status, 0, reboundCheck.stdout)
+
+  const blocked = spawnSync(
+    process.execPath,
+    [
+      resolve(repositoryRoot, 'src/cli/re.js'),
+      'project-run',
+      '--fixture',
+      resolve(repositoryRoot, 'examples/agent-expense-review-run.json'),
+      copy,
+    ],
+    { encoding: 'utf8' }
+  )
+  assert.equal(blocked.status, 65, blocked.stderr)
+  assert.equal(
+    JSON.parse(blocked.stdout).diagnostics[0].code,
+    'project-run-graph-revision-mismatch'
+  )
 
   const binary = resolve(repositoryRoot, 'native/target/release/revia')
   if (!existsSync(binary)) return
