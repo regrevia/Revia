@@ -46,7 +46,10 @@ review set. A change to the source should be checked against all four views.
 
 These source-oriented commands use the Node reference CLI. `bin/revia` is the
 versioned native launcher; its `run` command accepts a checked graph, bytecode
-artifact, and input digest.
+artifact, and input digest. The launcher resolves only a candidate whose
+release asset is recorded in `runtime/checksums.txt`: on a pending target it
+reports `pending target` and exits `69`, so check the
+[compatibility matrix](compatibility.md) before you plan a launcher-based run.
 
 ## Public Contract Surface
 

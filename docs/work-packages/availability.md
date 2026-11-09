@@ -888,6 +888,15 @@ It still changes language semantics and was not folded into Issues 1-3.
     pending rows was the correct count. The defect is ambiguity across two
     matrices, not a stale number, and record 49 now says so.
 
+52. `docs/execution-contract.md` and its Chinese mirror introduced `bin/revia`
+    as the versioned native launcher without saying that it resolves only a
+    candidate whose release asset is recorded in `runtime/checksums.txt`, and
+    `docs/language-reference.md` did the same. A reader on macOS `arm64` could
+    plan a launcher-based run that exits `69` with `pending target`. All three
+    pages now state the resolution rule and link the compatibility matrix, and
+    `release-compatibility-table` asserts the English exit code and link plus
+    the Chinese exit code.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

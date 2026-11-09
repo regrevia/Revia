@@ -209,7 +209,10 @@ output is captured and tested in the same way.
 
 The source-oriented examples below use the Node reference CLI (`npm run re --`).
 The versioned `bin/revia` launcher exposes the native release command surface;
-its `run` signature is `run <graph> <artifact> <input-digest>`.
+its `run` signature is `run <graph> <artifact> <input-digest>`. The launcher
+runs only on a target whose release asset is recorded for the candidate in
+`runtime/checksums.txt`; otherwise it reports `pending target` and exits `69`,
+so read the [compatibility matrix](compatibility.md) first.
 
 ```bash
 npm run re -- check examples/agent-workflow-brief.re

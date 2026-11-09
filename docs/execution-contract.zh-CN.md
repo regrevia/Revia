@@ -44,7 +44,10 @@ npm run --silent re -- view --locale zh-CN --format html examples/agent-handoff-
 源码变化后，应对照四个视图重新检查。
 
 这些面向源码的命令使用 Node 参考 CLI。`bin/revia` 是版本化 native 入口；
-它的 `run` 接收已检查的 graph、bytecode artifact 和 input digest。
+它的 `run` 接收已检查的 graph、bytecode artifact 和 input digest。启动器只解析
+`runtime/checksums.txt` 中记录了发布资产的那个候选：在 pending 目标上它报告
+`pending target` 并以 `69` 退出，因此在规划基于启动器的运行前先看
+[兼容性矩阵](compatibility.md)。
 
 ## 公开契约面
 

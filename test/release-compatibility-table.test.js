@@ -264,6 +264,16 @@ test('both launchers keep the pending-target and damaged-record paths', async ()
   assert.match(quickstart, /bin\/revia` runs a command only for a target/u)
   assert.match(quickstart, /it exits `69`\s+with `pending target`/u)
   assert.match(quickstart, /native\/target\/release\/revia/u)
+
+  const executionContract = await read('docs/execution-contract.md')
+  assert.match(executionContract, /reports\s+`pending target` and exits `69`/u)
+  assert.match(executionContract, /\[compatibility matrix\]\(compatibility\.md\)/u)
+  const executionContractZh = await read('docs/execution-contract.zh-CN.md')
+  assert.match(executionContractZh, /`pending target` 并以 `69` 退出/u)
+
+  const languageReference = await read('docs/language-reference.md')
+  assert.match(languageReference, /reports\s+`pending target` and exits `69`/u)
+  assert.match(languageReference, /\[compatibility matrix\]\(compatibility\.md\)/u)
 })
 
 // The count was not bound to any matrix, so it could not tell a reader which
