@@ -28,10 +28,12 @@ REVIA_EXECUTABLE=/path/to/revia-1.0.0-rc.1-darwin-arm64 \
   ./scripts/run-public-trials.sh experiments/rc1/kit
 ```
 
-The repository's `bin/revia` is the launcher for the current candidate, not
-the rc.1 binary, so pointing the runner at it stops at `runner binary digest
-mismatch`. The runner copies the executable you name into a temporary run
-directory, so the `./bin/revia` runner in the manifest names that copy.
+The kit README asks for the accepted candidate at `./bin/revia`; that path
+names the copy the runner makes in its own temporary run directory. In this
+repository the same path is the launcher for the current candidate, so
+pointing the runner at it stops at `runner binary digest mismatch`. The kit
+README is hash-bound fixture text, so install the candidate outside the
+repository and pass its path as shown above.
 
 The verifier and runner reject unsafe paths, symlinks, empty step sets, legacy
 1.0 command-only trials, digest drift, missing result files, and fixture

@@ -324,6 +324,25 @@ test('both launchers keep the pending-target and damaged-record paths', async ()
   )
   assert.match(trialContract, /runner binary digest\s+mismatch/u)
   assert.doesNotMatch(trialContract, /REVIA_EXECUTABLE=\.\/bin\/revia/u)
+  assert.match(trialContract, /hash-bound fixture text/u)
+
+  // The kit's own fixtures are bound to the accepted rc.1 export, so the
+  // verifier is the only thing that keeps a well-meaning README edit from
+  // invalidating a sealed record. Nothing else executes it on a push.
+  const kitVerification = spawnSync(
+    'sh',
+    [
+      fileURLToPath(new URL('../scripts/verify-rc1-trial-kit.sh', import.meta.url)),
+      fileURLToPath(new URL('../experiments/rc1/kit', import.meta.url)),
+      fileURLToPath(new URL('../runtime/rc1/export-manifest.json', import.meta.url)),
+    ],
+    { cwd: fileURLToPath(repository), encoding: 'utf8' },
+  )
+  assert.equal(kitVerification.status, 0, kitVerification.stderr)
+  assert.match(
+    kitVerification.stdout,
+    /RC1 trial kit verified: 1\.0\.0-rc\.1 darwin-arm64 [0-9a-f]{64}/u,
+  )
 })
 
 // The count was not bound to any matrix, so it could not tell a reader which

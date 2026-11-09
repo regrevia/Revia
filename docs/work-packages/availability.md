@@ -946,6 +946,13 @@ It still changes language semantics and was not folded into Issues 1-3.
     and pass its path, and say that the manifest's `./bin/revia` runner names
     the copy the runner makes in its temporary run directory.
 
+59. The first attempt at 58 also rewrote the kit README, which is hash-bound
+    fixture text in the sealed rc.1 export: the trial-kit verifier then failed
+    with `fixture hash mismatch: README.md`, and nothing in `npm test` ran it
+    to notice. The README is back to its recorded bytes and the correction
+    lives in the contract only; the compatibility test now runs the verifier,
+    so a later edit to a sealed fixture fails on a push instead of on a tag.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
