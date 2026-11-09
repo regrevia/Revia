@@ -1158,6 +1158,14 @@ It still changes language semantics and was not folded into Issues 1-3.
     each record to name the candidate version, and every shipped evidence record
     to be refreshed by at least one trial.
 
+90. `docs/evidence.md` is the page a reader lands on before reproducing the
+    RC1 trial: it counts the measured command paths, names each one, and states
+    the version. The trial manifest could gain, lose or rename a path while the
+    page kept its prose. The new guard binds the page to the manifest and the
+    candidate: seven paths mapped to their trial ids, every trial measured with
+    a command, an exit status and a stderr digest, the command surface still
+    running, and the page naming the candidate version.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

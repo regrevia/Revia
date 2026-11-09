@@ -873,3 +873,43 @@ test('the RC1 trial kit names the released runner and evidence records', async (
     assert.ok(refreshed.get(shipped) > 0, `no trial refreshes ${shipped}`)
   }
 })
+
+// `docs/evidence.md` is the page a reader lands on before reproducing the RC1
+// trial: it counts the measured command paths and names each one. The trial
+// manifest could gain, lose or rename a path while the page kept its prose, so
+// the page is bound to the manifest here.
+test('the RC1 evidence page names the trials the manifest measures', async () => {
+  const manifest = JSON.parse(await read('experiments/rc1/kit/trial-manifest.json'))
+  const candidate = JSON.parse(await read('runtime/rc1/candidate-manifest.json'))
+  const page = await read('docs/evidence.md')
+  const prose = page.replace(/\s+/gu, ' ')
+
+  assert.match(page, new RegExp(`\\b${manifest.trials.length}\\b|\\bseven\\b`, 'u'))
+  assert.ok(page.includes(`v${candidate.version}`), `the page does not name ${candidate.version}`)
+
+  const PATHS = new Map([
+    ['source check', 'hello-check'],
+    ['review manifest', 'agent-review'],
+    ['argument capability', 'capability-args'],
+    ['file capability', 'capability-file'],
+    ['project workflow', 'project-workflow'],
+    ['multi-module gate', 'multi-module'],
+    ['bounded HTTP/JSON/SQLite server gate', 'bounded-server'],
+  ])
+  assert.equal(PATHS.size, manifest.trials.length)
+  const trials = new Map(manifest.trials.map((trial) => [trial.id, trial]))
+  for (const [phrase, id] of PATHS) {
+    assert.ok(prose.includes(phrase), `the page does not describe the ${phrase}`)
+    const trial = trials.get(id)
+    assert.ok(trial, `the manifest no longer records the ${id} trial`)
+    assert.equal(trial.status, 'measured-native', `the ${id} trial is not measured`)
+    const [step] = trial.steps
+    assert.ok(Array.isArray(step.command) && step.command.length > 1, `${id} records no command`)
+    assert.equal(typeof step.expected.exit_status, 'number', `${id} records no exit status`)
+    assert.equal(step.expected.stderr_sha256.length, 64, `${id} records no stderr digest`)
+  }
+  const surface = new Set(manifest.trials.flatMap((trial) => trial.steps.map((step) => step.command[1])))
+  for (const command of ['check', 'manifest', 'execute', 'project-init', 'project-multi-module-gate', 'project-server-gate']) {
+    assert.ok(surface.has(command), `the trials no longer run \`${command}\``)
+  }
+})
