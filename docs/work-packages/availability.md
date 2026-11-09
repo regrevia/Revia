@@ -1143,6 +1143,12 @@ It still changes language semantics and was not folded into Issues 1-3.
     requires each listed file's size and SHA-256 to match, rejects duplicate
     entries, and requires the kit to ship no unlisted file.
 
+88. The RC1 kit's own `checksums.txt` is what a trial runner verifies before
+    executing, but no test read it: it could disagree with the manifest while
+    both claimed to describe the same kit. The new guard requires its file set
+    to equal the manifest's files plus the manifest itself, with matching
+    digests, and rejects duplicate or malformed lines.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

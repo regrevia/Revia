@@ -822,3 +822,29 @@ test('the RC1 trial manifest covers and matches the kit it lists', async () => {
     .filter((path) => !listed.has(path))
   assert.deepEqual(unlisted, [], 'the kit ships files the manifest does not hash')
 })
+
+// The kit's own `checksums.txt` is what a trial runner verifies before
+// executing. It restated the manifest digests but no test read it, so the two
+// could disagree while both claimed to describe the same kit.
+test('the RC1 trial checksums restate the manifest digests', async () => {
+  const manifest = JSON.parse(await read('experiments/rc1/kit/trial-manifest.json'))
+  const expected = new Map(manifest.files.map((file) => [file.path, file.sha256]))
+  const manifestBytes = await readFile(new URL('experiments/rc1/kit/trial-manifest.json', repository))
+  expected.set(
+    'trial-manifest.json',
+    createHash('sha256').update(manifestBytes).digest('hex'),
+  )
+  const text = await readFile(new URL('experiments/rc1/kit/checksums.txt', repository), 'utf8')
+  const published = new Map()
+  for (const line of text.trim().split('\n')) {
+    const [sum, path] = line.split(/\s+/u)
+    assert.match(sum, /^[0-9a-f]{64}$/u, `the kit checksums have a malformed digest: ${line}`)
+    assert.ok(path, `the kit checksums have a digest without a file name: ${line}`)
+    assert.equal(published.has(path), false, `the kit checksums repeat ${path}`)
+    published.set(path, sum)
+  }
+  assert.deepEqual([...published.keys()].sort(), [...expected.keys()].sort())
+  for (const [path, sum] of expected) {
+    assert.equal(published.get(path), sum, `${path} does not match its manifest digest`)
+  }
+})
