@@ -861,14 +861,16 @@ It still changes language semantics and was not folded into Issues 1-3.
     all three, catches the reverted exit code, and requires the compatibility
     page to state both codes.
 
-49. `docs/compatibility.md` and `docs/evidence.md` still told readers the
-    candidate had "five pending targets", but
-    `runtime/rc2.2.1/target-matrix.json` and the table above it list four
-    pending rows and two `measured-native` rows; no test read the number, so the
-    prose drifted when the matrix settled. Both pages now say "the pending
-    targets" without a count, and `release-compatibility-table` binds any
-    spoken or written count of pending targets in those two pages to the row
-    set, in English and Chinese, so a re-added count has to be correct.
+49. `docs/compatibility.md` and `docs/evidence.md` said "five pending
+    targets" on pages whose current section is RC2.2.1. The number was
+    accurate when written for the RC1 import (`c4e7867`):
+    `runtime/rc1/target-matrix.json` has five pending rows because RC1 measured
+    `darwin-arm64`, and `runtime/rc2.2.1/target-matrix.json` has four. On the
+    same page the sentence could be read against either matrix, and no test read
+    it. Both pages now say "the pending targets" without a count, and
+    `release-compatibility-table` accepts a count only when it equals the
+    pending rows of a published matrix (five or four here), in English and
+    Chinese, so a count that matches neither candidate fails.
 
 50. `QUICKSTART.md` described the published candidate assets only by libc
     floor, so a macOS `arm64` reader following it would reach the source
@@ -879,6 +881,12 @@ It still changes language semantics and was not folded into Issues 1-3.
     `native/target/release/revia` as the supported path there.
     `release-compatibility-table` asserts the quickstart keeps that wording
     next to the compatibility matrix.
+
+51. An earlier revision of record 49 in this file called the "five pending
+    targets" wording drift that appeared after the RC2.2.1 matrix settled. That
+    was wrong: `git log -S` traces the sentence to the RC1 import, where five
+    pending rows was the correct count. The defect is ambiguity across two
+    matrices, not a stale number, and record 49 now says so.
 
 ## 8. Evidence rules
 

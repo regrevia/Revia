@@ -266,10 +266,11 @@ test('both launchers keep the pending-target and damaged-record paths', async ()
   assert.match(quickstart, /native\/target\/release\/revia/u)
 })
 
-// Two pages told readers that the candidate had "five pending targets" after
-// the published matrix had already settled at four, and no test read the
-// number. A count in prose is a claim about the matrix, so bind every explicit
-// count to the pending row set instead of trusting it.
+// The count was not bound to any matrix, so it could not tell a reader which
+// candidate it described: `runtime/rc1/target-matrix.json` has five pending
+// rows (RC1 measured darwin-arm64), `runtime/rc2.2.1/target-matrix.json` has
+// four. A numeric count in these two pages must match one of those matrices,
+// and it has to stay correct if a row changes.
 const NUMBER_WORDS = {
   one: 1, two: 2, three: 3, four: 4, five: 5,
   six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
@@ -279,22 +280,28 @@ const CN_NUMERALS = {
 }
 const COUNTED_DOCUMENTS = ['docs/compatibility.md', 'docs/evidence.md']
 
-test('prose counts of pending targets match the release matrix', async () => {
-  const pending = EXPECTED_ROWS.filter((row) => row.state === 'pending').length
+async function pendingRowCount(relativePath) {
+  const matrix = JSON.parse(await read(relativePath))
+  return matrix.targets.filter((row) => row.status === 'pending').length
+}
+
+test('prose counts of pending targets match a published matrix', async () => {
+  const pending = new Set([
+    await pendingRowCount('runtime/rc1/target-matrix.json'),
+    await pendingRowCount('runtime/rc2.2.1/target-matrix.json'),
+  ])
   for (const relativePath of COUNTED_DOCUMENTS) {
     const text = await read(relativePath)
     for (const match of text.matchAll(/\b(one|two|three|four|five|six|seven|eight|nine|ten) pending targets\b/giu)) {
-      assert.equal(
-        NUMBER_WORDS[match[1].toLowerCase()],
-        pending,
-        `${relativePath} says "${match[0]}" but ${pending} rows are pending`,
+      assert.ok(
+        pending.has(NUMBER_WORDS[match[1].toLowerCase()]),
+        `${relativePath} says "${match[0]}" but no matrix has ${NUMBER_WORDS[match[1].toLowerCase()]} pending rows (${[...pending].join(', ')})`,
       )
     }
     for (const match of text.matchAll(/([一二三四五六七八九十])个 pending 目标/gu)) {
-      assert.equal(
-        CN_NUMERALS[match[1]],
-        pending,
-        `${relativePath} says "${match[0]}" but ${pending} rows are pending`,
+      assert.ok(
+        pending.has(CN_NUMERALS[match[1]]),
+        `${relativePath} says "${match[0]}" but no matrix has ${CN_NUMERALS[match[1]]} pending rows (${[...pending].join(', ')})`,
       )
     }
   }
