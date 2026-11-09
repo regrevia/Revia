@@ -89,6 +89,32 @@ Native surface check 只验证 authority 绑定与声明的必要结构，不替
 固定 graph revision、checked operation、adapter 契约、错误 variant、幂等要求和 HTTP
 路径。生成 client 是有界集成产物，不是第二语义真源或完整生产 SDK。
 
+The checked-in fixture `agent-expense-review-run.json` drives one bounded run
+with `project-run`, which requires that argument:
+
+```bash
+node src/cli/re.js project-run \
+  --fixture examples/agent-expense-review-run.json \
+  examples/agent-expense-review
+```
+
+That command exits `0` and prints one JSON line: `"ok":true`, schema
+`re.project-run-result@0.1.0`, and a receipt under schema
+`re.project-run-receipt@0.3.0`. The receipt's `receipt_digest` is equal across
+repeated runs of the same inputs, `replay` records `attempts: 2`, and
+`typed_outcome.value.approved` is `true`. Without `--fixture` the CLI prints its
+usage banner and exits `64`. The receipt is a preview project-run contract bound
+to this fixture; it is not a production backend and does not extend the
+single-file Node runtime.
+
+仓库内固定的 `agent-expense-review-run.json` 驱动一次有界 `project-run`，该参数必填。
+命令以 `0` 退出并输出一行 JSON：`"ok":true`、schema 为
+`re.project-run-result@0.1.0`，receipt 的 schema 为 `re.project-run-receipt@0.3.0`。
+相同输入重复运行时 `receipt_digest` 相同，`replay` 记录 `attempts: 2`，
+`typed_outcome.value.approved` 为 `true`。缺少 `--fixture` 时 CLI 打印 usage 并以
+`64` 退出。该 receipt 是绑定此 fixture 的预览 project-run 契约，不是生产后端，也不扩展
+单文件 Node 运行时。
+
 ## What To Inspect / 审阅重点
 
 1. Change one module source and update only its declared source digest.

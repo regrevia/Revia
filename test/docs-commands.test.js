@@ -312,3 +312,54 @@ test('the integration guide runs the built artifact outside the repository', () 
   assert.ok(guide.includes('`ENOTEMPTY`'))
   assert.ok(guide.includes('kind: self-contained-node-demo-runtime'))
 })
+
+test('the expense-review example runs its checked fixture', () => {
+  // The example README tells a reader to drive one bounded run with
+  // `project-run` and its checked-in fixture. Re-run that command twice, so
+  // the page cannot claim a stable receipt digest the run does not produce.
+  const example = resolve(repositoryRoot, 'examples/agent-expense-review')
+  const run = () => spawnSync(
+    process.execPath,
+    [
+      resolve(repositoryRoot, 'src/cli/re.js'),
+      'project-run',
+      '--fixture',
+      resolve(repositoryRoot, 'examples/agent-expense-review-run.json'),
+      example
+    ],
+    { encoding: 'utf8' }
+  )
+
+  const first = run()
+  assert.equal(first.status, 0, first.stderr)
+  assert.equal(first.stderr, '')
+  const envelope = JSON.parse(first.stdout)
+  assert.equal(envelope.schema, 're.project-run-result@0.1.0')
+  assert.equal(envelope.ok, true)
+  assert.equal(envelope.receipt.schema, 're.project-run-receipt@0.3.0')
+  assert.equal(envelope.receipt.replay.attempts, 2)
+  assert.equal(envelope.receipt.typed_outcome.value.approved, true)
+
+  const second = run()
+  assert.equal(second.status, 0, second.stderr)
+  assert.equal(
+    JSON.parse(second.stdout).receipt.receipt_digest,
+    envelope.receipt.receipt_digest
+  )
+
+  const withoutFixture = spawnSync(
+    process.execPath,
+    [resolve(repositoryRoot, 'src/cli/re.js'), 'project-run', example],
+    { encoding: 'utf8' }
+  )
+  assert.equal(withoutFixture.status, 64)
+  assert.equal(withoutFixture.stdout, '')
+
+  const readme = readFileSync(join(example, 'README.md'), 'utf8')
+  assert.ok(readme.includes('node src/cli/re.js project-run'))
+  assert.ok(readme.includes('`re.project-run-result@0.1.0`'))
+  assert.ok(readme.includes('`re.project-run-receipt@0.3.0`'))
+  assert.ok(readme.includes('`attempts: 2`'))
+  assert.ok(readme.includes('`typed_outcome.value.approved`'))
+  assert.ok(readme.includes('`--fixture`'))
+})

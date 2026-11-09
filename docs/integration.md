@@ -33,6 +33,10 @@ surface. Native
 the public source tree does not present them as a complete package manager or
 production project system.
 
+The checked example project runs one bounded preview execution from its
+checked-in fixture; see
+[the expense-review verification path](../examples/agent-expense-review/README.md#verify--验证).
+
 ## Generated Frontend Contract / 前端生成契约
 
 The public source tree includes a bounded interface projection command:
