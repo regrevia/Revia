@@ -983,6 +983,12 @@ It still changes language semantics and was not folded into Issues 1-3.
     host/glibc pair in each half, requires the recorded set, and rejects any pair
     at or above the stated floor.
 
+65. `experiments/rc1/README.md` said its manifest "binds seven trials" and that
+    five targets stayed pending, but no test read either number: a trial or a
+    matrix row could be added while the guide kept describing the old kit. Both
+    counts now derive from `kit/trial-manifest.json` and
+    `runtime/rc1/target-matrix.json` in the release-compatibility suite.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

@@ -411,3 +411,31 @@ test(
     assert.match(result.stdout, /launcher checks passed/u)
   },
 )
+
+// `experiments/rc1/README.md` describes the accepted trial kit in prose: how
+// many trials the manifest binds and how many targets are still pending. Both
+// numbers were unread, so a trial or matrix row could be added while the page
+// kept describing the old kit.
+test('deep-trial guide counts match the manifest and the rc.1 matrix', async () => {
+  const manifest = JSON.parse(await read('experiments/rc1/kit/trial-manifest.json'))
+  assert.equal(manifest.status, 'measured-native')
+  assert.equal(manifest.target, 'darwin-arm64')
+  const pending = await pendingRowCount('runtime/rc1/target-matrix.json')
+  const guide = await read('experiments/rc1/README.md')
+
+  function wordOf(count) {
+    const found = Object.entries(NUMBER_WORDS).find(([, value]) => value === count)
+    assert.ok(found, `no number word is recorded for ${count}`)
+    return found[0]
+  }
+  function cnOf(count) {
+    const found = Object.entries(CN_NUMERALS).find(([, value]) => value === count)
+    assert.ok(found, `no Chinese numeral is recorded for ${count}`)
+    return found[0]
+  }
+
+  assert.match(guide, new RegExp(`binds ${wordOf(manifest.trials.length)} trials\\b`, 'u'))
+  assert.match(guide, new RegExp(`将${cnOf(manifest.trials.length)}个试验`, 'u'))
+  assert.match(guide, new RegExp(`其他${cnOf(pending)}个目标仍为 \`pending\``, 'u'))
+  assert.match(guide, /`darwin-arm64`/u)
+})
