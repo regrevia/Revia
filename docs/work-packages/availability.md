@@ -920,6 +920,14 @@ It still changes language semantics and was not folded into Issues 1-3.
     release compatibility test runs the script on POSIX hosts, so drift fails
     the suite instead of waiting for a hand run.
 
+56. `docs/language.md` still told readers to run `revia --help` on macOS
+    arm64 "for `v1.0.0-rc.1`", naming a version whose only measured target is
+    not where the current candidate is measured. The clause now records the
+    rc.1 measurement as history, keeps its trial manifest as the rc.1
+    contract, and points at the compatibility matrix for the candidate a
+    reader actually runs. The release compatibility test holds both the
+    pointer and the retired phrasing.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

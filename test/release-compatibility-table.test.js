@@ -295,6 +295,16 @@ test('both launchers keep the pending-target and damaged-record paths', async ()
   const languageReference = await read('docs/language-reference.md')
   assert.match(languageReference, /reports\s+`pending target` and exits `69`/u)
   assert.match(languageReference, /\[compatibility matrix\]\(compatibility\.md\)/u)
+
+  // `docs/language.md` used to tell readers to run `revia --help` on macOS
+  // arm64 for rc.1, which is where the current candidate is not measured. The
+  // version it names is now a historical note, and the matrix is the pointer.
+  const languageGuide = await read('docs/language.md')
+  assert.match(languageGuide, /\[compatibility matrix\]\(compatibility\.md\)/u)
+  assert.match(languageGuide, /rc\.1 deep-trial command contract/u)
+  assert.match(languageGuide, /rc\.1 的深度试用命令契约/u)
+  assert.doesNotMatch(languageGuide, /For `v1\.0\.0-rc\.1`, run `revia --help`/u)
+  assert.doesNotMatch(languageGuide, /对于 `v1\.0\.0-rc\.1`，请在 macOS arm64 运行/u)
 })
 
 // The count was not bound to any matrix, so it could not tell a reader which
