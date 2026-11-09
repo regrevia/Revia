@@ -792,6 +792,75 @@ It still changes language semantics and was not folded into Issues 1-3.
     page so a rejected edit has a stated next step; `test/docs-links.test.js`
     resolves every fragment these links name.
 
+43. The largest checked project example documented only static checks, so a
+    reader could not see its execution path; `project-run --fixture` exits `0`
+    with `re.project-run-result@0.1.0` and a `re.project-run-receipt@0.3.0`
+    receipt. `examples/agent-expense-review/README.md` now runs that command
+    with the checked-in fixture, states the stable `receipt_digest`, `replay`
+    `attempts: 2`, the approved typed outcome, and the `64` usage exit without
+    `--fixture`; `docs/integration.md` links that section.
+    `test/docs-commands.test.js` re-runs the command twice and resolves the
+    link, and the `attempts` mutation is caught. The page also states the
+    three rejection paths — exit `65` with
+    `missing-project-run-selection-field`,
+    `project-run-graph-revision-mismatch`, or `project-run-case-not-found` —
+    and the test replays each; the first draft of the test asserted only the
+    live behaviour, so the code mutation passed until the page assertions were
+    added.
+
+44. QUICKSTART.md ended at the two single-file programs, so a reader who
+    wanted a project had to leave the page; the checked multi-module example is
+    now a third step with `project-check --format json` (`0`,
+    `re.project-check-result@0.1.0`, `"ok":true`) and `project-run --fixture`
+    (`0`, `re.project-run-receipt@0.3.0`, `64` without the flag).
+    `test/quickstart-first-program.test.js` re-runs both from the root and pins
+    the promised envelopes; the receipt-version mutation is caught.
+
+45. The example's modification steps named `project-surface-check` with no
+    binary, so a reader typed a command that does not exist; the steps now copy
+    the example to `scratch/`, name `native/target/release/revia
+    project-surface-check`, and record that its `graph_revision` is a native
+    digest that does not equal the pinned Node one. `docs-commands` re-runs the
+    stale-digest rejection (`project-module-source-digest-mismatch`, `65`) and
+    the native envelope when the binary exists; the code mutation is caught.
+
+46. `projects/README.md` presented `project-init` next to the source CLI's
+    `project-check`, with no provenance and no warning that the starter it
+    writes cannot be checked by that CLI: measured, the native starter seals a
+    `re 0.1 compact` module, so `project-check --format json` exits `65` with
+    `unsupported-module-surface-header` and the native surface check exits `65`
+    with `native-project-module-surface-header-unsupported`. The page now names
+    the release binary, the `re.native-project-init@0.1.0` envelope, the working
+    `revia project-check` path, and the failing header rewrite. The template
+    page says where `revia` comes from. `project-template` re-runs all four
+    envelopes and catches a renamed schema.
+
+47. The example's modification steps still told a reader to "update the source
+    digests" and confirm the native surface check "fails closed", which no
+    published command performs. Measured on a `scratch` copy: a comment-only
+    edit yields `65` `project-module-source-digest-mismatch`; updating only
+    `modules[].source_sha256` yields `65`
+    `project-module-implementation-digest-mismatch` for the same module; both
+    pins updated, `project-check` exits `0`. A capability-access edit with the
+    same two pins also exits `0` from `project-check` and the native surface
+    check, and the closed gate is `project-run --fixture ...`, which exits `65`
+    with `project-run-graph-revision-mismatch` because the fixture pins the
+    pre-edit revision. The steps now state the two-pin repair and that run
+    gate; `docs-commands` re-runs both and catches the code mutation.
+
+48. `bin/revia` reported every target the candidate never published as
+    `Revia runtime error: Missing checksum for revia-1.0.0-rc.2.2.1-darwin-arm64.tar.gz.`
+    with exit `70`, which reads as a damaged checkout. Measured: the candidate
+    publishes only `linux-x64` and `windows-x64` assets, and
+    `runtime/checksums.txt` has no `darwin-arm64` row for it, so on this
+    checkout `./bin/revia check ...` failed at the checksum lookup. Both
+    launchers now distinguish the two states: an absent per-target row prints
+    `pending target` with the target and compatibility pointer and exits `69`,
+    while a missing `runtime/checksums.txt` or a version with no rows at all
+    still exits `70`. `release-compatibility-table` runs synthetic roots for
+    all three, catches the reverted exit code, and requires the compatibility
+    page to state both codes.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

@@ -385,13 +385,26 @@ try {
 
   $Asset = "revia-$Version-$Platform.zip"
   $BinaryName = $Asset.Substring(0, $Asset.Length - '.zip'.Length)
-  $Checksums = Get-Content -LiteralPath (Join-Path $Root 'runtime/checksums.txt')
+  $ChecksumsPath = Join-Path $Root 'runtime/checksums.txt'
+  if (-not (Test-Path -LiteralPath $ChecksumsPath -PathType Leaf)) {
+    Fail-Runtime 'Release checksums file is unavailable.'
+  }
+  $Checksums = @(Get-Content -LiteralPath $ChecksumsPath)
+  $VersionRows = @($Checksums | Where-Object { $_ -match "  revia-$([Regex]::Escape($Version))-" }).Count
+  if ($VersionRows -eq 0) {
+    Fail-Runtime "Release checksums have no entries for $Version."
+  }
 
   function Get-ExpectedSha256([string]$Name) {
     $escapedName = [Regex]::Escape($Name)
     $entry = $Checksums | Where-Object { $_ -match "^([0-9a-f]{64})  $escapedName$" }
-    if (@($entry).Count -ne 1) {
-      Fail-Runtime "Missing or duplicate checksum for $Name."
+    if (@($entry).Count -eq 0) {
+      [Console]::Error.WriteLine("Revia $Version has a pending target: $Platform. No $Platform release asset is recorded for this candidate.")
+      [Console]::Error.WriteLine("See $Root/docs/compatibility.md for the current support matrix.")
+      exit 69
+    }
+    if (@($entry).Count -gt 1) {
+      Fail-Runtime "Duplicate checksum for $Name."
     }
     return ([Regex]::Match($entry, '^([0-9a-f]{64})').Groups[1].Value)
   }

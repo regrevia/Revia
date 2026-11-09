@@ -1,5 +1,17 @@
 import assert from 'node:assert/strict'
-import { readFile, readdir } from 'node:fs/promises'
+import { spawnSync } from 'node:child_process'
+import {
+  chmod,
+  copyFile,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rm,
+  writeFile,
+} from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import test from 'node:test'
 
 // `docs/compatibility.md` is what a reader uses to decide whether their target
@@ -147,4 +159,102 @@ test('pending rows cite no evidence and no evidence record exists for them', asy
     [...measuredTargets].sort(),
     candidate.targets.map((target) => target.target).sort(),
   )
+})
+
+// A reader on a target that the candidate never published should be told that
+// the target is pending, not that the checkout is damaged. `bin/revia` used to
+// report every absent release record as `Missing checksum` with exit 70, which
+// reads as a host fault on the most common developer platform (macOS arm64).
+// The synthetic roots below pin the three distinct outcomes: pending target
+// (exit 69), damaged release records (exit 70), and checksums that name no
+// asset for the current version (exit 70).
+const ZERO_DIGEST = '0'.repeat(64)
+
+function hostPlatformName() {
+  if (process.platform === 'darwin') {
+    return process.arch === 'arm64' ? 'darwin-arm64' : 'darwin-x64'
+  }
+  if (process.platform === 'linux') {
+    return process.arch === 'arm64' ? 'linux-arm64' : 'linux-x64'
+  }
+  return `windows-${process.arch === 'arm64' ? 'arm64' : 'x64'}`
+}
+
+async function createLauncherRoot(version, checksums) {
+  const root = await mkdtemp(join(tmpdir(), 'revia-launcher-pending-'))
+  await mkdir(join(root, 'bin'), { recursive: true })
+  await mkdir(join(root, 'runtime'), { recursive: true })
+  await copyFile(new URL('../bin/revia', import.meta.url), join(root, 'bin/revia'))
+  await chmod(join(root, 'bin/revia'), 0o755)
+  await writeFile(join(root, 'VERSION'), `${version}\n`)
+  if (checksums !== null) {
+    await writeFile(join(root, 'runtime/checksums.txt'), checksums)
+  }
+  return root
+}
+
+function runLauncher(root) {
+  return spawnSync(join(root, 'bin/revia'), ['check', 'example.re'], {
+    cwd: root,
+    encoding: 'utf8',
+  })
+}
+
+test('the launcher reports an unpublished target as pending, not as damage', { skip: process.platform === 'win32' }, async () => {
+  const version = '9.9.9-test'
+  const unpublished = `${ZERO_DIGEST}  revia-${version}-zzz.tar.gz\n${ZERO_DIGEST}  revia-${version}-zzz\n`
+  const root = await createLauncherRoot(version, unpublished)
+  try {
+    const result = runLauncher(root)
+    const output = `${result.stdout}${result.stderr}`
+    assert.equal(result.status, 69, output)
+    assert.match(output, /has a pending target/u)
+    assert.match(output, new RegExp(hostPlatformName(), 'u'))
+    assert.match(output, /release asset is recorded for this candidate/u)
+    assert.match(output, /docs\/compatibility\.md/u)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('the launcher still reports damaged release records as a runtime fault', { skip: process.platform === 'win32' }, async () => {
+  const version = '9.9.9-test'
+  const missing = await createLauncherRoot(version, null)
+  try {
+    const result = runLauncher(missing)
+    const output = `${result.stdout}${result.stderr}`
+    assert.equal(result.status, 70, output)
+    assert.match(output, /Release checksums file is unavailable\./u)
+    assert.match(output, /Revia runtime error/u)
+  } finally {
+    await rm(missing, { recursive: true, force: true })
+  }
+
+  const otherVersion = `${ZERO_DIGEST}  revia-1.0.0-rc.1-darwin-arm64.tar.gz\n${ZERO_DIGEST}  revia-1.0.0-rc.1-darwin-arm64\n`
+  const unrelated = await createLauncherRoot(version, otherVersion)
+  try {
+    const result = runLauncher(unrelated)
+    const output = `${result.stdout}${result.stderr}`
+    assert.equal(result.status, 70, output)
+    assert.match(output, new RegExp(`Release checksums have no entries for ${version.replaceAll('.', '\\.')}`, 'u'))
+  } finally {
+    await rm(unrelated, { recursive: true, force: true })
+  }
+})
+
+test('both launchers keep the pending-target and damaged-record paths', async () => {
+  const shell = await readFile(new URL('../bin/revia', import.meta.url), 'utf8')
+  const windows = await readFile(new URL('../bin/revia.ps1', import.meta.url), 'utf8')
+  for (const launcher of [shell, windows]) {
+    assert.match(launcher, /has a pending target/u)
+    assert.match(launcher, /release asset is recorded for this candidate/u)
+    assert.match(launcher, /Release checksums file is unavailable\./u)
+    assert.match(launcher, /Release checksums have no entries for/u)
+  }
+  assert.match(windows, /Duplicate checksum for/u)
+
+  // The table a reader lands on must explain the code they just saw.
+  const compatibility = await readFile(new URL('../docs/compatibility.md', import.meta.url), 'utf8')
+  assert.match(compatibility, /`bin\/revia` reports\s+`pending target` and exits 69/u)
+  assert.match(compatibility, /Exit 70 means the checkout's\s+release records are damaged/u)
 })

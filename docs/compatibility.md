@@ -19,6 +19,22 @@ complete language-output byte determinism.
 当前候选为 `v1.0.0-rc.2.2.1`，Linux x64 与 Windows x64 各自有独立原生证据。
 `measured-native` 仅适用于所列目标与记录中的候选，不证明 Stable V1.0 或所有语言产物均逐字节确定。
 
+On a target that the candidate never published, `bin/revia` reports
+`pending target` and exits 69, naming the target and pointing back at this
+table; it does not claim the checkout is broken. Exit 70 means the checkout's
+release records are damaged (missing `runtime/checksums.txt`, or no entries
+for the version in `VERSION`), not an unsupported host. The distinction
+matters because macOS arm64 is a pending RC2.2.1 target: building the native
+toolchain from source and invoking `native/target/release/revia` directly is
+the supported path there.
+
+在该候选没有发布产物的目标上，`bin/revia` 报告 `pending target` 并以 69 退出，
+同时指出目标并指回本表；它不会声称仓库已损坏。70 表示仓库中的发布记录损坏
+（缺少 `runtime/checksums.txt`，或 `VERSION` 所指版本没有任何记录），
+而非主机不受支持。这一点对 macOS arm64 尤其重要：它是 RC2.2.1 的 pending 目标，
+在该平台上受支持的路径是从源码构建原生工具链并直接调用
+`native/target/release/revia`。
+
 ## Linux x64 Runtime Baseline
 
 The `v1.0.0-rc.2.2.1` Linux x64 asset requires glibc **2.39**. The published binary (`revia-1.0.0-rc.2.2.1-linux-x64.tar.gz`, archive SHA-256

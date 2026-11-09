@@ -330,11 +330,21 @@ if [ "$VERSION" = '1.0.0-rc.1' ] && [ "$PLATFORM" != 'darwin-arm64' ]; then
   exit 69
 fi
 
+CHECKSUMS="$ROOT/runtime/checksums.txt"
+if [ ! -r "$CHECKSUMS" ]; then
+  runtime_error 'Release checksums file is unavailable.'
+fi
 ASSET="revia-${VERSION}-${PLATFORM}.tar.gz"
-EXPECTED=$(awk -v asset="$ASSET" '$2 == asset { print $1 }' "$ROOT/runtime/checksums.txt")
-EXPECTED_BINARY=$(awk -v asset="${ASSET%.tar.gz}" '$2 == asset { print $1 }' "$ROOT/runtime/checksums.txt")
+EXPECTED=$(awk -v asset="$ASSET" '$2 == asset { print $1 }' "$CHECKSUMS")
+EXPECTED_BINARY=$(awk -v asset="${ASSET%.tar.gz}" '$2 == asset { print $1 }' "$CHECKSUMS")
+VERSION_ROWS=$(awk -v prefix="revia-${VERSION}-" 'index($2, prefix) == 1 { count++ } END { print count + 0 }' "$CHECKSUMS")
+if [ "$VERSION_ROWS" -eq 0 ]; then
+  runtime_error "Release checksums have no entries for $VERSION."
+fi
 if [ -z "$EXPECTED" ] || [ -z "$EXPECTED_BINARY" ]; then
-  runtime_error "Missing checksum for $ASSET."
+  printf '%s\n' "Revia $VERSION has a pending target: $PLATFORM. No $PLATFORM release asset is recorded for this candidate." >&2
+  printf '%s\n' "See $ROOT/docs/compatibility.md for the current support matrix." >&2
+  exit 69
 fi
 
 sha256_file() {
