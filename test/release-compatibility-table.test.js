@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import {
   chmod,
   copyFile,
@@ -787,4 +788,37 @@ test('the capability records cover exactly the measured targets', async () => {
       }
     }
   }
+})
+
+// `experiments/rc1/kit/trial-manifest.json` is the reproducible input for the
+// RC1 trial: it lists every file the runner copies and hashes. Nothing checked
+// those digests against the files in the tree, so a fixture could drift or go
+// missing while the manifest kept publishing the old hash.
+test('the RC1 trial manifest covers and matches the kit it lists', async () => {
+  const manifest = JSON.parse(await read('experiments/rc1/kit/trial-manifest.json'))
+  const base = 'experiments/rc1/kit'
+  const listed = new Set()
+  for (const file of manifest.files) {
+    assert.equal(listed.has(file.path), false, `the manifest lists ${file.path} twice`)
+    listed.add(file.path)
+    const contents = await readFile(new URL(`${base}/${file.path}`, repository))
+    assert.equal(file.size, contents.length, `${file.path} changed size`)
+    assert.equal(file.sha256, createHash('sha256').update(contents).digest('hex'), `${file.path} changed contents`)
+  }
+  const present = []
+  async function walk(relative) {
+    for (const entry of await readdir(new URL(`${base}/${relative}`, repository), { withFileTypes: true })) {
+      const next = relative ? `${relative}/${entry.name}` : entry.name
+      if (entry.isDirectory()) {
+        await walk(next)
+      } else {
+        present.push(next)
+      }
+    }
+  }
+  await walk('')
+  const unlisted = present
+    .filter((path) => path !== 'trial-manifest.json' && path !== 'checksums.txt')
+    .filter((path) => !listed.has(path))
+  assert.deepEqual(unlisted, [], 'the kit ships files the manifest does not hash')
 })

@@ -1136,6 +1136,13 @@ It still changes language semantics and was not folded into Issues 1-3.
     `checksums.txt` to match the candidate manifest, rejects duplicate or
     malformed lines, and rejects entries no release record names.
 
+87. `experiments/rc1/kit/trial-manifest.json` is the reproducible input for
+    the RC1 trial: it lists every file the runner copies and hashes, but nothing
+    compared those digests with the files in the tree, so a fixture could drift
+    or go missing while the manifest kept publishing the old hash. The new guard
+    requires each listed file's size and SHA-256 to match, rejects duplicate
+    entries, and requires the kit to ship no unlisted file.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
