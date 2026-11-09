@@ -320,3 +320,56 @@ test('design documents separate runnable samples from illustrations', async () =
     await rm(directory, { recursive: true, force: true })
   }
 })
+
+test('the checked project example in QUICKSTART runs as documented', () => {
+  // QUICKSTART.md sends a reader from the first programs to the checked
+  // multi-module example. Re-run both commands from the repository root, so the
+  // page cannot promise envelopes or an exit code the CLI does not produce.
+  const checked = runCli(
+    repositoryRoot,
+    'project-check',
+    '--format',
+    'json',
+    'examples/agent-expense-review',
+  )
+  assert.equal(checked.status, 0, checked.stderr)
+  const checkEnvelope = JSON.parse(checked.stdout)
+  assert.equal(checkEnvelope.schema, 're.project-check-result@0.1.0')
+  assert.equal(checkEnvelope.ok, true)
+
+  const executed = runCli(
+    repositoryRoot,
+    'project-run',
+    '--fixture',
+    'examples/agent-expense-review-run.json',
+    'examples/agent-expense-review',
+  )
+  assert.equal(executed.status, 0, executed.stderr)
+  assert.equal(executed.stderr, '')
+  const runEnvelope = JSON.parse(executed.stdout)
+  assert.equal(runEnvelope.schema, 're.project-run-result@0.1.0')
+  assert.equal(runEnvelope.ok, true)
+  assert.equal(runEnvelope.receipt.schema, 're.project-run-receipt@0.3.0')
+
+  const withoutFixture = runCli(
+    repositoryRoot,
+    'project-run',
+    'examples/agent-expense-review',
+  )
+  assert.equal(withoutFixture.status, 64)
+  assert.equal(withoutFixture.stdout, '')
+
+  for (const promised of [
+    'npm run re -- project-check --format json examples/agent-expense-review',
+    'npm run re -- project-run',
+    '--fixture examples/agent-expense-review-run.json',
+    '`re.project-check-result@0.1.0`',
+    '`re.project-run-receipt@0.3.0`',
+    '`64`',
+  ]) {
+    assert.ok(
+      quickstart.includes(promised),
+      `QUICKSTART.md must document ${promised}`,
+    )
+  }
+})

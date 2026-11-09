@@ -181,6 +181,33 @@ cargo fmt --all -- --check
 cargo clippy --workspace --offline -- -D warnings
 ```
 
+### The checked project example / 项目示例
+
+From the repository root, validate the checked multi-module project example,
+then run the one bounded execution its checked-in fixture selects:
+
+```bash
+npm run re -- project-check --format json examples/agent-expense-review
+npm run re -- project-run \
+  --fixture examples/agent-expense-review-run.json \
+  examples/agent-expense-review
+```
+
+The first command exits `0` and prints a `re.project-check-result@0.1.0`
+envelope with `"ok":true` when every module pin, source digest, and graph
+revision matches. The second exits `0` and prints one JSON line with `"ok":true`
+and a receipt under `re.project-run-receipt@0.3.0`; omit `--fixture` and it
+exits `64` with the usage banner. The receipt is a preview contract bound to
+that fixture, not a production backend; the example's own README lists the
+rejection codes.
+
+在仓库根目录先校验仓库内固定的多模块项目示例，再执行其 fixture 选定的那一次有界运行。
+第一条命令在模块 pin、源码摘要与 graph revision 全部匹配时以 `0` 退出，打印
+`re.project-check-result@0.1.0` 且 `"ok":true`；第二条命令以 `0` 退出，输出一行
+`"ok":true` 的 JSON，receipt schema 为 `re.project-run-receipt@0.3.0`。省略
+`--fixture` 会打印 usage 并以 `64` 退出。该 receipt 是绑定此 fixture 的预览契约，
+不是生产后端；示例自己的 README 列出各类拒绝 code。
+
 ## Published candidate assets / 已发布候选资产
 
 The `v1.0.0-rc.2.2.1` Linux x64 asset requires **glibc 2.39** (it is built on the
