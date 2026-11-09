@@ -109,3 +109,30 @@ test('the public export ships the artifacts the candidate lists', () => {
     assert.ok(Number.isInteger(archive.size) && archive.size > 0)
   }
 })
+
+// `runtime/checksums.txt` is the plain digest list readers check a download
+// against. Only the RC1 lines and the export manifest's listing were covered,
+// so the current candidate could ship a stale or misspelled digest line.
+test('runtime checksums name the candidate archives and binaries', async () => {
+  const lines = (await readFile(new URL('runtime/checksums.txt', repository), 'utf8'))
+    .trim()
+    .split('\n')
+  const sums = new Map()
+  for (const line of lines) {
+    const [sum, name] = line.split(/\s+/u)
+    assert.match(sum, /^[0-9a-f]{64}$/u, `checksums.txt has a malformed digest: ${line}`)
+    assert.ok(name, `checksums.txt has a digest without a file name: ${line}`)
+    assert.equal(sums.has(name), false, `checksums.txt repeats ${name}`)
+    sums.set(name, sum)
+  }
+  assert.equal(sums.size, lines.length, 'checksums.txt repeats a line')
+  for (const target of candidate.targets) {
+    assert.equal(sums.get(target.archive), digestOf(target.archive_sha256), `${target.target} archive`)
+    assert.equal(sums.get(target.binary), digestOf(target.binary_sha256), `${target.target} binary`)
+  }
+  for (const name of sums.keys()) {
+    const recorded = name.includes('-rc.1-')
+      || candidate.targets.some((target) => target.archive === name || target.binary === name)
+    assert.ok(recorded, `checksums.txt lists ${name} for no release record`)
+  }
+})

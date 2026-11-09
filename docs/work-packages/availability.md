@@ -1129,6 +1129,13 @@ It still changes language semantics and was not folded into Issues 1-3.
     no longer there. The new guard requires each shipped record's size and
     SHA-256 to match the sealed entry.
 
+86. `runtime/checksums.txt` is the plain digest list readers check a download
+    against, but only the RC1 lines and the export manifest's listing were
+    covered: the current candidate could ship a stale or misspelled digest
+    line. The new guard requires the candidate archive and binary digests in
+    `checksums.txt` to match the candidate manifest, rejects duplicate or
+    malformed lines, and rejects entries no release record names.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
