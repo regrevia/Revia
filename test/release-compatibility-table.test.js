@@ -476,3 +476,25 @@ test('cross-platform evidence matches the rc.1 matrix and the rc.2.1 record', as
   assert.match(guide, new RegExp(`this ${word}-target matrix`, 'u'))
   assert.match(guide, new RegExp(`此${cn}目标矩阵`, 'u'))
 })
+
+// `docs/development-status.md` publishes how many cases pin the declared-call
+// and host-boundary slices. The Rust drivers iterate whatever the fixtures
+// hold, so the page could keep quoting a stale count after a case was added or
+// removed; no Node test read either fixture.
+test('development status corpus counts match the conformance fixtures', async () => {
+  const status = await read('docs/development-status.md')
+  const fixtures = [
+    ['test/fixtures/declared-capability-execution-corpus.json', '-case CLI conformance corpus'],
+    ['test/fixtures/host-boundary-refusal-corpus.json', '-case CLI corpus'],
+  ]
+  for (const [relativePath, suffix] of fixtures) {
+    const corpus = JSON.parse(await read(relativePath))
+    const ids = corpus.cases.map((entry) => entry.id)
+    assert.equal(new Set(ids).size, ids.length, `${relativePath} repeats a case id`)
+    assert.match(
+      status,
+      new RegExp(`\\b${corpus.cases.length}${suffix}`, 'u'),
+      `docs/development-status.md does not publish ${corpus.cases.length}${suffix}`
+    )
+  }
+})

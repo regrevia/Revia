@@ -997,6 +997,14 @@ It still changes language semantics and was not folded into Issues 1-3.
     `runtime/rc2.1/native-evidence.json`, and the six-target count to the
     matrix length.
 
+67. `docs/development-status.md` published the declared-call and host-boundary
+    corpus sizes, but the Rust drivers iterate whatever the fixtures hold, so
+    the page could keep quoting a stale count after a case was added or
+    removed. The suite now derives both counts from
+    `test/fixtures/declared-capability-execution-corpus.json` and
+    `test/fixtures/host-boundary-refusal-corpus.json` and rejects a fixture
+    that repeats a case id.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
