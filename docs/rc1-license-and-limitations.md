@@ -13,11 +13,25 @@ Revia `v1.0.0-rc.1` is intended for deep, non-production evaluation by developer
 
 ## Not permitted
 
-- Production or safety-critical use.
-- Commercial hosting or service delivery.
-- Redistribution or mirroring of the binary; link to the official GitHub release.
-- Reverse engineering or attempts to recover non-public implementation, except where applicable law does not allow that restriction.
-- Claims for operating systems, architectures, features, determinism boundaries, or performance that were not actually measured.
+- Production, live-user, operational-decision, safety-critical, regulated, and
+  high-risk use.
+- Selling, renting, leasing, sublicensing, or commercial hosting and service
+  delivery.
+- Redistribution, publishing, mirroring, or transfer of the Software or any
+  binary package; link to the official GitHub release instead.
+- Reverse engineering or attempts to recover the source code or non-public
+  implementation, except where applicable law does not allow that
+  restriction.
+- Removing or altering license, copyright, trademark, checksum, provenance,
+  security, or attribution notices.
+- Bypassing or weakening capability, review, release, integrity, or other
+  technical controls.
+- Using Revia names or marks to imply endorsement, certification,
+  compatibility, or affiliation without prior written permission.
+
+Published results must also not claim operating systems, architectures,
+features, determinism boundaries, or performance that were not actually
+measured.
 
 The controlling terms are in [LICENSE-RC.md](../LICENSE-RC.md). This page is an operational summary, not a substitute for the license and not legal advice.
 

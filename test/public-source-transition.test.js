@@ -206,3 +206,58 @@ function isTextPath(path) {
 function digest(bytes) {
   return createHash('sha256').update(bytes).digest('hex')
 }
+
+// `docs/rc1-license-and-limitations.md` calls itself an operational summary of
+// LICENSE-RC.md, but nothing compared the summary to the controlling terms: a
+// restriction could be dropped from the page while the license kept it, and a
+// reader deciding whether an evaluation use is allowed would not see it.
+test('the RC1 license summary lists every restriction the license states', () => {
+  const license = readFileSync(join(ROOT, 'LICENSE-RC.md'), 'utf8')
+  const restrictions = [...license
+    .split('## 2. Restrictions')[1]
+    .split(/\n## /u)[0]
+    .matchAll(/^\d+\. (.+)$/gmu)]
+    .map(([, text]) => text.toLowerCase())
+  assert.equal(restrictions.length, 7)
+
+  const page = readFileSync(
+    join(ROOT, 'docs', 'rc1-license-and-limitations.md'),
+    'utf8',
+  )
+  const section = page.split('## Not permitted')[1].split(/\n## /u)[0]
+  const bullets = []
+  for (const line of section.split('\n')) {
+    if (line.startsWith('- ')) {
+      bullets.push(line.slice(2))
+    } else if (/^\s{2}\S/u.test(line) && bullets.length > 0) {
+      bullets[bullets.length - 1] += ` ${line.trim()}`
+    }
+  }
+  assert.equal(bullets.length, restrictions.length)
+  const summary = bullets.map((bullet) => bullet.toLowerCase())
+
+  // Each numbered restriction keeps a topic that makes it recognizable. A
+  // reworded license fails here so the summary moves with it, rather than
+  // staying green against a stale topic.
+  const TOPICS = [
+    'production',
+    'sell',
+    'redistribut',
+    'reverse',
+    'notices',
+    'technical controls',
+    'names or marks',
+  ]
+  assert.equal(TOPICS.length, restrictions.length)
+  restrictions.forEach((text, index) => {
+    const topic = TOPICS[index]
+    assert.ok(
+      text.includes(topic),
+      `license restriction ${index + 1} no longer covers "${topic}"`,
+    )
+    assert.ok(
+      summary[index].includes(topic),
+      `the summary omits restriction ${index + 1} ("${topic}")`,
+    )
+  })
+})

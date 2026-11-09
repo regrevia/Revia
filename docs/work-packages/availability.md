@@ -1040,6 +1040,14 @@ It still changes language semantics and was not folded into Issues 1-3.
     page to name exactly the measured target and no pending one, and rejects
     the stale planned wording.
 
+73. The RC1 license page summarized the controlling license but listed only
+    four of its seven restrictions, and nothing compared the two: a reader
+    could take the page as the full list of prohibited uses. The page now
+    enumerates every restriction, and the source-transition suite parses the
+    numbered restrictions from `LICENSE-RC.md` and requires a matching
+    summary bullet carrying each restriction's topic, so a dropped bullet or
+    a reworded license fails.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
