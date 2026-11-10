@@ -1340,6 +1340,11 @@ It still changes language semantics and was not folded into Issues 1-3.
      regenerated kit could leave the published record naming other digests, and
      the runner digest was never tied to the entry in `runtime/checksums.txt`.
      A guard requires both records to agree and every trial to name that runner.
+118. `docs/architecture.md` draws the source-to-review path and prints the four
+     commands that walk it, but nothing ran them: a renamed subcommand or a moved
+     example could leave the drawing and its commands describing a path the
+     toolchain no longer takes. A guard executes the documented block and checks
+     the stages stay `check`, `run`, `manifest`, `view`.
 
 ## 8. Evidence rules
 

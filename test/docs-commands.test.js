@@ -714,3 +714,36 @@ test('every npm script points at a file the repository ships', () => {
   const missing = targets.filter((target) => !tracked.has(target))
   assert.deepEqual(missing, [], 'every npm script target is tracked')
 })
+
+// `docs/architecture.md` draws the source-to-review path and then shows the four
+// commands that walk it. Nothing ran that example, so a renamed subcommand, a
+// moved example file, or a dropped stage could leave the drawing and the
+// commands describing a path the toolchain no longer takes.
+test('the architecture example runs the path it draws', () => {
+  const document = readFileSync(resolve(repositoryRoot, 'docs/architecture.md'), 'utf8')
+  const block = document.match(/```bash\n([\s\S]*?)```/u)
+  assert.ok(block, 'the architecture document keeps its runnable example')
+  const commands = block[1]
+    .split('\n')
+    .map((line) => line.split(' > ')[0].trim())
+    .filter(Boolean)
+  assert.equal(commands.length, 4, 'the example shows each stage once')
+  const stages = []
+  for (const command of commands) {
+    const parsed = command.match(/^npm run (?:--silent )?re -- ([a-z][a-z-]+)(.*)$/u)
+    assert.ok(parsed, `not a runnable re command: ${command}`)
+    const [, subcommand, rest] = parsed
+    stages.push(subcommand)
+    const args = rest.trim().split(/\s+/u).filter(Boolean)
+    const input = args.filter((argument) => argument.endsWith('.re')).at(-1)
+    assert.ok(input, `${command} names no source file`)
+    assert.ok(existsSync(resolve(repositoryRoot, input)), `${command} names a missing example`)
+    const run = spawnSync(process.execPath, [resolve(repositoryRoot, 'src/cli/re.js'), subcommand, ...args], {
+      cwd: repositoryRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    })
+    assert.equal(run.status, 0, `${command} fails: ${run.stderr}`)
+  }
+  assert.deepEqual(stages, ['check', 'run', 'manifest', 'view'])
+})
