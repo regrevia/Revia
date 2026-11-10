@@ -1056,3 +1056,33 @@ test('the public trial runner rejects a kit outside the step contract', async ()
     await rm(scratch, { recursive: true, force: true })
   }
 })
+
+// `scripts/test-rc1-launcher-contract.sh` pins the RC1 launcher messages that
+// tell a reader on an unmeasured host what happened, and
+// `scripts/test-rc1-gate-contract.sh` pins the steps the RC1 gate workflow
+// runs. Nothing invoked either one, so a dropped message or gate step would
+// only surface by hand. `scripts/validate-public-tree.sh` now runs both; this
+// guard keeps that wiring and requires both contracts to pass.
+test('the RC1 launcher and gate contracts are enforced', async () => {
+  const validator = await readFile(
+    fileURLToPath(new URL('../scripts/validate-public-tree.sh', import.meta.url)),
+    'utf8',
+  )
+  for (const [name, marker] of [
+    ['test-rc1-launcher-contract.sh', 'RC1 launcher contract passed'],
+    ['test-rc1-gate-contract.sh', null],
+  ]) {
+    assert.match(
+      validator,
+      new RegExp(`sh scripts/${name.replace(/[.]/gu, '\\$&')}`, 'u'),
+      `validate-public-tree.sh does not run ${name}`,
+    )
+    const result = spawnSync(
+      'sh',
+      [fileURLToPath(new URL(`../scripts/${name}`, import.meta.url))],
+      { encoding: 'utf8' },
+    )
+    assert.equal(result.status, 0, result.stderr)
+    if (marker !== null) assert.match(result.stdout, new RegExp(marker, 'u'))
+  }
+})

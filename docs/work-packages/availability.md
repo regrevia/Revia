@@ -1208,6 +1208,14 @@ It still changes language semantics and was not folded into Issues 1-3.
     pass the contract and stop at the candidate digest, while a trial-level
     command and a step without results must each stop at the contract gate.
 
+97. `scripts/test-rc1-launcher-contract.sh` pins the RC1 launcher messages and
+    `scripts/test-rc1-gate-contract.sh` pins the RC1 gate workflow steps, but
+    neither script was invoked by the test suite, the CI validator, or a
+    workflow: a dropped message or gate step would only surface by hand. Both
+    scripts now run from `scripts/validate-public-tree.sh`, and a guard keeps
+    that wiring and requires both contracts to pass, so losing either the
+    launcher wording or the gate step fails the suite.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
