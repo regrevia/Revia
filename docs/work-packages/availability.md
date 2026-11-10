@@ -1350,6 +1350,11 @@ It still changes language semantics and was not folded into Issues 1-3.
      two blocks, so a translated page could keep an older command list and send
      its readers down a path the English page no longer takes. A guard requires
      the same stages in both pages and exactly one locale each.
+120. Decision records cite source as `path:line`, and nothing resolved those
+     citations: a moved file or a line past the end still reads as evidence while
+     pointing at nothing, so a reader checking a decision lands nowhere. A guard
+     asks every whole-repository citation under `docs/` to name a file that
+     exists and that has the cited line.
 
 ## 8. Evidence rules
 
