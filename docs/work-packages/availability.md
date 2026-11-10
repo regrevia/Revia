@@ -1316,6 +1316,11 @@ It still changes language semantics and was not folded into Issues 1-3.
      token scope, so a release or validation gate can quietly gain write access
      it never needed and nothing in the tree said so. A guard reads the block
      from each workflow and accepts only `{}` or read-only scopes.
+113. `.github/ISSUE_TEMPLATE/config.yml` decides where a report can go, and no
+     test read it: enabling blank issues lets a reporter skip the form the
+     diagnostics page promises, and a contact link that leaves the repository
+     sends the report where nobody reads it. A guard keeps blank issues off and
+     pins each contact link to this repository.
 
 ## 8. Evidence rules
 

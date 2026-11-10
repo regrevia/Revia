@@ -375,3 +375,23 @@ test('the diagnostics page repairs a rejected edit', async () => {
     await rm(directory, { recursive: true, force: true })
   }
 })
+
+test('the issue form configuration keeps reports on the tracked path', async () => {
+  // config.yml decides where a report can go: with blank issues enabled a
+  // reporter can skip the form the diagnostics page promises, and a contact
+  // link that leaves the repository sends the report somewhere nobody reads.
+  const config = await readFile(
+    join(repositoryRoot, '.github', 'ISSUE_TEMPLATE', 'config.yml'),
+    'utf8',
+  )
+  assert.match(config, /^blank_issues_enabled: false$/mu, 'blank issues stay disabled')
+  const links = config
+    .split(/^\s+- name: /mu)
+    .slice(1)
+    .map((block) => block.split(/^\s+- name: /mu)[0])
+  assert.ok(links.length >= 2, `expected the contact links, found ${links.length}`)
+  for (const link of links) {
+    assert.match(link, /^\s+url: https:\/\/github\.com\/regrevia\/Revia\//mu, link)
+    assert.match(link, /^\s+about: \S/mu, link)
+  }
+})
