@@ -385,3 +385,25 @@ test('every tracked shell script parses before it ships', () => {
   }
   assert.deepEqual(failures, [], 'tracked shell scripts parse with sh -n')
 })
+
+// The shipped records and fixtures are read one by one: a release test parses
+// the records it knows about, a corpus test parses its own fixture. A tracked
+// JSON file that no test happens to open can lose its closing brace or keep a
+// trailing comma and the suite stays green until a reader hits it.
+test('every tracked JSON file parses before it ships', () => {
+  const tracked = spawnSync('git', ['ls-files', '*.json'], { cwd: ROOT, encoding: 'utf8' })
+  assert.equal(tracked.status, 0, tracked.stderr)
+  const files = tracked.stdout
+    .split('\n')
+    .filter((path) => path !== '' && !path.startsWith('native/'))
+  assert.ok(files.length >= 100, `expected the tracked JSON files, found ${files.length}`)
+  const failures = []
+  for (const path of files) {
+    try {
+      JSON.parse(readFileSync(join(ROOT, path), 'utf8'))
+    } catch (error) {
+      failures.push(`${path}: ${error.message}`)
+    }
+  }
+  assert.deepEqual(failures, [], 'tracked JSON files parse')
+})

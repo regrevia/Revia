@@ -1383,6 +1383,12 @@ It still changes language semantics and was not folded into Issues 1-3.
      valid, so only its version field says which release it describes. A guard
      sweeps those directories and requires each record to name its own release.
 
+126. The shipped records and fixtures are opened one at a time. A tracked
+     JSON file that no test happens to read can lose its closing brace or
+     keep a trailing comma, and `npm test` stays green until a reader hits
+     it. A guard parses every tracked JSON file outside `native/` in one
+     sweep, so a broken record fails before it ships.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
