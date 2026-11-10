@@ -692,3 +692,25 @@ test('documented example inputs exist', () => {
   const missing = [...referenced].filter((target) => !existsSync(resolve(repositoryRoot, target)))
   assert.deepEqual(missing, [], 'a document runs an input this repository does not ship')
 })
+
+// The npm scripts are how a contributor reaches the fuzz gate, the cold-start
+// runner and the CLI; nothing read their targets, so a rename that updated the
+// imports could leave `npm run` pointing at a file the repository no longer
+// ships. The targets are resolved against the tracked tree instead.
+test('every npm script points at a file the repository ships', () => {
+  const packageJson = JSON.parse(
+    readFileSync(resolve(repositoryRoot, 'package.json'), 'utf8')
+  )
+  const tracked = new Set(
+    execFileSync('git', ['ls-files'], { cwd: repositoryRoot, encoding: 'utf8' }).split('\n')
+  )
+  const targets = []
+  for (const [name, command] of Object.entries(packageJson.scripts)) {
+    const match = /^node \.\/([A-Za-z0-9_./-]+)(?:\s|$)/u.exec(command.trim())
+    assert.ok(match, `npm script ${name} is not a node invocation: ${command}`)
+    targets.push(match[1])
+  }
+  assert.ok(targets.length >= 5, `expected the npm scripts, found ${targets.length}`)
+  const missing = targets.filter((target) => !tracked.has(target))
+  assert.deepEqual(missing, [], 'every npm script target is tracked')
+})

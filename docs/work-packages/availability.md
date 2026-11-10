@@ -1301,6 +1301,12 @@ It still changes language semantics and was not folded into Issues 1-3.
      named anywhere else in the tree. A guard now collects every path the
      eight workflow files invoke and requires it to exist, so the rename lands
      in every workflow that names it.
+110. The npm scripts are how a contributor reaches the CLI, the cold-start
+     runner and the grammar fuzz gate, and nothing read their targets: a rename
+     that updated the imports could leave `npm run` pointing at a file the
+     repository no longer ships. A guard now resolves every script target
+     against the tracked tree and rejects a command that is not a plain `node`
+     invocation.
 
 ## 8. Evidence rules
 
