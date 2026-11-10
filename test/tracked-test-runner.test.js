@@ -764,3 +764,24 @@ test('bound Windows runner verifies the exact source-built executable before lau
   assert.notEqual(launchDownloaded, -1)
   assert.ok(verifyDownloaded < launchDownloaded)
 })
+
+// The advertised floor is what a user is told the package supports, and the CI
+// matrix is the only place that floor is exercised. The floor has drifted once
+// already: `engines.node` and `MINIMUM_NODE_VERSION` are pinned to each other,
+// but the matrix pins a version of its own, so bumping the minimum leaves CI
+// testing a runtime the package no longer claims.
+test('the Node validation matrix covers the advertised floor', () => {
+  const workflow = readFileSync(join(ROOT, '.github/workflows/validate.yml'), 'utf8')
+  const declared = /node-version:\s*\[([^\]]*)\]/u.exec(workflow)
+  assert.ok(declared, 'the workflow declares no node-version matrix')
+  const versions = [...declared[1].matchAll(/'([^']+)'/gu)].map((match) => match[1])
+  assert.ok(
+    versions.includes(MINIMUM_NODE_VERSION),
+    `the matrix tests ${versions.join(', ')} but not the advertised floor ${MINIMUM_NODE_VERSION}`,
+  )
+  const major = MINIMUM_NODE_VERSION.split('.')[0]
+  assert.ok(
+    versions.includes(major),
+    `the matrix does not track the ${major} major line`,
+  )
+})

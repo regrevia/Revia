@@ -1289,6 +1289,12 @@ It still changes language semantics and was not folded into Issues 1-3.
      error in the rest ships unnoticed: breaking `scripts/test-launchers.sh`
      leaves that gate green. A guard now parses every tracked `*.sh` with
      `sh -n` and requires all of them to parse.
+108. `package.json` and `MINIMUM_NODE_VERSION` are pinned to each other, but
+     the `.github/workflows/validate.yml` matrix pins a version of its own. The
+     matrix is the only place the advertised floor is exercised, so a minimum
+     bump would leave CI testing a runtime the package no longer claims. A
+     guard now requires the matrix to name both the exact floor and the major
+     line it tracks.
 
 ## 8. Evidence rules
 
