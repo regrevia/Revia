@@ -1272,6 +1272,12 @@ It still changes language semantics and was not folded into Issues 1-3.
      validate. The public tree validation syntax-checks the contract, and a
      guard keeps its case list and the case directories in step.
 
+105. The source-import allowlist decides what the manifest covers, and
+     `scripts/validate-release-provenance.mjs`, which release-gate CI runs,
+     was absent from it: its provenance could change without any digest
+     moving. The path is listed and a guard requires every tracked JavaScript
+     module to be in the allowlist, so a new module cannot enter unnoticed.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

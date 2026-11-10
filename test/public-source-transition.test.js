@@ -6,6 +6,7 @@ import {
   lstatSync,
 } from 'node:fs'
 import { join } from 'node:path'
+import { spawnSync } from 'node:child_process'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
@@ -317,4 +318,25 @@ test('the sealed RC1 export names one license digest', () => {
   assert.ok(entry, 'the sealed export no longer lists LICENSE-RC.md')
   assert.equal(exportManifest.license_sha256, digest(license))
   assert.equal(exportManifest.license_sha256, entry.sha256)
+})
+
+// The allowlist decides what the source-import manifest covers. A tracked
+// script that never reaches the allowlist is invisible to the manifest, so
+// its provenance can change without any digest moving — that happened to
+// `scripts/validate-release-provenance.mjs`, which release-gate CI runs.
+// Every tracked JavaScript module has to be listed.
+test('every tracked JavaScript module is in the source import allowlist', () => {
+  const allowlist = JSON.parse(readFileSync(
+    join(ROOT, 'SOURCE_IMPORT_FILES.json'),
+    'utf8',
+  ))
+  const listed = new Set(allowlist.files)
+  const tracked = spawnSync('git', ['ls-files'], { cwd: ROOT, encoding: 'utf8' })
+  assert.equal(tracked.status, 0, tracked.stderr)
+  const modules = tracked.stdout
+    .split('\n')
+    .filter((path) => /\.(?:c|m)?js$/u.test(path))
+  assert.ok(modules.length >= 300, `expected the module tree, found ${modules.length}`)
+  const missing = modules.filter((path) => !listed.has(path))
+  assert.deepEqual(missing, [], `tracked modules outside the allowlist: ${missing.join(', ')}`)
 })

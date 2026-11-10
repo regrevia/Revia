@@ -242,6 +242,7 @@
     "scripts/run-tracked-tests.js",
     "scripts/test-cli-surface.ps1",
     "scripts/validate-public-tree.sh",
+    "scripts/validate-release-provenance.mjs",
     "src/cli/re.js",
     "src/host/agent-adapter-contract.js",
     "src/host/agent-business-http-adapter.js",
