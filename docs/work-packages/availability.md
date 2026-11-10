@@ -1277,6 +1277,12 @@ It still changes language semantics and was not folded into Issues 1-3.
      was absent from it: its provenance could change without any digest
      moving. The path is listed and a guard requires every tracked JavaScript
      module to be in the allowlist, so a new module cannot enter unnoticed.
+106. The sequencing ledger in this file is edited by hand at the end of every
+     work package and no document scan reads it (`docs/work-packages/` is
+     excluded from the command and link checks), so a skipped or reused number
+     would make two packages indistinguishable in review. A guard now requires
+     the entries under `## 7. Sequencing` to be numbered 1..N, once each and in
+     order, and the last entry to keep its evidence lines.
 
 ## 8. Evidence rules
 

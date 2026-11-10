@@ -340,3 +340,30 @@ test('every tracked JavaScript module is in the source import allowlist', () => 
   const missing = modules.filter((path) => !listed.has(path))
   assert.deepEqual(missing, [], `tracked modules outside the allowlist: ${missing.join(', ')}`)
 })
+
+// `docs/work-packages/availability.md` keeps the sequencing ledger that every
+// work package appends to. The ledger is edited by hand at the end, and none of
+// the document scans look at it (`docs/work-packages/` is excluded from the
+// command and link checks). A skipped or reused number makes two packages
+// indistinguishable in review, so the numbering has to be contiguous and
+// unique inside the section that holds it.
+test('the work package ledger numbers its entries without gaps', () => {
+  const ledger = readFileSync(
+    join(ROOT, 'docs/work-packages/availability.md'),
+    'utf8',
+  )
+  const heading = /^## 7\. Sequencing$/mu.exec(ledger)
+  assert.ok(heading, 'the sequencing section is gone')
+  const rest = ledger.slice(heading.index + heading[0].length)
+  const end = rest.search(/^## /mu)
+  const section = end === -1 ? rest : rest.slice(0, end)
+  const numbers = [...section.matchAll(/^(\d+)\. /gmu)].map((match) => Number(match[1]))
+  assert.ok(numbers.length >= 100, `expected the ledger, found ${numbers.length} entries`)
+  assert.deepEqual(
+    numbers,
+    numbers.map((_, index) => index + 1),
+    'ledger entries are numbered 1..N in order, once each',
+  )
+  const last = section.slice(section.lastIndexOf(`\n${numbers.at(-1)}. `))
+  assert.ok(last.trim().split('\n').length >= 2, 'the last entry carries its evidence')
+})
