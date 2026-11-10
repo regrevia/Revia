@@ -1331,6 +1331,10 @@ It still changes language semantics and was not folded into Issues 1-3.
      measured without a preregistered run, or an advantage claimed while every
      metric is still `not_evaluated`. A guard keeps the metric set complete,
      every metric unmeasured, and the claim negative.
+116. `experiments/rc1/comparison/record.schema.json` defines what a comparison
+     record must publish, and nothing read it: dropping a required digest, an
+     execution mode, or `additionalProperties: false` would let a record look
+     complete while omitting the proof. A guard pins those five shapes.
 
 ## 8. Evidence rules
 

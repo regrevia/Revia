@@ -1377,3 +1377,31 @@ test('the adversarial review contract covers every case directory', async () => 
   }
   assert.match(contract, /status.*-eq 69/u, 'the pending-on-this-target escape is gone')
 })
+
+// A comparison record is only evidence if it publishes the identity of what ran,
+// the execution mode it ran in, and the four separately hashed outcomes. If the
+// schema stops requiring one of them, or accepts a mode the track does not
+// define, a record can look complete while omitting the proof.
+test('the comparison record schema keeps every field a comparison must publish', async () => {
+  const schema = await readJson('experiments/rc1/comparison/record.schema.json')
+  assert.equal(schema.properties.schema.const, 'revia.comparison-record@1.0.0')
+  assert.equal(schema.additionalProperties, false, 'a record carries no unreviewed fields')
+  assert.deepEqual(
+    [...schema.required].sort(),
+    [
+      'asset_sha256', 'command', 'environment', 'exit_status', 'implementation',
+      'input_sha256', 'limitations', 'outcome', 'schema', 'task_sha256', 'version',
+    ],
+    'every identity field stays required',
+  )
+  assert.deepEqual(
+    [...schema.properties.environment.properties.execution_mode.enum].sort(),
+    ['emulated', 'native', 'virtualized-native'],
+    'only the three declared execution modes are recordable',
+  )
+  assert.deepEqual(
+    [...schema.properties.outcome.required].sort(),
+    ['effect_tree_sha256', 'result_sha256', 'stderr_sha256', 'stdout_sha256'],
+    'each outcome is hashed separately',
+  )
+})
