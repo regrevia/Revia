@@ -1200,6 +1200,14 @@ It still changes language semantics and was not folded into Issues 1-3.
     fixture byte, one checksum line, and adds one symlink, requiring each edit
     to fail with its documented message.
 
+96. The 1.1 trial contract moved `command` and `expected` inside `steps`, and
+    `scripts/run-public-trials.sh` is the only place that enforces it, but its
+    shell test only greps for the failure message: a contract clause dropped
+    from the jq filter would leave the message and the test intact. The new
+    guard runs the runner on a scratch copy three times: the pristine kit must
+    pass the contract and stop at the candidate digest, while a trial-level
+    command and a step without results must each stop at the contract gate.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

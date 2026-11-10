@@ -993,3 +993,66 @@ test('the RC1 trial verifier rejects a tampered kit copy', async () => {
     await rm(scratch, { recursive: true, force: true })
   }
 })
+
+// `docs/rc1-trial-kit-contract.md` makes the step shape part of the accepted
+// kit: a trial carries `steps`, never a trial-level `command` or `expected`.
+// Only the runner enforces that shape at execution time, and the shell test
+// next to it asserts the message is present rather than that it fires. The
+// guard runs the runner on altered copies and requires the contract gate to
+// reject each edit before the run reaches the candidate binary.
+test('the public trial runner rejects a kit outside the step contract', async () => {
+  const runner = fileURLToPath(
+    new URL('../scripts/run-public-trials.sh', import.meta.url),
+  )
+  const kit = fileURLToPath(new URL('../experiments/rc1/kit', import.meta.url))
+  async function replicate(from, to) {
+    await mkdir(to, { recursive: true })
+    for (const entry of await readdir(from, { withFileTypes: true })) {
+      const source = join(from, entry.name)
+      const target = join(to, entry.name)
+      if (entry.isDirectory()) {
+        await replicate(source, target)
+      } else {
+        await copyFile(source, target)
+      }
+    }
+  }
+  const scratch = await mkdtemp(join(tmpdir(), 'revia-public-trials-'))
+  const copy = join(scratch, 'kit')
+  // The contract gate runs before the candidate digest, so any executable
+  // proves the difference: a passing contract stops at the digest message.
+  const execute = () =>
+    spawnSync('sh', [runner, copy], {
+      encoding: 'utf8',
+      env: { ...process.env, REVIA_EXECUTABLE: '/bin/sh' },
+    })
+  const manifestPath = join(copy, 'trial-manifest.json')
+  const manifest = JSON.parse(
+    await readFile(join(kit, 'trial-manifest.json'), 'utf8'),
+  )
+  try {
+    await replicate(kit, copy)
+    const intact = execute()
+    assert.equal(intact.status, 65, intact.stdout)
+    assert.match(intact.stderr, /runner binary digest mismatch/u)
+    assert.doesNotMatch(intact.stderr, /step contract is invalid/u)
+
+    // The 1.1 contract removed trial-level `command` and `expected`.
+    const withCommand = structuredClone(manifest)
+    withCommand.trials[0].command = ['./bin/revia']
+    await writeFile(manifestPath, JSON.stringify(withCommand))
+    const trialLevel = execute()
+    assert.equal(trialLevel.status, 65)
+    assert.match(trialLevel.stderr, /trial manifest step contract is invalid/u)
+
+    // Every step must declare the results the runner compares.
+    const withoutResults = structuredClone(manifest)
+    delete withoutResults.trials[0].steps[0].expected.results
+    await writeFile(manifestPath, JSON.stringify(withoutResults))
+    const missingResults = execute()
+    assert.equal(missingResults.status, 65)
+    assert.match(missingResults.stderr, /trial manifest step contract is invalid/u)
+  } finally {
+    await rm(scratch, { recursive: true, force: true })
+  }
+})
