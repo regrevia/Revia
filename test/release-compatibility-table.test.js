@@ -1316,3 +1316,25 @@ test('the rc1 trial-kit verifier rejects an unsealed kit', async () => {
     await rm(scratch, { recursive: true, force: true })
   }
 })
+
+// `scripts/verify-rc1-release-assets.sh` derives the release tag from VERSION
+// and refuses to inspect any other tag; if that comparison weakens, the asset
+// check would happily verify a release for the wrong version.
+test('the rc1 release asset check refuses a mismatched tag', async () => {
+  const script = fileURLToPath(
+    new URL('../scripts/verify-rc1-release-assets.sh', import.meta.url),
+  )
+  const version = (await readFile('VERSION', 'utf8')).trim()
+  const execute = (args) =>
+    spawnSync('sh', [script, ...args], { encoding: 'utf8', timeout: 20000 })
+
+  const usage = execute([])
+  assert.equal(usage.status, 64)
+  assert.match(usage.stderr, /Usage: verify-rc1-release-assets\.sh <tag>/u)
+
+  for (const tag of ['v0.0.0', version]) {
+    const result = execute([tag])
+    assert.equal(result.status, 65, `${tag}: ${result.stdout}${result.stderr}`)
+    assert.match(result.stderr, /release asset tag\/version mismatch/u)
+  }
+})

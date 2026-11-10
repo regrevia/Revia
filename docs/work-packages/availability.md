@@ -1259,6 +1259,12 @@ It still changes language semantics and was not folded into Issues 1-3.
      guard drives each rejection on synthetic kits and requires its exit code
      and message.
 
+103. `scripts/verify-rc1-release-assets.sh` derives the release tag from
+     `VERSION` and refuses to inspect any other tag, but only `sh -n` covered
+     it. A guard requires the usage exit and rejects both a foreign tag and the
+     bare version without its `v` prefix, so a weakened comparison cannot let
+     the asset check inspect a release for the wrong version.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
