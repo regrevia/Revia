@@ -1179,6 +1179,12 @@ It still changes language semantics and was not folded into Issues 1-3.
     stale digest while every other check stayed green. The new guard requires
     both to restate the `LICENSE-RC.md` bytes and therefore each other.
 
+93. The public trial kit header names a version, and its README states the
+    release in prose, but neither was compared with the candidate manifest the
+    kit measures: the header could name one release while the kit measured
+    another. The new guard requires the kit version to match the candidate
+    version, the status to stay measured, and the README to name that version.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

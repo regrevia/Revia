@@ -913,3 +913,19 @@ test('the RC1 evidence page names the trials the manifest measures', async () =>
     assert.ok(surface.has(command), `the trials no longer run \`${command}\``)
   }
 })
+
+// The trial kit's header claims the release it measures, but nothing compared
+// that claim with the candidate or the kit README: the kit could keep
+// measuring one release while naming another.
+test('the RC1 trial kit names the release it measures', async () => {
+  const manifest = JSON.parse(await read('experiments/rc1/kit/trial-manifest.json'))
+  const candidate = JSON.parse(await read('runtime/rc1/candidate-manifest.json'))
+  const readme = (await read('experiments/rc1/kit/README.md')).replace(/\s+/gu, ' ')
+
+  assert.equal(manifest.version, candidate.version, 'the kit names another release')
+  assert.equal(manifest.status, 'measured-native')
+  assert.ok(
+    readme.includes(`v${manifest.version}`),
+    `the kit README does not name v${manifest.version}`,
+  )
+})
