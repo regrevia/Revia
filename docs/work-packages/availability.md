@@ -1251,6 +1251,14 @@ It still changes language semantics and was not folded into Issues 1-3.
      drives each rejection on synthetic directories and requires its exit
      code and message.
 
+102. `scripts/verify-rc1-trial-kit.sh` is the gate a trial kit has to pass,
+     and on the current version line only `sh -n` covered it: the usage exit
+     and every rejection before the digest comparison were unbound, so a
+     weakened directory, symlink, file-type, inventory, or canonical-JSON
+     check would let a kit through while the syntax check stayed green. A
+     guard drives each rejection on synthetic kits and requires its exit code
+     and message.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

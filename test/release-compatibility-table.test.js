@@ -1271,3 +1271,48 @@ test('the rc1 export verifier rejects an unsealed directory', async () => {
     await rm(scratch, { recursive: true, force: true })
   }
 })
+
+// `scripts/verify-rc1-trial-kit.sh` is the gate a trial kit has to pass, and
+// on the current version line it is only checked for shell syntax: the usage
+// exit and every rejection before the digest comparison are unbound, so a
+// weakened directory, symlink, file-type, inventory, or JSON check would let a
+// kit through while `sh -n` kept passing.
+test('the rc1 trial-kit verifier rejects an unsealed kit', async () => {
+  const script = fileURLToPath(new URL('../scripts/verify-rc1-trial-kit.sh', import.meta.url))
+  const accepted = fileURLToPath(
+    new URL('../runtime/rc1/export-manifest.json', import.meta.url),
+  )
+  const scratch = await mkdtemp(join(tmpdir(), 'revia-rc1-kit-'))
+  const execute = (args) =>
+    spawnSync('sh', [script, ...args], { encoding: 'utf8', timeout: 20000 })
+  const kit = join(scratch, 'kit')
+  const reject = (directory, message) => {
+    const result = execute([directory, accepted])
+    assert.equal(result.status, 65, `${message}: ${result.stdout}${result.stderr}`)
+    assert.match(result.stderr, new RegExp(message, 'u'))
+  }
+  try {
+    const usage = execute([])
+    assert.equal(usage.status, 64)
+    assert.match(usage.stderr, /Usage: verify-rc1-trial-kit\.sh/u)
+
+    reject(join(scratch, 'absent'), 'trial-kit directory is missing or is a symlink')
+
+    await mkdir(kit)
+    await symlink(accepted, join(kit, 'linked.json'))
+    reject(kit, 'symlinks are forbidden')
+    await rm(join(kit, 'linked.json'))
+
+    await writeFile(join(kit, 'payload.bin'), '')
+    reject(kit, 'trial kit contains a forbidden file type')
+    await rm(join(kit, 'payload.bin'))
+
+    reject(kit, 'manifest or checksums missing')
+
+    await writeFile(join(kit, 'trial-manifest.json'), '{"version": 1}\n')
+    await writeFile(join(kit, 'checksums.txt'), '')
+    reject(kit, 'trial manifest is not canonical compact JSON')
+  } finally {
+    await rm(scratch, { recursive: true, force: true })
+  }
+})
