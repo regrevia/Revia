@@ -1316,6 +1316,50 @@ It still changes language semantics and was not folded into Issues 1-3.
      token scope, so a release or validation gate can quietly gain write access
      it never needed and nothing in the tree said so. A guard reads the block
      from each workflow and accepts only `{}` or read-only scopes.
+113. `.github/ISSUE_TEMPLATE/config.yml` decides where a report can go, and no
+     test read it: enabling blank issues lets a reporter skip the form the
+     diagnostics page promises, and a contact link that leaves the repository
+     sends the report where nobody reads it. A guard keeps blank issues off and
+     pins each contact link to this repository.
+114. `runtime/checksums.txt` is what a trial runner verifies a download against,
+     while the candidate and export manifests are what the release record cites;
+     nothing tied the two, so the list could pass a file the record does not
+     describe. A guard recomputes the list digest and matches every current
+     release entry to the manifests.
+115. `experiments/rc1/comparison/baseline-status.json` states what the comparison
+     study has established, and no test read it: a metric could be recorded as
+     measured without a preregistered run, or an advantage claimed while every
+     metric is still `not_evaluated`. A guard keeps the metric set complete,
+     every metric unmeasured, and the claim negative.
+116. `experiments/rc1/comparison/record.schema.json` defines what a comparison
+     record must publish, and nothing read it: dropping a required digest, an
+     execution mode, or `additionalProperties: false` would let a record look
+     complete while omitting the proof. A guard pins those five shapes.
+117. `runtime/rc1/trial-manifest.json` publishes what the RC1 trial measured and
+     the kit ships a copy of the same record, but nothing compared them: a
+     regenerated kit could leave the published record naming other digests, and
+     the runner digest was never tied to the entry in `runtime/checksums.txt`.
+     A guard requires both records to agree and every trial to name that runner.
+118. `docs/architecture.md` draws the source-to-review path and prints the four
+     commands that walk it, but nothing ran them: a renamed subcommand or a moved
+     example could leave the drawing and its commands describing a path the
+     toolchain no longer takes. A guard executes the documented block and checks
+     the stages stay `check`, `run`, `manifest`, `view`.
+119. `docs/architecture.zh-CN.md` repeats the runnable example of its English
+     counterpart, and only the locale is meant to differ. Nothing compared the
+     two blocks, so a translated page could keep an older command list and send
+     its readers down a path the English page no longer takes. A guard requires
+     the same stages in both pages and exactly one locale each.
+120. Decision records cite source as `path:line`, and nothing resolved those
+     citations: a moved file or a line past the end still reads as evidence while
+     pointing at nothing, so a reader checking a decision lands nowhere. A guard
+     asks every whole-repository citation under `docs/` to name a file that
+     exists and that has the cited line.
+121. `runtime/rc1/candidate-manifest.json` inventories the binary it measured and
+     seeds its `candidate_id` with that digest, while `runtime/checksums.txt` is
+     what a downloader verifies. Nothing compared the two, so a re-cut binary or
+     a stale id could drift unnoticed. A guard requires the inventoried binary
+     digest to be the published one and the candidate id to carry it.
 
 ## 8. Evidence rules
 

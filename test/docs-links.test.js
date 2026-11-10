@@ -194,3 +194,29 @@ test('the pull request template links resolve and keep the licence agreement', (
     'the template keeps the licence agreement checkbox'
   )
 })
+
+// Decision records cite source by path and line: `native/.../vm.rs:417`. A
+// citation that names a moved file or a line past the end of it reads as
+// evidence while pointing at nothing, so every whole-repository citation in
+// `docs/` is asked to resolve to a file that has that line.
+const CITATION = /`([A-Za-z0-9_][A-Za-z0-9_./-]*\/[A-Za-z0-9_.-]+\.(?:rs|js|mjs|sh|md|json)):(\d+)(?:-(\d+))?`/gu
+
+test('every source citation in the documentation resolves', () => {
+  const unresolvable = []
+  for (const document of markdownFiles('docs')) {
+    const source = withoutFencedBlocks(readFileSync(resolve(repositoryRoot, document), 'utf8'))
+    for (const match of source.matchAll(CITATION)) {
+      const [, cited, first, last = first] = match
+      const absolutePath = resolve(repositoryRoot, cited)
+      if (!existsSync(absolutePath)) {
+        unresolvable.push(`${document} cites missing ${cited}`)
+        continue
+      }
+      const lines = readFileSync(absolutePath, 'utf8').split(/\r?\n/u).length
+      if (Number(last) > lines) {
+        unresolvable.push(`${document} cites ${cited} line ${last} of ${lines}`)
+      }
+    }
+  }
+  assert.deepEqual(unresolvable, [], 'every citation points inside a file that exists')
+})

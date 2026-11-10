@@ -714,3 +714,67 @@ test('every npm script points at a file the repository ships', () => {
   const missing = targets.filter((target) => !tracked.has(target))
   assert.deepEqual(missing, [], 'every npm script target is tracked')
 })
+
+// `docs/architecture.md` draws the source-to-review path and then shows the four
+// commands that walk it. Nothing ran that example, so a renamed subcommand, a
+// moved example file, or a dropped stage could leave the drawing and the
+// commands describing a path the toolchain no longer takes.
+test('the architecture example runs the path it draws', () => {
+  const document = readFileSync(resolve(repositoryRoot, 'docs/architecture.md'), 'utf8')
+  const block = document.match(/```bash\n([\s\S]*?)```/u)
+  assert.ok(block, 'the architecture document keeps its runnable example')
+  const commands = block[1]
+    .split('\n')
+    .map((line) => line.split(' > ')[0].trim())
+    .filter(Boolean)
+  assert.equal(commands.length, 4, 'the example shows each stage once')
+  const stages = []
+  for (const command of commands) {
+    const parsed = command.match(/^npm run (?:--silent )?re -- ([a-z][a-z-]+)(.*)$/u)
+    assert.ok(parsed, `not a runnable re command: ${command}`)
+    const [, subcommand, rest] = parsed
+    stages.push(subcommand)
+    const args = rest.trim().split(/\s+/u).filter(Boolean)
+    const input = args.filter((argument) => argument.endsWith('.re')).at(-1)
+    assert.ok(input, `${command} names no source file`)
+    assert.ok(existsSync(resolve(repositoryRoot, input)), `${command} names a missing example`)
+    const run = spawnSync(process.execPath, [resolve(repositoryRoot, 'src/cli/re.js'), subcommand, ...args], {
+      cwd: repositoryRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    })
+    assert.equal(run.status, 0, `${command} fails: ${run.stderr}`)
+  }
+  assert.deepEqual(stages, ['check', 'run', 'manifest', 'view'])
+})
+
+// The translated architecture document repeats the same runnable example. Only
+// the locale differs. Nothing compared the two blocks, so a translated page
+// could keep an older command list and send its readers down a path the English
+// page no longer takes.
+test('the translated architecture example walks the same path', () => {
+  const read = (document) => readFileSync(resolve(repositoryRoot, document), 'utf8')
+  const commands = (document) => {
+    const block = read(document).match(/```bash\n([\s\S]*?)```/u)
+    assert.ok(block, `${document} keeps its runnable example`)
+    return block[1]
+      .split('\n')
+      .map((line) => line.split(' > ')[0].trim())
+      .filter(Boolean)
+  }
+  const english = commands('docs/architecture.md')
+  const translated = commands('docs/architecture.zh-CN.md')
+  assert.equal(translated.length, english.length, 'both pages show every stage')
+  const locales = new Set()
+  const normalize = (command) => command.replace(/--locale [a-z]{2}-[A-Za-z]{2}/u, '--locale <locale>')
+  for (const [index, command] of translated.entries()) {
+    const locale = command.match(/--locale ([a-z]{2}-[A-Za-z]{2})/u)?.[1]
+    if (locale) locales.add(locale)
+    assert.equal(normalize(command), normalize(english[index]), `stage ${index + 1} of the translation drifted`)
+  }
+  for (const command of english) {
+    const locale = command.match(/--locale ([a-z]{2}-[A-Za-z]{2})/u)?.[1]
+    if (locale) locales.add(locale)
+  }
+  assert.deepEqual([...locales].sort(), ['en-US', 'zh-CN'], 'each page renders its own declared locale')
+})

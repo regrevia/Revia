@@ -1377,3 +1377,73 @@ test('the adversarial review contract covers every case directory', async () => 
   }
   assert.match(contract, /status.*-eq 69/u, 'the pending-on-this-target escape is gone')
 })
+
+// A comparison record is only evidence if it publishes the identity of what ran,
+// the execution mode it ran in, and the four separately hashed outcomes. If the
+// schema stops requiring one of them, or accepts a mode the track does not
+// define, a record can look complete while omitting the proof.
+test('the comparison record schema keeps every field a comparison must publish', async () => {
+  const schema = await readJson('experiments/rc1/comparison/record.schema.json')
+  assert.equal(schema.properties.schema.const, 'revia.comparison-record@1.0.0')
+  assert.equal(schema.additionalProperties, false, 'a record carries no unreviewed fields')
+  assert.deepEqual(
+    [...schema.required].sort(),
+    [
+      'asset_sha256', 'command', 'environment', 'exit_status', 'implementation',
+      'input_sha256', 'limitations', 'outcome', 'schema', 'task_sha256', 'version',
+    ],
+    'every identity field stays required',
+  )
+  assert.deepEqual(
+    [...schema.properties.environment.properties.execution_mode.enum].sort(),
+    ['emulated', 'native', 'virtualized-native'],
+    'only the three declared execution modes are recordable',
+  )
+  assert.deepEqual(
+    [...schema.properties.outcome.required].sort(),
+    ['effect_tree_sha256', 'result_sha256', 'stderr_sha256', 'stdout_sha256'],
+    'each outcome is hashed separately',
+  )
+})
+
+// `runtime/rc1/trial-manifest.json` publishes what the RC1 trial measured, and
+// the kit ships its own copy of the same manifest. Nothing compared them, so a
+// kit could be regenerated while the published record kept the old digests, and
+// an operator would verify the download against a trial that was never run.
+test('the published RC1 trial record restates the kit it ships with', async () => {
+  const published = await readJson('runtime/rc1/trial-manifest.json')
+  const kit = await readJson('experiments/rc1/kit/trial-manifest.json')
+  assert.deepEqual(published, kit, 'the record and the kit describe the same trial')
+  for (const trial of published.trials) {
+    assert.equal(
+      trial.runner_binary_sha256,
+      published.runner_binary_sha256,
+      `${trial.id} ran a runner the record does not name`,
+    )
+  }
+  const artifact = `revia-${published.version}-${published.target}`
+  const checksums = await read('runtime/checksums.txt')
+  assert.match(
+    checksums,
+    new RegExp(`^${published.runner_binary_sha256} {2}${artifact.replace(/\./gu, '\\.')}$`, 'mu'),
+    `${artifact} is published with the digest the trial ran`,
+  )
+})
+
+// `runtime/rc1/candidate-manifest.json` names the candidate and the bytes that
+// were measured, while `runtime/checksums.txt` is what a downloader verifies.
+// The two were never compared: a re-cut archive, or a runner digest seeded into
+// the candidate id, could drift without any test noticing.
+test('the RC1 candidate manifest names the bytes the checksums publish', async () => {
+  const candidate = JSON.parse(await read('runtime/rc1/candidate-manifest.json'))
+  const checksums = await read('runtime/checksums.txt')
+  const published = new Map()
+  for (const line of checksums.split('\n')) {
+    const match = line.match(/^([0-9a-f]{64}) {2}(\S+)$/u)
+    if (match) published.set(match[2], match[1])
+  }
+  const runner = candidate.files.find((file) => file.path === candidate.binary)
+  assert.ok(runner, 'the candidate manifest does not inventory its binary')
+  assert.equal(runner.digest, `sha256:${published.get(`revia-${candidate.release_version}-${candidate.target}`)}`)
+  assert.equal(candidate.candidate_id, `revia-${candidate.target}-${runner.digest.slice(-64, -48)}`)
+})
