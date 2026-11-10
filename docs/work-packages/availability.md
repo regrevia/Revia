@@ -1216,6 +1216,16 @@ It still changes language semantics and was not folded into Issues 1-3.
     that wiring and requires both contracts to pass, so losing either the
     launcher wording or the gate step fails the suite.
 
+98. `scripts/run-reviewed-file-plan.sh` is the boundary between a reviewed
+    approval and a sandbox write: the approval is bound to the plan bytes it
+    was given, effect paths may not escape the sandbox, duplicate effects are
+    rejected, and a denied decision must not invoke the runner at all. Only
+    `sh -n` checked the script; no test, workflow, or script executed it, so a
+    weakened check would keep passing by hand. A guard now drives the script
+    through its usage, stale-approval, unsafe-path, duplicate-effect, and
+    denied-no-execution branches, so any of those checks going quiet fails the
+    suite.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

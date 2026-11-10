@@ -1086,3 +1086,87 @@ test('the RC1 launcher and gate contracts are enforced', async () => {
     if (marker !== null) assert.match(result.stdout, new RegExp(marker, 'u'))
   }
 })
+
+// `scripts/run-reviewed-file-plan.sh` is the boundary between a human approval
+// and a sandbox write: an approval is bound to the plan bytes it was given, an
+// effect path may not escape the sandbox, and a denied decision must not run
+// the runner at all. Nothing executed the script — only `sh -n` checked it —
+// so a weakened check would keep passing by hand.
+test('the reviewed-file-plan boundary holds', async () => {
+  const script = fileURLToPath(new URL('../scripts/run-reviewed-file-plan.sh', import.meta.url))
+  const scratch = await mkdtemp(join(tmpdir(), 'reviewed-plan-'))
+  try {
+    const plan = join(scratch, 'plan.re')
+    const planText = 'fn main() { return }\n'
+    await writeFile(plan, planText)
+    const digest = (text) => createHash('sha256').update(text).digest('hex')
+    const planDigest = digest(planText)
+    const effectDigest = digest('written')
+
+    const decision = async (name, value) => {
+      const path = join(scratch, `${name}.json`)
+      await writeFile(path, JSON.stringify(value))
+      return path
+    }
+    const contract = (overrides) => ({
+      schema: 'revia.reviewed-file-plan-decision@1.0.0',
+      decision: 'approved',
+      source_sha256: planDigest,
+      input_sha256: digest('input'),
+      expected_effects: [{ path: 'out.txt', sha256: effectDigest }],
+      ...overrides,
+    })
+    const run = (args, env = {}) =>
+      spawnSync('sh', [script, ...args], {
+        encoding: 'utf8',
+        env: { ...process.env, ...env },
+      })
+
+    const usage = run([])
+    assert.equal(usage.status, 64, usage.stderr)
+    assert.match(usage.stderr, /Usage: run-reviewed-file-plan\.sh/u)
+
+    const empty = join(scratch, 'sandbox')
+    await mkdir(empty)
+
+    const stale = await decision('stale', contract({ source_sha256: digest('other') }))
+    const staleResult = run([plan, stale, empty])
+    assert.equal(staleResult.status, 65, staleResult.stdout + staleResult.stderr)
+    assert.match(staleResult.stderr, /approval is stale for this plan source/u)
+
+    const unsafe = await decision('unsafe', contract({
+      expected_effects: [{ path: '../escape.txt', sha256: effectDigest }],
+    }))
+    const unsafeResult = run([plan, unsafe, empty])
+    assert.equal(unsafeResult.status, 65, unsafeResult.stdout + unsafeResult.stderr)
+    assert.match(unsafeResult.stderr, /unsafe effect path/u)
+
+    const duplicate = await decision('duplicate', contract({
+      expected_effects: [
+        { path: 'out.txt', sha256: effectDigest },
+        { path: 'out.txt', sha256: effectDigest },
+      ],
+    }))
+    const duplicateResult = run([plan, duplicate, empty])
+    assert.equal(duplicateResult.status, 65, duplicateResult.stdout + duplicateResult.stderr)
+    assert.match(duplicateResult.stderr, /duplicate expected effect path/u)
+
+    // A denied decision must return without invoking the runner at all.
+    const canary = join(scratch, 'canary.txt')
+    const fakeRunner = join(scratch, 'fake-runner.sh')
+    await writeFile(fakeRunner, `#!/bin/sh\nprintf invoked > '${canary}'\n`)
+    await chmod(fakeRunner, 0o755)
+    const denied = await decision('denied', contract({ decision: 'denied' }))
+    const deniedResult = run([plan, denied, empty], { REVIA_EXECUTABLE: fakeRunner })
+    assert.equal(deniedResult.status, 0, deniedResult.stdout + deniedResult.stderr)
+    assert.deepEqual(JSON.parse(deniedResult.stdout).decision, 'denied')
+    assert.deepEqual(JSON.parse(deniedResult.stdout).effect, 'not-run')
+    assert.equal(
+      spawnSync('sh', ['-c', `test -e '${canary}'`]).status,
+      1,
+      'a denied decision invoked the runner',
+    )
+  } finally {
+    await rm(scratch, { recursive: true, force: true })
+  }
+})
