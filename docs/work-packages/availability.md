@@ -1295,6 +1295,12 @@ It still changes language semantics and was not folded into Issues 1-3.
      bump would leave CI testing a runtime the package no longer claims. A
      guard now requires the matrix to name both the exact floor and the major
      line it tracks.
+109. The workflows name ten files under `scripts/` and `runtime/`; a rename
+     that misses one only fails when that gate is next triggered, and two gate
+     workflows (`rc2-release-gate.yml`, `windows-rc2-release-gate.yml`) are not
+     named anywhere else in the tree. A guard now collects every path the
+     eight workflow files invoke and requires it to exist, so the rename lands
+     in every workflow that names it.
 
 ## 8. Evidence rules
 

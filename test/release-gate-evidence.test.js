@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import {
+  existsSync,
+  readFileSync,
+  readdirSync,
+} from 'node:fs'
 import { join } from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
@@ -63,4 +67,31 @@ test('the release notes describe the later snapshot the same way', () => {
   assert.match(notes, /`cargo test --workspace`/u)
   assert.match(notes, /re-verified the digest of the\s+executable/u)
   assert.match(notes, /核对自己构建的\s*可执行文件摘要/u)
+})
+
+// A workflow that invokes a renamed or deleted file fails only when that gate
+// is triggered, which for the release workflows can be the worst possible
+// moment. The paths are checked in the tree instead, so a rename has to be
+// carried into every workflow that names it.
+const WORKFLOW_PATH =
+  /\b((?:scripts|test|runtime|bin|native|experiments|examples|docs)\/[A-Za-z0-9_./-]+\.(?:sh|mjs|js|json|ps1|rs|toml|yml|md))(?![\w-])/gu
+
+test('every file the workflows invoke exists in the tree', () => {
+  const directory = join(repositoryRoot, '.github/workflows')
+  const workflows = readdirSync(directory).filter((name) => name.endsWith('.yml'))
+  assert.ok(workflows.length >= 7, `expected the workflows, found ${workflows.length}`)
+  const referenced = new Set()
+  for (const workflow of workflows) {
+    for (const match of read(join('.github/workflows', workflow)).matchAll(WORKFLOW_PATH)) {
+      referenced.add(match[1])
+    }
+  }
+  assert.ok(
+    referenced.size >= 8,
+    `expected the workflow references, found ${referenced.size}`,
+  )
+  const missing = [...referenced]
+    .filter((relativePath) => !existsSync(join(repositoryRoot, relativePath)))
+    .sort()
+  assert.deepEqual(missing, [], 'every path a workflow invokes exists')
 })
