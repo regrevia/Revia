@@ -1326,6 +1326,11 @@ It still changes language semantics and was not folded into Issues 1-3.
      nothing tied the two, so the list could pass a file the record does not
      describe. A guard recomputes the list digest and matches every current
      release entry to the manifests.
+115. `experiments/rc1/comparison/baseline-status.json` states what the comparison
+     study has established, and no test read it: a metric could be recorded as
+     measured without a preregistered run, or an advantage claimed while every
+     metric is still `not_evaluated`. A guard keeps the metric set complete,
+     every metric unmeasured, and the claim negative.
 
 ## 8. Evidence rules
 

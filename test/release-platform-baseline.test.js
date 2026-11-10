@@ -136,3 +136,21 @@ test('linux-x64 runtime baseline matches the published binary', async () => {
   assert.match(flatSection, /only `ubuntu-24\.04` has actually been exercised/u)
   assert.match(flatSection, /Building from source on a host below glibc 2\.39 has not been verified/u)
 })
+
+// `experiments/rc1/comparison/baseline-status.json` is the public statement of
+// what the comparison study has actually established. Recording a metric
+// without a preregistered run, or claiming an advantage while every metric is
+// still unmeasured, would turn a plan into a result.
+test('the comparison baseline claims no advantage while its metrics are unmeasured', async () => {
+  const status = JSON.parse(await read('experiments/rc1/comparison/baseline-status.json'))
+  assert.equal(status.schema, 'revia.comparison-status@1.0.0')
+  assert.deepEqual(
+    Object.keys(status.agent_productivity).sort(),
+    ['migration_cost', 'repair_rounds', 'review_miss_rate', 'task_success_rate'],
+    'the published metric set stays complete',
+  )
+  for (const [metric, value] of Object.entries(status.agent_productivity)) {
+    assert.equal(value, 'not_evaluated', `${metric} has no preregistered result yet`)
+  }
+  assert.equal(status.claim, 'no-agent-native-advantage-established')
+})
