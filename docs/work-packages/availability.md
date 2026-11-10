@@ -1355,6 +1355,11 @@ It still changes language semantics and was not folded into Issues 1-3.
      pointing at nothing, so a reader checking a decision lands nowhere. A guard
      asks every whole-repository citation under `docs/` to name a file that
      exists and that has the cited line.
+121. `runtime/rc1/candidate-manifest.json` inventories the binary it measured and
+     seeds its `candidate_id` with that digest, while `runtime/checksums.txt` is
+     what a downloader verifies. Nothing compared the two, so a re-cut binary or
+     a stale id could drift unnoticed. A guard requires the inventoried binary
+     digest to be the published one and the candidate id to carry it.
 
 ## 8. Evidence rules
 

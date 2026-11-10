@@ -1429,3 +1429,21 @@ test('the published RC1 trial record restates the kit it ships with', async () =
     `${artifact} is published with the digest the trial ran`,
   )
 })
+
+// `runtime/rc1/candidate-manifest.json` names the candidate and the bytes that
+// were measured, while `runtime/checksums.txt` is what a downloader verifies.
+// The two were never compared: a re-cut archive, or a runner digest seeded into
+// the candidate id, could drift without any test noticing.
+test('the RC1 candidate manifest names the bytes the checksums publish', async () => {
+  const candidate = JSON.parse(await read('runtime/rc1/candidate-manifest.json'))
+  const checksums = await read('runtime/checksums.txt')
+  const published = new Map()
+  for (const line of checksums.split('\n')) {
+    const match = line.match(/^([0-9a-f]{64}) {2}(\S+)$/u)
+    if (match) published.set(match[2], match[1])
+  }
+  const runner = candidate.files.find((file) => file.path === candidate.binary)
+  assert.ok(runner, 'the candidate manifest does not inventory its binary')
+  assert.equal(runner.digest, `sha256:${published.get(`revia-${candidate.release_version}-${candidate.target}`)}`)
+  assert.equal(candidate.candidate_id, `revia-${candidate.target}-${runner.digest.slice(-64, -48)}`)
+})
