@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { readFile } from 'node:fs/promises'
+import { readFile, readdir } from 'node:fs/promises'
 import test from 'node:test'
 
 const repository = new URL('../', import.meta.url)
@@ -219,5 +219,32 @@ test('the published checksum list agrees with the release manifests', async () =
   assert.ok(current.length >= 4, `expected the current release entries, found ${current.length}`)
   for (const [, digest, name] of current) {
     assert.equal(digest, expected.get(name), `${name} must match the release manifests`)
+  }
+})
+
+// Each release directory holds records that travel together: the candidate, the
+// target matrix, the native and server evidence, and the export manifest. A
+// record copied forward from the previous release keeps every digest field
+// valid, so only its version tells a verifier which release it describes.
+test('every release record names the release directory it sits in', async () => {
+  const releases = new Map([
+    ['rc1', '1.0.0-rc.1'],
+    ['rc2', '1.0.0-rc.2'],
+    ['rc2.1', '1.0.0-rc.2.1'],
+    ['rc2.2', '1.0.0-rc.2.2'],
+    ['rc2.2.1', '1.0.0-rc.2.2.1'],
+  ])
+  for (const [release, releaseVersion] of releases) {
+    const directory = new URL(`runtime/${release}/`, repository)
+    const names = (await readdir(directory)).filter((name) => name.endsWith('.json')).sort()
+    assert.ok(names.length >= 8, `${release} publishes too few records: ${names.length}`)
+    for (const name of names) {
+      const record = await readJson(`runtime/${release}/${name}`)
+      assert.equal(
+        record.version,
+        releaseVersion,
+        `runtime/${release}/${name} names the wrong release`,
+      )
+    }
   }
 })

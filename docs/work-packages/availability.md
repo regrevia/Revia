@@ -1378,6 +1378,11 @@ It still changes language semantics and was not folded into Issues 1-3.
      a schema the tree no longer emits. A guard resolves every identifier on
      those pages against the emitters under `src/` and `native/*/src/`.
 
+125. Each `runtime/rc*` directory publishes records that travel together. A
+     record copied forward from the previous release keeps every digest field
+     valid, so only its version field says which release it describes. A guard
+     sweeps those directories and requires each record to name its own release.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
