@@ -1185,6 +1185,13 @@ It still changes language semantics and was not folded into Issues 1-3.
     another. The new guard requires the kit version to match the candidate
     version, the status to stay measured, and the README to name that version.
 
+94. The current target matrix was only read for its pending-row count: its
+    version field was compared with nothing, and a measured row could name a
+    target the candidate never shipped while the count stayed the same. The new
+    guard binds the matrix schema and version to the candidate manifest, keeps
+    the desktop target vocabulary of both matrices equal, and requires the
+    measured rows to be exactly the candidate's targets.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

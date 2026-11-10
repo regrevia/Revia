@@ -162,3 +162,33 @@ test('the RC1 checksum lines restate the sealed export and candidate digests', a
   assert.ok(shipped, `the sealed export no longer lists ${archive}`)
   assert.equal(sums.get(archive), shipped.sha256, 'the RC1 archive digest moved')
 })
+
+// `runtime/rc2.2.1/target-matrix.json` publishes the desktop targets for the
+// current release, but only its pending-row count was read: the version field
+// was compared with nothing, and a measured row could name a target the
+// candidate does not ship while every other record stayed green.
+test('the current target matrix names the release it measures', async () => {
+  const matrix = await readJson('runtime/rc2.2.1/target-matrix.json')
+  const rc1 = await readJson('runtime/rc1/target-matrix.json')
+  assert.equal(matrix.schema, 'revia.public-target-matrix@1.0.0')
+  assert.equal(matrix.version, candidate.version)
+  assert.deepEqual(
+    matrix.targets.map((row) => row.target).sort(),
+    rc1.targets.map((row) => row.target).sort(),
+    'the target matrix no longer carries the desktop targets',
+  )
+  const measured = matrix.targets
+    .filter((row) => row.status === 'measured-native')
+    .map((row) => row.target)
+  assert.deepEqual(
+    measured.sort(),
+    candidate.targets.map((target) => target.target).sort(),
+    'the matrix measures targets the candidate does not ship',
+  )
+  for (const row of matrix.targets) {
+    assert.ok(
+      row.status === 'measured-native' || row.status === 'pending',
+      `the matrix records an unknown status for ${row.target}`,
+    )
+  }
+})
