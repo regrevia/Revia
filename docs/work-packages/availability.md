@@ -1366,6 +1366,13 @@ It still changes language semantics and was not folded into Issues 1-3.
      compared them, so one record could be refreshed alone. A guard requires the
      four records to agree and the native record to restate the capability run.
 
+123. `runtime/rc1/server-evidence.json` and `multi-module-evidence.json` each
+     publish a report digest, a stable digest and a gate digest for one measured
+     run, and both measured the same two modules. Nothing compared them, so a
+     partial refresh could publish a stable digest naming a report that no
+     longer exists. A guard requires each record to name one digest and both to
+     agree on the module count.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

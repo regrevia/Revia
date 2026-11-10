@@ -1467,3 +1467,18 @@ test('the RC1 native record restates the release evidence it was paired with', a
   assert.equal(native.release_stable_digest, identity.stable_digest, 'the paired stable digest moved')
   assert.equal(native.release_evidence_schema, identity.report_schema, 'the paired schema moved')
 })
+
+test('the RC1 server and multi-module records publish one digest', async () => {
+  const server = JSON.parse(await read('runtime/rc1/server-evidence.json'))
+  const multi = JSON.parse(await read('runtime/rc1/multi-module-evidence.json'))
+  const shape = /^sha256:[0-9a-f]{64}$/u
+  assert.match(server.stable_digest, shape, 'the server stable digest is not a sha256 digest')
+  assert.match(server.report_digest, shape, 'the server report digest is not a sha256 digest')
+  assert.match(multi.stable_digest, shape, 'the multi-module stable digest is not a sha256 digest')
+  assert.match(multi.report_digest, shape, 'the multi-module report digest is not a sha256 digest')
+  assert.match(multi.gate_digest, shape, 'the multi-module gate digest is not a sha256 digest')
+  assert.equal(server.stable_digest, server.report_digest, 'the server stable digest names another report')
+  assert.equal(multi.stable_digest, multi.report_digest, 'the multi-module stable digest names another report')
+  assert.equal(multi.report_digest, multi.gate_digest, 'the multi-module gate published another report')
+  assert.equal(server.module_count, multi.module_count, 'the two gate records measured different modules')
+})
