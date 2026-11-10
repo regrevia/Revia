@@ -367,3 +367,21 @@ test('the work package ledger numbers its entries without gaps', () => {
   const last = section.slice(section.lastIndexOf(`\n${numbers.at(-1)}. `))
   assert.ok(last.trim().split('\n').length >= 2, 'the last entry carries its evidence')
 })
+
+// A tracked shell script that cannot be parsed is a broken gate: the release
+// checks and the trial contract scripts are read by maintainers, and a typo in
+// one of them only shows up when that particular gate is invoked. Only a few
+// scripts are checked at run time (`scripts/validate-public-tree.sh` parses a
+// subset), so the syntax check has to come from the tracked tree itself.
+test('every tracked shell script parses before it ships', () => {
+  const tracked = spawnSync('git', ['ls-files', '*.sh'], { cwd: ROOT, encoding: 'utf8' })
+  assert.equal(tracked.status, 0, tracked.stderr)
+  const scripts = tracked.stdout.split('\n').filter((path) => path !== '')
+  assert.ok(scripts.length >= 12, `expected the tracked scripts, found ${scripts.length}`)
+  const failures = []
+  for (const script of scripts) {
+    const parsed = spawnSync('sh', ['-n', script], { cwd: ROOT, encoding: 'utf8' })
+    if (parsed.status !== 0) failures.push(`${script}: ${parsed.stderr.trim()}`)
+  }
+  assert.deepEqual(failures, [], 'tracked shell scripts parse with sh -n')
+})

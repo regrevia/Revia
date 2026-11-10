@@ -1283,6 +1283,12 @@ It still changes language semantics and was not folded into Issues 1-3.
      would make two packages indistinguishable in review. A guard now requires
      the entries under `## 7. Sequencing` to be numbered 1..N, once each and in
      order, and the last entry to keep its evidence lines.
+107. The release and trial scripts under `scripts/` are read and run by
+     maintainers, but only a subset is parsed at run time
+     (`scripts/validate-public-tree.sh` checks six of the thirteen). A syntax
+     error in the rest ships unnoticed: breaking `scripts/test-launchers.sh`
+     leaves that gate green. A guard now parses every tracked `*.sh` with
+     `sh -n` and requires all of them to parse.
 
 ## 8. Evidence rules
 
