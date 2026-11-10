@@ -1373,6 +1373,11 @@ It still changes language semantics and was not folded into Issues 1-3.
      longer exists. A guard requires each record to name one digest and both to
      agree on the module count.
 
+124. The top-level reference pages name nine JSON schema identifiers, and each
+     is emitted by a source file. Nothing tied the two, so a page could promise
+     a schema the tree no longer emits. A guard resolves every identifier on
+     those pages against the emitters under `src/` and `native/*/src/`.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

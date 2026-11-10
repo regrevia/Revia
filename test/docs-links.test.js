@@ -220,3 +220,36 @@ test('every source citation in the documentation resolves', () => {
   }
   assert.deepEqual(unresolvable, [], 'every citation points inside a file that exists')
 })
+
+// Published pages name the JSON schema a command emits. A schema identifier that
+// no source file mentions is a promise the tree cannot keep, so every identifier
+// on a top-level reference page is looked up in the code that emits it.
+const SCHEMA_IDENTIFIER = /\bre\.[a-z0-9-]+@[0-9]+\.[0-9]+\.[0-9]+\b/gu
+const EMITTING_ROOTS = ['native/revia-cli/src', 'native/revia-core/src', 'src']
+
+function emittedSource(directory) {
+  let source = ''
+  for (const entry of readdirSync(resolve(repositoryRoot, directory)).sort()) {
+    const relativePath = posix.join(directory, entry)
+    const absolutePath = resolve(repositoryRoot, relativePath)
+    if (statSync(absolutePath).isDirectory()) {
+      source += emittedSource(relativePath)
+    } else if (/\.(?:m?js|rs|sh)$/u.test(entry)) {
+      source += readFileSync(absolutePath, 'utf8')
+    }
+  }
+  return source
+}
+
+test('every schema a reference page names is emitted by the tree', () => {
+  const emitted = EMITTING_ROOTS.map(emittedSource).join('\n')
+  const unnamed = []
+  for (const document of readdirSync(resolve(repositoryRoot, 'docs')).sort()) {
+    if (!document.endsWith('.md')) continue
+    const source = readFileSync(resolve(repositoryRoot, 'docs', document), 'utf8')
+    for (const identifier of new Set(source.match(SCHEMA_IDENTIFIER) ?? [])) {
+      if (!emitted.includes(identifier)) unnamed.push(`${document} names unemitted ${identifier}`)
+    }
+  }
+  assert.deepEqual(unnamed, [], 'every schema identifier names a schema the tree emits')
+})
