@@ -1192,6 +1192,14 @@ It still changes language semantics and was not folded into Issues 1-3.
     the desktop target vocabulary of both matrices equal, and requires the
     measured rows to be exactly the candidate's targets.
 
+95. `docs/rc1-trial-kit-contract.md` promises that the static verifier rejects
+    digest drift, changed checksums, and symlinked fixtures, but the suite only
+    ran it against the intact kit: a comparison weakened to accept any value
+    would still print the verified line on every push. The new guard copies the
+    kit to a scratch directory, requires the copy to verify, then changes one
+    fixture byte, one checksum line, and adds one symlink, requiring each edit
+    to fail with its documented message.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

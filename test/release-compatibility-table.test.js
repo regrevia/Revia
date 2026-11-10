@@ -9,6 +9,7 @@ import {
   readFile,
   readdir,
   rm,
+  symlink,
   writeFile,
 } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -928,4 +929,67 @@ test('the RC1 trial kit names the release it measures', async () => {
     readme.includes(`v${manifest.version}`),
     `the kit README does not name v${manifest.version}`,
   )
+})
+
+// `docs/rc1-trial-kit-contract.md` tells a trial operator that the verifier
+// rejects digest drift, missing fixtures, and symlinks, but the suite only ran
+// the verifier on the intact kit: a weakened comparison would still print the
+// verified line on every push. The guard tampers with a copy and requires each
+// claimed rejection to happen.
+test('the RC1 trial verifier rejects a tampered kit copy', async () => {
+  const verifier = fileURLToPath(
+    new URL('../scripts/verify-rc1-trial-kit.sh', import.meta.url),
+  )
+  const kit = fileURLToPath(new URL('../experiments/rc1/kit', import.meta.url))
+  const exportManifest = fileURLToPath(
+    new URL('../runtime/rc1/export-manifest.json', import.meta.url),
+  )
+  async function replicate(from, to) {
+    await mkdir(to, { recursive: true })
+    for (const entry of await readdir(from, { withFileTypes: true })) {
+      const source = join(from, entry.name)
+      const target = join(to, entry.name)
+      if (entry.isDirectory()) {
+        await replicate(source, target)
+      } else {
+        await copyFile(source, target)
+      }
+    }
+  }
+  const scratch = await mkdtemp(join(tmpdir(), 'revia-trial-kit-'))
+  const copy = join(scratch, 'kit')
+  const verify = () =>
+    spawnSync('sh', [verifier, copy, exportManifest], { encoding: 'utf8' })
+  try {
+    await replicate(kit, copy)
+    const intact = verify()
+    assert.equal(intact.status, 0, intact.stderr)
+    assert.match(intact.stdout, /RC1 trial kit verified: 1\.0\.0-rc\.1/u)
+
+    // The sealed digest exists to catch a fixture whose bytes moved.
+    const fixture = join(copy, 'fixtures/bounded-server/expected-report.json')
+    const original = await readFile(fixture)
+    await writeFile(fixture, Buffer.concat([original, Buffer.from(' ')]))
+    const drifted = verify()
+    assert.notEqual(drifted.status, 0, 'the verifier accepted a changed fixture')
+    assert.match(drifted.stderr, /fixture hash mismatch/u)
+    await writeFile(fixture, original)
+
+    // The kit checksums are what a runner checks before executing a trial.
+    const checksums = join(copy, 'checksums.txt')
+    const checksumsText = await readFile(checksums, 'utf8')
+    await writeFile(checksums, checksumsText.replace(/^[0-9a-f]{64}/mu, '0'.repeat(64)))
+    const rehashed = verify()
+    assert.notEqual(rehashed.status, 0, 'the verifier accepted a changed checksum')
+    assert.match(rehashed.stderr, /checksum mismatch/u)
+    await writeFile(checksums, checksumsText)
+
+    // A symlinked fixture would let a kit point outside its own copy.
+    await symlink('checksums.txt', join(copy, 'fixtures', 'linked.txt'))
+    const linked = verify()
+    assert.notEqual(linked.status, 0, 'the verifier accepted a symlink')
+    assert.match(linked.stderr, /symlinks are forbidden/u)
+  } finally {
+    await rm(scratch, { recursive: true, force: true })
+  }
 })
