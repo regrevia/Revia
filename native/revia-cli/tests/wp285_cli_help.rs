@@ -88,7 +88,8 @@ fn native_cli_exit_code_legend_matches_the_observed_codes() {
 
     let missing = run(&root, &["check", "absent.re"]);
     assert_eq!(missing.status.code(), Some(66));
-    assert!(missing.stdout.is_empty());
+    assert!(missing.stdout.contains("\"code\":\"input-unreadable\""));
+    assert!(missing.stdout.contains("\"file\":\"absent.re\""));
 
     let directory = run(&root, &["check", "directory"]);
     assert_eq!(directory.status.code(), Some(66));
@@ -96,6 +97,63 @@ fn native_cli_exit_code_legend_matches_the_observed_codes() {
     let usage = run(&root, &["check"]);
     assert_eq!(usage.status.code(), Some(64));
 
+    cleanup(&root);
+}
+
+#[test]
+fn native_cli_unreadable_input_reports_a_diagnostic() {
+    // Exit 66 used to be silent; every unreadable-input class now reports one
+    // JSON diagnostic carrying the path, on the check envelope.
+    let root = temp_root();
+    fs::create_dir_all(root.join("directory")).unwrap();
+    let mut inputs: Vec<&str> = vec!["absent.re", "directory"];
+    #[cfg(unix)]
+    {
+        std::os::unix::fs::symlink("no-such-target.re", root.join("broken.re")).unwrap();
+        inputs.push("broken.re");
+    }
+    fs::write(root.join("denied.re"), "re 0.1\n").unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut mode = fs::metadata(root.join("denied.re")).unwrap().permissions();
+        mode.set_mode(0o000);
+        fs::set_permissions(root.join("denied.re"), mode).unwrap();
+    }
+
+    for input in inputs {
+        let output = run(&root, &["check", input]);
+        assert_eq!(output.status.code(), Some(66), "{input} did not exit 66");
+        assert!(
+            output.stderr.is_empty(),
+            "{input} wrote to stderr: {}",
+            output.stderr
+        );
+        assert!(
+            output.stdout.contains("\"code\":\"input-unreadable\""),
+            "{input} reported no input-unreadable diagnostic: {}",
+            output.stdout
+        );
+        assert!(
+            output.stdout.contains(&format!("\"file\":\"{input}\"")),
+            "{input} diagnostic names no path: {}",
+            output.stdout
+        );
+        assert!(
+            output.stdout.contains("\"ok\":false"),
+            "{input} diagnostic lacks ok:false: {}",
+            output.stdout
+        );
+    }
+
+    // A superuser reads past file permissions, so the denied row only runs
+    // where the mode actually denies the read.
+    if fs::read(root.join("denied.re")).is_err() {
+        let output = run(&root, &["check", "denied.re"]);
+        assert_eq!(output.status.code(), Some(66));
+        assert!(output.stdout.contains("\"code\":\"input-unreadable\""));
+        assert!(output.stdout.contains("\"file\":\"denied.re\""));
+    }
     cleanup(&root);
 }
 
