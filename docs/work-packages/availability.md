@@ -1243,6 +1243,14 @@ It still changes language semantics and was not folded into Issues 1-3.
      that every pinned marker still exists in both the contract and the
      runner, so a stale pin fails instead of passing quietly.
 
+101. `scripts/verify-rc1-export.sh` is the gate a sealed RC1 export has to
+     pass, and only `sh -n` covered it: the usage exit, the missing-directory
+     rejection, the symlink rejection, the exact inventory rejection, and the
+     evidence parse were all unbound, so a weakened check would let an
+     unsealed directory through while the syntax check stayed green. A guard
+     drives each rejection on synthetic directories and requires its exit
+     code and message.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

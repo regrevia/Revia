@@ -1213,3 +1213,61 @@ test('the trial runner contract is wired and holds', async () => {
     assert.ok(runner.includes(marker), `the runner no longer carries ${marker}`)
   }
 })
+
+// The RC1 export verifier is the gate the sealed export has to pass before a
+// release, and only `sh -n` covers it: a weakened rejection would let a
+// directory that is missing, a symlink, an incomplete inventory, or empty
+// evidence pass the gate while the shell syntax check keeps passing.
+test('the rc1 export verifier rejects an unsealed directory', async () => {
+  const script = fileURLToPath(new URL('../scripts/verify-rc1-export.sh', import.meta.url))
+  const scratch = await mkdtemp(join(tmpdir(), 'revia-rc1-export-'))
+  const sealedFiles = [
+    'LICENSE-RC.md',
+    'NOTICE-RC.md',
+    'candidate-manifest.json',
+    'capability-evidence.json',
+    'checksums.txt',
+    'export-manifest.json',
+    'multi-module-evidence.json',
+    'native-evidence.json',
+    'revia-1.0.0-rc.1-darwin-arm64.tar.gz',
+    'server-evidence.json',
+    'target-matrix.json',
+  ]
+  const execute = (args) =>
+    spawnSync('sh', [script, ...args], { encoding: 'utf8', timeout: 20000 })
+  try {
+    const usage = execute([])
+    assert.equal(usage.status, 64)
+    assert.match(usage.stderr, /Usage: verify-rc1-export\.sh <sealed-export-directory>/u)
+
+    const missing = execute([join(scratch, 'absent')])
+    assert.equal(missing.status, 65)
+    assert.match(missing.stderr, /export directory is missing/u)
+
+    const realDirectory = join(scratch, 'real')
+    await mkdir(realDirectory)
+    const link = join(scratch, 'link')
+    await symlink(realDirectory, link)
+    const linked = execute([link])
+    assert.equal(linked.status, 65)
+    assert.match(linked.stderr, /export directory must not be a symlink/u)
+
+    const emptyDirectory = join(scratch, 'empty')
+    await mkdir(emptyDirectory)
+    const empty = execute([emptyDirectory])
+    assert.equal(empty.status, 65)
+    assert.match(empty.stderr, /exact file inventory mismatch/u)
+
+    // A complete inventory of unreadable evidence must fail on the evidence
+    // itself, not on the inventory.
+    const hollowDirectory = join(scratch, 'hollow')
+    await mkdir(hollowDirectory)
+    for (const name of sealedFiles) await writeFile(join(hollowDirectory, name), '')
+    const hollow = execute([hollowDirectory])
+    assert.equal(hollow.status, 65)
+    assert.match(hollow.stderr, /export-manifest\.json is not valid JSON/u)
+  } finally {
+    await rm(scratch, { recursive: true, force: true })
+  }
+})
