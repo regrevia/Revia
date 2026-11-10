@@ -1338,3 +1338,42 @@ test('the rc1 release asset check refuses a mismatched tag', async () => {
     assert.match(result.stderr, /release asset tag\/version mismatch/u)
   }
 })
+
+// The adversarial review contract is the only thing that exercises the three
+// case directories end to end, and nothing referenced it: a case could be
+// added without the contract, or dropped from the contract while its
+// directory stayed, and the tree would still validate. The contract is now
+// syntax-checked by the public tree validation, and this guard keeps the
+// contract's case list and the case directories in step.
+test('the adversarial review contract covers every case directory', async () => {
+  const validation = await readFile('scripts/validate-public-tree.sh', 'utf8')
+  assert.match(
+    validation,
+    /\nsh -n scripts\/test-adversarial-review-contract\.sh\n/u,
+    'the public tree validation no longer syntax-checks the contract',
+  )
+
+  const contract = await readFile('scripts/test-adversarial-review-contract.sh', 'utf8')
+  const caseRoot = 'examples/adversarial-review'
+  const onDisk = (await readdir(caseRoot, { withFileTypes: true }))
+    .filter((entry) => entry.isDirectory() && entry.name.startsWith('case-'))
+    .map((entry) => entry.name)
+    .sort()
+  assert.ok(onDisk.length >= 3, `expected at least 3 cases, found ${onDisk.length}`)
+  for (const name of onDisk) {
+    assert.ok(
+      contract.includes(`${caseRoot}/${name}`),
+      `the contract no longer exercises ${name}`,
+    )
+    for (const file of ['main.re', 'README.md']) {
+      await readFile(join(caseRoot, name, file), 'utf8')
+    }
+  }
+
+  const listed = [...contract.matchAll(/case-\d+-[a-z0-9-]+/gu)].map((match) => match[0])
+  assert.ok(listed.length >= 3, `expected at least 3 listed cases, found ${listed.length}`)
+  for (const name of listed) {
+    assert.ok(onDisk.includes(name), `the contract exercises a missing case: ${name}`)
+  }
+  assert.match(contract, /status.*-eq 69/u, 'the pending-on-this-target escape is gone')
+})

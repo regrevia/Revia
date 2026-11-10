@@ -1265,6 +1265,13 @@ It still changes language semantics and was not folded into Issues 1-3.
      bare version without its `v` prefix, so a weakened comparison cannot let
      the asset check inspect a release for the wrong version.
 
+104. `scripts/test-adversarial-review-contract.sh` is the only thing that
+     exercises the three adversarial case directories end to end, and nothing
+     referenced it: a case could be added without the contract, or dropped from
+     the contract while its directory stayed, and the tree would still
+     validate. The public tree validation syntax-checks the contract, and a
+     guard keeps its case list and the case directories in step.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

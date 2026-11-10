@@ -21,6 +21,7 @@ sh -n scripts/verify-rc1-export.sh
 sh -n scripts/verify-rc1-trial-kit.sh
 sh -n scripts/run-public-trials.sh
 sh -n scripts/run-reviewed-file-plan.sh
+sh -n scripts/test-adversarial-review-contract.sh
 node scripts/build-source-import-manifest.js --check
 sh scripts/test-rc1-validate-contract.sh
 sh scripts/test-rc1-launcher-contract.sh
