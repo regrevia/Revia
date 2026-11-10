@@ -83,6 +83,7 @@ use revia_core::{
         CAPABILITY_POLICY_MISSING, CapabilityPolicy, DeclaredCapabilityHost,
         referenced_declared_references,
     },
+    diagnostic::Diagnostic,
     digest::sha256_hex,
     experiment_kit::{build_experiment_kit, serialize_experiment_kit},
     fault_corpus::{
@@ -8829,7 +8830,16 @@ fn print_compile_error(code: &str) {
 }
 
 fn read_source(path: &str) -> Result<(String, String), i32> {
-    let bytes = fs::read(path).map_err(|_| 66)?;
+    // An unreadable input reports a diagnostic on the same envelope as the
+    // invalid-source path below, instead of exiting 66 with no output.
+    let bytes = fs::read(path).map_err(|_| {
+        println!(
+            "{{\"diagnostics\":[{}],\"ok\":false,\"schema\":{}}}",
+            Diagnostic::from_unreadable_file(path).to_json(),
+            quote(CHECK_SCHEMA)
+        );
+        66
+    })?;
     let source = SourceText::from_bytes(&bytes, path).map_err(|diagnostic| {
         println!(
             "{{\"diagnostics\":[{}],\"ok\":false,\"schema\":{}}}",
