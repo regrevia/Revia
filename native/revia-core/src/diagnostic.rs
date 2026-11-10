@@ -75,6 +75,27 @@ impl Diagnostic {
         }
     }
 
+    pub fn from_unreadable_file(file: &str) -> Self {
+        Self {
+            schema: "re.source-diagnostic@0.1.0".to_owned(),
+            severity: "error".to_owned(),
+            file: file.to_owned(),
+            code: "input-unreadable".to_owned(),
+            phase: "source".to_owned(),
+            rule: "source.read".to_owned(),
+            byte_start: Some(0),
+            byte_end: Some(0),
+            line: 1,
+            column: 1,
+            end_line: 1,
+            end_column: 1,
+            lexeme: String::new(),
+            expected: None,
+            actual: None,
+            repair: Some("inspect".to_owned()),
+        }
+    }
+
     pub fn with_expected(mut self, expected: impl Into<String>) -> Self {
         self.expected = Some(expected.into());
         self
