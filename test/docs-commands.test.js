@@ -747,3 +747,34 @@ test('the architecture example runs the path it draws', () => {
   }
   assert.deepEqual(stages, ['check', 'run', 'manifest', 'view'])
 })
+
+// The translated architecture document repeats the same runnable example. Only
+// the locale differs. Nothing compared the two blocks, so a translated page
+// could keep an older command list and send its readers down a path the English
+// page no longer takes.
+test('the translated architecture example walks the same path', () => {
+  const read = (document) => readFileSync(resolve(repositoryRoot, document), 'utf8')
+  const commands = (document) => {
+    const block = read(document).match(/```bash\n([\s\S]*?)```/u)
+    assert.ok(block, `${document} keeps its runnable example`)
+    return block[1]
+      .split('\n')
+      .map((line) => line.split(' > ')[0].trim())
+      .filter(Boolean)
+  }
+  const english = commands('docs/architecture.md')
+  const translated = commands('docs/architecture.zh-CN.md')
+  assert.equal(translated.length, english.length, 'both pages show every stage')
+  const locales = new Set()
+  const normalize = (command) => command.replace(/--locale [a-z]{2}-[A-Za-z]{2}/u, '--locale <locale>')
+  for (const [index, command] of translated.entries()) {
+    const locale = command.match(/--locale ([a-z]{2}-[A-Za-z]{2})/u)?.[1]
+    if (locale) locales.add(locale)
+    assert.equal(normalize(command), normalize(english[index]), `stage ${index + 1} of the translation drifted`)
+  }
+  for (const command of english) {
+    const locale = command.match(/--locale ([a-z]{2}-[A-Za-z]{2})/u)?.[1]
+    if (locale) locales.add(locale)
+  }
+  assert.deepEqual([...locales].sort(), ['en-US', 'zh-CN'], 'each page renders its own declared locale')
+})

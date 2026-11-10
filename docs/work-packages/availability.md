@@ -1345,6 +1345,11 @@ It still changes language semantics and was not folded into Issues 1-3.
      example could leave the drawing and its commands describing a path the
      toolchain no longer takes. A guard executes the documented block and checks
      the stages stay `check`, `run`, `manifest`, `view`.
+119. `docs/architecture.zh-CN.md` repeats the runnable example of its English
+     counterpart, and only the locale is meant to differ. Nothing compared the
+     two blocks, so a translated page could keep an older command list and send
+     its readers down a path the English page no longer takes. A guard requires
+     the same stages in both pages and exactly one locale each.
 
 ## 8. Evidence rules
 
