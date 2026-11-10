@@ -1312,6 +1312,10 @@ It still changes language semantics and was not folded into Issues 1-3.
      licence link and the agreement checkbox are the contributor's part of the
      release contract, so a guard now resolves the template's links from
      `.github` and keeps the checkbox.
+112. A workflow that omits `permissions` runs with the repository default
+     token scope, so a release or validation gate can quietly gain write access
+     it never needed and nothing in the tree said so. A guard reads the block
+     from each workflow and accepts only `{}` or read-only scopes.
 
 ## 8. Evidence rules
 

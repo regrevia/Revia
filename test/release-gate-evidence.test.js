@@ -95,3 +95,34 @@ test('every file the workflows invoke exists in the tree', () => {
     .sort()
   assert.deepEqual(missing, [], 'every path a workflow invokes exists')
 })
+
+// A workflow that omits `permissions` inherits the repository default for the
+// token, so a gate can quietly gain write access it never needed. The block is
+// read from the workflows themselves and only `{}` or read-only scopes pass.
+test('every workflow narrows the token permissions it runs with', () => {
+  const directory = join(repositoryRoot, '.github/workflows')
+  const workflows = readdirSync(directory).filter((name) => name.endsWith('.yml'))
+  assert.ok(workflows.length >= 7, `expected the workflows, found ${workflows.length}`)
+  const broad = []
+  for (const workflow of workflows) {
+    const lines = read(join('.github/workflows', workflow)).split('\n')
+    const start = lines.findIndex((line) => /^permissions:/u.test(line))
+    if (start === -1) {
+      broad.push(`${workflow}: no permissions block`)
+      continue
+    }
+    if (/^permissions: \{\}$/u.test(lines[start])) continue
+    for (let index = start + 1; index < lines.length; index += 1) {
+      const line = lines[index]
+      if (line.trim() === '' || line.startsWith('  ')) {
+        const scope = /^\s+([a-z-]+):\s*(\S+)\s*$/u.exec(line)
+        if (scope !== null && !/^(?:read|none)$/u.test(scope[2])) {
+          broad.push(`${workflow}: ${scope[1]} ${scope[2]}`)
+        }
+        continue
+      }
+      break
+    }
+  }
+  assert.deepEqual(broad, [], 'every workflow blocks with read-only or no permissions')
+})
