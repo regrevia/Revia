@@ -672,3 +672,23 @@ test('the rendering page names exactly the formats the view command accepts', ()
   assert.equal(rejected.status, 64, 'view accepted a format the page does not document')
   assert.match(rejected.stderr, /re view \[--locale zh-CN\|en-US\] \[--format html\|svg\]/u)
 })
+
+// The invocation scan above reads subcommand names and required flags, so a
+// code fence may still hand a reader a `.re` input that no longer exists: a
+// renamed or moved example leaves every documented command unrunnable while
+// the subcommand and flag checks keep passing.
+test('documented example inputs exist', () => {
+  const referenced = new Set()
+  for (const document of documents) {
+    const source = readFileSync(resolve(repositoryRoot, document), 'utf8')
+    for (const match of source.matchAll(/(?:examples|projects|experiments)\/[^\s'"`()\[\]]+\.re\b/gu)) {
+      const target = match[0]
+      // `examples/<case>.re` and `examples/*.re` are shapes, not paths.
+      if (/[<>*]/u.test(target)) continue
+      referenced.add(target)
+    }
+  }
+  assert.ok(referenced.size >= 10, `documents reference ${referenced.size} example inputs`)
+  const missing = [...referenced].filter((target) => !existsSync(resolve(repositoryRoot, target)))
+  assert.deepEqual(missing, [], 'a document runs an input this repository does not ship')
+})

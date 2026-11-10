@@ -1226,6 +1226,15 @@ It still changes language semantics and was not folded into Issues 1-3.
     denied-no-execution branches, so any of those checks going quiet fails the
     suite.
 
+99. The documentation tests parse documented invocations for their
+    subcommand names and required flags, but never resolve the `.re` inputs
+    those invocations name, so a renamed or moved example leaves the
+    architecture walkthrough and the example pages telling a reader to run a
+    file the repository no longer ships while every documented-command check
+    keeps passing. A guard resolves every `examples/`, `projects/`, and
+    `experiments/` `.re` path named in the scanned documents and requires it
+    to exist, so doc rot of a runnable input fails the suite.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
