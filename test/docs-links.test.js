@@ -169,3 +169,28 @@ test('every repository path named in shipped documentation exists', () => {
   }
   assert.deepEqual(missing, [])
 })
+
+// The pull request template is the one page every contributor reads before a
+// change, and the link scan above never reached it because it walks `docs`,
+// `doc` and `examples`. The licence link and the agreement checkbox it carries
+// are the contributor's part of the release contract, so they are checked from
+// the file's own directory.
+test('the pull request template links resolve and keep the licence agreement', () => {
+  const template = readFileSync(
+    resolve(repositoryRoot, '.github/pull_request_template.md'),
+    'utf8'
+  )
+  const links = [...template.matchAll(LINK)]
+    .map((match) => match[1])
+    .filter((target) => !EXTERNAL.test(target))
+  assert.ok(links.length >= 1, 'the template links nothing')
+  const missing = links.filter(
+    (target) => !existsSync(resolve(repositoryRoot, '.github', target.split('#')[0]))
+  )
+  assert.deepEqual(missing, [], 'every template link resolves from .github')
+  assert.match(
+    template,
+    /^\s*- \[ \] I agree to \[LICENSE\]\(\.\.\/LICENSE\)/mu,
+    'the template keeps the licence agreement checkbox'
+  )
+})

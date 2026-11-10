@@ -1307,6 +1307,11 @@ It still changes language semantics and was not folded into Issues 1-3.
      repository no longer ships. A guard now resolves every script target
      against the tracked tree and rejects a command that is not a plain `node`
      invocation.
+111. `.github/pull_request_template.md` is the one page every contributor reads,
+     and the link scan reached `docs`, `doc` and `examples` but never it. Its
+     licence link and the agreement checkbox are the contributor's part of the
+     release contract, so a guard now resolves the template's links from
+     `.github` and keeps the checkbox.
 
 ## 8. Evidence rules
 
