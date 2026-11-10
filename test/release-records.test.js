@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
@@ -190,5 +191,33 @@ test('the current target matrix names the release it measures', async () => {
       row.status === 'measured-native' || row.status === 'pending',
       `the matrix records an unknown status for ${row.target}`,
     )
+  }
+})
+
+// `runtime/checksums.txt` is what a verifier runs against a downloaded archive,
+// while the manifests are what the release record cites. If the two disagree,
+// the verification succeeds on files the release record does not describe.
+test('the published checksum list agrees with the release manifests', async () => {
+  const checksums = await readFile(new URL('runtime/checksums.txt', repository), 'utf8')
+  const listed = exportManifest.files.find((file) => file.path === 'checksums.txt')
+  assert.ok(listed !== undefined, 'the export manifest must publish checksums.txt')
+  assert.equal(
+    createHash('sha256').update(checksums).digest('hex'),
+    digestOf(listed.sha256),
+    'the export manifest publishes the digest of this checksum list',
+  )
+  const expected = new Map()
+  for (const file of exportManifest.files) {
+    expected.set(file.path, digestOf(file.sha256))
+  }
+  for (const target of candidate.targets) {
+    expected.set(target.archive, digestOf(target.archive_sha256))
+    expected.set(target.binary, digestOf(target.binary_sha256))
+  }
+  const lines = [...checksums.matchAll(/^([0-9a-f]{64}) {2}(\S+)$/gmu)]
+  const current = lines.filter((line) => line[2].includes(candidate.version))
+  assert.ok(current.length >= 4, `expected the current release entries, found ${current.length}`)
+  for (const [, digest, name] of current) {
+    assert.equal(digest, expected.get(name), `${name} must match the release manifests`)
   }
 })

@@ -1321,6 +1321,11 @@ It still changes language semantics and was not folded into Issues 1-3.
      diagnostics page promises, and a contact link that leaves the repository
      sends the report where nobody reads it. A guard keeps blank issues off and
      pins each contact link to this repository.
+114. `runtime/checksums.txt` is what a trial runner verifies a download against,
+     while the candidate and export manifests are what the release record cites;
+     nothing tied the two, so the list could pass a file the record does not
+     describe. A guard recomputes the list digest and matches every current
+     release entry to the manifests.
 
 ## 8. Evidence rules
 
