@@ -1405,3 +1405,27 @@ test('the comparison record schema keeps every field a comparison must publish',
     'each outcome is hashed separately',
   )
 })
+
+// `runtime/rc1/trial-manifest.json` publishes what the RC1 trial measured, and
+// the kit ships its own copy of the same manifest. Nothing compared them, so a
+// kit could be regenerated while the published record kept the old digests, and
+// an operator would verify the download against a trial that was never run.
+test('the published RC1 trial record restates the kit it ships with', async () => {
+  const published = await readJson('runtime/rc1/trial-manifest.json')
+  const kit = await readJson('experiments/rc1/kit/trial-manifest.json')
+  assert.deepEqual(published, kit, 'the record and the kit describe the same trial')
+  for (const trial of published.trials) {
+    assert.equal(
+      trial.runner_binary_sha256,
+      published.runner_binary_sha256,
+      `${trial.id} ran a runner the record does not name`,
+    )
+  }
+  const artifact = `revia-${published.version}-${published.target}`
+  const checksums = await read('runtime/checksums.txt')
+  assert.match(
+    checksums,
+    new RegExp(`^${published.runner_binary_sha256} {2}${artifact.replace(/\./gu, '\\.')}$`, 'mu'),
+    `${artifact} is published with the digest the trial ran`,
+  )
+})

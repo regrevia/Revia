@@ -1335,6 +1335,11 @@ It still changes language semantics and was not folded into Issues 1-3.
      record must publish, and nothing read it: dropping a required digest, an
      execution mode, or `additionalProperties: false` would let a record look
      complete while omitting the proof. A guard pins those five shapes.
+117. `runtime/rc1/trial-manifest.json` publishes what the RC1 trial measured and
+     the kit ships a copy of the same record, but nothing compared them: a
+     regenerated kit could leave the published record naming other digests, and
+     the runner digest was never tied to the entry in `runtime/checksums.txt`.
+     A guard requires both records to agree and every trial to name that runner.
 
 ## 8. Evidence rules
 
