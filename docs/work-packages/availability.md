@@ -1173,6 +1173,12 @@ It still changes language semantics and was not folded into Issues 1-3.
     restates the RC1 binary digest from the candidate file and the RC1 archive
     digest from the sealed export, so a drift on either side fails.
 
+92. The sealed RC1 export carries the license digest twice: in the payload
+    inventory and as the top-level `license_sha256`. Only the inventory entry
+    was compared with the shipped license, so the top-level field could name a
+    stale digest while every other check stayed green. The new guard requires
+    both to restate the `LICENSE-RC.md` bytes and therefore each other.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

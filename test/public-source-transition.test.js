@@ -302,3 +302,19 @@ test('the sealed RC1 export agrees with the records the tree still ships', () =>
     assert.equal(entry.sha256, digest(contents), `${path} changed contents`)
   }
 })
+
+// The sealed export carries the license digest twice: once in the payload
+// inventory and once as the top-level `license_sha256`. Only the inventory
+// entry was compared with the shipped license, so the top-level field could
+// name a stale digest while every other check stayed green.
+test('the sealed RC1 export names one license digest', () => {
+  const exportManifest = JSON.parse(readFileSync(join(
+    ROOT,
+    'runtime/rc1/export-manifest.json',
+  ), 'utf8'))
+  const license = readFileSync(join(ROOT, 'LICENSE-RC.md'))
+  const entry = exportManifest.files.find(({ path }) => path === 'LICENSE-RC.md')
+  assert.ok(entry, 'the sealed export no longer lists LICENSE-RC.md')
+  assert.equal(exportManifest.license_sha256, digest(license))
+  assert.equal(exportManifest.license_sha256, entry.sha256)
+})
