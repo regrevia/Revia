@@ -1447,3 +1447,23 @@ test('the RC1 candidate manifest names the bytes the checksums publish', async (
   assert.equal(runner.digest, `sha256:${published.get(`revia-${candidate.release_version}-${candidate.target}`)}`)
   assert.equal(candidate.candidate_id, `revia-${candidate.target}-${runner.digest.slice(-64, -48)}`)
 })
+
+// `native-evidence.json` re-states the release-evidence digest, input and schema
+// that `capability-evidence.json` measured. Nothing compared the two records, so
+// one of them could be refreshed while the other kept naming the earlier run.
+test('the RC1 native record restates the release evidence it was paired with', async () => {
+  const names = ['capability', 'multi-module', 'native', 'server']
+  const records = {}
+  for (const name of names) records[name] = JSON.parse(await read(`runtime/rc1/${name}-evidence.json`))
+  const identity = records.capability
+  for (const name of names) {
+    assert.equal(records[name].version, identity.version, `${name}-evidence names another version`)
+    assert.equal(records[name].target, identity.target, `${name}-evidence names another target`)
+    assert.equal(records[name].status, identity.status, `${name}-evidence claims another status`)
+  }
+  const native = records.native
+  assert.equal(native.release_evidence_digest, identity.evidence_digest, 'the paired digest moved')
+  assert.equal(native.release_evidence_input_sha256, identity.input_sha256, 'the paired input moved')
+  assert.equal(native.release_stable_digest, identity.stable_digest, 'the paired stable digest moved')
+  assert.equal(native.release_evidence_schema, identity.report_schema, 'the paired schema moved')
+})

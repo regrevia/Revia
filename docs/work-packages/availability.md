@@ -1360,6 +1360,11 @@ It still changes language semantics and was not folded into Issues 1-3.
      what a downloader verifies. Nothing compared the two, so a re-cut binary or
      a stale id could drift unnoticed. A guard requires the inventoried binary
      digest to be the published one and the candidate id to carry it.
+122. `runtime/rc1/native-evidence.json` re-states the release-evidence digest,
+     input, stable digest and schema that `capability-evidence.json` records, and
+     all four RC1 evidence files claim one target, version and status. Nothing
+     compared them, so one record could be refreshed alone. A guard requires the
+     four records to agree and the native record to restate the capability run.
 
 ## 8. Evidence rules
 
