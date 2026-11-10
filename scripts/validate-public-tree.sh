@@ -25,6 +25,7 @@ node scripts/build-source-import-manifest.js --check
 sh scripts/test-rc1-validate-contract.sh
 sh scripts/test-rc1-launcher-contract.sh
 sh scripts/test-rc1-gate-contract.sh
+sh scripts/test-public-trial-runner-contract.sh
 
 if [ "$VERSION" = '1.0.0-rc.1' ]; then
 node --input-type=module <<'NODE'

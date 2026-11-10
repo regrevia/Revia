@@ -1170,3 +1170,46 @@ test('the reviewed-file-plan boundary holds', async () => {
     await rm(scratch, { recursive: true, force: true })
   }
 })
+
+// `scripts/test-public-trial-runner-contract.sh` pins the trial runner's
+// evidence checks, but nothing invoked it: it was not chained from the public
+// tree validation and no test ran it, so the pins could drift with the runner
+// and stay green by hand.
+// The markers the trial-runner contract exists to protect: the per-trial step
+// count, the per-step command shape, the fixture comparison, and the two
+// rejections a malformed kit must hit.
+const PINNED_RUNNER_MARKERS = [
+  '.trials[$trial].steps | length',
+  '.steps[$step].command',
+  '.expected.results',
+  'result differs from fixture',
+  'trial manifest step contract is invalid',
+]
+
+test('the trial runner contract is wired and holds', async () => {
+  const validation = await readFile('scripts/validate-public-tree.sh', 'utf8')
+  assert.match(
+    validation,
+    /\nsh scripts\/test-public-trial-runner-contract\.sh\n/u,
+    'public tree validation no longer runs the trial runner contract',
+  )
+  const contractPath = fileURLToPath(
+    new URL('../scripts/test-public-trial-runner-contract.sh', import.meta.url),
+  )
+  const result = spawnSync('sh', [contractPath], {
+    cwd: fileURLToPath(repository),
+    encoding: 'utf8',
+    timeout: 20000,
+  })
+  assert.equal(result.status, 0, `trial runner contract failed: ${result.stderr}`)
+
+  // A contract that greps for markers the runner dropped passes on its own
+  // while the runner has already moved on, so each pin must still exist in
+  // both files.
+  const contract = await readFile('scripts/test-public-trial-runner-contract.sh', 'utf8')
+  const runner = await readFile('scripts/run-public-trials.sh', 'utf8')
+  for (const marker of PINNED_RUNNER_MARKERS) {
+    assert.ok(contract.includes(marker), `the contract no longer pins ${marker}`)
+    assert.ok(runner.includes(marker), `the runner no longer carries ${marker}`)
+  }
+})

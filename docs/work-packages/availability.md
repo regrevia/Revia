@@ -1235,6 +1235,14 @@ It still changes language semantics and was not folded into Issues 1-3.
     `experiments/` `.re` path named in the scanned documents and requires it
     to exist, so doc rot of a runnable input fails the suite.
 
+100. `scripts/test-public-trial-runner-contract.sh` pins the markers the
+     public trial runner relies on, but nothing invoked it: the public tree
+     validation never chained it and no test ran it, so its pins could drift
+     with the runner while it stayed green by hand. The validation now chains
+     it, and a guard requires the chain, executes the contract, and checks
+     that every pinned marker still exists in both the contract and the
+     runner, so a stale pin fails instead of passing quietly.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
