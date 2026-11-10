@@ -1166,6 +1166,13 @@ It still changes language semantics and was not folded into Issues 1-3.
     a command, an exit status and a stderr digest, the command surface still
     running, and the page naming the candidate version.
 
+91. The RC1 lines in `runtime/checksums.txt` were only whitelisted by name,
+    and the sealed export's archive entry was never compared with them: the two
+    records that describe the same download could disagree while both tests
+    passed, and the binary line was compared with nothing at all. The new guard
+    restates the RC1 binary digest from the candidate file and the RC1 archive
+    digest from the sealed export, so a drift on either side fails.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

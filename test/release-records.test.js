@@ -136,3 +136,29 @@ test('runtime checksums name the candidate archives and binaries', async () => {
     assert.ok(recorded, `checksums.txt lists ${name} for no release record`)
   }
 })
+
+// The RC1 lines in `runtime/checksums.txt` were only whitelisted by name, and
+// the sealed export's archive entry was never compared with them: the two
+// records that describe the same download could disagree while both tests
+// passed.
+test('the RC1 checksum lines restate the sealed export and candidate digests', async () => {
+  const lines = (await readFile(new URL('runtime/checksums.txt', repository), 'utf8'))
+    .trim()
+    .split('\n')
+  const sums = new Map(lines.map((line) => {
+    const [sum, name] = line.split(/\s+/u)
+    return [name, sum]
+  }))
+  const candidate = await readJson('runtime/rc1/candidate-manifest.json')
+  const sealed = await readJson('runtime/rc1/export-manifest.json')
+  const archive = `revia-${candidate.version}-darwin-arm64.tar.gz`
+  const binary = `revia-${candidate.version}-darwin-arm64`
+
+  const runner = candidate.files.find((file) => file.path === 'revia')
+  assert.ok(runner, 'the RC1 candidate no longer lists the executable')
+  assert.equal(sums.get(binary), runner.digest.replace(/^sha256:/u, ''), 'the RC1 binary digest moved')
+
+  const shipped = sealed.files.find((entry) => entry.path === archive)
+  assert.ok(shipped, `the sealed export no longer lists ${archive}`)
+  assert.equal(sums.get(archive), shipped.sha256, 'the RC1 archive digest moved')
+})
