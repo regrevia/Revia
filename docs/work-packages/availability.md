@@ -1420,6 +1420,16 @@ It still changes language semantics and was not folded into Issues 1-3.
      it with the bytes the release binary prints, so a field added, dropped, or
      renamed on either side fails.
 
+131. The native CLI exits 65 for a source that reads but does not parse, and
+     the diagnostics page described that outcome only as a diagnostic that
+     names the offending token: it did not say where the bytes go or what the
+     envelope is, so a caller could not tell a parse failure from an unreadable
+     input by reading stdout. The page now states that `64` writes the banner
+     to stderr and `65` writes the parser result envelope to stdout, and quotes
+     the envelope in full. A guard runs the release binary for both codes and
+     compares the printed envelope with the quoted one, so a change to the
+     stdout/stderr side or to any envelope field fails.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

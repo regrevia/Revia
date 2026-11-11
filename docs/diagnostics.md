@@ -54,6 +54,18 @@ caller can report which input was unreadable without parsing the message. A
 file that reads but does not parse is a different outcome: it exits `65` and
 prints the diagnostic that names the offending token.
 
+A `64` writes the usage banner to stderr and leaves stdout empty, so a script
+can tell an unreadable input apart from a command it called wrongly.
+
+A `65` from `check` is a parse failure. It writes the parser result envelope to
+stdout and leaves stderr empty, with `ok` false and one `diagnostics` entry per
+problem; the entry names the byte range, the rule, and what the grammar
+expected:
+
+```json
+{"diagnostics":[{"actual":"module broken","byte_end":13,"byte_start":0,"code":"missing-grammar-header","column":1,"end_column":14,"end_line":1,"expected":"re 0.1 compact | re 0.1 canonical","file":"broken.re","lexeme":"module broken","line":1,"phase":"header","repair":"inspect","rule":"header.required","schema":"re.source-diagnostic@0.1.0","severity":"error"}],"ok":false,"schema":"re.native-parser-result@0.1.0"}
+```
+
 ## Launcher exit codes
 
 `bin/revia` is a launcher around a released binary, not the source CLI, so it

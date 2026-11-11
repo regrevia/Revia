@@ -512,3 +512,30 @@ test('the diagnostics page documents the object an unreadable native input print
     await rm(root, { recursive: true, force: true })
   }
 })
+
+test('the native CLI separates its usage banner from its parser envelope', async () => {
+  const start = diagnostics.indexOf('## Native CLI exit codes')
+  const end = diagnostics.indexOf('## Launcher exit codes')
+  assert.ok(start >= 0 && end > start, 'the page has a native exit-code section')
+  const section = diagnostics.slice(start, end)
+  const documented = /```json\n(\{[^\n]*\})\n```/u.exec(section)
+  assert.ok(documented !== null, 'the section quotes the parser envelope')
+  const expected = JSON.parse(documented[1])
+  const root = await mkdtemp(join(tmpdir(), 're-native-envelope-'))
+  try {
+    const binary = join(repositoryRoot, 'native', 'target', 'release', 'revia')
+    // A checkout that has not built the release binary has nothing to measure.
+    if (spawnSync(binary, ['--help'], { cwd: root }).error?.code === 'ENOENT') return
+    const usage = spawnSync(binary, [], { cwd: root, encoding: 'utf8' })
+    assert.equal(usage.status, 64, usage.stderr)
+    assert.equal(usage.stdout, '', 'the banner does not go to stdout')
+    assert.match(usage.stderr, /^Usage: revia /u)
+    await writeFile(join(root, 'broken.re'), 'module broken\n  cap x\n')
+    const parsed = spawnSync(binary, ['check', 'broken.re'], { cwd: root, encoding: 'utf8' })
+    assert.equal(parsed.status, 65, parsed.stderr)
+    assert.equal(parsed.stderr, '', 'the envelope goes to stdout only')
+    assert.deepEqual(JSON.parse(parsed.stdout), expected)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
