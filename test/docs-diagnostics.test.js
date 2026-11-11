@@ -483,3 +483,32 @@ test('the declared-capability acceptance page cannot claim a state its records d
   }
   assert.deepEqual(dead, [], 'the acceptance page links to files that exist')
 })
+
+// The page describes the native CLI's codes as prose, and nothing measured
+// them: the object an unreadable input prints could gain or lose a field while
+// the page kept quoting the old one. Read the documented object out of the page
+// and compare it with the bytes the release binary prints.
+test('the diagnostics page documents the object an unreadable native input prints', async () => {
+  const start = diagnostics.indexOf('## Native CLI exit codes')
+  const end = diagnostics.indexOf('## Launcher exit codes')
+  assert.ok(start >= 0 && end > start, 'the page has a native exit-code section')
+  const section = diagnostics.slice(start, end)
+  const documented = /```text\n(\{[^\n]*\})\n```/u.exec(section)
+  assert.ok(documented !== null, 'the section quotes the diagnostic object')
+  const expected = JSON.parse(documented[1])
+  const root = await mkdtemp(join(tmpdir(), 're-native-unreadable-'))
+  try {
+    const binary = join(repositoryRoot, 'native', 'target', 'release', 'revia')
+    const result = spawnSync(binary, ['digest', 'missing.re'], {
+      cwd: root,
+      encoding: 'utf8',
+    })
+    // A checkout that has not built the release binary has nothing to measure.
+    if (result.error?.code === 'ENOENT') return
+    assert.equal(result.status, 66, result.stderr)
+    assert.equal(result.stderr, '', 'the diagnostic goes to stdout only')
+    assert.deepEqual(JSON.parse(result.stdout), expected)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})

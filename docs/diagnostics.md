@@ -35,6 +35,25 @@ for a pin without `--format json` is a usage error instead: stderr starts with
 The native CLI and the Rust test harnesses have their own codes. This page
 describes the source CLI that `npm run re --` invokes.
 
+## Native CLI exit codes
+
+`native/target/release/revia` is the compiled CLI, so its codes are its own:
+`0` success, `64` usage or unknown command, `65` source, project, or contract
+failure, `66` input file unreadable, and `101` an internal panic.
+
+A `66` names the read that failed instead of exiting silently. It prints one
+diagnostic object on stdout, the same shape `check` uses, and leaves stderr
+empty:
+
+```text
+{"byte_end":0,"byte_start":0,"code":"input-unreadable","column":1,"end_column":1,"end_line":1,"file":"missing.re","lexeme":"","line":1,"phase":"source","repair":"inspect","rule":"source.read","schema":"re.source-diagnostic@0.1.0","severity":"error"}
+```
+
+`file` is the path the command was given and `rule` is `source.read`, so a
+caller can report which input was unreadable without parsing the message. A
+file that reads but does not parse is a different outcome: it exits `65` and
+prints the diagnostic that names the offending token.
+
 ## Launcher exit codes
 
 `bin/revia` is a launcher around a released binary, not the source CLI, so it

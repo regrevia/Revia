@@ -1412,6 +1412,14 @@ It still changes language semantics and was not folded into Issues 1-3.
      appear once, and requires both `help <command>` and `<command> --help` to
      repeat that command's usage line exactly.
 
+130. The native CLI exits 66 for an unreadable input, and the diagnostics page
+     said so for one policy file while naming no object a caller could parse:
+     no page carried the schema, code, or rule of the diagnostic that command
+     prints. The page now quotes the object an unreadable input writes to
+     stdout in full, and a guard reads that quote out of the page and compares
+     it with the bytes the release binary prints, so a field added, dropped, or
+     renamed on either side fails.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
