@@ -1520,3 +1520,30 @@ test('the wildcard binding rejection the reference records is reproducible', asy
     await rm(root, { recursive: true, force: true })
   }
 })
+
+test('the preview flags the language page rejects are rejected', async () => {
+  const language = await read('docs/language.md')
+  const claim = /`revia check (--format json) <file\.re>` and `revia check (--write) <file\.re>`[\s\S]{0,40}?exit\s+`(\d+)` with `Usage: revia` on stderr/u.exec(
+    language,
+  )
+  assert.ok(claim, 'the language page states that the preview flags are rejected')
+  const [, formatFlag, writeFlag, code] = claim
+  assert.equal(Number(code), 64, 'the sentence names another exit code')
+
+  const binary = join(fileURLToPath(repository), 'native', 'target', 'release', 'revia')
+  // A checkout that has not built the release binary has nothing to measure.
+  if (spawnSync(binary, ['--help'], { cwd: fileURLToPath(repository) }).error?.code === 'ENOENT') {
+    return
+  }
+  for (const flag of [formatFlag, writeFlag]) {
+    const args = flag === '--format json' ? ['--format', 'json'] : [flag]
+    const result = spawnSync(
+      binary,
+      ['check', ...args, 'test/fixtures/wrong-argument.re'],
+      { cwd: fileURLToPath(repository), encoding: 'utf8' },
+    )
+    assert.equal(result.status, Number(code), `${flag} was not rejected with ${code}: ${result.stderr}`)
+    assert.equal(result.stdout, '', `${flag} wrote a result to stdout`)
+    assert.match(result.stderr, /^Usage: revia /u, `${flag} printed another banner`)
+  }
+})

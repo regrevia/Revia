@@ -1438,6 +1438,13 @@ It still changes language semantics and was not folded into Issues 1-3.
      compares the code, schema, and expected token it prints with the ones the
      sentence names, so either side moving fails.
 
+133. The language page told readers that the preview forms it lists are dead
+     on the current binary — `revia check --format json` and `revia check
+     --write` exit 64 with the banner on stderr — but nothing ran those two
+     arrays, so the sentence could survive a change that made either form
+     work. A guard reads the flags and the code out of the sentence and runs
+     both against the release binary, failing if the page or the parser moves.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
