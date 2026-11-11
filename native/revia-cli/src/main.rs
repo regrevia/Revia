@@ -1596,7 +1596,7 @@ fn runtime_run(
 }
 
 fn capability_comparison(catalog_path: &str, output_path: &str) -> Result<(), i32> {
-    let output_path = absolute_input_path(Path::new(output_path)).map_err(|_| 66)?;
+    let output_path = absolute_input_or_exit(output_path)?;
     let result = (|| -> Result<String, String> {
         let catalog_path = absolute_input_path(Path::new(catalog_path))?;
         let catalog_source = fs::read_to_string(&catalog_path)
@@ -1743,7 +1743,7 @@ fn capability_project_comparison(
     toolchain_digest: &str,
     output_path: &str,
 ) -> Result<(), i32> {
-    let output_path = absolute_input_path(Path::new(output_path)).map_err(|_| 66)?;
+    let output_path = absolute_input_or_exit(output_path)?;
     let result = (|| -> Result<String, String> {
         let catalog_path = absolute_input_path(Path::new(catalog_path))?;
         let project_path = absolute_input_path(Path::new(project_path))?;
@@ -2349,7 +2349,7 @@ fn decode_capability_hex(value: &str) -> Result<Vec<u8>, String> {
 }
 
 fn bundle_comparison(catalog_path: &str, project_path: &str, output_path: &str) -> Result<(), i32> {
-    let output_path = absolute_input_path(Path::new(output_path)).map_err(|_| 66)?;
+    let output_path = absolute_input_or_exit(output_path)?;
     let result = (|| -> Result<String, String> {
         let catalog_path = absolute_input_path(Path::new(catalog_path))?;
         let project_path = absolute_input_path(Path::new(project_path))?;
@@ -2968,7 +2968,7 @@ fn conformance_run(
     input_digest: &str,
     transcript_path: &str,
 ) -> Result<(), i32> {
-    let transcript_source = fs::read_to_string(transcript_path).map_err(|_| 66)?;
+    let transcript_source = read_text_input(transcript_path)?;
     let transcript = match parse_native_replay_transcript(&transcript_source) {
         Ok(transcript) => transcript,
         Err(error) => {
@@ -3044,7 +3044,7 @@ fn cross_language_matrix(
     node_result_path: &str,
     output_path: &str,
 ) -> Result<(), i32> {
-    let transcript_source = fs::read_to_string(transcript_path).map_err(|_| 66)?;
+    let transcript_source = read_text_input(transcript_path)?;
     let transcript = parse_native_replay_transcript(&transcript_source).map_err(|error| {
         print_cross_language_error(&error.code);
         65
@@ -3130,7 +3130,7 @@ fn cross_language_matrix(
             })
             .collect(),
     );
-    let node_source = fs::read_to_string(node_result_path).map_err(|_| 66)?;
+    let node_source = read_text_input(node_result_path)?;
     let node = parse_backend_result(&node_source).map_err(|error| {
         print_cross_language_error(&error.code);
         65
@@ -3163,7 +3163,7 @@ fn cross_language_matrix(
 }
 
 fn replay_catalog(catalog_path: &str, output_path: &str) -> Result<(), i32> {
-    let catalog_source = fs::read_to_string(catalog_path).map_err(|_| 66)?;
+    let catalog_source = read_text_input(catalog_path)?;
     let catalog = parse_replay_workload_catalog(&catalog_source).map_err(|error| {
         print_replay_catalog_error(&error.code);
         65
@@ -4026,7 +4026,7 @@ fn collect_project_capability_release_evidence(
 }
 
 fn replay_fault_catalog(catalog_path: &str, output_path: &str) -> Result<(), i32> {
-    let catalog_source = fs::read_to_string(catalog_path).map_err(|_| 66)?;
+    let catalog_source = read_text_input(catalog_path)?;
     let catalog = parse_replay_fault_catalog(&catalog_source).map_err(|error| {
         print_replay_fault_catalog_error(&error.code);
         65
@@ -4179,7 +4179,7 @@ fn replay_fault_catalog(catalog_path: &str, output_path: &str) -> Result<(), i32
 }
 
 fn replay_fault_corpus(corpus_path: &str, output_path: &str) -> Result<(), i32> {
-    let corpus_source = fs::read_to_string(corpus_path).map_err(|_| 66)?;
+    let corpus_source = read_text_input(corpus_path)?;
     let corpus = parse_native_fault_corpus(&corpus_source).map_err(|error| {
         print_native_fault_corpus_error(&error.code);
         65
@@ -5031,8 +5031,8 @@ fn developer_gate(
     input_digest: &str,
     report_path: &str,
 ) -> Result<(), i32> {
-    let project_path = absolute_input_path(Path::new(project_path)).map_err(|_| 66)?;
-    let report_path = absolute_input_path(Path::new(report_path)).map_err(|_| 66)?;
+    let project_path = absolute_input_or_exit(project_path)?;
+    let report_path = absolute_input_or_exit(report_path)?;
     if path_is_within(&project_path, &report_path) {
         eprintln!("native-developer-gate-report-inside-project");
         return Err(65);
@@ -5254,7 +5254,7 @@ fn toolchain_gate(
     input_digest: &str,
     report_path: &str,
 ) -> Result<(), i32> {
-    let report_path = absolute_input_path(Path::new(report_path)).map_err(|_| 66)?;
+    let report_path = absolute_input_or_exit(report_path)?;
     let result = (|| -> Result<String, String> {
         let source_path = absolute_input_path(Path::new(source_path))?;
         let project_path = absolute_input_path(Path::new(project_path))?;
@@ -6717,13 +6717,13 @@ fn lex(path: &str) -> Result<(), i32> {
 }
 
 fn digest(path: &str) -> Result<(), i32> {
-    let bytes = fs::read(path).map_err(|_| 66)?;
+    let bytes = read_byte_input(path)?;
     println!("sha256:{}", sha256_hex(&bytes));
     Ok(())
 }
 
 fn canonical(path: &str) -> Result<(), i32> {
-    let bytes = fs::read(path).map_err(|_| 66)?;
+    let bytes = read_byte_input(path)?;
     let source = SourceText::from_bytes(&bytes, path).map_err(|diagnostic| {
         print_simple_graph_error(diagnostic.code.as_str());
         65
@@ -6747,7 +6747,7 @@ fn canonical(path: &str) -> Result<(), i32> {
 
 fn graph_check(path: &str, registry_path: Option<&str>) -> Result<(), i32> {
     let declared = read_declarations(registry_path)?;
-    let bytes = fs::read(path).map_err(|_| 66)?;
+    let bytes = read_byte_input(path)?;
     let source = SourceText::from_bytes(&bytes, path).map_err(|diagnostic| {
         print_simple_graph_error(diagnostic.code.as_str());
         65
@@ -7055,7 +7055,7 @@ fn project_execute_plan(
     toolchain_digest: &str,
     input_digest: &str,
 ) -> Result<(), i32> {
-    let plan_source = fs::read_to_string(plan_path).map_err(|_| 66)?;
+    let plan_source = read_text_input(plan_path)?;
     let plan = parse_project_execution_plan(&plan_source).map_err(|error| {
         print_project_runtime_error(&error.code);
         65
@@ -7111,7 +7111,7 @@ fn project_execute_plan_direct(
     toolchain_digest: &str,
     input_digest: &str,
 ) -> Result<(), i32> {
-    let plan_source = fs::read_to_string(plan_path).map_err(|_| 66)?;
+    let plan_source = read_text_input(plan_path)?;
     let plan = parse_project_execution_plan(&plan_source).map_err(|error| {
         print_project_runtime_error(&error.code);
         65
@@ -7168,7 +7168,7 @@ fn project_execute_plan_cached(
     toolchain_digest: &str,
     input_digest: &str,
 ) -> Result<(), i32> {
-    let plan_source = fs::read_to_string(plan_path).map_err(|_| 66)?;
+    let plan_source = read_text_input(plan_path)?;
     let plan = parse_project_execution_plan(&plan_source).map_err(|error| {
         eprint_project_runtime_error(&error.code);
         65
@@ -7226,7 +7226,7 @@ fn project_multi_module_gate(
     input_digest: &str,
     report_path: &str,
 ) -> Result<(), i32> {
-    let plan_source = fs::read_to_string(plan_path).map_err(|_| 66)?;
+    let plan_source = read_text_input(plan_path)?;
     let plan = parse_project_execution_plan(&plan_source).map_err(|error| {
         print_project_runtime_error(&error.code);
         65
@@ -7285,10 +7285,10 @@ fn project_server_gate(
     database_path: &str,
     report_path: &str,
 ) -> Result<(), i32> {
-    let project_path = absolute_input_path(Path::new(project_path)).map_err(|_| 66)?;
-    let plan_path = absolute_input_path(Path::new(plan_path)).map_err(|_| 66)?;
-    let database_path = absolute_input_path(Path::new(database_path)).map_err(|_| 66)?;
-    let report_path = absolute_input_path(Path::new(report_path)).map_err(|_| 66)?;
+    let project_path = absolute_input_or_exit(project_path)?;
+    let plan_path = absolute_input_or_exit(plan_path)?;
+    let database_path = absolute_input_or_exit(database_path)?;
+    let report_path = absolute_input_or_exit(report_path)?;
     let (sqlite_executable, sqlite_executable_digest) =
         resolve_sqlite_executable(sqlite_executable).map_err(|code| {
             print_project_runtime_error(&code);
@@ -7300,7 +7300,7 @@ fn project_server_gate(
         eprintln!("native-project-server-gate-output-inside-project");
         return Err(65);
     }
-    let plan_source = fs::read_to_string(&plan_path).map_err(|_| 66)?;
+    let plan_source = read_text_input(&plan_path)?;
     let plan = parse_project_execution_plan(&plan_source).map_err(|error| {
         print_project_runtime_error(&error.code);
         65
@@ -8051,8 +8051,8 @@ fn project_run_sandbox(
         print_project_runtime_error(&error.code);
         65
     })?;
-    let project_path = absolute_input_path(Path::new(project_path)).map_err(|_| 66)?;
-    let sandbox_path = absolute_input_path(Path::new(sandbox_path)).map_err(|_| 66)?;
+    let project_path = absolute_input_or_exit(project_path)?;
+    let sandbox_path = absolute_input_or_exit(sandbox_path)?;
     let (mut bridge, program_stdout) = project_host_bridge_for_sandbox(
         &project_path,
         std::slice::from_ref(&module_name.to_owned()),
@@ -8173,7 +8173,7 @@ fn project_build(
 fn verify(graph_path: &str, artifact_path: &str, registry_path: Option<&str>) -> Result<(), i32> {
     let declared = read_declarations(registry_path)?;
     let graph = read_graph_with_declarations(graph_path, &declared)?;
-    let artifact = fs::read_to_string(artifact_path).map_err(|_| 66)?;
+    let artifact = read_text_input(artifact_path)?;
     let verified = verify_bytecode_artifact_with_declarations(&graph, &artifact, &declared)
         .map_err(|error| {
             print_graph_error(&error);
@@ -8200,7 +8200,7 @@ fn run(
     let declared = read_declarations(registry_path)?;
     let graph = read_graph_with_declarations(graph_path, &declared)?;
     let policy = read_capability_policy(policy_path, &graph, &declared)?;
-    let artifact = fs::read_to_string(artifact_path).map_err(|_| 66)?;
+    let artifact = read_text_input(artifact_path)?;
     let loaded = revia_core::bytecode::load_bytecode_artifact(&artifact).map_err(|error| {
         print_graph_error(&error);
         65
@@ -8551,7 +8551,7 @@ fn read_declarations(registry_path: Option<&str>) -> Result<Vec<DeclaredSchema>,
     match registry_path {
         None => Ok(Vec::new()),
         Some(registry_path) => {
-            let source = fs::read_to_string(registry_path).map_err(|_| 66)?;
+            let source = read_text_input(registry_path)?;
             parse_registry(&source).map_err(|error| {
                 print_graph_error(&error);
                 65
@@ -8578,7 +8578,7 @@ fn read_capability_policy(
             Err(65)
         }
         Some(policy_path) => {
-            let source = fs::read_to_string(policy_path).map_err(|_| 66)?;
+            let source = read_text_input(policy_path)?;
             CapabilityPolicy::parse(&source).map_err(|code| {
                 print_host_executor_error(&code);
                 65
@@ -8606,7 +8606,7 @@ fn read_graph_with_declarations(
     path: &str,
     declared: &[DeclaredSchema],
 ) -> Result<revia_core::graph::Graph, i32> {
-    let bytes = fs::read(path).map_err(|_| 66)?;
+    let bytes = read_byte_input(path)?;
     let source = SourceText::from_bytes(&bytes, path).map_err(|diagnostic| {
         print_simple_graph_error(diagnostic.code.as_str());
         65
@@ -8653,6 +8653,35 @@ fn print_graph_error(error: &revia_core::graph::GraphError) {
         fields.join(","),
         quote("re.native-graph-result@0.1.0"),
     );
+}
+
+/// An unreadable input prints the source diagnostic the check paths print,
+/// instead of leaving exit 66 silent. Commands without a result envelope
+/// print the diagnostic object itself, which carries its own schema.
+fn print_input_unreadable(path: &str) {
+    println!("{}", Diagnostic::from_unreadable_file(path).to_json());
+}
+
+fn read_text_input(path: impl AsRef<Path>) -> Result<String, i32> {
+    let path = path.as_ref();
+    fs::read_to_string(path).map_err(|_| {
+        print_input_unreadable(&path.display().to_string());
+        66
+    })
+}
+
+fn read_byte_input(path: &str) -> Result<Vec<u8>, i32> {
+    fs::read(path).map_err(|_| {
+        print_input_unreadable(path);
+        66
+    })
+}
+
+fn absolute_input_or_exit(path: &str) -> Result<PathBuf, i32> {
+    absolute_input_path(Path::new(path)).map_err(|_| {
+        print_input_unreadable(path);
+        66
+    })
 }
 
 fn print_simple_graph_error(code: &str) {

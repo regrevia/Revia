@@ -1397,6 +1397,13 @@ It still changes language semantics and was not folded into Issues 1-3.
      target matrix, the kind cells to the four defined labels, every named
      token to a native source, and checks the page's own links.
 
+128. Exit 66 promises the input file could not be read, but thirty-one native
+     read sites short-circuited with a bare code and printed nothing, so a
+     caller learned only "unreadable" with no path, phase, or rule. Every
+     transcript, catalog, digest, graph, and path resolver now prints the
+     source diagnostic the check path prints before exiting, and a guard runs
+     one command from each read family and requires the same field set.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

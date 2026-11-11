@@ -241,6 +241,85 @@ fn every_supported_native_command_has_a_help_entry() {
     cleanup(&root);
 }
 
+#[test]
+fn native_cli_remaining_exit_66_inputs_report_a_diagnostic() {
+    // WP-483: the transcript, catalog, digest, and path-resolution readers used
+    // to short-circuit with a bare 66; each now prints the same source
+    // diagnostic the check path prints, before exiting.
+    let root = temp_root();
+    fs::create_dir_all(&root).unwrap();
+
+    for (args, file) in [
+        (
+            vec!["replay-fault-corpus", "absent-corpus.json", "out.json"],
+            "absent-corpus.json",
+        ),
+        (vec!["digest", "absent-source.re"], "absent-source.re"),
+    ] {
+        let output = run(&root, &args);
+        assert_eq!(output.status.code(), Some(66), "{args:?} did not exit 66");
+        assert!(
+            output.stderr.is_empty(),
+            "{args:?} wrote to stderr: {}",
+            output.stderr
+        );
+        assert_input_unreadable(&output, file);
+    }
+
+    // The path-resolution family only fails when the working directory cannot
+    // be read, so a shell wrapper deletes the directory before exec.
+    let gone = root.join("gone");
+    fs::create_dir_all(&gone).unwrap();
+    let output = Command::new("/bin/sh")
+        .arg("-c")
+        .arg("cd \"$0\" && rmdir \"$0\" && exec \"$1\" capability-comparison catalog.json out.json")
+        .arg(&gone)
+        .arg(env!("CARGO_BIN_EXE_revia"))
+        .env_clear()
+        .env("PATH", "/usr/bin:/bin")
+        .output()
+        .unwrap();
+    let output = Output {
+        status: output.status,
+        stdout: String::from_utf8(output.stdout).unwrap(),
+        stderr: String::from_utf8(output.stderr).unwrap(),
+    };
+    assert_eq!(
+        output.status.code(),
+        Some(66),
+        "the path resolver did not exit 66"
+    );
+    assert!(
+        output.stderr.is_empty(),
+        "the path resolver wrote to stderr: {}",
+        output.stderr
+    );
+    assert_input_unreadable(&output, "out.json");
+
+    cleanup(&root);
+}
+
+fn assert_input_unreadable(output: &Output, file: &str) {
+    for needle in [
+        "\"code\":\"input-unreadable\"",
+        "\"schema\":\"re.source-diagnostic@0.1.0\"",
+        "\"severity\":\"error\"",
+        "\"phase\":\"source\"",
+        "\"rule\":\"source.read\"",
+    ] {
+        assert!(
+            output.stdout.contains(needle),
+            "{file} diagnostic lacks {needle}: {}",
+            output.stdout
+        );
+    }
+    assert!(
+        output.stdout.contains(&format!("\"file\":\"{file}\"")),
+        "{file} diagnostic names no path: {}",
+        output.stdout
+    );
+}
+
 struct Output {
     status: std::process::ExitStatus,
     stdout: String,
