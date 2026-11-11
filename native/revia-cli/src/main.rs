@@ -259,7 +259,7 @@ Commands:
 
 Use `revia <command> --help` for a command's arguments.
 "#;
-const CLI_EXIT_CODES: &str = "Exit codes:\n  0  success\n  64 usage or unknown command\n  65 source, project, or contract failure\n  66 input file unreadable\n  101 internal panic (a defect; report the input)\n";
+const CLI_EXIT_CODES: &str = "Exit codes:\n  0  success\n  64 usage or unknown command\n  65 source, project, or contract failure\n  66 input file unreadable\n  74 output write failure\n  101 internal panic (a defect; report the input)\n";
 
 fn main() {
     let mut arguments = env::args().skip(1).collect::<Vec<_>>();

@@ -1512,6 +1512,13 @@ It still changes language semantics and was not folded into Issues 1-3.
      unknown target and pins 65, so the two failure classes cannot merge into
      one status without the suite noticing.
 
+142. A status a caller can meet has to be one the help text explains. The
+     legend listed 0, 64, 65, 66 and 101 while the CLI already returned 74
+     for an output it cannot write. That line is now there, and the guard
+     provokes each failure class, reads the code back from the process, and
+     requires the legend to carry it, so a new exit code cannot ship without
+     a reader being able to interpret it.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
