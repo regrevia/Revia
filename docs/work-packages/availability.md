@@ -1475,6 +1475,14 @@ It still changes language semantics and was not folded into Issues 1-3.
      demands a fixed point, and requires `check` to accept the result as
      `ok`: true.
 
+137. `revia lex` publishes the byte spans every later stage trusts, but no test
+     ran it: a lexer that reported character offsets would still emit plausible
+     numbers on the ASCII-only examples, because their multi-byte text sits in
+     comments the lexer skips. A guard now lexes a program whose path literal is
+     multi-byte, requires `check` to accept it, then demands that every token
+     span slice out of the file bytes equals the token text and that the
+     sentinel covers the whole file.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

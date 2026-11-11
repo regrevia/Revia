@@ -371,6 +371,54 @@ test('native canonical output is a stable, name-independent program', async () =
   }
 })
 
+test('native lexer reports byte spans that match the source bytes', async () => {
+  ensureNativeBinary()
+  const workspace = await mkdtemp(join(tmpdir(), 'revia-lexer-spans-'))
+  try {
+    const source = readFileSync(join(ROOT, 'examples', 'write-check.re'))
+      .toString('utf8')
+      .replace('"output.txt"', '"dau-ra-tiếng-việt.txt"')
+    const file = join(workspace, 'unicode-path.re')
+    writeFileSync(file, source)
+    const bytes = readFileSync(file)
+    assert.ok(
+      bytes.some((byte) => byte > 0x7f),
+      'the fixture must contain multi-byte text for the span check to bite',
+    )
+    const checked = runNative('check', file)
+    assert.equal(checked.status, 0, checked.stderr)
+    const first = runNative('lex', file)
+    assert.equal(first.status, 0, first.stderr)
+    assert.equal(first.stderr, '')
+    const result = JSON.parse(first.stdout)
+    assert.equal(result.schema, 're.native-lexer-result@0.1.0')
+    assert.equal(result.ok, true)
+    assert.ok(result.tokens.length > 20)
+    assert.ok(
+      result.tokens.some((token) => Buffer.byteLength(token.text, 'utf8') !== [...token.text].length),
+      'the token stream must carry a multi-byte token',
+    )
+    for (const token of result.tokens) {
+      assert.equal(typeof token.text, 'string')
+      assert.ok(Number.isInteger(token.start) && Number.isInteger(token.end))
+      assert.ok(token.start >= 0 && token.end >= token.start && token.end <= bytes.length)
+      assert.equal(
+        bytes.subarray(token.start, token.end).toString('utf8'),
+        token.text,
+        `token span ${token.start}..${token.end} does not cover its text`,
+      )
+    }
+    const sentinel = result.tokens[result.tokens.length - 1]
+    assert.equal(sentinel.kind, 'end')
+    assert.equal(sentinel.start, bytes.length)
+    assert.equal(sentinel.end, bytes.length)
+    assert.equal(sentinel.text, '')
+    assert.equal(runNative('lex', file).stdout, first.stdout)
+  } finally {
+    await rm(workspace, { recursive: true, force: true })
+  }
+})
+
 function looksLikeDarwinDependencyHeader(line) {
   return line.trimEnd().endsWith(':')
 }
