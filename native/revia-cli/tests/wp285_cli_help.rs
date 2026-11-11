@@ -267,34 +267,38 @@ fn native_cli_remaining_exit_66_inputs_report_a_diagnostic() {
     }
 
     // The path-resolution family only fails when the working directory cannot
-    // be read, so a shell wrapper deletes the directory before exec.
-    let gone = root.join("gone");
-    fs::create_dir_all(&gone).unwrap();
-    let output = Command::new("/bin/sh")
-        .arg("-c")
-        .arg("cd \"$0\" && rmdir \"$0\" && exec \"$1\" capability-comparison catalog.json out.json")
-        .arg(&gone)
-        .arg(env!("CARGO_BIN_EXE_revia"))
-        .env_clear()
-        .env("PATH", "/usr/bin:/bin")
-        .output()
-        .unwrap();
-    let output = Output {
-        status: output.status,
-        stdout: String::from_utf8(output.stdout).unwrap(),
-        stderr: String::from_utf8(output.stderr).unwrap(),
-    };
-    assert_eq!(
-        output.status.code(),
-        Some(66),
-        "the path resolver did not exit 66"
-    );
-    assert!(
-        output.stderr.is_empty(),
-        "the path resolver wrote to stderr: {}",
-        output.stderr
-    );
-    assert_input_unreadable(&output, "out.json");
+    // be read, so a shell wrapper deletes the directory before exec. It has
+    // no Windows equivalent: a deleted directory there keeps a usable handle.
+    #[cfg(unix)]
+    {
+        let gone = root.join("gone");
+        fs::create_dir_all(&gone).unwrap();
+        let output = Command::new("/bin/sh")
+            .arg("-c")
+            .arg("cd \"$0\" && rmdir \"$0\" && exec \"$1\" capability-comparison catalog.json out.json")
+            .arg(&gone)
+            .arg(env!("CARGO_BIN_EXE_revia"))
+            .env_clear()
+            .env("PATH", "/usr/bin:/bin")
+            .output()
+            .unwrap();
+        let output = Output {
+            status: output.status,
+            stdout: String::from_utf8(output.stdout).unwrap(),
+            stderr: String::from_utf8(output.stderr).unwrap(),
+        };
+        assert_eq!(
+            output.status.code(),
+            Some(66),
+            "the path resolver did not exit 66"
+        );
+        assert!(
+            output.stderr.is_empty(),
+            "the path resolver wrote to stderr: {}",
+            output.stderr
+        );
+        assert_input_unreadable(&output, "out.json");
+    }
 
     cleanup(&root);
 }
