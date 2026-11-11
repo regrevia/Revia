@@ -539,3 +539,43 @@ test('the native CLI separates its usage banner from its parser envelope', async
     await rm(root, { recursive: true, force: true })
   }
 })
+
+test('the report-before-you-file snippet prints the facts the page records', async () => {
+  const section = feedbackLoop.split('## Before You Report')[1] ?? ''
+  const block = /```bash\n([^`]+)```/u.exec(section)
+  assert.ok(block !== null, 'the page keeps a runnable snippet')
+  const commands = block[1].trim().split('\n').filter((line) => line !== '')
+  assert.equal(commands.length, 3, 'the snippet collects three facts')
+  const outputs = commands.map((command) => {
+    const result = spawnSync('sh', ['-c', command], {
+      cwd: repositoryRoot,
+      encoding: 'utf8',
+    })
+    assert.equal(result.status, 0, `${command}\n${result.stderr}`)
+    return result.stdout.trim()
+  })
+  const manifest = await readFile(join(repositoryRoot, 'native', 'Cargo.toml'), 'utf8')
+  const version = /^version = "(.+)"$/mu.exec(manifest)[1]
+  assert.equal(outputs[0], version, 'the first command prints the manifest version')
+  assert.equal(
+    outputs[0],
+    (await readFile(join(repositoryRoot, 'VERSION'), 'utf8')).trim(),
+    'the manifest version and the VERSION file agree',
+  )
+  assert.ok(
+    feedbackLoop.includes(`the release version (\`${version}\` in the current tree)`),
+    'the page names the version its snippet prints',
+  )
+  const summary = feedbackLoop.split('中文摘要：报告前')[1] ?? ''
+  assert.ok(summary.includes(version), 'the Chinese summary names the same version')
+  assert.match(outputs[1], /^[0-9a-f]{7,40}$/u, 'the second command prints a commit')
+  assert.match(outputs[2], /^v\d+\.\d+\.\d+/u, 'the third command prints a Node build')
+  const engines = JSON.parse(await readFile(join(repositoryRoot, 'package.json'), 'utf8')).engines.node
+  assert.ok(feedbackLoop.includes(`node ${engines}`), 'the page names the engines floor')
+  const required = /^>=\d+(\.\d+){0,2}$/u.test(engines) ? engines.slice(2).split('.').map(Number) : null
+  assert.ok(required !== null, 'the engines floor is a lower bound')
+  const actual = outputs[2].slice(1).split('.').map(Number)
+  const delta = (actual[0] - required[0]) || (actual[1] - (required[1] ?? 0))
+    || (actual[2] - (required[2] ?? 0))
+  assert.ok(delta >= 0, `${outputs[2]} must satisfy node ${engines}`)
+})

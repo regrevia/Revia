@@ -1445,6 +1445,17 @@ It still changes language semantics and was not folded into Issues 1-3.
      work. A guard reads the flags and the code out of the sentence and runs
      both against the release binary, failing if the page or the parser moves.
 
+134. The feedback page told a reporter to collect three facts from the clone
+     before filing: the manifest version, the commit, and the Node build, and
+     it printed the version and the `node >=22.16.0` floor beside them. The
+     first command carries shell-escaped quotes that a tidy-up would delete,
+     turning it into a syntax error, and no test ran any of the three, so the
+     block could stop working without the prose noticing. A guard now reads
+     the fenced block out of the page, runs each command from the clone root,
+     and compares the printed version with the manifest, the VERSION file, and
+     the sentences in both languages, the commit with a commit shape, and the
+     Node build with the floor the page and the package declare.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
