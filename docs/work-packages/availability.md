@@ -1404,6 +1404,14 @@ It still changes language semantics and was not folded into Issues 1-3.
      source diagnostic the check path prints before exiting, and a guard runs
      one command from each read family and requires the same field set.
 
+129. The native help table is one literal and the per-command topics another,
+     so they drifted: the table advertised `project-run` twice, once without the
+     `--project-receipt` and `--print-values` flags its dispatch accepts, and no
+     test compared either table with the topics it serves. The duplicate line is
+     gone, and a guard now reads the advertised table, requires each command to
+     appear once, and requires both `help <command>` and `<command> --help` to
+     repeat that command's usage line exactly.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

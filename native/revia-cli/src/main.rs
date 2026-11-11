@@ -237,7 +237,6 @@ Commands:
   project-scale <project>
   project-build <project> <cache> <build> <profile-digest> <toolchain-digest>
   project-translate <project> <cache> <build> <profile-digest> <toolchain-digest> <module>
-  project-run <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest>
   project-run-sandbox <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest> <sandbox>
   project-execute <project> <module> <profile-digest> <toolchain-digest> <input-digest>
   project-execute-plan <project> <plan> <profile-digest> <toolchain-digest> <input-digest>

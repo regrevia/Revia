@@ -303,6 +303,81 @@ fn native_cli_remaining_exit_66_inputs_report_a_diagnostic() {
     cleanup(&root);
 }
 
+// The top-level table and the per-command topics are two hand-written literals,
+// so a usage line can be edited in one place only. Each command is advertised
+// once, and both `help <command>` and `<command> --help` must repeat that exact
+// header — a second `project-run` line used to contradict the flags dispatch
+// accepts.
+#[test]
+fn native_cli_help_advertises_each_command_once_with_a_matching_topic() {
+    let root = temp_root();
+    fs::create_dir_all(&root).unwrap();
+
+    let top_level = run(&root, &["--help"]);
+    assert!(top_level.status.success());
+
+    let mut advertised: Vec<(String, String)> = Vec::new();
+    let mut in_commands = false;
+    for line in top_level.stdout.lines() {
+        if line == "Commands:" {
+            in_commands = true;
+            continue;
+        }
+        if !in_commands || line.starts_with("Use `") {
+            in_commands = false;
+            continue;
+        }
+        let Some(rest) = line.strip_prefix("  ") else {
+            continue;
+        };
+        let Some((command, _)) = rest.split_once(' ') else {
+            continue;
+        };
+        if !command.chars().all(|c| c.is_ascii_lowercase() || c == '-') {
+            continue;
+        }
+        advertised.push((command.to_owned(), rest.to_owned()));
+    }
+    assert!(
+        advertised.len() >= 50,
+        "the help table advertises only {} commands",
+        advertised.len()
+    );
+
+    let mut seen: Vec<String> = Vec::new();
+    let mut duplicates: Vec<String> = Vec::new();
+    for (command, _) in &advertised {
+        if seen.contains(command) {
+            duplicates.push(command.clone());
+        }
+        seen.push(command.clone());
+    }
+    assert!(
+        duplicates.is_empty(),
+        "the help table advertises {duplicates:?} more than once"
+    );
+
+    for (command, usage) in &advertised {
+        let topic = run(&root, &["help", command]);
+        assert!(topic.status.success(), "help {command} failed");
+        assert!(topic.stderr.is_empty(), "help {command} wrote to stderr");
+        assert_eq!(
+            topic.stdout.lines().next(),
+            Some(format!("revia {usage}").as_str()),
+            "help {command} does not repeat the advertised usage line"
+        );
+
+        let suffix = run(&root, &[command.as_str(), "--help"]);
+        assert!(suffix.status.success(), "{command} --help failed");
+        assert_eq!(
+            suffix.stdout, topic.stdout,
+            "{command} --help differs from help {command}"
+        );
+    }
+
+    cleanup(&root);
+}
+
 fn assert_input_unreadable(output: &Output, file: &str) {
     for needle in [
         "\"code\":\"input-unreadable\"",
