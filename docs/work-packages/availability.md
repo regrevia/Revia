@@ -1498,6 +1498,13 @@ It still changes language semantics and was not folded into Issues 1-3.
      (an output path, a timestamp) fails the suite instead of reaching release
      evidence.
 
+140. A compile that cannot write its artifact keeps a distinct exit code:
+     74, not the generic 65 that means the source or contract was rejected.
+     The guard makes the final rename fail and pins the code, the error
+     envelope on stdout with empty stderr, and the absence of a temporary
+     artifact beside the destination, so a release script can tell a bad
+     source from a bad output path.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
