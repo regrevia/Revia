@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
 import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
-import { readFile } from 'node:fs/promises'
+import { copyFile, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { dirname, join, resolve, sep } from 'node:path'
+import { tmpdir } from 'node:os'
 import test from 'node:test'
 
 import { parseExecutableGrammar } from '../src/toolchain/executable-grammar.js'
@@ -343,6 +344,32 @@ function dependencyLinesForScan(output, platform, binaryPath) {
   if (dependencies.length === 0) throw new Error('native dependency scan output empty')
   return dependencies.join('\n')
 }
+
+test('native canonical output is a stable, name-independent program', async () => {
+  ensureNativeBinary()
+  const workspace = await mkdtemp(join(tmpdir(), 'revia-canonical-'))
+  try {
+    const compact = join(ROOT, 'examples', 'args-check.re')
+    const first = runNative('canonical', compact)
+    assert.equal(first.status, 0, first.stderr)
+    assert.equal(first.stdout.split('\n')[0], 're 0.1 canonical')
+    const renamed = join(workspace, 'renamed.re')
+    await copyFile(compact, renamed)
+    const second = runNative('canonical', renamed)
+    assert.equal(second.status, 0, second.stderr)
+    assert.equal(second.stdout, first.stdout, 'canonical text depends on the input path')
+    const program = join(workspace, 'program.re')
+    await writeFile(program, first.stdout)
+    const again = runNative('canonical', program)
+    assert.equal(again.status, 0, again.stderr)
+    assert.equal(again.stdout, first.stdout, 'canonical text is not its own fixed point')
+    const checked = runNative('check', program)
+    assert.equal(checked.status, 0, checked.stderr)
+    assert.equal(JSON.parse(checked.stdout).ok, true)
+  } finally {
+    await rm(workspace, { recursive: true, force: true })
+  }
+})
 
 function looksLikeDarwinDependencyHeader(line) {
   return line.trimEnd().endsWith(':')

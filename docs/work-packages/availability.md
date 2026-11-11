@@ -1466,6 +1466,15 @@ It still changes language semantics and was not folded into Issues 1-3.
      bytes, a renamed copy must digest identically, and a one-file change
      must move the value.
 
+136. `revia canonical` writes the canonical form that every later stage can
+     re-read, but nothing executed it: the header, the idempotence branch that
+     recognizes its own output, and the claim that the text carries no input
+     path were all asserted only by inspection. A guard now canonicalizes a
+     tracked example, checks the header, canonicalizes a renamed copy and
+     demands the same bytes, feeds the output back through `canonical` and
+     demands a fixed point, and requires `check` to accept the result as
+     `ok`: true.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
