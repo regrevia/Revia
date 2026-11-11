@@ -419,6 +419,25 @@ test('native lexer reports byte spans that match the source bytes', async () => 
   }
 })
 
+test('reserved reviewed-task entries have no argv execution path', () => {
+  ensureNativeBinary()
+  const reserved = [
+    ['task-request', ['config.json', 'request.json', 'sandbox', 'bundle.json', 'review.json']],
+    ['approval-authority', ['socket', 'state', 'policy.json']],
+    ['task-run', ['bundle.json', 'socket', 'sandbox']],
+  ]
+  for (const [verb, entries] of reserved) {
+    const invoked = runNativeArgs([verb, ...entries])
+    assert.equal(invoked.status, 64, `${verb} must stay undispatched`)
+    assert.equal(invoked.stdout, '')
+    assert.ok(invoked.stderr.startsWith('Usage: revia '), invoked.stderr.slice(0, 40))
+    const documented = runNativeArgs(['help', verb])
+    assert.equal(documented.status, 0, documented.stderr)
+    assert.match(documented.stdout, /Reserved WP-313/)
+    assert.match(documented.stdout, new RegExp(`^revia ${verb} `))
+  }
+})
+
 function looksLikeDarwinDependencyHeader(line) {
   return line.trimEnd().endsWith(':')
 }

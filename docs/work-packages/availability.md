@@ -1483,6 +1483,13 @@ It still changes language semantics and was not folded into Issues 1-3.
      span slice out of the file bytes equals the token text and that the
      sentinel covers the whole file.
 
+138. The three WP-313 entries (`task-request`, `approval-authority`, `task-run`)
+     are advertised by `help` as reserved, and they stay unreachable from argv:
+     an invocation with their documented arity exits 64 with nothing on stdout
+     and the usage line on stderr. A guard now pins that refusal for all three,
+     so enabling an unverified approval path would surface as a changed exit
+     code rather than a silent new dispatch.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
