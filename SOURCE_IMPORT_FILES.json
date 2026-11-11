@@ -115,6 +115,7 @@
     "native/revia-cli/tests/wp365_permission_scope_cli.rs",
     "native/revia-cli/tests/wp366_check_stage_cli.rs",
     "native/revia-cli/tests/wp484_compile_write_failure_cli.rs",
+    "native/revia-cli/tests/wp485_release_matrix_write_failure_cli.rs",
     "native/revia-cli/tests/wp4_result_value_cli.rs",
     "native/revia-conformance/Cargo.toml",
     "native/revia-conformance/src/lib.rs",

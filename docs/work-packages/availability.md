@@ -1505,6 +1505,13 @@ It still changes language semantics and was not folded into Issues 1-3.
      artifact beside the destination, so a release script can tell a bad
      source from a bad output path.
 
+141. The same rule holds for the release matrix: it shares the atomic write
+     helper, so its write failure must keep code 74 while a rejected target
+     stays 65. The guard fails the rename on the matrix destination, pins the
+     release envelope and the absence of the temporary file, then rejects an
+     unknown target and pins 65, so the two failure classes cannot merge into
+     one status without the suite noticing.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
