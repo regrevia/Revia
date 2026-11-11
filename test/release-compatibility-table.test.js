@@ -1547,3 +1547,40 @@ test('the preview flags the language page rejects are rejected', async () => {
     assert.match(result.stderr, /^Usage: revia /u, `${flag} printed another banner`)
   }
 })
+
+test('the native source digest is the sha256 of the file bytes', async () => {
+  // `revia digest` is the command behind the `source-digest` argument of the
+  // release and runtime contracts, yet only its refusal for an absent file was
+  // ever executed. Hash the same bytes in Node, so a digest that stamped a path
+  // or a parsed graph cannot pass as the source digest of the bytes on disk.
+  const binary = join(fileURLToPath(repository), 'native', 'target', 'release', 'revia')
+  // A checkout that has not built the release binary has nothing to measure.
+  if (spawnSync(binary, ['--help'], { cwd: fileURLToPath(repository) }).error?.code === 'ENOENT') {
+    return
+  }
+  const root = await mkdtemp(join(tmpdir(), 'revia-source-digest-'))
+  try {
+    const source = Buffer.from('re 0.1 compact\nunit @digest_probe\n', 'utf8')
+    const cases = [
+      ['source.re', source],
+      ['renamed.re', source],
+      ['empty.re', Buffer.alloc(0)],
+      ['not-a-program.re', Buffer.from([0x72, 0x65, 0xff, 0x00, 0x0a])],
+    ]
+    const printed = []
+    for (const [name, contents] of cases) {
+      await writeFile(join(root, name), contents)
+      const result = spawnSync(binary, ['digest', name], { cwd: root, encoding: 'utf8' })
+      assert.equal(result.status, 0, `${name}: ${result.stderr}`)
+      assert.equal(result.stderr, '', 'the digest goes to stdout only')
+      const sha256 = createHash('sha256').update(contents).digest('hex')
+      assert.equal(result.stdout, `sha256:${sha256}\n`, `${name} must print the sha256 of its bytes`)
+      printed.push(result.stdout)
+    }
+    assert.equal(printed[0], printed[1], 'the digest must not depend on the file name')
+    // A file the parser would reject still digests: the command hashes bytes.
+    assert.notEqual(printed[3], printed[0], 'different bytes must digest differently')
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})

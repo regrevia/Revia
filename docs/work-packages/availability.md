@@ -1456,6 +1456,16 @@ It still changes language semantics and was not folded into Issues 1-3.
      the sentences in both languages, the commit with a commit shape, and the
      Node build with the floor the page and the package declare.
 
+135. `revia digest` prints the `source-digest` value that the release and
+     runtime contracts take as an argument, but only its refusal for an
+     absent file was ever executed: the success path could hash a parsed
+     graph, a file name, or the wrong bytes and every receipt built on it
+     would still pass. That digest is now pinned to the SHA-256 of the file
+     bytes: four inputs, including an empty file and a file the parser
+     rejects, must print `sha256:` plus the hex Node computes over the same
+     bytes, a renamed copy must digest identically, and a one-file change
+     must move the value.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
