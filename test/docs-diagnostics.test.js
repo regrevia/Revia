@@ -395,3 +395,91 @@ test('the issue form configuration keeps reports on the tracked path', async () 
     assert.match(link, /^\s+about: \S/mu, link)
   }
 })
+
+test('the declared-capability acceptance page cannot claim a state its records do not support', async () => {
+  // Issue #27: the acceptance record for the declared-capability slice was read
+  // by no gate, so its status sentence, the kind words in its findings tables
+  // and the diagnostic tokens it names could drift with every check green.
+  const page = await readFile(
+    join(repositoryRoot, 'docs', 'work-packages', 'availability.md'),
+    'utf8',
+  )
+  const status = /^Status: (in progress|delivered)\./mu.exec(page)
+  assert.ok(status !== null, 'the page must open with a lifecycle status')
+  const matrix = JSON.parse(
+    await readFile(
+      join(repositoryRoot, 'runtime', 'rc2.2.1', 'target-matrix.json'),
+      'utf8',
+    ),
+  )
+  const measured = matrix.targets.filter(
+    ({ status: state }) => state === 'measured-native',
+  )
+  assert.equal(
+    measured.length,
+    2,
+    `expected two measured targets, found ${measured.length}`,
+  )
+  // "Delivered" on a matrix that still lists pending platforms is the edit
+  // #27 demonstrates: the status word and the record cannot both be true.
+  if (status[1] === 'delivered') {
+    assert.equal(
+      measured.length,
+      matrix.targets.length,
+      'a delivered slice leaves no target pending',
+    )
+  } else {
+    assert.ok(
+      measured.length < matrix.targets.length,
+      'an in-progress slice still has a pending target to close',
+    )
+  }
+  // Finding kinds reuse the four labels section 1 defines; a fifth state word
+  // would be a label no reader can resolve and no other record carries.
+  const kinds = new Set()
+  for (const section of page.split(/^### /mu).slice(1)) {
+    if (!/findings|disclosed/iu.test(section.split('\n')[0])) continue
+    for (const line of section.split('\n').slice(1)) {
+      if (line.startsWith('## ') || line.startsWith('### ')) break
+      if (!line.startsWith('| ') || line.includes('---')) continue
+      const cells = line.split('|').map((cell) => cell.trim())
+      if (cells[2] === 'Kind' || cells[1] === '') continue
+      kinds.add(cells[2].split(/\s/u)[0])
+    }
+  }
+  assert.deepEqual(
+    [...kinds].sort(),
+    ['fault-observed', 'measured', 'pending', 'verified-only'],
+    'the findings tables use only the page vocabulary',
+  )
+  // A named diagnostic that no native source emits would send a reader looking
+  // for a token the shipped binary cannot print.
+  const tracked = spawnSync('git', ['ls-files', '*.rs'], {
+    cwd: repositoryRoot,
+    encoding: 'utf8',
+  })
+  assert.equal(tracked.status, 0, tracked.stderr)
+  const sources = []
+  for (const path of tracked.stdout.split('\n')) {
+    if (!path.startsWith('native/revia-cli/src/') && !path.startsWith('native/revia-core/src/')) continue
+    sources.push(await readFile(join(repositoryRoot, path), 'utf8'))
+  }
+  assert.ok(sources.length >= 20, `expected the native sources, found ${sources.length}`)
+  const emitted = sources.join('\n')
+  const tokens = [...page.matchAll(/`(native-[a-z0-9-]+)/gu)].map((match) => match[1])
+  assert.ok(tokens.length >= 8, `expected the documented tokens, found ${tokens.length}`)
+  const unemitted = [...new Set(tokens)].filter((token) => !emitted.includes(token))
+  assert.deepEqual(unemitted, [], 'every documented diagnostic token is emitted natively')
+  // The page sits outside the root-document link sweep, so its own relative
+  // links are checked here: a moved evidence file must not leave a dead link.
+  const directory = join(repositoryRoot, 'docs', 'work-packages')
+  const dead = []
+  for (const [, target] of page.matchAll(/\]\(([^)#:\s]+)\)/gu)) {
+    try {
+      await readFile(join(directory, target))
+    } catch {
+      dead.push(target)
+    }
+  }
+  assert.deepEqual(dead, [], 'the acceptance page links to files that exist')
+})

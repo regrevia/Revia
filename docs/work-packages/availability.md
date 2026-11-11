@@ -1389,6 +1389,14 @@ It still changes language semantics and was not folded into Issues 1-3.
      it. A guard parses every tracked JSON file outside `native/` in one
      sweep, so a broken record fails before it ships.
 
+127. The declared-capability acceptance page has no reader of its own. Its
+     status sentence can call the slice delivered while platform rows are
+     still pending, a findings row can take a state word section 1 never
+     defines, and a renamed diagnostic token still sends a reader after a
+     code the binary cannot print. A guard binds the status word to the
+     target matrix, the kind cells to the four defined labels, every named
+     token to a native source, and checks the page's own links.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
