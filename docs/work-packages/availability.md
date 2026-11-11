@@ -1430,6 +1430,14 @@ It still changes language semantics and was not folded into Issues 1-3.
      compares the printed envelope with the quoted one, so a change to the
      stdout/stderr side or to any envelope field fails.
 
+132. The language reference recorded a measurement of its own — `revia check`
+     on `ok(%data) => …` exits 65 with `re.native-parser-result@0.1.0`,
+     `code:"unexpected-token"`, `expected:"_"` — and no test reproduced it, so
+     the sentence could drift away from the parser it describes. A guard now
+     runs the release binary on the fixture with that branch rewritten and
+     compares the code, schema, and expected token it prints with the ones the
+     sentence names, so either side moving fails.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

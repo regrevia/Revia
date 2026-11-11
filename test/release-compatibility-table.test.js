@@ -1482,3 +1482,41 @@ test('the RC1 server and multi-module records publish one digest', async () => {
   assert.equal(multi.report_digest, multi.gate_digest, 'the multi-module gate published another report')
   assert.equal(server.module_count, multi.module_count, 'the two gate records measured different modules')
 })
+
+test('the wildcard binding rejection the reference records is reproducible', async () => {
+  const reference = await read('docs/language-reference.md')
+  const start = reference.indexOf('Measured: `revia check` on `ok(%data) =>')
+  assert.ok(start >= 0, 'the reference records the wildcard measurement')
+  const paragraph = reference.slice(start, reference.indexOf('\n\n', start))
+  const schema = /`(re\.native-parser-result@[0-9.]+)`/u.exec(paragraph)
+  const code = /`code:"([^"]+)"`/u.exec(paragraph)
+  const expected = /`expected:"([^"]+)"`/u.exec(paragraph)
+  assert.ok(schema && code && expected, 'the sentence names the schema, code and expected token')
+  assert.match(paragraph, /exits 65/u)
+
+  const source = await read('test/fixtures/wrong-argument.re')
+  const accepted = 'ok(_) => process.exit(0)'
+  assert.equal(source.split(accepted).length - 1, 1, 'the fixture holds one wildcard branch')
+  const root = await mkdtemp(join(tmpdir(), 're-wildcard-binding-'))
+  try {
+    const binary = join(fileURLToPath(repository), 'native', 'target', 'release', 'revia')
+    // A checkout that has not built the release binary has nothing to measure.
+    if (spawnSync(binary, ['--help'], { cwd: root }).error?.code === 'ENOENT') return
+    await writeFile(
+      join(root, 'branch.re'),
+      source.replace(accepted, 'ok(%data) => process.exit(0)'),
+    )
+    const result = spawnSync(binary, ['check', 'branch.re'], { cwd: root, encoding: 'utf8' })
+    assert.equal(result.status, 65, result.stderr)
+    assert.equal(result.stderr, '', 'the envelope goes to stdout only')
+    const envelope = JSON.parse(result.stdout)
+    assert.equal(envelope.schema, schema[1])
+    assert.equal(envelope.ok, false)
+    assert.equal(envelope.diagnostics.length, 1)
+    assert.equal(envelope.diagnostics[0].code, code[1])
+    assert.equal(envelope.diagnostics[0].expected, expected[1])
+    assert.equal(envelope.diagnostics[0].actual, '%data')
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
