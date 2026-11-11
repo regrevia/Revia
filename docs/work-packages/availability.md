@@ -1519,6 +1519,14 @@ It still changes language semantics and was not folded into Issues 1-3.
      requires the legend to carry it, so a new exit code cannot ship without
      a reader being able to interpret it.
 
+143. Per-command help is a second surface for the same claim, and it can
+     drift on its own: a page can name a status the legend never explains,
+     or the top-level listing can advertise a command whose page is
+     missing. The guard reads every command name out of `--help`, requires
+     each one to answer `help <command>` with status 0, collects the exit
+     codes those pages mention, and requires each to appear in the legend.
+     Renaming a documented status in one page now fails the suite.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
