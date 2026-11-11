@@ -66,7 +66,7 @@ fn native_fault_corpus_release_gate_accepts_relative_corpus_path() {
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr)
     );
-    let evidence = fs::read(&evidence_path).unwrap();
+    let evidence = read_release_evidence(&evidence_path);
     assert_eq!(output.stdout, evidence);
     let source = String::from_utf8(evidence).unwrap();
     assert!(source.contains("re.native-fault-corpus-release-evidence@0.1.0"));
@@ -75,6 +75,22 @@ fn native_fault_corpus_release_gate_accepts_relative_corpus_path() {
     assert!(source.contains("\"node_process_count\":0"));
     assert!(!source.contains(root.to_str().unwrap()));
     fs::remove_dir_all(root).unwrap();
+}
+
+fn read_release_evidence(path: &std::path::Path) -> Vec<u8> {
+    // On Windows the release binary's rename into place can leave the file
+    // briefly locked by the system scanner, so retry before failing.
+    let mut last = None;
+    for _ in 0..40 {
+        match fs::read(path) {
+            Ok(bytes) => return bytes,
+            Err(error) => {
+                last = Some(error);
+                std::thread::sleep(std::time::Duration::from_millis(50));
+            }
+        }
+    }
+    panic!("evidence unreadable at {:?}: {}", path, last.unwrap());
 }
 
 fn temp_root(label: &str) -> PathBuf {
