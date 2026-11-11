@@ -191,6 +191,48 @@ test('native bytecode translator emits a verified graph-bound artifact', () => {
   assert.equal(JSON.parse(rejected.stdout).diagnostics[0].code, 'bytecode-register-invalid')
 })
 
+test('native compile output is reproducible and independent of its paths', async () => {
+  ensureNativeBinary()
+  const workspace = await mkdtemp(join(tmpdir(), 'revia-compile-repro-'))
+  try {
+    await mkdirSync(join(workspace, 'a'), { recursive: true })
+    await mkdirSync(join(workspace, 'b'), { recursive: true })
+    const source = join(workspace, 'a', 'src.re')
+    await copyFile(join(ROOT, 'examples', 'write-check.re'), source)
+    const renamed = join(workspace, 'b', 'renamed.re')
+    await copyFile(source, renamed)
+
+    const compile = (input, output) => {
+      const result = runNativeArgs(['compile', input, output])
+      assert.equal(result.status, 0, result.stderr)
+      const reported = JSON.parse(result.stdout)
+      assert.equal(reported.ok, true)
+      assert.equal(reported.schema, 're.native-compile-result@0.1.0')
+      return reported
+    }
+
+    const first = compile(source, join(workspace, 'a', 'out.rea'))
+    const second = compile(source, join(workspace, 'b', 'out.rea'))
+    const third = compile(renamed, join(workspace, 'b', 'renamed.rea'))
+
+    assert.deepEqual(second, first)
+    assert.deepEqual(third, first)
+    assert.match(first.artifact_digest, /^sha256:[0-9a-f]{64}$/u)
+
+    const bytes = await readFile(join(workspace, 'a', 'out.rea'))
+    assert.deepEqual(await readFile(join(workspace, 'b', 'out.rea')), bytes)
+    assert.deepEqual(await readFile(join(workspace, 'b', 'renamed.rea')), bytes)
+    const text = bytes.toString('utf8')
+    assert.ok(text.endsWith(`artifact_digest ${first.artifact_digest}\n`), text.slice(-80))
+
+    const verified = runNativeArgs(['verify', source, join(workspace, 'a', 'out.rea')])
+    assert.equal(verified.status, 0, verified.stderr)
+    assert.equal(JSON.parse(verified.stdout).ok, true)
+  } finally {
+    await rm(workspace, { recursive: true, force: true })
+  }
+})
+
 test('native conformance runner reports deterministic fixture outcomes', () => {
   ensureNativeConformanceBinary()
   const result = spawnSync(

@@ -1490,6 +1490,14 @@ It still changes language semantics and was not folded into Issues 1-3.
      so enabling an unverified approval path would surface as a changed exit
      code rather than a silent new dispatch.
 
+139. Native artifacts are reproducible: compiling one source twice, to two
+     different output paths, yields byte-identical artifacts, and compiling a
+     renamed copy of that source yields the same bytes and the same reported
+     digest. A guard now compiles the three ways and compares bytes and the
+     printed result, so any machine-specific value in the artifact or its JSON
+     (an output path, a timestamp) fails the suite instead of reaching release
+     evidence.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
