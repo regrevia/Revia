@@ -1648,6 +1648,17 @@ It still changes language semantics and was not folded into Issues 1-3.
      that no report appeared; restoring the bare token fails the byte
      comparison.
 
+153. The toolchain gate answered a report write failure with the bare
+     token `native-toolchain-gate-report-write-failure` on stderr, even
+     though every earlier refusal in the same gate already spoke the
+     `re.native-toolchain-gate@0.1.0` object. The dispatch arm keyed the
+     exit status off the `report-write-failure` suffix, so the code
+     survived the change while the shape caught up: same code, still
+     stderr, now inside the gate envelope, stdout empty, nothing written.
+     The guard makes the report path a directory, asserts exit `74`, the
+     empty stdout, the exact stderr bytes, and an empty directory after
+     the run; restoring the bare token fails the byte comparison.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

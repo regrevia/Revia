@@ -5571,7 +5571,11 @@ fn toolchain_gate(
     match result {
         Ok(report) => {
             if write_atomic(&report_path, report.as_bytes()).is_err() {
-                eprintln!("native-toolchain-gate-report-write-failure");
+                eprintln!(
+                    "{{\"diagnostics\":[{{\"code\":{}}}],\"ok\":false,\"schema\":{}}}",
+                    quote("native-toolchain-gate-report-write-failure"),
+                    quote(TOOLCHAIN_GATE_SCHEMA)
+                );
                 return Err(74);
             }
             print!("{report}");
