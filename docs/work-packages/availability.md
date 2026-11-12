@@ -1768,6 +1768,17 @@ It still changes language semantics and was not folded into Issues 1-3.
      file is written through the link, while a sibling report path still
      exits `0`.
 
+163. A bundle that opened but was not UTF-8 was reported as unreadable, so
+     `revia runtime-verify bad.rebundle` exited `66` and named
+     `native-runtime-bundle-unreadable`, the same class as a path that does
+     not exist: the bytes had been read and rejected, and the caller was
+     told to go and look at its path. Reading the bundle now separates the
+     open from the decode, so that command is refused at exit `65` with
+     `native-runtime-bundle-json-invalid` on stderr and empty stdout, while
+     a missing path and a directory still exit `66` and an intact bundle
+     still exits `0`. The test covers all four and fails when the decode
+     error is folded back into the unreadable class.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

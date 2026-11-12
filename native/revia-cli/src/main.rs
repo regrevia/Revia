@@ -1257,10 +1257,22 @@ fn runtime_package(source_path: &str, bundle_path: &str) -> Result<(), i32> {
     Ok(())
 }
 
+/// A bundle that opens but is not UTF-8 was read successfully, so it is
+/// rejected content (65), not an unreadable input (66): exit 66 would name
+/// the wrong class. Every other input command separates the two already.
+fn read_bundle_text(path: &Path) -> Result<String, (&'static str, i32)> {
+    match fs::read(path) {
+        Ok(bytes) => {
+            String::from_utf8(bytes).map_err(|_| ("native-runtime-bundle-json-invalid", 65))
+        }
+        Err(_) => Err(("native-runtime-bundle-unreadable", 66)),
+    }
+}
+
 fn runtime_verify(bundle_path: &str) -> Result<(), i32> {
-    let bundle_source = fs::read_to_string(bundle_path).map_err(|_| {
-        print_runtime_bundle_error("native-runtime-bundle-unreadable");
-        66
+    let bundle_source = read_bundle_text(Path::new(bundle_path)).map_err(|(code, status)| {
+        print_runtime_bundle_error(code);
+        status
     })?;
     let bundle = verify_runtime_bundle(&bundle_source).map_err(|error| {
         print_runtime_bundle_error(&error.code);
