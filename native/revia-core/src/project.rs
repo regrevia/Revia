@@ -558,8 +558,13 @@ pub fn load_project_directory_with_diagnostics(
         }
         let bytes = fs::read(&real_source)
             .map_err(|_| ProjectError::new("project-module-source-unreadable"))?;
-        let source = std::str::from_utf8(&bytes)
-            .map_err(|_| ProjectError::new("project-module-source-invalid-utf8"))?;
+        let source = match std::str::from_utf8(&bytes) {
+            Ok(source) => source,
+            Err(_) => return Err(ProjectLoadError::new("project-module-source-invalid-utf8")),
+        };
+        if source.starts_with('\u{feff}') {
+            return Err(ProjectLoadError::new("byte-order-mark-not-allowed"));
+        }
         for (agent, authority) in module_agent_identities(source, &module.name)? {
             if source_agents.insert(agent, authority).is_some() {
                 return Err(ProjectLoadError::new("duplicate-project-agent"));

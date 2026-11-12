@@ -1844,6 +1844,15 @@ It still changes language semantics and was not folded into Issues 1-3.
      byte, its line and its column survive the refusal. The test drives all
      three against a byte-order mark and two of them against a late bad byte,
      which is what tells the positions apart.
+169. The project loader verified a module with `std::str::from_utf8` and a
+     digest, and nothing else. A byte-order mark is valid UTF-8, so a module
+     that began with one passed the digest, entered the graph, and
+     `project-check` reported the project as sound, while `project-test` on the
+     same directory refused the same bytes with `byte-order-mark-not-allowed`
+     and the single-file routes refused the file outright. The loader now
+     refuses the mark where it reads the module, so the project gates agree
+     with each other and with `check` instead of the strictest one being right
+     only by accident of running later.
 
 ## 8. Evidence rules
 
