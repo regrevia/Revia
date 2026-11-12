@@ -7340,17 +7340,21 @@ fn project_server_gate(
     let plan_path = absolute_input_or_exit(plan_path)?;
     let database_path = absolute_input_or_exit(database_path)?;
     let report_path = absolute_input_or_exit(report_path)?;
+    if path_is_inside_or_equal(&project_path, &database_path)
+        || path_is_inside_or_equal(&project_path, &report_path)
+    {
+        eprintln!(
+            "{{\"diagnostics\":[{{\"code\":{}}}],\"ok\":false,\"schema\":{}}}",
+            quote("native-project-server-gate-output-inside-project"),
+            quote(NATIVE_PROJECT_SERVER_GATE_SCHEMA)
+        );
+        return Err(65);
+    }
     let (sqlite_executable, sqlite_executable_digest) =
         resolve_sqlite_executable(sqlite_executable).map_err(|code| {
             print_project_runtime_error(&code);
             65
         })?;
-    if path_is_inside_or_equal(&project_path, &database_path)
-        || path_is_inside_or_equal(&project_path, &report_path)
-    {
-        eprintln!("native-project-server-gate-output-inside-project");
-        return Err(65);
-    }
     let plan_source = read_text_input(&plan_path)?;
     let plan = parse_project_execution_plan(&plan_source).map_err(|error| {
         print_project_runtime_error(&error.code);

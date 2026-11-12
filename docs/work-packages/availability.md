@@ -1695,6 +1695,19 @@ It still changes language semantics and was not folded into Issues 1-3.
      inside the project, then asserts the exit code, the empty stdout,
      the exact stderr bytes and that no report was created.
 
+157. The server gate checked that its database and report stay outside the
+     project only after it had already resolved the external `sqlite3`
+     executable, so a project-local output path with a missing executable
+     answered `native-project-server-gate-sqlite-unavailable` and never
+     reached the containment refusal. The refusal now runs first, before
+     anything external is resolved, and speaks the gate's own
+     `re.native-project-server-gate@0.2.0` object on stderr instead of a
+     bare token. The guard points both outputs inside the project and
+     passes a sqlite path that does not exist, then asserts exit `65`,
+     empty stdout, the exact stderr bytes and that neither output was
+     created, so it fails both when the ordering regresses and when the
+     refusal stops being an object.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
