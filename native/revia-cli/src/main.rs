@@ -4736,6 +4736,10 @@ fn release_evidence_gate(
     corpus_path: &str,
     evidence_path: &str,
 ) -> Result<(), i32> {
+    if fs::symlink_metadata(Path::new(source_path)).is_err() {
+        print_input_unreadable(source_path);
+        return Err(66);
+    }
     let result = (|| -> Result<String, String> {
         let source_path = absolute_input_path(Path::new(source_path))?;
         let project_path = absolute_input_path(Path::new(project_path))?;
@@ -5262,6 +5266,10 @@ fn toolchain_gate(
     input_digest: &str,
     report_path: &str,
 ) -> Result<(), i32> {
+    if fs::symlink_metadata(Path::new(source_path)).is_err() {
+        print_input_unreadable(source_path);
+        return Err(66);
+    }
     let report_path = absolute_input_or_exit(report_path)?;
     let result = (|| -> Result<String, String> {
         let source_path = absolute_input_path(Path::new(source_path))?;

@@ -1570,6 +1570,18 @@ It still changes language semantics and was not folded into Issues 1-3.
      diagnostic fields, the absent envelope, and that no report appears;
      deleting the pre-check makes the gate exit `65` and fail it.
 
+147. Two of the three gates still disagreed with that reading: a
+     `toolchain-gate` whose source path is absent printed
+     `native-toolchain-gate-source-unreadable` on stderr and exited
+     `65`, and `release-evidence-gate` wrapped the same read failure in
+     a `re.native-release-evidence@0.5.0` envelope on stderr with `65`.
+     Both now inspect the source argument first, like `node-free-gate`:
+     the bare `re.source-diagnostic@0.1.0` object on stdout, empty
+     stderr, no report or evidence file, and exit `66`, byte-identical
+     across the three gates. The guard runs all three gates against the
+     same absent path and compares their stdout bytes; removing either
+     pre-check makes that gate exit `65` and fails it.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
