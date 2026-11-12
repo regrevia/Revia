@@ -134,6 +134,7 @@
     "native/revia-cli/tests/wp500_server_gate_containment_order.rs",
     "native/revia-cli/tests/wp501_output_overwrites_source.rs",
     "native/revia-cli/tests/wp502_output_alias_overwrites_source.rs",
+    "native/revia-cli/tests/wp503_output_symlink_overwrites_source.rs",
     "native/revia-conformance/Cargo.toml",
     "native/revia-conformance/src/lib.rs",
     "native/revia-conformance/src/main.rs",

@@ -1736,6 +1736,17 @@ It still changes language semantics and was not folded into Issues 1-3.
      that must still exit `0`, and fails when the comparison goes back to
      the raw strings.
 
+160. Comparing resolved parents left one alias open: a symlink whose target
+     is the source. `revia compile link.re real.re`, with `link.re` pointing
+     at `real.re`, exited `0` and replaced `real.re` with the artifact, so
+     the source lost its contents while every name-based comparison said
+     the two arguments differed. Path identity now resolves the whole path
+     when it exists and only falls back to the parent when it does not, so
+     the pair above is refused at exit `65` with the source untouched and
+     the symlink still in place. The test covers both commands plus a
+     sibling output that must still exit `0`, and fails when the resolution
+     of the file itself is dropped.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

@@ -5662,6 +5662,9 @@ fn path_identity(path: &Path) -> PathBuf {
         }
     };
     let normalized = normalized_path(&absolute);
+    if let Ok(resolved) = fs::canonicalize(&normalized) {
+        return resolved;
+    }
     match (normalized.parent(), normalized.file_name()) {
         (Some(parent), Some(name)) => match fs::canonicalize(parent) {
             Ok(parent) => parent.join(name),
