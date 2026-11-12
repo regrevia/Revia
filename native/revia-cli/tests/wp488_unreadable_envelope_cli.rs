@@ -86,7 +86,9 @@ fn every_source_reader_prints_the_same_bare_unreadable_diagnostic() {
                 "{verb} diagnostic must carry {field}, saw {text}"
             );
         }
-        let file_field = format!("\"file\":\"{shown}\"");
+        // Windows paths carry backslashes, so the JSON text escapes them.
+        let escaped = shown.replace('\\', "\\\\");
+        let file_field = format!("\"file\":\"{escaped}\"");
         assert!(
             text.contains(&file_field),
             "{verb} must name the path it was given, saw {text}"

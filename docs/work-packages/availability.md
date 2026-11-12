@@ -1540,7 +1540,9 @@ It still changes language semantics and was not folded into Issues 1-3.
      a bare diagnostic with `schema` `re.source-diagnostic@0.1.0` and no
      `ok` or `diagnostics` key, and identical bytes from every verb; the
      older exit-66 test now rejects an envelope instead of demanding
-     `ok:false`. Wrapping any reader again fails that test.
+     `ok:false`. The path assertion escapes separators, so the guard
+     matches the same contract on Windows. Wrapping any reader again
+     fails that test.
 
 ## 8. Evidence rules
 
