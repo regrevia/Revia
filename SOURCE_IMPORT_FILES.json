@@ -127,6 +127,7 @@
     "native/revia-cli/tests/wp494_bundle_comparison_write_failure.rs",
     "native/revia-cli/tests/wp495_developer_gate_temp_directory_failure.rs",
     "native/revia-cli/tests/wp496_toolchain_gate_write_failure.rs",
+    "native/revia-cli/tests/wp497_capability_project_write_failure.rs",
     "native/revia-cli/tests/wp4_result_value_cli.rs",
     "native/revia-conformance/Cargo.toml",
     "native/revia-conformance/src/lib.rs",

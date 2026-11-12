@@ -2111,7 +2111,11 @@ fn capability_project_comparison(
     match result {
         Ok(report) => {
             if write_atomic(&output_path, report.as_bytes()).is_err() {
-                eprintln!("native-capability-project-comparison-report-write-failure");
+                eprintln!(
+                    "{{\"diagnostics\":[{{\"code\":{}}}],\"ok\":false,\"schema\":{}}}",
+                    quote("native-capability-project-comparison-report-write-failure"),
+                    quote(CAPABILITY_PROJECT_COMPARISON_REPORT_SCHEMA)
+                );
                 return Err(74);
             }
             print!("{report}");

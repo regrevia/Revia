@@ -1659,6 +1659,18 @@ It still changes language semantics and was not folded into Issues 1-3.
      empty stdout, the exact stderr bytes, and an empty directory after
      the run; restoring the bare token fails the byte comparison.
 
+154. `capability-project-comparison` prints its report on success and
+     answers every build refusal inside the
+     `re.native-capability-project-comparison-report@0.1.0` object, so a
+     write failure that printed the bare token
+     `native-capability-project-comparison-report-write-failure` was the
+     one shape a caller could not parse. The token now rides inside the
+     same envelope on stderr, exit `74`, stdout empty, and the report path
+     left as the empty directory it was. The guard builds the real four
+     workload project, points the output at a directory, and asserts the
+     exit code, empty stdout, exact stderr bytes and an untouched
+     directory; restoring the bare token fails the byte comparison.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
