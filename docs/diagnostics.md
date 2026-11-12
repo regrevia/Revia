@@ -45,7 +45,8 @@ describes the source CLI that `npm run re --` invokes.
 
 `native/target/release/revia` is the compiled CLI, so its codes are its own:
 `0` success, `64` usage or unknown command, `65` source, project, or contract
-failure, `66` input file unreadable, and `101` an internal panic.
+failure, `66` input file unreadable, `74` output file unwritable, and `101` an
+internal panic.
 
 A `66` names the read that failed instead of exiting silently. Every command
 that reads a source file prints the same bare diagnostic object on stdout and
@@ -60,8 +61,14 @@ caller can report which input was unreadable without parsing the message. A
 file that reads but does not parse is a different outcome: it exits `65` and
 prints the diagnostic that names the offending token.
 
-A `64` writes the usage banner to stderr and leaves stdout empty, so a script
-can tell an unreadable input apart from a command it called wrongly.
+A gate reads its source path the same way: when that path cannot be read it
+exits `66` with this object and no verdict, instead of reporting a result it
+never computed.
+
+A `64` writes usage text to stderr and leaves stdout empty, so a script can
+tell an unreadable input apart from a command it called wrongly. A mistyped
+flag is refused with a short usage note for that command; an unknown command
+prints the whole banner.
 
 A `65` from `check` is a parse failure. It writes the parser result envelope to
 stdout and leaves stderr empty, with `ok` false and one `diagnostics` entry per

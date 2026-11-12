@@ -1558,6 +1558,18 @@ It still changes language semantics and was not folded into Issues 1-3.
      asserts the refusal, the empty working directory afterwards, and
      both spellings that succeed; dropping the dash test fails it.
 
+146. A gate that was handed a source path it cannot read answered with
+     exit `65` and a `re.native-node-free-result@0.1.0` envelope, so
+     `node-free-gate absent.re ...` claimed a verdict the gate never
+     computed and contradicted the `66` the other readers return for the
+     same missing file. The gate now inspects its source argument first:
+     an unreadable path prints the bare `re.source-diagnostic@0.1.0`
+     object naming that path on stdout, leaves stderr empty, writes no
+     report, and returns `66`, while a readable source keeps the gate
+     verdict path. The guard asserts the code, the empty stderr, the
+     diagnostic fields, the absent envelope, and that no report appears;
+     deleting the pre-check makes the gate exit `65` and fail it.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

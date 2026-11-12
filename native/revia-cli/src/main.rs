@@ -4702,6 +4702,10 @@ fn node_free_gate(
     module_name: &str,
     report_path: &str,
 ) -> Result<(), i32> {
+    if fs::symlink_metadata(Path::new(source_path)).is_err() {
+        print_input_unreadable(source_path);
+        return Err(66);
+    }
     let result = absolute_input_path(Path::new(source_path))
         .and_then(|source| {
             absolute_input_path(Path::new(project_path)).map(|project| (source, project))
