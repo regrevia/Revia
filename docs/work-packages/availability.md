@@ -1623,6 +1623,19 @@ It still changes language semantics and was not folded into Issues 1-3.
      directory is still empty; restoring the bare token makes the byte
      comparison fail.
 
+151. The `bundle-comparison` writer carried the same bare token as
+     `capability-comparison` did: a report path that blocked the write
+     printed `native-runtime-bundle-comparison-report-write-failure` on
+     stderr with exit `74` and nothing on stdout, while its own
+     report-object arm, one line below, already answered a `65` with a
+     `re.native-runtime-bundle-comparison@0.2.0` envelope. The write
+     failure now prints that same object family on stderr naming the
+     write-failure code, keeps stdout empty, returns `74`, and leaves
+     the report path untouched. The guard makes the report path an
+     existing directory and asserts the exit code, the empty stdout, the
+     exact stderr bytes, and the still-empty directory; restoring the
+     bare token fails the byte comparison.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

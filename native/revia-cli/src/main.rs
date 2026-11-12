@@ -2671,7 +2671,11 @@ fn bundle_comparison(catalog_path: &str, project_path: &str, output_path: &str) 
     match result {
         Ok(report) => {
             if write_atomic(&output_path, report.as_bytes()).is_err() {
-                eprintln!("native-runtime-bundle-comparison-report-write-failure");
+                eprintln!(
+                    "{{\"diagnostics\":[{{\"code\":{}}}],\"ok\":false,\"schema\":{}}}",
+                    quote("native-runtime-bundle-comparison-report-write-failure"),
+                    quote(BUNDLE_COMPARISON_SCHEMA)
+                );
                 return Err(74);
             }
             print!("{report}");
