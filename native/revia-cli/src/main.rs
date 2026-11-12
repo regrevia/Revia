@@ -6923,7 +6923,7 @@ fn digest(path: &str) -> Result<(), i32> {
 fn canonical(path: &str) -> Result<(), i32> {
     let bytes = read_byte_input(path)?;
     let source = SourceText::from_bytes(&bytes, path).map_err(|diagnostic| {
-        print_simple_graph_error(diagnostic.code.as_str());
+        print_source_graph_error(&diagnostic);
         65
     })?;
     let graph = if source.text.starts_with("re 0.1 canonical\n") {
@@ -6947,7 +6947,7 @@ fn graph_check(path: &str, registry_path: Option<&str>) -> Result<(), i32> {
     let declared = read_declarations(registry_path)?;
     let bytes = read_byte_input(path)?;
     let source = SourceText::from_bytes(&bytes, path).map_err(|diagnostic| {
-        print_simple_graph_error(diagnostic.code.as_str());
+        print_source_graph_error(&diagnostic);
         65
     })?;
     let graph = if source.text.starts_with("re 0.1 canonical\n") {
@@ -8810,7 +8810,7 @@ fn read_graph_with_declarations(
 ) -> Result<revia_core::graph::Graph, i32> {
     let bytes = read_byte_input(path)?;
     let source = SourceText::from_bytes(&bytes, path).map_err(|diagnostic| {
-        print_simple_graph_error(diagnostic.code.as_str());
+        print_source_graph_error(&diagnostic);
         65
     })?;
     let graph = if source.text.starts_with("re 0.1 canonical\n") {
@@ -8886,10 +8886,14 @@ fn absolute_input_or_exit(path: &str) -> Result<PathBuf, i32> {
     })
 }
 
-fn print_simple_graph_error(code: &str) {
+/// A source that could not be decoded is refused with the diagnostic that
+/// says where, in the same envelope as the other graph refusals. The bare
+/// code is not enough: two sources refused for the same reason are told
+/// apart only by the byte that was rejected.
+fn print_source_graph_error(diagnostic: &Diagnostic) {
     println!(
-        "{{\"diagnostics\":[{{\"code\":{}}}],\"ok\":false,\"schema\":{}}}",
-        quote(code),
+        "{{\"diagnostics\":[{}],\"ok\":false,\"schema\":{}}}",
+        diagnostic.to_json(),
         quote("re.native-graph-result@0.1.0"),
     );
 }

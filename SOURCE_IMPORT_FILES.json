@@ -142,6 +142,7 @@
     "native/revia-cli/tests/wp508_input_text_class.rs",
     "native/revia-cli/tests/wp509_project_run_text_class.rs",
     "native/revia-cli/tests/wp510_catalog_text_class.rs",
+    "native/revia-cli/tests/wp511_graph_diagnostic_position.rs",
     "native/revia-conformance/Cargo.toml",
     "native/revia-conformance/src/lib.rs",
     "native/revia-conformance/src/main.rs",

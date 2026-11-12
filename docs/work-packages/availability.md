@@ -1833,6 +1833,18 @@ It still changes language semantics and was not folded into Issues 1-3.
      decode failure cannot drift back into the unreadable class without
      turning the suite red.
 
+168. The graph routes answered a source they could not decode with the code
+     alone. `canonical`, `translate` and `compile` all pass the bytes through
+     `SourceText::from_bytes`, and when that fails they printed
+     `{"diagnostics":[{"code":...}]}` with the rest of the diagnostic dropped,
+     so a refusal caused by a byte-order mark and a refusal caused by a bad
+     byte on line 4 were the same message. `check` had already been taught to
+     carry the position; the three graph routes now use the same diagnostic,
+     in the same `re.native-graph-result@0.1.0` envelope, so the offending
+     byte, its line and its column survive the refusal. The test drives all
+     three against a byte-order mark and two of them against a late bad byte,
+     which is what tells the positions apart.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
