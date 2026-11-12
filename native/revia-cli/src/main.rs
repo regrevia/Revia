@@ -1146,7 +1146,7 @@ fn release_result(result: Result<String, revia_core::release::ReleaseError>) -> 
 }
 
 fn compile(source_path: &str, artifact_path: &str, registry_path: Option<&str>) -> Result<(), i32> {
-    if normalized_path(Path::new(source_path)) == normalized_path(Path::new(artifact_path)) {
+    if names_same_path(source_path, artifact_path) {
         print_compile_error("native-compile-output-overwrites-source");
         return Err(65);
     }
@@ -1228,7 +1228,7 @@ fn execute(
 }
 
 fn runtime_package(source_path: &str, bundle_path: &str) -> Result<(), i32> {
-    if normalized_path(Path::new(source_path)) == normalized_path(Path::new(bundle_path)) {
+    if names_same_path(source_path, bundle_path) {
         print_runtime_bundle_error("native-runtime-bundle-output-overwrites-source");
         return Err(65);
     }
@@ -5646,6 +5646,29 @@ fn absolute_input_path(path: &Path) -> Result<PathBuf, String> {
     env::current_dir()
         .map(|directory| directory.join(path))
         .map_err(|_| "node-free-source-unreadable".to_owned())
+}
+
+fn names_same_path(left: &str, right: &str) -> bool {
+    path_identity(Path::new(left)) == path_identity(Path::new(right))
+}
+
+fn path_identity(path: &Path) -> PathBuf {
+    let absolute = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        match env::current_dir() {
+            Ok(directory) => directory.join(path),
+            Err(_) => return normalized_path(path),
+        }
+    };
+    let normalized = normalized_path(&absolute);
+    match (normalized.parent(), normalized.file_name()) {
+        (Some(parent), Some(name)) => match fs::canonicalize(parent) {
+            Ok(parent) => parent.join(name),
+            Err(_) => normalized,
+        },
+        _ => normalized,
+    }
 }
 
 fn normalized_path(path: &Path) -> PathBuf {

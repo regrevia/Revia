@@ -1723,6 +1723,19 @@ It still changes language semantics and was not folded into Issues 1-3.
      runs both with a sibling output and requires exit `0`. Removing either
      comparison makes that command exit `0` and fails the test.
 
+159. The two refusals added by 158 compared the argument strings after
+     folding `.` and `..`, so `revia compile hello.re ./hello.re` still
+     exited `0` and replaced the source. Comparing text cannot decide
+     whether two names reach one file: the same file is spelled relative
+     and absolute, with a leading `./`, and below a `..` that cancels a
+     directory. Both commands now resolve each argument against the working
+     directory, fold the components, and canonicalize the parent directory
+     before comparing, so the name pairs above are refused at exit `65`
+     with the same envelope and the source untouched. The guard drives
+     three spellings of one output for each command, then a sibling output
+     that must still exit `0`, and fails when the comparison goes back to
+     the raw strings.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
