@@ -1805,6 +1805,19 @@ It still changes language semantics and was not folded into Issues 1-3.
      halves at each of the four sites and fails when the decode error is
      folded back into the unreadable class.
 
+166. The same collapse reached the project-run pair, the last two JSON
+     inputs read as text: `revia project-run-verify bad.json` and the two
+     reads inside `revia project-run-receipt-verify` reported a file whose
+     bytes do not decode as an unreadable path, exiting `66`, when the bytes
+     had been read and rejected. Both commands now separate the open from
+     the decode, so a damaged run or receipt is refused at exit `65` with
+     `project-manifest-json-invalid`, the code the same file already
+     produced when it was merely malformed, while an absent path still
+     exits `66` with `native-project-run-unreadable` or
+     `native-project-run-receipt-unreadable`. The test asserts both halves
+     at all three reads and fails when the decode error is folded back into
+     the unreadable class.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

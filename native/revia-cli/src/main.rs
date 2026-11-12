@@ -1439,9 +1439,14 @@ fn runtime_receipt_verify(
 }
 
 fn project_run_verify(run_path: &str) -> Result<(), i32> {
-    let source = fs::read_to_string(run_path).map_err(|_| {
-        eprint_project_runtime_error("native-project-run-unreadable");
-        66
+    let source = read_json_text(
+        Path::new(run_path),
+        "project-manifest-json-invalid",
+        "native-project-run-unreadable",
+    )
+    .map_err(|(code, status)| {
+        eprint_project_runtime_error(code);
+        status
     })?;
     let verification = verify_project_run_serialized(&source).map_err(|error| {
         eprint_project_runtime_error(&error.code);
@@ -1477,13 +1482,23 @@ fn project_run_verify(run_path: &str) -> Result<(), i32> {
 }
 
 fn project_run_receipt_verify(receipt_path: &str, run_path: &str) -> Result<(), i32> {
-    let receipt_source = fs::read_to_string(receipt_path).map_err(|_| {
-        eprint_project_receipt_error("native-project-run-receipt-unreadable");
-        66
+    let receipt_source = read_json_text(
+        Path::new(receipt_path),
+        "project-manifest-json-invalid",
+        "native-project-run-receipt-unreadable",
+    )
+    .map_err(|(code, status)| {
+        eprint_project_receipt_error(code);
+        status
     })?;
-    let run_source = fs::read_to_string(run_path).map_err(|_| {
-        eprint_project_receipt_error("native-project-run-unreadable");
-        66
+    let run_source = read_json_text(
+        Path::new(run_path),
+        "project-manifest-json-invalid",
+        "native-project-run-unreadable",
+    )
+    .map_err(|(code, status)| {
+        eprint_project_receipt_error(code);
+        status
     })?;
     let receipt = revia_core::project_receipt::parse_project_run_receipt(&receipt_source).map_err(
         |code| {
