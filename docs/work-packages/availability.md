@@ -1582,6 +1582,18 @@ It still changes language semantics and was not folded into Issues 1-3.
      same absent path and compares their stdout bytes; removing either
      pre-check makes that gate exit `65` and fails it.
 
+148. `--refresh` rebuilt the import allowlist from the source roots plus
+     `EXPLICIT_PATHS`, and that list omitted
+     `scripts/validate-release-provenance.mjs`, which the release gate
+     runs: every refresh silently deleted the entry, `--check` then
+     disagreed with CI, and the deletion appeared in no diff as a
+     removal. The selection now lives in `scripts/source-import-selection.mjs`
+     and the builder imports it, so a refresh and the admitted list are
+     the same set. The new test compares `selectFiles` against
+     `SOURCE_IMPORT_FILES.json` in both directions; deleting the entry
+     makes it report the file the refresh would drop, and a test file
+     absent from the list fails the other direction.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
