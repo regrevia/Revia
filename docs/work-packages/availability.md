@@ -1708,6 +1708,21 @@ It still changes language semantics and was not folded into Issues 1-3.
      created, so it fails both when the ordering regresses and when the
      refusal stops being an object.
 
+158. `docs/diagnostics.md` gives an artifact path as a name to write, and two
+     commands wrote it over the program they had just read. `compile
+     hello.re hello.re` exited `0` and left a 913-byte artifact where the
+     source had been, and `runtime-package hello.re hello.re` did the same
+     with a bundle, so one mistyped second argument destroyed the input and
+     reported success. Both now compare the normalized source and output
+     paths first and refuse with the envelope their own failures already
+     use — `re.native-compile-result@0.1.0` on stdout for `compile`,
+     `re.native-runtime-bundle@0.1.0` on stderr for `runtime-package` — at
+     exit `65`, before the source is read. The guard runs both commands with
+     one path as both arguments and asserts the code, the exact refusal
+     bytes, the untouched source, and that no temporary file is left, then
+     runs both with a sibling output and requires exit `0`. Removing either
+     comparison makes that command exit `0` and fails the test.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

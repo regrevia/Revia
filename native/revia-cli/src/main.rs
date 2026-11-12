@@ -1146,6 +1146,10 @@ fn release_result(result: Result<String, revia_core::release::ReleaseError>) -> 
 }
 
 fn compile(source_path: &str, artifact_path: &str, registry_path: Option<&str>) -> Result<(), i32> {
+    if normalized_path(Path::new(source_path)) == normalized_path(Path::new(artifact_path)) {
+        print_compile_error("native-compile-output-overwrites-source");
+        return Err(65);
+    }
     let declared = read_declarations(registry_path)?;
     let graph = read_graph_with_declarations(source_path, &declared)?;
     let artifact = translate_graph_with_declarations(&graph, &declared).map_err(|error| {
@@ -1224,6 +1228,10 @@ fn execute(
 }
 
 fn runtime_package(source_path: &str, bundle_path: &str) -> Result<(), i32> {
+    if normalized_path(Path::new(source_path)) == normalized_path(Path::new(bundle_path)) {
+        print_runtime_bundle_error("native-runtime-bundle-output-overwrites-source");
+        return Err(65);
+    }
     let graph = read_graph(source_path)?;
     let artifact = translate_graph(&graph).map_err(|error| {
         print_graph_error(&error);
