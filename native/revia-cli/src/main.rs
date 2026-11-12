@@ -1260,13 +1260,27 @@ fn runtime_package(source_path: &str, bundle_path: &str) -> Result<(), i32> {
 /// A bundle that opens but is not UTF-8 was read successfully, so it is
 /// rejected content (65), not an unreadable input (66): exit 66 would name
 /// the wrong class. Every other input command separates the two already.
-fn read_bundle_text(path: &Path) -> Result<String, (&'static str, i32)> {
+/// Reads a JSON input as text and keeps the two failure classes apart: bytes
+/// that were read but do not decode are a content rejection, and only a path
+/// that cannot be opened is an unreadable input. `fs::read_to_string` merges
+/// them, which reported a damaged file as a missing one.
+fn read_json_text(
+    path: &Path,
+    invalid_code: &'static str,
+    unreadable_code: &'static str,
+) -> Result<String, (&'static str, i32)> {
     match fs::read(path) {
-        Ok(bytes) => {
-            String::from_utf8(bytes).map_err(|_| ("native-runtime-bundle-json-invalid", 65))
-        }
-        Err(_) => Err(("native-runtime-bundle-unreadable", 66)),
+        Ok(bytes) => String::from_utf8(bytes).map_err(|_| (invalid_code, 65)),
+        Err(_) => Err((unreadable_code, 66)),
     }
+}
+
+fn read_bundle_text(path: &Path) -> Result<String, (&'static str, i32)> {
+    read_json_text(
+        path,
+        "native-runtime-bundle-json-invalid",
+        "native-runtime-bundle-unreadable",
+    )
 }
 
 fn runtime_verify(bundle_path: &str) -> Result<(), i32> {
@@ -1318,9 +1332,14 @@ fn runtime_verify(bundle_path: &str) -> Result<(), i32> {
 }
 
 fn runtime_authority_pin(bundle_path: &str, input_digest: &str, pin_path: &str) -> Result<(), i32> {
-    let bundle_source = fs::read_to_string(bundle_path).map_err(|_| {
-        print_runtime_authority_error("native-runtime-load-authority-bundle-unreadable");
-        66
+    let bundle_source = read_json_text(
+        Path::new(bundle_path),
+        "native-runtime-bundle-json-invalid",
+        "native-runtime-load-authority-bundle-unreadable",
+    )
+    .map_err(|(code, status)| {
+        print_runtime_authority_error(code);
+        status
     })?;
     let pin = build_runtime_load_authority_pin(
         &bundle_source,
@@ -1350,17 +1369,27 @@ fn runtime_receipt_verify(
     result_path: &str,
     stdout_path: &str,
 ) -> Result<(), i32> {
-    let pin_source = fs::read_to_string(pin_path).map_err(|_| {
-        print_runtime_authority_error("native-runtime-load-authority-pin-unreadable");
-        66
+    let pin_source = read_json_text(
+        Path::new(pin_path),
+        "native-runtime-load-authority-json-invalid",
+        "native-runtime-load-authority-pin-unreadable",
+    )
+    .map_err(|(code, status)| {
+        print_runtime_authority_error(code);
+        status
     })?;
     let pin = parse_runtime_load_authority_pin(&pin_source).map_err(|error| {
         print_runtime_authority_error(&error.code);
         65
     })?;
-    let receipt_source = fs::read_to_string(receipt_path).map_err(|_| {
-        print_runtime_receipt_error("native-runtime-load-receipt-unreadable");
-        66
+    let receipt_source = read_json_text(
+        Path::new(receipt_path),
+        "native-runtime-load-receipt-json-invalid",
+        "native-runtime-load-receipt-unreadable",
+    )
+    .map_err(|(code, status)| {
+        print_runtime_receipt_error(code);
+        status
     })?;
     let result_bytes = fs::read(result_path).map_err(|_| {
         print_runtime_receipt_error("native-runtime-load-result-unreadable");
@@ -1515,9 +1544,14 @@ fn runtime_run(
         65
     })?;
     let authority_pin = if let Some(authority_pin_path) = authority_pin_path {
-        let authority_pin_source = fs::read_to_string(authority_pin_path).map_err(|_| {
-            print_runtime_authority_error("native-runtime-load-authority-pin-unreadable");
-            66
+        let authority_pin_source = read_json_text(
+            Path::new(authority_pin_path),
+            "native-runtime-load-authority-json-invalid",
+            "native-runtime-load-authority-pin-unreadable",
+        )
+        .map_err(|(code, status)| {
+            print_runtime_authority_error(code);
+            status
         })?;
         Some(
             verify_runtime_load_authority(

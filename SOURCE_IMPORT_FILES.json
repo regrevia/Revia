@@ -139,6 +139,7 @@
     "native/revia-cli/tests/wp505_developer_gate_report_symlinked_project.rs",
     "native/revia-cli/tests/wp506_runtime_verify_bundle_text_class.rs",
     "native/revia-cli/tests/wp507_source_diagnostic_position.rs",
+    "native/revia-cli/tests/wp508_input_text_class.rs",
     "native/revia-conformance/Cargo.toml",
     "native/revia-conformance/src/lib.rs",
     "native/revia-conformance/src/main.rs",

@@ -1791,6 +1791,20 @@ It still changes language semantics and was not folded into Issues 1-3.
      per scalar rather than per byte. The test covers all three files and
      fails when the position is pinned back to the file start.
 
+165. The same collapse WP-163 fixed for `runtime-verify` still held on the
+     four other JSON inputs the authority commands read: a pin or receipt
+     that opened but was not UTF-8 exited `66` naming an `-unreadable` code,
+     so `revia runtime-authority-pin bad.rebundle` and
+     `revia runtime-receipt-verify` sent the caller to inspect a path that
+     was there and readable. All four now read bytes and decode separately,
+     so a damaged pin, receipt or bundle is refused at exit `65` with
+     `native-runtime-load-authority-json-invalid` or
+     `native-runtime-load-receipt-json-invalid`, the code the same file
+     already produced when it was merely malformed, while an absent path
+     still exits `66` with its `-unreadable` code. The test asserts both
+     halves at each of the four sites and fails when the decode error is
+     folded back into the unreadable class.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
