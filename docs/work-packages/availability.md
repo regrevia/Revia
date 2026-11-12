@@ -1608,6 +1608,21 @@ It still changes language semantics and was not folded into Issues 1-3.
      empty stderr and the absent report, and deleting the load check
      makes stderr non-empty and fails it.
 
+150. When the report path of `capability-comparison` could not be
+     written, the command printed the bare token
+     `native-capability-comparison-report-write-failure` on stderr and
+     exited `74`, so a caller that parses the diagnostic envelope for
+     every other code from this command had nothing to parse, while the
+     neighbouring `runtime-bundle` and `runtime-authority` writers
+     already answered a `74` with their own envelope. The write failure
+     now prints the `re.native-capability-comparison-report@0.1.0`
+     object naming that code on stderr, keeps stdout empty, and still
+     returns `74`; the report directory is left untouched. The guard
+     points the report path at an existing directory, then asserts the
+     exit code, the empty stdout, the exact stderr bytes, and that the
+     directory is still empty; restoring the bare token makes the byte
+     comparison fail.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

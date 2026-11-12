@@ -1721,7 +1721,11 @@ fn capability_comparison(catalog_path: &str, output_path: &str) -> Result<(), i3
     match result {
         Ok(output) => {
             if write_atomic(&output_path, output.as_bytes()).is_err() {
-                eprintln!("native-capability-comparison-report-write-failure");
+                eprintln!(
+                    "{{\"diagnostics\":[{{\"code\":{}}}],\"ok\":false,\"schema\":{}}}",
+                    quote("native-capability-comparison-report-write-failure"),
+                    quote("re.native-capability-comparison-report@0.1.0")
+                );
                 return Err(74);
             }
             print!("{output}");
