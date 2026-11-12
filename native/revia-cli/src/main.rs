@@ -543,6 +543,11 @@ fn main() {
         [command, project_path] if command == "project-surface-check" => {
             project_surface_check(project_path)
         }
+        [command, project_path] if command == "project-init" && project_path.starts_with('-') => {
+            eprintln!("Usage: revia project-init <directory>");
+            eprintln!("A directory that starts with '-' must be written as ./<name>.");
+            Err(64)
+        }
         [command, project_path] if command == "project-init" => project_init(project_path),
         [command, project_path] if command == "project-test" => project_test(project_path),
         [command, project_path] if command == "project-scale" => project_scale(project_path),

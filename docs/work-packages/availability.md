@@ -1544,6 +1544,20 @@ It still changes language semantics and was not folded into Issues 1-3.
      matches the same contract on Windows. Wrapping any reader again
      fails that test.
 
+145. `docs/diagnostics.md` says a `64` is a usage error and prints the
+     usage banner to stderr with stdout empty, and `project-init` was
+     documented only as taking a directory. It accepted any two-element
+     argv as a directory and wrote a scaffold before inspecting the
+     rest, so a mistyped option such as `--definitely-bogus-flag` exited
+     `0` after creating `./--definitely-bogus-flag/project.json` and
+     `./--definitely-bogus-flag/modules/main.re`. The dispatch arm now
+     refuses a directory argument that begins with `-`, printing the
+     command's usage line and the `./<name>` spelling that works, and
+     returning `64` before any filesystem call; `./-name` and a plain
+     name still scaffold and keep their success envelope. The guard
+     asserts the refusal, the empty working directory afterwards, and
+     both spellings that succeed; dropping the dash test fails it.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

@@ -18,6 +18,12 @@ A `64` prints the usage banner to stderr and nothing to stdout. A `65` prints
 the diagnostic to stderr and nothing to stdout, so a pipeline that reads stdout
 only sees output from files that passed.
 
+A command that creates files treats a positional argument that begins
+with `-` as a usage error, not a name: `revia project-init --dry-run`
+exits `64`, writes the usage banner to stderr, and creates nothing,
+so a mistyped flag cannot invent a directory. Write `./-name` when the
+directory really starts with a dash.
+
 A `70` is not the program failing: a host input it needs to start cannot be
 used. Under `--format json` the run result on stdout names the phase and the
 fault, and no program code runs:

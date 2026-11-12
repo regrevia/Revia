@@ -119,6 +119,7 @@
     "native/revia-cli/tests/wp486_cli_exit_code_legend.rs",
     "native/revia-cli/tests/wp487_command_help_exit_legend.rs",
     "native/revia-cli/tests/wp488_unreadable_envelope_cli.rs",
+    "native/revia-cli/tests/wp489_project_init_dash_path.rs",
     "native/revia-cli/tests/wp4_result_value_cli.rs",
     "native/revia-conformance/Cargo.toml",
     "native/revia-conformance/src/lib.rs",
