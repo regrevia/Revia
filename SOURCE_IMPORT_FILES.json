@@ -122,6 +122,7 @@
     "native/revia-cli/tests/wp489_project_init_dash_path.rs",
     "native/revia-cli/tests/wp490_node_free_gate_unreadable_source.rs",
     "native/revia-cli/tests/wp491_gate_family_unreadable_source.rs",
+    "native/revia-cli/tests/wp492_developer_gate_unreadable_project.rs",
     "native/revia-cli/tests/wp4_result_value_cli.rs",
     "native/revia-conformance/Cargo.toml",
     "native/revia-conformance/src/lib.rs",

@@ -1594,6 +1594,20 @@ It still changes language semantics and was not folded into Issues 1-3.
      makes it report the file the refresh would drop, and a test file
      absent from the list fails the other direction.
 
+149. `developer-gate` was handed an unreadable project root and, instead
+     of a verdict about that root, it resolved the report path, created
+     a temporary root, and only failed when the first `project-check`
+     child came back non-zero: the code printed `project-check`'s
+     envelope on stderr and exited `65`, while `project-check absent`
+     printed the same bytes on stdout. The gate now loads the project
+     first and, when the only failure is `project-root-unreadable`,
+     prints that envelope on stdout with empty stderr and exits `65`,
+     leaving the report unwritten; every other load failure keeps the
+     stage-by-stage path that the drift guard pins. The guard compares
+     the gate's stdout with `project-check`'s byte for byte, requires the
+     empty stderr and the absent report, and deleting the load check
+     makes stderr non-empty and fails it.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

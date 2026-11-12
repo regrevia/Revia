@@ -5049,6 +5049,13 @@ fn developer_gate(
         eprintln!("native-developer-gate-report-inside-project");
         return Err(65);
     }
+    match load_project_directory_with_diagnostics(&project_path) {
+        Err(error) if error.code == "project-root-unreadable" => {
+            print_project_load_error(&error, "re.native-project-result@0.1.0");
+            return Err(65);
+        }
+        _ => {}
+    }
     let binary = env::current_exe().map_err(|_| 70)?;
     let root = native_temp_root("developer-gate");
     let empty_path = root.join("empty-path");
