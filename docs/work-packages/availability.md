@@ -1671,6 +1671,20 @@ It still changes language semantics and was not folded into Issues 1-3.
      exit code, empty stdout, exact stderr bytes and an untouched
      directory; restoring the bare token fails the byte comparison.
 
+155. The developer gate's own report write has two failure shapes, and
+     only one of them had caught up with the gate envelope: the temporary
+     directory failure speaks the
+     `re.native-developer-gate@0.1.0` object (WP-152), while the write of
+     the finished report still printed
+     `native-developer-gate-report-write-failure` as a bare token. Both
+     now answer in the same object on stderr with exit `74` and empty
+     stdout, which is what the neighbouring drift and containment
+     refusals already did. The guard makes the report path a directory,
+     then asserts the exit code, the empty stdout, the exact stderr bytes
+     and a still-empty directory; the existing report-directory test in
+     the same gate keeps passing because the token survives inside the
+     envelope.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
