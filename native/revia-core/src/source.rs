@@ -14,6 +14,7 @@ impl SourceText {
             return Err(Diagnostic::from_invalid_bytes(
                 file,
                 "byte-order-mark-not-allowed",
+                bytes,
                 0,
             ));
         }
@@ -25,6 +26,7 @@ impl SourceText {
             Err(error) => Err(Diagnostic::from_invalid_bytes(
                 file,
                 "invalid-utf8-source",
+                bytes,
                 error.valid_up_to(),
             )),
         }

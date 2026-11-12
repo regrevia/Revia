@@ -54,7 +54,13 @@ impl Diagnostic {
         }
     }
 
-    pub fn from_invalid_bytes(file: &str, code: &str, offset: usize) -> Self {
+    pub fn from_invalid_bytes(file: &str, code: &str, bytes: &[u8], offset: usize) -> Self {
+        let offset = offset.min(bytes.len());
+        // The bytes before the offending one always decode, so the prefix is a
+        // str and the shared position rule applies to it unchanged. Reporting a
+        // fixed line 1 column 1 would point every file at its own first byte.
+        let prefix = String::from_utf8_lossy(&bytes[..offset]);
+        let (line, column) = position_at(&prefix, prefix.len());
         Self {
             schema: "re.source-diagnostic@0.1.0".to_owned(),
             severity: "error".to_owned(),
@@ -64,10 +70,10 @@ impl Diagnostic {
             rule: "source.utf8".to_owned(),
             byte_start: Some(offset),
             byte_end: Some(offset + 1),
-            line: 1,
-            column: 1,
-            end_line: 1,
-            end_column: 1,
+            line,
+            column,
+            end_line: line,
+            end_column: column + 1,
             lexeme: String::new(),
             expected: None,
             actual: None,

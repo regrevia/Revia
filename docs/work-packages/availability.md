@@ -1779,6 +1779,18 @@ It still changes language semantics and was not folded into Issues 1-3.
      still exits `0`. The test covers all four and fails when the decode
      error is folded back into the unreadable class.
 
+164. A source file whose bytes do not decode was reported at the start of
+     the file: `revia check late.re`, with the bad byte 28 bytes in, printed
+     `"line":1,"column":1` beside `"byte_start":28`, so every undecodable
+     file named the same position and a tool could not point an editor at
+     the cause. The decoder now derives `line`, `column`, `end_line` and
+     `end_column` from the bytes that precede the offending one, using the
+     position rule the rest of the diagnostics already share, so that file
+     reports `"line":4,"column":10`, a byte-order mark still reports line 1
+     column 1, and a bad byte after a three-byte scalar reports one column
+     per scalar rather than per byte. The test covers all three files and
+     fails when the position is pinned back to the file start.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
