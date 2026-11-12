@@ -1747,6 +1747,16 @@ It still changes language semantics and was not folded into Issues 1-3.
      sibling output that must still exit `0`, and fails when the resolution
      of the file itself is dropped.
 
+161. Resolving the path closed the symlink but not the hard link: a second
+     name for one inode cannot be told apart by any path, so `revia compile
+     link.re real.re`, with `link.re` and `real.re` hard-linked, exited `0`
+     and rewrote the shared inode, destroying the source through the other
+     name. Path identity is now backed by a device and inode comparison of
+     both existing files, so the pair above is refused at exit `65` with
+     both names keeping their bytes. The test covers both commands plus a
+     control copy that must still exit `0`, and fails when the inode
+     comparison is disabled.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

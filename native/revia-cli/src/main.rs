@@ -5649,7 +5649,25 @@ fn absolute_input_path(path: &Path) -> Result<PathBuf, String> {
 }
 
 fn names_same_path(left: &str, right: &str) -> bool {
-    path_identity(Path::new(left)) == path_identity(Path::new(right))
+    let (left, right) = (Path::new(left), Path::new(right));
+    if path_identity(left) == path_identity(right) {
+        return true;
+    }
+    match (fs::metadata(left), fs::metadata(right)) {
+        (Ok(left), Ok(right)) => same_file(&left, &right),
+        _ => false,
+    }
+}
+
+#[cfg(unix)]
+fn same_file(left: &fs::Metadata, right: &fs::Metadata) -> bool {
+    use std::os::unix::fs::MetadataExt;
+    left.dev() == right.dev() && left.ino() == right.ino()
+}
+
+#[cfg(not(unix))]
+fn same_file(_left: &fs::Metadata, _right: &fs::Metadata) -> bool {
+    false
 }
 
 fn path_identity(path: &Path) -> PathBuf {
