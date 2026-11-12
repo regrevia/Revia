@@ -1685,6 +1685,16 @@ It still changes language semantics and was not folded into Issues 1-3.
      the same gate keeps passing because the token survives inside the
      envelope.
 
+156. The developer gate's containment refusal, `report-inside-project`, was
+     the last refusal in that gate still printed as a bare token on
+     stderr, next to a success path that has been a canonical report for
+     many rounds. It now answers with the same
+     `re.native-developer-gate@0.1.0` object the report write failure and
+     the temporary directory failure already speak, keeping exit `65`
+     because nothing was executed. The guard points the report at a path
+     inside the project, then asserts the exit code, the empty stdout,
+     the exact stderr bytes and that no report was created.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

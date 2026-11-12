@@ -5058,7 +5058,11 @@ fn developer_gate(
     let project_path = absolute_input_or_exit(project_path)?;
     let report_path = absolute_input_or_exit(report_path)?;
     if path_is_within(&project_path, &report_path) {
-        eprintln!("native-developer-gate-report-inside-project");
+        eprintln!(
+            "{{\"diagnostics\":[{{\"code\":{}}}],\"ok\":false,\"schema\":{}}}",
+            quote("native-developer-gate-report-inside-project"),
+            quote(DEVELOPER_GATE_SCHEMA)
+        );
         return Err(65);
     }
     match load_project_directory_with_diagnostics(&project_path) {
