@@ -41,9 +41,9 @@ describes the source CLI that `npm run re --` invokes.
 `0` success, `64` usage or unknown command, `65` source, project, or contract
 failure, `66` input file unreadable, and `101` an internal panic.
 
-A `66` names the read that failed instead of exiting silently. It prints one
-diagnostic object on stdout, the same shape `check` uses, and leaves stderr
-empty:
+A `66` names the read that failed instead of exiting silently. Every command
+that reads a source file prints the same bare diagnostic object on stdout and
+leaves stderr empty, with no command envelope around it:
 
 ```text
 {"byte_end":0,"byte_start":0,"code":"input-unreadable","column":1,"end_column":1,"end_line":1,"file":"missing.re","lexeme":"","line":1,"phase":"source","repair":"inspect","rule":"source.read","schema":"re.source-diagnostic@0.1.0","severity":"error"}

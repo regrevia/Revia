@@ -1527,6 +1527,21 @@ It still changes language semantics and was not folded into Issues 1-3.
      codes those pages mention, and requires each to appear in the legend.
      Renaming a documented status in one page now fails the suite.
 
+144. Exit `66` is documented as one bare diagnostic object on stdout with
+     stderr empty, and `docs/diagnostics.md` shows that object next to a
+     missing path. Four readers obeyed it: `digest`, `canonical`,
+     `manifest`, and `graph-check` all printed the object alone. Two did
+     not: `check` and `lex` wrapped the same diagnostic in the parser
+     result envelope, so one command's stdout at the same exit status had
+     two shapes and a caller that parsed per the doc broke on half the
+     verbs. `read_source` now routes its read failure through the same
+     printer the other four use. The guard runs all six verbs against one
+     missing path and requires exit 66, empty stderr, a single stdout line,
+     a bare diagnostic with `schema` `re.source-diagnostic@0.1.0` and no
+     `ok` or `diagnostics` key, and identical bytes from every verb; the
+     older exit-66 test now rejects an envelope instead of demanding
+     `ok:false`. Wrapping any reader again fails that test.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

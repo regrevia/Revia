@@ -8858,14 +8858,10 @@ fn print_compile_error(code: &str) {
 }
 
 fn read_source(path: &str) -> Result<(String, String), i32> {
-    // An unreadable input reports a diagnostic on the same envelope as the
-    // invalid-source path below, instead of exiting 66 with no output.
+    // An unreadable input prints one bare source diagnostic object, the same
+    // shape every native reader prints, instead of exiting 66 with no output.
     let bytes = fs::read(path).map_err(|_| {
-        println!(
-            "{{\"diagnostics\":[{}],\"ok\":false,\"schema\":{}}}",
-            Diagnostic::from_unreadable_file(path).to_json(),
-            quote(CHECK_SCHEMA)
-        );
+        print_input_unreadable(path);
         66
     })?;
     let source = SourceText::from_bytes(&bytes, path).map_err(|diagnostic| {

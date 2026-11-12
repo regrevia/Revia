@@ -140,8 +140,8 @@ fn native_cli_unreadable_input_reports_a_diagnostic() {
             output.stdout
         );
         assert!(
-            output.stdout.contains("\"ok\":false"),
-            "{input} diagnostic lacks ok:false: {}",
+            !output.stdout.contains("\"ok\":"),
+            "{input} wrapped the diagnostic in an envelope: {}",
             output.stdout
         );
     }
