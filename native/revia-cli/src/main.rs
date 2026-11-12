@@ -1275,6 +1275,31 @@ fn read_json_text(
     }
 }
 
+/// A catalog is read as text, so the two ways that read can fail are kept
+/// apart: bytes that were read but do not decode are the same content
+/// rejection the parser reports for a malformed catalog, and only a path that
+/// cannot be opened is an unreadable input.
+fn read_catalog_text(
+    path: &str,
+    invalid_code: &'static str,
+    report_invalid: impl Fn(&str),
+) -> Result<String, i32> {
+    let bytes = match fs::read(path) {
+        Ok(bytes) => bytes,
+        Err(_) => {
+            print_input_unreadable(path);
+            return Err(66);
+        }
+    };
+    match String::from_utf8(bytes) {
+        Ok(source) => Ok(source),
+        Err(_) => {
+            report_invalid(invalid_code);
+            Err(65)
+        }
+    }
+}
+
 fn read_bundle_text(path: &Path) -> Result<String, (&'static str, i32)> {
     read_json_text(
         path,
@@ -3248,7 +3273,11 @@ fn cross_language_matrix(
 }
 
 fn replay_catalog(catalog_path: &str, output_path: &str) -> Result<(), i32> {
-    let catalog_source = read_text_input(catalog_path)?;
+    let catalog_source = read_catalog_text(
+        catalog_path,
+        "replay-workload-catalog-json-invalid",
+        print_replay_catalog_error,
+    )?;
     let catalog = parse_replay_workload_catalog(&catalog_source).map_err(|error| {
         print_replay_catalog_error(&error.code);
         65
@@ -4111,7 +4140,11 @@ fn collect_project_capability_release_evidence(
 }
 
 fn replay_fault_catalog(catalog_path: &str, output_path: &str) -> Result<(), i32> {
-    let catalog_source = read_text_input(catalog_path)?;
+    let catalog_source = read_catalog_text(
+        catalog_path,
+        "replay-fault-catalog-json-invalid",
+        print_replay_fault_catalog_error,
+    )?;
     let catalog = parse_replay_fault_catalog(&catalog_source).map_err(|error| {
         print_replay_fault_catalog_error(&error.code);
         65
@@ -4264,7 +4297,11 @@ fn replay_fault_catalog(catalog_path: &str, output_path: &str) -> Result<(), i32
 }
 
 fn replay_fault_corpus(corpus_path: &str, output_path: &str) -> Result<(), i32> {
-    let corpus_source = read_text_input(corpus_path)?;
+    let corpus_source = read_catalog_text(
+        corpus_path,
+        "native-fault-corpus-json-invalid",
+        print_native_fault_corpus_error,
+    )?;
     let corpus = parse_native_fault_corpus(&corpus_source).map_err(|error| {
         print_native_fault_corpus_error(&error.code);
         65

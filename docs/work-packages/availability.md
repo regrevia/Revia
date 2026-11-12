@@ -1818,6 +1818,21 @@ It still changes language semantics and was not folded into Issues 1-3.
      at all three reads and fails when the decode error is folded back into
      the unreadable class.
 
+167. The replay catalog commands never reached the fix because they read
+     their catalog through the shared text-input helper rather than
+     `fs::read_to_string`, and that helper returns a source diagnostic in a
+     shape of its own. `replay-catalog`, `replay-fault-catalog` and
+     `replay-fault-corpus` therefore answered a catalog whose bytes do not
+     decode with exit `66` and `input-unreadable`, while the same file merely
+     malformed was refused at exit `65` under each command's own
+     `-json-invalid` code in a different envelope. A catalog that was read
+     and rejected is now a content rejection on all three: exit `65`, the
+     same code and envelope as the malformed case, with an absent path left
+     alone at exit `66` in the diagnostic shape. The test asserts all three
+     commands against bad bytes, malformed bytes and a missing path, so the
+     decode failure cannot drift back into the unreadable class without
+     turning the suite red.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
