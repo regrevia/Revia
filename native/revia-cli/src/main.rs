@@ -5074,7 +5074,11 @@ fn developer_gate(
         || fs::create_dir_all(&second_root).is_err()
     {
         fs::remove_dir_all(&root).ok();
-        eprintln!("native-developer-gate-temporary-directory-failure");
+        eprintln!(
+            "{{\"diagnostics\":[{{\"code\":{}}}],\"ok\":false,\"schema\":{}}}",
+            quote("native-developer-gate-temporary-directory-failure"),
+            quote(DEVELOPER_GATE_SCHEMA)
+        );
         return Err(74);
     }
 

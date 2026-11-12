@@ -1636,6 +1636,18 @@ It still changes language semantics and was not folded into Issues 1-3.
      exact stderr bytes, and the still-empty directory; restoring the
      bare token fails the byte comparison.
 
+152. `developer-gate` had the same split as its written report: a
+     refusal after the report was built already answered in the gate
+     object, but a temporary directory that could not be created printed
+     the bare token `native-developer-gate-temporary-directory-failure`
+     and exited `74`. The two failures a caller cannot tell apart by exit
+     code now share one shape: the same code, still on stderr, inside a
+     `re.native-developer-gate@0.1.0` envelope, with stdout empty and no
+     report written. The guard points `TMPDIR` at an existing file,
+     asserts the exit code, the empty stdout, the exact stderr bytes, and
+     that no report appeared; restoring the bare token fails the byte
+     comparison.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
