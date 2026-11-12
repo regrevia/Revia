@@ -1757,6 +1757,17 @@ It still changes language semantics and was not folded into Issues 1-3.
      control copy that must still exit `0`, and fails when the inode
      comparison is disabled.
 
+162. Refusing a report inside the project compared paths, and a path that
+     leaves the project and comes back through a symlinked directory spells
+     a different string, so `revia developer-gate project revia.app.main
+     <digest> outside/into/report.json`, with `outside/into` a symlink to
+     the project, exited `0` and wrote the report into the project it had
+     promised to stay out of. Both containment helpers now resolve their
+     arguments, down to the nearest existing ancestor, before comparing, so
+     that command is refused at exit `65` with the exact envelope and no
+     file is written through the link, while a sibling report path still
+     exits `0`.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

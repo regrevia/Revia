@@ -5684,10 +5684,7 @@ fn path_identity(path: &Path) -> PathBuf {
         return resolved;
     }
     match (normalized.parent(), normalized.file_name()) {
-        (Some(parent), Some(name)) => match fs::canonicalize(parent) {
-            Ok(parent) => parent.join(name),
-            Err(_) => normalized,
-        },
+        (Some(parent), Some(name)) => path_identity(parent).join(name),
         _ => normalized,
     }
 }
@@ -5709,14 +5706,14 @@ fn normalized_path(path: &Path) -> PathBuf {
 }
 
 fn path_is_within(parent: &Path, child: &Path) -> bool {
-    let parent = normalized_path(parent);
-    let child = normalized_path(child);
+    let parent = path_identity(parent);
+    let child = path_identity(child);
     child.starts_with(&parent) && child != parent
 }
 
 fn path_is_inside_or_equal(parent: &Path, child: &Path) -> bool {
-    let parent = normalized_path(parent);
-    let child = normalized_path(child);
+    let parent = path_identity(parent);
+    let child = path_identity(child);
     child.starts_with(&parent)
 }
 
