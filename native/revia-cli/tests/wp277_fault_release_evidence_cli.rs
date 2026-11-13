@@ -35,7 +35,7 @@ fn native_fault_corpus_release_gate_rejects_debug_binary_before_execution() {
         String::from_utf8_lossy(&output.stderr)
             .contains("native-fault-corpus-release-binary-required")
     );
-    fs::remove_dir_all(root).unwrap();
+    remove_dir_all_retrying(&root);
 }
 
 #[test]
@@ -74,7 +74,23 @@ fn native_fault_corpus_release_gate_accepts_relative_corpus_path() {
     assert!(source.contains("\"empty_path\":true"));
     assert!(source.contains("\"node_process_count\":0"));
     assert!(!source.contains(root.to_str().unwrap()));
-    fs::remove_dir_all(root).unwrap();
+    remove_dir_all_retrying(&root);
+}
+
+fn remove_dir_all_retrying(path: &std::path::Path) {
+    // Windows keeps the copied release binary locked for a moment after the
+    // process exits, so the cleanup retries the same way the read does.
+    let mut last = None;
+    for _ in 0..40 {
+        match fs::remove_dir_all(path) {
+            Ok(()) => return,
+            Err(error) => {
+                last = Some(error);
+                std::thread::sleep(std::time::Duration::from_millis(50));
+            }
+        }
+    }
+    panic!("could not remove {}: {:?}", path.display(), last);
 }
 
 fn read_release_evidence(path: &std::path::Path) -> Vec<u8> {

@@ -241,6 +241,7 @@
     "native/revia-core/tests/wp354_declared_host_serving.rs",
     "native/revia-core/tests/wp523_receipt_byte_order_mark.rs",
     "native/revia-core/tests/wp524_result_byte_order_mark.rs",
+    "native/revia-core/tests/wp525_project_run_byte_order_mark.rs",
     "native/revia-macos-identity/Cargo.toml",
     "native/revia-macos-identity/src/lib.rs",
     "native/revia-macos-identity/tests/peer_identity.rs",

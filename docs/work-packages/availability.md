@@ -1934,6 +1934,17 @@ It still changes language semantics and was not folded into Issues 1-3.
      same code, so the JSON layer had accepted the bytes; the mark did not make
      the text undecodable, it only moved the failure. The mark is now named,
      and a result that really is malformed keeps the result code.
+182. The project run document is parsed with the shared project JSON parser,
+     and the run verifier passed that parser's code straight through. The parser
+     is shared with the project manifest, so a run document that opens with a
+     byte-order mark was refused as `project-manifest-json-invalid` — one file's
+     code on another file, naming a manifest the user never wrote. A run of `{}`
+     gets past the JSON layer and stops at `native-project-run-schema-mismatch`,
+     which is how the bytes were shown to be acceptable; only the leading mark
+     differed. The mark is now named, and malformed text keeps the parser code.
+     The Windows lane's `wp277` cleanup now retries its own directory removal,
+     which the copied release binary keeps locked for a moment; that lane had
+     failed on the retry the test already applied to its read.
 
 ## 8. Evidence rules
 
