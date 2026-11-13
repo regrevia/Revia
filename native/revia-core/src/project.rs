@@ -522,9 +522,11 @@ pub fn load_project_directory_with_diagnostics(
     let root = fs::canonicalize(root_directory.as_ref())
         .map_err(|_| ProjectLoadError::new("project-root-unreadable"))?;
     let manifest_path = root.join("project.json");
-    let manifest_source = fs::read_to_string(&manifest_path)
+    let manifest_bytes = fs::read(&manifest_path)
         .map_err(|_| ProjectLoadError::new("project-manifest-unreadable"))?;
-    let document = parse_json(&manifest_source)?;
+    let manifest_source = std::str::from_utf8(&manifest_bytes)
+        .map_err(|_| ProjectLoadError::new("project-manifest-invalid-utf8"))?;
+    let document = parse_json(manifest_source)?;
     let (project_modules, package, agents, allowed_capabilities, resources) =
         parse_project_manifest(&document)?;
     validate_package(&package)?;

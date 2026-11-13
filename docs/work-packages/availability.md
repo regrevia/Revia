@@ -1853,6 +1853,14 @@ It still changes language semantics and was not folded into Issues 1-3.
      refuses the mark where it reads the module, so the project gates agree
      with each other and with `check` instead of the strictest one being right
      only by accident of running later.
+170. The project loader read `project.json` through `fs::read_to_string`,
+     which fails both when the file cannot be opened and when it opens but
+     holds bytes that are not text. Both failures arrived as
+     `project-manifest-unreadable`, so a manifest truncated at a random offset
+     and a manifest deleted outright were the same refusal, and the reader was
+     told to check a file that was there the whole time. The read is now split:
+     opening the file keeps its own class, and undecodable bytes get
+     `project-manifest-invalid-utf8`.
 
 ## 8. Evidence rules
 
