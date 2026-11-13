@@ -85,6 +85,9 @@ pub fn parse_runtime_load_authority_pin(
             "native-runtime-load-authority-trailing-newline-missing",
         ));
     }
+    if source.starts_with('\u{feff}') {
+        return Err(RuntimeAuthorityError::new("byte-order-mark-not-allowed"));
+    }
     let value = parse_json(source)
         .map_err(|_| RuntimeAuthorityError::new("native-runtime-load-authority-json-invalid"))?;
     let pin = parse_pin(&value)?;

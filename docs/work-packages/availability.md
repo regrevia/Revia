@@ -1916,6 +1916,12 @@ It still changes language semantics and was not folded into Issues 1-3.
      plain form stops at `schema-or-size-invalid`, so the JSON layer had again
      accepted the bytes. The mark is now named, and malformed text keeps the
      JSON code in the same test.
+179. The runtime load authority pin shares the reader shape but is reached
+     through `runtime-receipt-verify`, and it files every JSON failure as
+     `native-runtime-load-authority-json-invalid`. A pin of `{}` is refused by
+     the pin's own field rules, so the JSON layer accepts the bytes; with the
+     mark in front the same document was called unreadable JSON. The mark is
+     now named, and malformed text keeps the JSON code.
 
 ## 8. Evidence rules
 
