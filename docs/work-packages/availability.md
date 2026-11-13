@@ -1945,6 +1945,13 @@ It still changes language semantics and was not folded into Issues 1-3.
      The Windows lane's `wp277` cleanup now retries its own directory removal,
      which the copied release binary keeps locked for a moment; that lane had
      failed on the retry the test already applied to its read.
+183. The execution document had the same problem one reader over. Its verifier
+     shares the project JSON parser, so an execution document that opens with a
+     byte-order mark was refused as `project-manifest-json-invalid` — a manifest
+     code on an execution file. An execution document of `{}` gets past the JSON
+     layer and stops on the missing fields (`invalid-project-field`), which is
+     how the bytes were shown to be acceptable. The mark is now named there too,
+     and text that really is malformed keeps the parser's own code.
 
 ## 8. Evidence rules
 

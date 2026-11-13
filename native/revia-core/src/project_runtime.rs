@@ -1010,6 +1010,9 @@ pub fn serialize_project_execution(
 }
 
 pub fn verify_project_execution_serialized(source: &str) -> Result<String, ProjectRuntimeError> {
+    if source.starts_with('\u{feff}') {
+        return Err(ProjectRuntimeError::new("byte-order-mark-not-allowed"));
+    }
     let value = parse_json(source).map_err(|error| ProjectRuntimeError::new(&error.code))?;
     if format!("{}\n", canonicalize(&value)) != source {
         return Err(ProjectRuntimeError::new(
