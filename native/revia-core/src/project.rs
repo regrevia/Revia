@@ -526,6 +526,9 @@ pub fn load_project_directory_with_diagnostics(
         .map_err(|_| ProjectLoadError::new("project-manifest-unreadable"))?;
     let manifest_source = std::str::from_utf8(&manifest_bytes)
         .map_err(|_| ProjectLoadError::new("project-manifest-invalid-utf8"))?;
+    if manifest_source.starts_with('\u{feff}') {
+        return Err(ProjectLoadError::new("byte-order-mark-not-allowed"));
+    }
     let document = parse_json(manifest_source)?;
     let (project_modules, package, agents, allowed_capabilities, resources) =
         parse_project_manifest(&document)?;

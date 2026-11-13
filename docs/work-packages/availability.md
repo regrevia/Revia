@@ -1861,6 +1861,12 @@ It still changes language semantics and was not folded into Issues 1-3.
      told to check a file that was there the whole time. The read is now split:
      opening the file keeps its own class, and undecodable bytes get
      `project-manifest-invalid-utf8`.
+171. A project manifest that opens with a byte-order mark decodes as valid
+     UTF-8, so it reached the JSON parser and came back as
+     `project-manifest-json-invalid` — the reader was sent to look for a stray
+     brace in a file whose JSON was intact. Modules with the same mark already
+     got `byte-order-mark-not-allowed` (169); the manifest now gets the same
+     name, because the mark is the whole problem.
 
 ## 8. Evidence rules
 
