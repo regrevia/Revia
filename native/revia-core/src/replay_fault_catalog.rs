@@ -262,6 +262,9 @@ pub fn serialize_replay_fault_catalog(
 pub fn parse_replay_fault_catalog(
     source: &str,
 ) -> Result<ReplayFaultCatalog, ReplayFaultCatalogError> {
+    if source.starts_with('\u{feff}') {
+        return Err(ReplayFaultCatalogError::new("byte-order-mark-not-allowed"));
+    }
     let value = parse_json(source)
         .map_err(|_| ReplayFaultCatalogError::new("replay-fault-catalog-json-invalid"))?;
     let entries = exact_object(&value, &["schema", "workloads"])?;

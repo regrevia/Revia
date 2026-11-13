@@ -1906,6 +1906,11 @@ It still changes language semantics and was not folded into Issues 1-3.
      layer had already accepted the bytes; only the mark made the difference.
      It now reports `byte-order-mark-not-allowed`, and genuinely malformed text
      keeps the JSON code, which the same test pins.
+177. The fault catalog was the third reader in this family and carried the
+     same defect: `parse_replay_fault_catalog` folded the mark into
+     `replay-fault-catalog-json-invalid`. Its plain form reaches
+     `too-few-workloads`, which is what made the difference attributable, so
+     the mark is now named there too. Malformed text keeps the JSON code.
 
 ## 8. Evidence rules
 
