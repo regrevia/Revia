@@ -1928,6 +1928,12 @@ It still changes language semantics and was not folded into Issues 1-3.
      layer had accepted the bytes, and the mark reached the JSON code. The mark
      is now named, and malformed text keeps the JSON code. The reader is
      covered directly rather than through the command, which reads a pin first.
+181. The VM result the receipt is built from is read by a second parser in the
+     same file, and it filed both its UTF-8 and its JSON failures as
+     `native-runtime-load-receipt-result-invalid`. A result of `{}` reaches that
+     same code, so the JSON layer had accepted the bytes; the mark did not make
+     the text undecodable, it only moved the failure. The mark is now named,
+     and a result that really is malformed keeps the result code.
 
 ## 8. Evidence rules
 

@@ -104,6 +104,9 @@ fn extract_vm_result_facts(
 ) -> Result<(String, String, String, String), RuntimeAuthorityError> {
     let source = std::str::from_utf8(result_bytes)
         .map_err(|_| RuntimeAuthorityError::new("native-runtime-load-receipt-result-invalid"))?;
+    if source.starts_with('\u{feff}') {
+        return Err(RuntimeAuthorityError::new("byte-order-mark-not-allowed"));
+    }
     let value = parse_json(source)
         .map_err(|_| RuntimeAuthorityError::new("native-runtime-load-receipt-result-invalid"))?;
     let JsonValue::Object(entries) = value else {
