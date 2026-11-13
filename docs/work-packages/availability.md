@@ -1959,6 +1959,14 @@ It still changes language semantics and was not folded into Issues 1-3.
      fields (`invalid-project-field`), which is how the bytes were shown to be
      acceptable. The mark is now named there too, and text that really is
      malformed keeps the parser's own code.
+185. The project run receipt had it too. Its parser shares the project JSON
+     parser and returned that parser's code unchanged, so a receipt that opens
+     with a byte-order mark was refused as `project-manifest-json-invalid` — a
+     manifest code on a receipt file. A receipt of `{}` gets past the JSON layer
+     and stops on the missing fields
+     (`native-project-run-receipt-fields-invalid`), which is how the bytes were
+     shown to be acceptable. The mark is now named there too, and text that
+     really is malformed keeps the parser's own code.
 
 ## 8. Evidence rules
 

@@ -99,6 +99,9 @@ fn digest(value: &JsonValue) -> String {
 }
 
 pub fn parse_project_run_receipt(source: &str) -> Result<ProjectRunReceipt, String> {
+    if source.starts_with('\u{feff}') {
+        return Err("byte-order-mark-not-allowed".to_owned());
+    }
     let value = parse_json(source).map_err(|error| error.code)?;
     let JsonValue::Object(entries) = value else {
         return Err("native-project-run-receipt-json-invalid".to_owned());
