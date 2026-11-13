@@ -1872,6 +1872,11 @@ It still changes language semantics and was not folded into Issues 1-3.
      `project-manifest-unreadable` — the manifest was the one thing that was
      fine. The loader now checks that the resolved root is a directory and
      reports `project-root-not-a-directory`.
+173. The module loader has refused symlinked modules since the filesystem
+     alias work, but `project.json` itself was read without looking at how it
+     was reached — a manifest symlinked to a copy outside the project loaded
+     and reported a healthy graph. It now refuses with
+     `project-manifest-symlink-not-allowed`, the same rule the modules follow.
 
 ## 8. Evidence rules
 

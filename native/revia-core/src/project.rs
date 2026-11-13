@@ -525,6 +525,13 @@ pub fn load_project_directory_with_diagnostics(
         return Err(ProjectLoadError::new("project-root-not-a-directory"));
     }
     let manifest_path = root.join("project.json");
+    let manifest_metadata = fs::symlink_metadata(&manifest_path)
+        .map_err(|_| ProjectLoadError::new("project-manifest-unreadable"))?;
+    if manifest_metadata.file_type().is_symlink() {
+        return Err(ProjectLoadError::new(
+            "project-manifest-symlink-not-allowed",
+        ));
+    }
     let manifest_bytes = fs::read(&manifest_path)
         .map_err(|_| ProjectLoadError::new("project-manifest-unreadable"))?;
     let manifest_source = std::str::from_utf8(&manifest_bytes)
