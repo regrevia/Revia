@@ -34,6 +34,8 @@ use crate::{
 pub const CAPABILITY_POLICY_SCHEMA: &str = "revia.capability-policy@0.1.0";
 /// The policy artifact is malformed, duplicated, or names an unknown field.
 pub const CAPABILITY_POLICY_INVALID: &str = "native-capability-policy-invalid";
+/// The policy text begins with a UTF-8 byte-order mark, which is not JSON.
+pub const BYTE_ORDER_MARK_NOT_ALLOWED: &str = "byte-order-mark-not-allowed";
 /// A graph names declared capabilities but the run supplied no policy.
 pub const CAPABILITY_POLICY_MISSING: &str = "native-host-capability-policy-missing";
 /// The policy grants a member this toolchain does not implement.
@@ -60,6 +62,9 @@ impl CapabilityPolicy {
 
     /// Parses a `revia.capability-policy@0.1.0` artifact.
     pub fn parse(source: &str) -> Result<Self, String> {
+        if source.starts_with('\u{feff}') {
+            return Err(BYTE_ORDER_MARK_NOT_ALLOWED.to_owned());
+        }
         let value =
             parse_json(source).map_err(|_| format!("{CAPABILITY_POLICY_INVALID}:not-json"))?;
         let JsonValue::Object(entries) = value else {

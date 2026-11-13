@@ -143,7 +143,12 @@ Policy parse failures, all prefixed `native-capability-policy-invalid:`:
 `grant-reference-empty`, `grant-members-not-an-array`,
 `grant-members-empty:<reference>`, `grant-member-not-text:<reference>`,
 `grant-member-empty:<reference>`,
-`grant-member-duplicate:<reference>.<member>`. The two `duplicate-field`
+`grant-member-duplicate:<reference>.<member>`. One reason is outside that
+vocabulary because it is not a policy-parse failure at all: a policy file
+opening with a UTF-8 byte-order mark is refused with
+`byte-order-mark-not-allowed`, the same code the single-file reader and the
+project manifest use, since the text is well-formed and only its prefix is not.
+The two `duplicate-field`
 branches in `CapabilityPolicy::parse` are defensive: `parse_json` collapses an
 object to unique keys, so text input cannot reach them. They are pinned by
 inspection, not by a test, and that is stated rather than papered over.
@@ -1877,6 +1882,15 @@ It still changes language semantics and was not folded into Issues 1-3.
      was reached — a manifest symlinked to a copy outside the project loaded
      and reported a healthy graph. It now refuses with
      `project-manifest-symlink-not-allowed`, the same rule the modules follow.
+174. A capability policy that opens with a byte-order mark decodes as valid
+     UTF-8, so it reached the JSON parser and came back as
+     `native-capability-policy-invalid:not-json` — the reader was told the
+     policy was not JSON when the JSON was intact and only the encoding prefix
+     was not. Modules (169), the project root (172) and the manifest (171) had
+     each already been given a name for that mark; the policy artifact was the
+     last text input still folding it into a decode failure. It now reports
+     `byte-order-mark-not-allowed`, matching `source.rs`, and the unmarked
+     policy still parses, so the rule is narrower rather than stricter.
 
 ## 8. Evidence rules
 

@@ -18,7 +18,7 @@ fn a_project_manifest_reached_through_a_symlink_is_refused() {
     let manifest = project.join("project.json");
     let elsewhere = root.join("manifest-copy.json");
     fs::rename(&manifest, &elsewhere).unwrap();
-    std::os::unix::fs::symlink(&elsewhere, &manifest).unwrap();
+    link_file(&elsewhere, &manifest);
 
     for command in ["project-check", "project-test", "project-surface-check"] {
         let output = run(&[command, project.to_str().unwrap()]);
@@ -48,6 +48,13 @@ fn run(arguments: &[&str]) -> process::Output {
 
 fn text(bytes: &[u8]) -> String {
     String::from_utf8_lossy(bytes).trim_end().to_owned()
+}
+
+fn link_file(original: &std::path::Path, link: &std::path::Path) {
+    #[cfg(unix)]
+    std::os::unix::fs::symlink(original, link).unwrap();
+    #[cfg(not(unix))]
+    std::os::windows::fs::symlink_file(original, link).unwrap();
 }
 
 fn temp_root(label: &str) -> PathBuf {
