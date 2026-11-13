@@ -150,6 +150,7 @@
     "native/revia-cli/tests/wp516_project_manifest_symlink.rs",
     "native/revia-cli/tests/wp517_policy_byte_order_mark.rs",
     "native/revia-cli/tests/wp518_registry_byte_order_mark.rs",
+    "native/revia-cli/tests/wp519_catalog_byte_order_mark.rs",
     "native/revia-conformance/Cargo.toml",
     "native/revia-conformance/src/lib.rs",
     "native/revia-conformance/src/main.rs",

@@ -1899,6 +1899,13 @@ It still changes language semantics and was not folded into Issues 1-3.
      which is what distinguishes this from 171 and 174: those readers own the
      artifact and can name the mark outright, whereas the registry already has
      a class and needs the reason inside it rather than instead of it.
+176. The replay workload catalog reader had the identical blind spot one layer
+     out: a catalog opening with a byte-order mark came back as
+     `replay-workload-catalog-json-invalid`. The tell is that the plain catalog
+     is rejected by the catalog's own rules (`too-few-workloads`), so the JSON
+     layer had already accepted the bytes; only the mark made the difference.
+     It now reports `byte-order-mark-not-allowed`, and genuinely malformed text
+     keeps the JSON code, which the same test pins.
 
 ## 8. Evidence rules
 
