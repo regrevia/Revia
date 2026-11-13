@@ -1867,6 +1867,11 @@ It still changes language semantics and was not folded into Issues 1-3.
      brace in a file whose JSON was intact. Modules with the same mark already
      got `byte-order-mark-not-allowed` (169); the manifest now gets the same
      name, because the mark is the whole problem.
+172. `fs::canonicalize` resolves a path but says nothing about what it
+     resolved to, so a regular file handed to `project-check` came back as
+     `project-manifest-unreadable` — the manifest was the one thing that was
+     fine. The loader now checks that the resolved root is a directory and
+     reports `project-root-not-a-directory`.
 
 ## 8. Evidence rules
 

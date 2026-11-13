@@ -521,6 +521,9 @@ pub fn load_project_directory_with_diagnostics(
 ) -> Result<NativeProject, ProjectLoadError> {
     let root = fs::canonicalize(root_directory.as_ref())
         .map_err(|_| ProjectLoadError::new("project-root-unreadable"))?;
+    if !root.is_dir() {
+        return Err(ProjectLoadError::new("project-root-not-a-directory"));
+    }
     let manifest_path = root.join("project.json");
     let manifest_bytes = fs::read(&manifest_path)
         .map_err(|_| ProjectLoadError::new("project-manifest-unreadable"))?;
