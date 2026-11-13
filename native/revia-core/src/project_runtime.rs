@@ -934,6 +934,9 @@ pub fn serialize_project_execution_plan(
 pub fn parse_project_execution_plan(
     source: &str,
 ) -> Result<NativeProjectExecutionPlan, ProjectRuntimeError> {
+    if source.starts_with('\u{feff}') {
+        return Err(ProjectRuntimeError::new("byte-order-mark-not-allowed"));
+    }
     let value = parse_json(source).map_err(|error| ProjectRuntimeError::new(&error.code))?;
     let plan = parse_plan_value(&value)?;
     let canonical = serialize_project_execution_plan(&plan)?;

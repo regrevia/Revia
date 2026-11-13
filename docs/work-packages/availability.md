@@ -1952,6 +1952,13 @@ It still changes language semantics and was not folded into Issues 1-3.
      layer and stops on the missing fields (`invalid-project-field`), which is
      how the bytes were shown to be acceptable. The mark is now named there too,
      and text that really is malformed keeps the parser's own code.
+184. The execution plan had the same problem again. `parse_project_execution_plan`
+     shares the project JSON parser, so a plan that opens with a byte-order mark
+     was refused as `project-manifest-json-invalid` — a manifest code on a plan
+     file. A plan of `{}` gets past the JSON layer and stops on the missing
+     fields (`invalid-project-field`), which is how the bytes were shown to be
+     acceptable. The mark is now named there too, and text that really is
+     malformed keeps the parser's own code.
 
 ## 8. Evidence rules
 
