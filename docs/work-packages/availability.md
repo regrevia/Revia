@@ -1911,6 +1911,11 @@ It still changes language semantics and was not folded into Issues 1-3.
      `replay-fault-catalog-json-invalid`. Its plain form reaches
      `too-few-workloads`, which is what made the difference attributable, so
      the mark is now named there too. Malformed text keeps the JSON code.
+178. The fault observation corpus reader is the fourth and last of these, and
+     the mark reached `native-fault-corpus-json-invalid` there as well. Its
+     plain form stops at `schema-or-size-invalid`, so the JSON layer had again
+     accepted the bytes. The mark is now named, and malformed text keeps the
+     JSON code in the same test.
 
 ## 8. Evidence rules
 

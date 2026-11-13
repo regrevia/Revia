@@ -505,6 +505,9 @@ pub fn serialize_native_fault_corpus(
 pub fn parse_native_fault_corpus(
     source: &str,
 ) -> Result<NativeFaultCorpus, NativeFaultCorpusError> {
+    if source.starts_with('\u{feff}') {
+        return Err(NativeFaultCorpusError::new("byte-order-mark-not-allowed"));
+    }
     let value = parse_json(source)
         .map_err(|_| NativeFaultCorpusError::new("native-fault-corpus-json-invalid"))?;
     let entries = exact_object(&value, &["cases", "schema"])?;
