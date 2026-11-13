@@ -59,6 +59,9 @@ const INVALID: &str = "declared-schema-registry-invalid";
 /// programmatic declarations, so duplicate references, members, parameters and
 /// built-in shadowing are rejected here as `declared-schema-invalid`.
 pub fn parse_registry(source: &str) -> Result<Vec<DeclaredSchema>, GraphError> {
+    if source.starts_with('\u{feff}') {
+        return Err(invalid("byte-order-mark-not-allowed"));
+    }
     let value = parse_json(source).map_err(|_| invalid("json"))?;
     let registry = object(&value, "registry")?;
     reject_unknown_keys(registry, &["definitions", "schema"], "registry")?;

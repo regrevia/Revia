@@ -1891,6 +1891,14 @@ It still changes language semantics and was not folded into Issues 1-3.
      last text input still folding it into a decode failure. It now reports
      `byte-order-mark-not-allowed`, matching `source.rs`, and the unmarked
      policy still parses, so the rule is narrower rather than stricter.
+175. The schema registry is the third artifact read through the same parser,
+     and it carried the same blind spot: every JSON failure came back as
+     `declared-schema-registry-invalid` with `actual: "json"`, so a registry
+     behind a byte-order mark was reported as unreadable JSON. It now reports
+     `actual: "byte-order-mark-not-allowed"` while keeping its own error class,
+     which is what distinguishes this from 171 and 174: those readers own the
+     artifact and can name the mark outright, whereas the registry already has
+     a class and needs the reason inside it rather than instead of it.
 
 ## 8. Evidence rules
 
