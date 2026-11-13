@@ -246,6 +246,7 @@
     "native/revia-core/tests/wp527_project_plan_byte_order_mark.rs",
     "native/revia-core/tests/wp528_project_receipt_byte_order_mark.rs",
     "native/revia-core/tests/wp529_comparison_catalog_byte_order_mark.rs",
+    "native/revia-core/tests/wp530_experiment_kit_byte_order_mark.rs",
     "native/revia-macos-identity/Cargo.toml",
     "native/revia-macos-identity/src/lib.rs",
     "native/revia-macos-identity/tests/peer_identity.rs",

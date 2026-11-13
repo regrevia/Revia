@@ -253,6 +253,9 @@ pub fn serialize_experiment_kit(kit: &ExperimentKit) -> Result<String, Experimen
 }
 
 pub fn parse_experiment_kit(source: &str) -> Result<ExperimentKit, ExperimentKitError> {
+    if source.starts_with('\u{feff}') {
+        return Err(ExperimentKitError::new("byte-order-mark-not-allowed"));
+    }
     let value =
         parse_json(source).map_err(|_| ExperimentKitError::new("experiment-kit-json-invalid"))?;
     let entries = exact_object(

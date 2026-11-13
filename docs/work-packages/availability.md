@@ -1974,6 +1974,13 @@ It still changes language semantics and was not folded into Issues 1-3.
      (`comparison-catalog-required-field-missing`), which is how the bytes were
      shown to be acceptable. The mark is now named there too, and text that
      really is malformed keeps the reader's own code.
+187. The experiment kit reader had it as well. It reports every parse failure
+     as `experiment-kit-json-invalid`, so a kit that opens with a byte-order
+     mark was called malformed JSON although its text is fine. A kit of `{}`
+     gets past the JSON layer and stops on the missing fields
+     (`experiment-kit-required-field-missing`), which is how the bytes were
+     shown to be acceptable. The mark is now named there too, and text that
+     really is malformed keeps the reader's own code.
 
 ## 8. Evidence rules
 
