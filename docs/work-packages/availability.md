@@ -1922,6 +1922,12 @@ It still changes language semantics and was not folded into Issues 1-3.
      the pin's own field rules, so the JSON layer accepts the bytes; with the
      mark in front the same document was called unreadable JSON. The mark is
      now named, and malformed text keeps the JSON code.
+180. The receipt reader behind the same command had the same shape and filed
+     its failures as `native-runtime-load-receipt-json-invalid`. A receipt of
+     `{}` stops at `native-runtime-load-receipt-fields-invalid`, so the JSON
+     layer had accepted the bytes, and the mark reached the JSON code. The mark
+     is now named, and malformed text keeps the JSON code. The reader is
+     covered directly rather than through the command, which reads a pin first.
 
 ## 8. Evidence rules
 

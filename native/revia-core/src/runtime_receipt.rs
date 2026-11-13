@@ -68,6 +68,9 @@ pub fn parse_runtime_load_receipt(
             "native-runtime-load-receipt-trailing-newline-missing",
         ));
     }
+    if source.starts_with('\u{feff}') {
+        return Err(RuntimeAuthorityError::new("byte-order-mark-not-allowed"));
+    }
     let value = parse_json(source)
         .map_err(|_| RuntimeAuthorityError::new("native-runtime-load-receipt-json-invalid"))?;
     let receipt = parse_receipt(&value)?;
