@@ -376,6 +376,9 @@ pub fn serialize_comparison_catalog(
 }
 
 pub fn parse_comparison_catalog(source: &str) -> Result<ComparisonCatalog, ComparisonCatalogError> {
+    if source.starts_with('\u{feff}') {
+        return Err(ComparisonCatalogError::new("byte-order-mark-not-allowed"));
+    }
     let value = parse_json(source)
         .map_err(|_| ComparisonCatalogError::new("comparison-catalog-json-invalid"))?;
     let entries = exact_object(&value, &["schema", "workloads"])?;

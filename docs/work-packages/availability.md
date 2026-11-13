@@ -1967,6 +1967,13 @@ It still changes language semantics and was not folded into Issues 1-3.
      (`native-project-run-receipt-fields-invalid`), which is how the bytes were
      shown to be acceptable. The mark is now named there too, and text that
      really is malformed keeps the parser's own code.
+186. So did the comparison catalog. Its reader reports every parse failure as
+     `comparison-catalog-json-invalid`, so a catalog that opens with a
+     byte-order mark was called malformed JSON although its text is fine. A
+     catalog of `{}` gets past the JSON layer and stops on the missing fields
+     (`comparison-catalog-required-field-missing`), which is how the bytes were
+     shown to be acceptable. The mark is now named there too, and text that
+     really is malformed keeps the reader's own code.
 
 ## 8. Evidence rules
 
