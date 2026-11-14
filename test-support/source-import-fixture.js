@@ -51,11 +51,11 @@ export async function temporaryRoot(missing) {
   return root
 }
 
-export function run(root) {
+export function run(root, mode = '--refresh') {
   return new Promise((resolve, reject) => {
     const child = spawn(
       process.execPath,
-      [join(root, 'scripts/build-source-import-manifest.js'), '--refresh'],
+      [join(root, 'scripts/build-source-import-manifest.js'), mode],
       { cwd: root },
     )
     let stdout = ''

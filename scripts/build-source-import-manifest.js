@@ -40,7 +40,13 @@ try {
   const manifest = await buildManifest(allowlist)
   const bytes = Buffer.from(canonicalJson(manifest))
   if (mode === '--check') {
-    const existing = refuseMark(await readFile(MANIFEST))
+    // The manifest is compared, not parsed, so a missing one is not drift: no
+    // bytes to differ from. Reading it threw a raw ENOENT with an absolute
+    // path, which stableCode() drops to the unnamed failure.
+    const existing = refuseMark(await readFile(MANIFEST).catch((error) => {
+      if (error?.code === 'ENOENT') throw new Error('source-import-manifest-missing')
+      throw error
+    }))
     if (!existing.equals(bytes)) throw new Error('source-import-manifest-drift')
   } else {
     await writeFile(MANIFEST, bytes)

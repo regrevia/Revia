@@ -2168,6 +2168,41 @@ the second test red. Its fixtures moved to
 so the two tests that build a temporary root share one copy, and the
 `source-import-explicit-path-missing` tests stay green on that shared fixture.
 
+196. Naming the manifest a `--check` could not find. `--refresh` writes both
+documents, and `--check` compares them, but only the allowlist was ever
+resolved with a reader that names its absence: `SOURCE_IMPORT_MANIFEST.json`
+went through a bare `readFile`, so a tree holding a fresh allowlist and no
+manifest — the first run after a checkout that skipped it, or a clone where
+the file was deleted — threw a raw `ENOENT` carrying an absolute path, and
+`stableCode()` dropped that to `source-import-failed`, the same word a
+document it cannot parse reports. Both repairs are written down and neither is
+that word: a missing manifest is a file to write, a stale one is a file to
+regenerate. A probe of the shipped gate put both cases in front of it — with
+the manifest deleted, `--check` exited 1 with `source-import-failed` on stderr
+and nothing on stdout, exactly as it does for a manifest that is not JSON at
+all. The read in `--check` now catches `ENOENT` and reports
+`source-import-manifest-missing`, a fifth name alongside the four the gate
+already gave. `--refresh` was never affected: it does not read the manifest,
+so it writes the file the check missed, which is what makes the two codes
+different repairs rather than two spellings of one. The catch is narrowed to
+`ENOENT` and sits on the comparison read rather than around the parse, so a
+manifest that is present but unreadable — a directory at the path, a file the
+process cannot open — keeps its own failure instead of being reported as
+absent, and a manifest that is present and differs is still
+`source-import-manifest-drift`. The three tests in
+[`test/source-import-manifest-missing.test.js`](../../test/source-import-manifest-missing.test.js)
+pin all of it: delete the manifest and `--check` exits 1 with the new code and
+empty stdout; edit a published file after a refresh and it exits 1 with
+`source-import-manifest-drift`; put a directory at the manifest path and it
+exits 1 with `source-import-failed`. All three mutations turned tests red —
+rethrowing the raw error restored `source-import-failed`, widening the catch
+to swallow every error relabelled the unreadable case as missing, and
+removing the catch did the same — and each restored file re-greened at 3/3.
+The fixtures come from the shared
+[`test-support/source-import-fixture.js`](../../test-support/source-import-fixture.js),
+whose `run` now takes the mode so a test can drive `--check` as well as
+`--refresh`.
+
 
 ## 8. Evidence rules
 

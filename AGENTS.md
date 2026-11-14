@@ -39,7 +39,10 @@ Revia repository.
    back. A source root the selection walks is not listed anywhere, so a tree
    that lost one has no stale entry to find: the gate reports
    `source-import-source-root-missing`, and only restoring the directory fixes
-   it.
+   it. The manifest is compared rather than parsed, so a missing one is not
+   drift — there are no bytes to disagree — and the gate says
+   `source-import-manifest-missing`; `--refresh` writes it, while a manifest
+   that is present and differs is still `source-import-manifest-drift`.
    `--refresh` rewrites the allowlist one path per line, in the same order
    `--check` reads it, so the diff of a refresh shows the files that
    changed and nothing else; do not reformat the list by hand.
