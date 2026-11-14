@@ -1991,6 +1991,27 @@ It still changes language semantics and was not folded into Issues 1-3.
      so a marked document is named even without the newline, and text that
      really is malformed keeps the reader's own code.
 
+189. Release evidence records are outcomes. `runtime/rc2.2.1/linux-native-evidence.json`
+     and its Windows sibling carry `source_commit`, `source_inventory_digest`,
+     `binary_sha256` and `archive_sha256`, which pin bytes to a commit, and none of
+     it says how the observation was made, so a reader who was not there can check
+     the artifact but not repeat the run behind it. `classifyEvidenceWitness` in
+     `src/toolchain/release-evidence-witness.js` answers the only question that can
+     be answered honestly about a record in hand: whether it names a witness, and
+     which parts of one it is missing. The shipped records name none, and the test
+     says so rather than passing by construction. A record that does carry a
+     witness must give the `command` that produced it plus the `environment_digest`
+     and `raw_log_sha256` of that run; a partial one is refused with every absent
+     field listed, so a half-written witness cannot ship green later. The obligation
+     is scoped to `measured-native` records: a `pending` target that names no
+     witness is not failing, it is making no claim. `docs/compatibility.md` states
+     the consequence in both halves of the page: a record without a witness cannot
+     support a `requires` sentence. Nothing in the published artifact moves — the
+     linux-x64 target stays `measured-native` with the same archive and binary
+     digests, and macOS arm64, macOS x86_64, Linux arm64 and Windows arm64 stay
+     `pending`.
+
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

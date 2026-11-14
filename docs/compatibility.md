@@ -19,6 +19,21 @@ complete language-output byte determinism.
 当前候选为 `v1.0.0-rc.2.2.1`，Linux x64 与 Windows x64 各自有独立原生证据。
 `measured-native` 仅适用于所列目标与记录中的候选，不证明 Stable V1.0 或所有语言产物均逐字节确定。
 
+Both evidence records are outcome records: `source_commit`,
+`source_inventory_digest`, `binary_sha256` and `archive_sha256` say which bytes
+a commit produced and which workflow run produced them. Neither carries a
+`witness`, so a record without a `witness` cannot support a `requires` sentence:
+the bytes can be checked, the observation behind them cannot be repeated. A
+record that does carry a `witness` must give the `command` that produced it and
+the `environment_digest` and `raw_log_sha256` of that run, and the release tests
+refuse a partial one.
+
+两份证据记录都是结果记录：`source_commit`、`source_inventory_digest`、
+`binary_sha256` 与 `archive_sha256` 说明哪个提交产出了哪些字节、由哪次工作流运行产出。
+两者都不带 `witness`，因此没有 `witness` 的记录不能支撑 `requires` 这类句子：
+字节可核，但产生它的那次观察无法复现。带 `witness` 的记录必须给出产生它的 `command`
+以及该次运行的 `environment_digest` 与 `raw_log_sha256`，残缺的会被发布测试拒绝。
+
 On a target that the candidate never published, `bin/revia` reports
 `pending target` and exits 69, naming the target and pointing back at this
 table; it does not claim the checkout is broken. Exit 70 means the checkout's
