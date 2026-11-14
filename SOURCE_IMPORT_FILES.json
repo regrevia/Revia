@@ -697,6 +697,7 @@
     "test/server-secret-macos-keychain.test.js",
     "test/source-import-allowlist-layout.test.js",
     "test/source-import-byte-order-mark.test.js",
+    "test/source-import-explicit-path-missing.test.js",
     "test/source-import-file-missing.test.js",
     "test/source-import-refresh-selection.test.js",
     "test/source-text.test.js",

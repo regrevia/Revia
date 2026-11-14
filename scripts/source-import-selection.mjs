@@ -94,7 +94,13 @@ export async function selectFiles(root) {
     for (const path of await walk(root, entry)) selected.add(path)
   }
   for (const entry of EXPLICIT_PATHS) {
-    const stat = await lstat(join(root, entry))
+    const stat = await lstat(join(root, entry)).catch((error) => {
+      // A published path that is gone means the tree lost a file the build
+      // must publish; a path the allowlist forgot is a stale list. Both used
+      // to report the unnamed failure, which names neither repair.
+      if (error?.code === 'ENOENT') throw new Error('source-import-explicit-path-missing')
+      throw error
+    })
     if (stat.isSymbolicLink()) throw new Error('source-import-symlink')
     if (stat.isDirectory()) {
       for (const path of await walk(root, entry)) selected.add(path)

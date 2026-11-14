@@ -32,7 +32,11 @@ Revia repository.
    gate also tells a path listed in the allowlist that is not in the tree
    (`source-import-file-missing`) from one that is there but is a directory or
    a symbolic link (`source-import-file-invalid`); run `--refresh` for the
-   first, and put the file back for the second.
+   first, and put the file back for the second. A path the selection publishes
+   itself is a third case: when one is gone the gate reports
+   `source-import-explicit-path-missing`, because the tree lost a file the build
+   must publish rather than the list going stale, and no refresh can bring it
+   back.
    `--refresh` rewrites the allowlist one path per line, in the same order
    `--check` reads it, so the diff of a refresh shows the files that
    changed and nothing else; do not reformat the list by hand.

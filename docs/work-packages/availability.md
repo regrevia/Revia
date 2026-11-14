@@ -2112,6 +2112,33 @@ the guide sentence in [`AGENTS.md`](../../AGENTS.md) turned only the guide test
 red. The neighbouring source-import tests — byte-order mark, missing path, and
 selection equality — stay green.
 
+194. A published path that disappeared reported the unnamed failure. The
+selection publishes five source roots plus an explicit list of files and
+directories; the roots are walked, so a missing root reads as an empty
+directory, but every explicit entry is resolved with `lstat`, and a `--refresh`
+against a tree that lost one of those files threw a raw `ENOENT`. `stableCode()`
+only keeps the message when it matches `^[a-z0-9-]+$`, so an `ENOENT` carrying a
+space and an absolute path collapsed to `source-import-failed` — the same word
+an unparseable document reports. An operator who deleted `AGENTS.md` saw
+"failed", not "you lost a file the build must publish". The selection now
+catches `ENOENT` and names `source-import-explicit-path-missing`, which is a
+third repair from the two the gate already named: a stale allowlist is fixed by
+`--refresh` and a file that is there but is a directory or a symbolic link is
+fixed by putting the file back, while a lost explicit path is fixed only by
+restoring the file, because a refresh cannot select what is not in the tree.
+[`test/source-import-explicit-path-missing.test.js`](../../test/source-import-explicit-path-missing.test.js)
+reads the explicit list out of the selection rather than keeping a second copy,
+builds a root with every published path except one, and requires `--refresh` to
+exit 1 with `source-import-explicit-path-missing` and empty stdout; the same
+root with the path present refreshes to exactly that list, sorted the way the
+selection sorts. Removing the catch turned the first test red while the
+second stayed green; rethrowing the raw error instead of naming it turned only
+the first red, with `source-import-failed` back in place of the name. The
+neighbouring source-import tests — byte-order mark, missing allowlist path,
+allowlist layout, and selection equality — stay green, and the guide sentence
+in [`AGENTS.md`](../../AGENTS.md) has to name the third code and say that no
+refresh repairs it.
+
 
 ## 8. Evidence rules
 
