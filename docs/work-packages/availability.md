@@ -2057,6 +2057,34 @@ codes still fire. Each guard was falsified by mutation — removing the
 throw turned three tests red, removing the `--refresh` read turned exactly the
 one test named for it red — and the guide sentence in
 [`AGENTS.md`](../../AGENTS.md) fails its own test when narrowed to one mode.
+192. The source-import gate called a stale allowlist entry "failed".
+`buildManifest()` read each listed path with `lstat()` and then asked whether it
+was a file; when the path was simply not there, `lstat()` threw `ENOENT` and
+`stableCode()` fell back to its unnamed `source-import-failed`, the same string
+a genuinely unparseable document reports. An operator who deleted a file saw
+"failed", not "you listed a file that is gone". The read now catches `ENOENT`
+and names `source-import-file-missing`, so the three refusals stay distinct: a
+path that is not in the tree (`source-import-file-missing`, repaired by
+`--refresh`), a path that is there but is a directory or a symbolic link
+(`source-import-file-invalid`, repaired by putting the file back), and a
+document that cannot be parsed (`source-import-failed`, repaired by hand).
+`--check` and `--write` both report the new code and write nothing, and the
+directory and symbolic-link rows keep the code they already had, so the new
+branch narrows the fallback without swallowing either neighbour.
+[`test/source-import-file-missing.test.js`](../../test/source-import-file-missing.test.js)
+runs the shipped builder from a copied root with a sorted allowlist naming both
+`note.txt` and an absent `gone.txt`: `--check` and `--write` exit 1 with
+`source-import-file-missing` and empty stdout; a directory and a symbolic link
+at listed paths still exit 1 with `source-import-file-invalid`; an edited file
+behind an unchanged manifest still reports `source-import-manifest-drift`; and
+the guide sentence in [`AGENTS.md`](../../AGENTS.md) has to name both codes and
+what each repair is. Each guard was falsified by mutation — restoring the bare
+`lstat()` turned the missing-path test red and nothing else, and the guide
+sentence fails its own test when narrowed to "a path the allowlist lists". The
+`--refresh` mode is deliberately not asserted here: it regenerates the
+allowlist from the tree and never reads the stale entry through
+`buildManifest()`, so `source-import-file-missing` is unreachable from that
+mode and the missing-path row above covers the two modes that can report it.
 
 
 ## 8. Evidence rules

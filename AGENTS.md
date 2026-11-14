@@ -28,7 +28,11 @@ Revia repository.
    scan before submitting. The source-import gate refuses an allowlist or
    manifest that opens with a UTF-8 byte-order mark, reporting
    `byte-order-mark-not-allowed` in `--check`, `--write` and `--refresh` alike,
-   so restore the file from Git instead of stripping the bytes by hand.
+   so restore the file from Git instead of stripping the bytes by hand. The
+   gate also tells a path listed in the allowlist that is not in the tree
+   (`source-import-file-missing`) from one that is there but is a directory or
+   a symbolic link (`source-import-file-invalid`); run `--refresh` for the
+   first, and put the file back for the second.
 
 ## Public Claims
 

@@ -94,7 +94,13 @@ async function buildManifest(allowlist) {
   const files = []
   for (const path of allowlist.files) {
     const absolute = join(ROOT, path)
-    const stat = await lstat(absolute)
+    // A path that is not there and a path that is there but is not a file are
+    // different repairs: one means the allowlist is stale, the other means the
+    // tree holds a directory or a link where a file belongs.
+    const stat = await lstat(absolute).catch((error) => {
+      if (error?.code === 'ENOENT') throw new Error('source-import-file-missing')
+      throw error
+    })
     if (!stat.isFile() || stat.isSymbolicLink()) {
       throw new Error('source-import-file-invalid')
     }
