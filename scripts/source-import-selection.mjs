@@ -91,7 +91,17 @@ const EXPLICIT_PATHS = [
 export async function selectFiles(root) {
   const selected = new Set()
   for (const entry of SOURCE_ROOTS) {
-    for (const path of await walk(root, entry)) selected.add(path)
+    // A published root is listed nowhere, so a tree that lost one has no stale
+    // entry to report: only restoring the directory fixes it. Without this the
+    // raw ENOENT from readdir carries a path, and the gate drops it to the
+    // unnamed failure, which names neither the root nor the repair. The catch
+    // sits here rather than inside walk so a directory that disappears partway
+    // through a walk is not reported as a root that was never there.
+    const paths = await walk(root, entry).catch((error) => {
+      if (error?.code === 'ENOENT') throw new Error('source-import-source-root-missing')
+      throw error
+    })
+    for (const path of paths) selected.add(path)
   }
   for (const entry of EXPLICIT_PATHS) {
     const stat = await lstat(join(root, entry)).catch((error) => {

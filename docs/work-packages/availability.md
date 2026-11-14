@@ -2114,8 +2114,7 @@ selection equality — stay green.
 
 194. A published path that disappeared reported the unnamed failure. The
 selection publishes five source roots plus an explicit list of files and
-directories; the roots are walked, so a missing root reads as an empty
-directory, but every explicit entry is resolved with `lstat`, and a `--refresh`
+directories; every explicit entry is resolved with `lstat`, and a `--refresh`
 against a tree that lost one of those files threw a raw `ENOENT`. `stableCode()`
 only keeps the message when it matches `^[a-z0-9-]+$`, so an `ENOENT` carrying a
 space and an absolute path collapsed to `source-import-failed` — the same word
@@ -2138,6 +2137,36 @@ neighbouring source-import tests — byte-order mark, missing allowlist path,
 allowlist layout, and selection equality — stay green, and the guide sentence
 in [`AGENTS.md`](../../AGENTS.md) has to name the third code and say that no
 refresh repairs it.
+195. A published source root that disappeared reported the unnamed failure,
+and the previous paragraph said the opposite. The selection publishes five
+source roots — `doc`, `native`, `src`, `test`, `test-support` — and none of
+them is listed anywhere, so a tree missing one has no stale entry to find.
+`walk` called `readdir` on the root and let the raw `ENOENT` out, which
+`stableCode()` dropped to `source-import-failed` for the same reason as the
+explicit path in 194: the message carries a space and an absolute path. A
+`--refresh` in a tree without `native/` therefore reported that something
+failed and named neither the root nor the repair, while 194's own paragraph
+claimed a missing root read as an empty directory — a claim written from
+reading the loop instead of running it, and wrong as soon as it was run. The
+selection now catches `ENOENT` around each root walk and reports
+`source-import-source-root-missing`, which is a fourth repair distinct from
+the three the gate already named: it is the one case no `--refresh` can fix
+and no allowlist can record, because the missing thing is never listed. The
+catch is narrowed to `ENOENT` and sits at the root loop rather than inside
+`walk`, so a fault found while descending keeps its own name and a directory
+that disappears mid-walk is not reported as a root that was never there.
+[`test/source-import-source-root-missing.test.js`](../../test/source-import-source-root-missing.test.js)
+builds a root with every published path present, removes `native/`, and
+requires `--refresh` to exit 1 with `source-import-source-root-missing` and
+empty stdout; a second test puts a symbolic link inside `doc/` and requires
+the refusal to stay `source-import-symlink`, so a catch that swallowed every
+error would be red. Removing the catch turned the first test red with
+`source-import-failed` back; rethrowing the raw error instead of naming it did
+the same; replacing the narrowed catch with an unconditional one turned only
+the second test red. Its fixtures moved to
+[`test-support/source-import-fixture.js`](../../test-support/source-import-fixture.js)
+so the two tests that build a temporary root share one copy, and the
+`source-import-explicit-path-missing` tests stay green on that shared fixture.
 
 
 ## 8. Evidence rules
