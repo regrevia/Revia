@@ -88,6 +88,10 @@ A host that fails to load the binary reports a missing `GLIBC_2.39` version, for
 example `revia: /lib/x86_64-linux-gnu/libc.so.6: version 'GLIBC_2.39' not
 found`; the `libc.so.6` path differs by distribution (RHEL-family hosts usually
 use `/lib64/libc.so.6`), and a different path does not change the conclusion.
+That last part is reasoning about the loader's message format, not a recorded
+observation: the example was not re-run from a second path, and
+`runtime/rc2.2.1/loader-path-probe.json` records that state as `pending` instead
+of a measurement.
 
 No `-musl` or static variant is published for this candidate. On an older glibc
 baseline, either run the published binary inside a container whose distribution
@@ -128,7 +132,9 @@ glibc 的容器里构建只会抬高该下限，不会使其更低。发布更�
 
 这类主机上的加载错误形如（外部报告的形状，不是本机复现的完整记录；
 `libc.so.6` 的路径因发行版而异，Debian/Ubuntu 是上面这个，RHEL 系通常形如
-`/lib64/libc.so.6`，路径不同不改变结论）：
+`/lib64/libc.so.6`，路径不同不改变结论；但这一句是对加载器消息格式的推理，不是已记录
+的观察：上面的例子没有从第二条路径重跑过，`runtime/rc2.2.1/loader-path-probe.json`
+记录的是 `pending` 这一状态，而不是一次测量）：
 
 ```
 revia: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.39' not found (required by ./revia)

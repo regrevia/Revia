@@ -2011,6 +2011,24 @@ It still changes language semantics and was not folded into Issues 1-3.
      digests, and macOS arm64, macOS x86_64, Linux arm64 and Windows arm64 stay
      `pending`.
 
+190. The loader-path sentence had no test behind it. `docs/compatibility.md` shows
+     one loader failure from `/lib/x86_64-linux-gnu/libc.so.6`, then says the
+     `libc.so.6` path differs by distribution and that a different path does not
+     change the conclusion — reasoning about the loader's message format, not an
+     observation anyone recorded. `runtime/rc2.2.1/loader-path-probe.json` now
+     carries that state as `pending`, with the reason: no host below glibc 2.39 was
+     available, and the example was neither reproduced nor re-run. The page says the
+     same thing in both halves instead of standing on the example alone, and names
+     the record. `classifyLoaderPathProbe` in `src/toolchain/loader-path-probe.js`
+     is the gate: a probe counts as measured only with two distinct loader-reported
+     paths whose diagnostics agree once the path is masked, so a single path or a
+     message that changes with the path cannot be reported as path independence.
+     Flipping the record to `measured` moves the obligation onto the page, which
+     must then cite the observation it now has; the test fails until it does. No
+     measurement is claimed that was not taken, and the published artifact does not
+     move.
+
+
 
 ## 8. Evidence rules
 

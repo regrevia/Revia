@@ -1,0 +1,8 @@
+{
+  "schema": "revia.loader-path-probe@1.0.0",
+  "version": "1.0.0-rc.2.2.1",
+  "target": "linux-x64",
+  "status": "pending",
+  "probes": [],
+  "unrecorded_reason": "no host below glibc 2.39 was available; the loader-failure example in docs/compatibility.md was neither reproduced nor re-run from a second libc.so.6 path"
+}
