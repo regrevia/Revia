@@ -33,6 +33,9 @@ Revia repository.
    (`source-import-file-missing`) from one that is there but is a directory or
    a symbolic link (`source-import-file-invalid`); run `--refresh` for the
    first, and put the file back for the second.
+   `--refresh` rewrites the allowlist one path per line, in the same order
+   `--check` reads it, so the diff of a refresh shows the files that
+   changed and nothing else; do not reformat the list by hand.
 
 ## Public Claims
 

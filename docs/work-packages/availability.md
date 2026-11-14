@@ -2087,6 +2087,32 @@ allowlist from the tree and never reads the stale entry through
 mode and the missing-path row above covers the two modes that can report it.
 
 
+193. A refresh rewrote every line of the allowlist to admit one file.
+`--refresh` rendered the whole list through `canonicalJson()`, which sorts the
+keys and prints one line, while the checked-in
+[`SOURCE_IMPORT_FILES.json`](../../SOURCE_IMPORT_FILES.json) keeps one path per
+line. Running the documented repair therefore turned a one-entry admission into
+a 709-line rewrite: the diff showed every path and the admission itself was the
+one thing a reviewer could not find. The layout now lives in a single exported
+function, `renderAllowlist()`, in
+[`scripts/source-import-selection.mjs`](../../scripts/source-import-selection.mjs),
+and both the checked-in file and `--refresh` render through it, so the two
+cannot drift into different shapes again. The order is still `compareUtf8`, the
+order `--check` reads, and the schema string is exported beside it so the
+writer and the reader cannot disagree about the name either. A measured
+`--refresh` on the repository now rewrites one line, not 709:
+[`test/source-import-allowlist-layout.test.js`](../../test/source-import-allowlist-layout.test.js)
+re-renders the committed list from its own paths and requires the result to be
+byte-identical, admits one path between two others and requires the diff to be
+exactly one added entry, and requires the builder to write through
+`renderAllowlist()` rather than rebuild the string itself. Rendering the list on
+one line turned the first two tests red while the wiring test stayed green;
+bypassing the function in the builder turned only the wiring test red; narrowing
+the guide sentence in [`AGENTS.md`](../../AGENTS.md) turned only the guide test
+red. The neighbouring source-import tests — byte-order mark, missing path, and
+selection equality — stay green.
+
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

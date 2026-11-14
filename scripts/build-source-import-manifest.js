@@ -9,7 +9,7 @@ import {
 } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { compareUtf8, selectFiles } from './source-import-selection.mjs'
+import { ALLOWLIST_SCHEMA, compareUtf8, renderAllowlist, selectFiles } from './source-import-selection.mjs'
 
 const ROOT = resolve(fileURLToPath(new URL('../', import.meta.url)))
 const ALLOWLIST = join(ROOT, 'SOURCE_IMPORT_FILES.json')
@@ -34,10 +34,7 @@ try {
     // rewriting the file would silently erase the one thing that was wrong.
     await readMarked(ALLOWLIST)
     const files = await selectFiles(ROOT)
-    await writeFile(ALLOWLIST, `${canonicalJson({
-      files,
-      schema: 'revia.source-import-allowlist@1.0.0',
-    })}`)
+    await writeFile(ALLOWLIST, renderAllowlist(files))
   }
   const allowlist = await readAllowlist()
   const manifest = await buildManifest(allowlist)
@@ -60,7 +57,7 @@ try {
 
 async function readAllowlist() {
   const value = JSON.parse(refuseMark(await readFile(ALLOWLIST)).toString('utf8'))
-  if (value?.schema !== 'revia.source-import-allowlist@1.0.0'
+  if (value?.schema !== ALLOWLIST_SCHEMA
     || !Array.isArray(value.files)
     || value.files.length === 0
     || value.files.some((path) => !safePath(path))) {

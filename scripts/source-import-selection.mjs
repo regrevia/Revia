@@ -124,6 +124,21 @@ async function walk(root, relative) {
   return files
 }
 
+// The allowlist is reviewed as a diff. Rendered on one line, admitting a single
+// file rewrites every other line with it and buries the admission; rendered one
+// path per line, the admission is the only line the diff shows. Both the
+// checked-in file and `--refresh` go through this function so the two cannot
+// disagree about the layout.
+export const ALLOWLIST_SCHEMA = 'revia.source-import-allowlist@1.0.0'
+
+export function renderAllowlist(files) {
+  // The last entry carries no comma, so a one-line addition is a one-line diff
+  // rather than a rewrite of the entry above it.
+  const entries = [...files].sort(compareUtf8).map((path) => `    ${JSON.stringify(path)}`)
+  const body = entries.length === 0 ? '' : `\n${entries.join(',\n')}\n  `
+  return `{\n  "files": [${body}],\n  "schema": "${ALLOWLIST_SCHEMA}"\n}\n`
+}
+
 export function compareUtf8(left, right) {
   return Buffer.compare(Buffer.from(left), Buffer.from(right))
 }
