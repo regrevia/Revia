@@ -62,7 +62,14 @@ try {
 }
 
 async function readAllowlist() {
-  const value = JSON.parse(refuseMark(await readFile(ALLOWLIST)).toString('utf8'))
+  // --refresh writes this file; every other mode reads it. Without it there is
+  // no list to compare or to write from, and the raw ENOENT it threw carried
+  // an absolute path that stableCode() dropped to the unnamed failure.
+  const source = await readFile(ALLOWLIST).catch((error) => {
+    if (error?.code === 'ENOENT') throw new Error('source-import-allowlist-missing')
+    throw error
+  })
+  const value = JSON.parse(refuseMark(source).toString('utf8'))
   if (value?.schema !== ALLOWLIST_SCHEMA
     || !Array.isArray(value.files)
     || value.files.length === 0

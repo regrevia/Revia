@@ -2203,6 +2203,34 @@ The fixtures come from the shared
 whose `run` now takes the mode so a test can drive `--check` as well as
 `--refresh`.
 
+197. Naming the allowlist a read could not find. The fix in the previous
+package gave the manifest a name for its absence, and the same probe showed
+the other document in the same state reported the unnamed failure: delete
+`SOURCE_IMPORT_FILES.json` and `--check` exits 1 with `source-import-failed`
+on stderr and nothing on stdout, while `--write` does the same. The list was
+opened with a bare `readFile` inside `readAllowlist()`, so an absent one threw
+a raw `ENOENT` carrying an absolute path, and `stableCode()` dropped that to
+the same word a document it cannot parse reports. Every path the manifest
+hashes comes out of that list, so a tree without one has nothing to compare
+and nothing to write from — a state the operator meets right after a checkout
+that skipped it. `--refresh` is the mode that writes the list, so for it an
+absent one is the empty case it exists to fix: the probe confirmed it already
+exits 0 there and writes a complete manifest, and only the two modes that read
+the list were misreporting. The read now catches `ENOENT` and reports
+`source-import-allowlist-missing`, a sixth name alongside the five the gate
+already gave. The catch is narrowed to `ENOENT` and wraps only the read, so a
+directory at the path, or a file the process cannot open, keeps its own
+failure instead of being reported as absent — the operator would otherwise
+rewrite a list that is already there. The three tests in
+[`test/source-import-allowlist-missing.test.js`](../../test/source-import-allowlist-missing.test.js)
+pin all of it: delete the list and both reading modes exit 1 with the new code
+and empty stdout; `--refresh` still exits 0 and writes a manifest; put a
+directory at the path and the read keeps `source-import-failed`. All three
+mutations turned tests red — rethrowing the raw error restored
+`source-import-failed`, widening the catch to swallow every error relabelled
+the unreadable case as missing, and removing the catch did the same — and each
+restored file re-greened at 3/3.
+
 
 ## 8. Evidence rules
 

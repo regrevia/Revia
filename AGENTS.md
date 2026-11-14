@@ -42,7 +42,11 @@ Revia repository.
    it. The manifest is compared rather than parsed, so a missing one is not
    drift — there are no bytes to disagree — and the gate says
    `source-import-manifest-missing`; `--refresh` writes it, while a manifest
-   that is present and differs is still `source-import-manifest-drift`.
+   that is present and differs is still `source-import-manifest-drift`. The
+   allowlist reads the same way: a tree without one is
+   `source-import-allowlist-missing` in `--check` and `--write`, while
+   `--refresh` writes it, so an absent list is the state that mode exists to
+   fix rather than a fault.
    `--refresh` rewrites the allowlist one path per line, in the same order
    `--check` reads it, so the diff of a refresh shows the files that
    changed and nothing else; do not reformat the list by hand.
