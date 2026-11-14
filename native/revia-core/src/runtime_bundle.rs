@@ -73,6 +73,9 @@ pub fn serialize_runtime_bundle(
 }
 
 pub fn parse_runtime_bundle(source: &str) -> Result<NativeRuntimeBundle, RuntimeBundleError> {
+    if source.starts_with('\u{feff}') {
+        return Err(RuntimeBundleError::new("byte-order-mark-not-allowed"));
+    }
     if !source.ends_with('\n') {
         return Err(RuntimeBundleError::new(
             "native-runtime-bundle-trailing-newline-missing",

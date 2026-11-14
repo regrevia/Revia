@@ -1982,6 +1982,15 @@ It still changes language semantics and was not folded into Issues 1-3.
      shown to be acceptable. The mark is now named there too, and text that
      really is malformed keeps the reader's own code.
 
+188. The runtime bundle reader too. It reports every parse failure as
+     `native-runtime-bundle-json-invalid`, so a bundle that opens with a
+     byte-order mark was called malformed JSON although its text is fine. A
+     bundle of `{}` gets past the JSON layer and stops on the fields
+     (`native-runtime-bundle-fields-invalid`), which is how the bytes were shown
+     to be acceptable. The mark is now named ahead of the trailing-newline gate,
+     so a marked document is named even without the newline, and text that
+     really is malformed keeps the reader's own code.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that
