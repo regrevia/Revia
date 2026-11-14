@@ -2027,7 +2027,36 @@ It still changes language semantics and was not folded into Issues 1-3.
      must then cite the observation it now has; the test fails until it does. No
      measurement is claimed that was not taken, and the published artifact does not
      move.
+191. The source-import gate refused a byte-order mark without naming it.
 
+`--check` on an allowlist that opens with a UTF-8 byte-order mark failed with
+`source-import-failed`, `stableCode()`'s fallback for any error whose message
+is not a code. The mark is not a corrupt document: the bytes are well-formed
+UTF-8 and the JSON behind them parses on its own, so the one thing wrong with
+the file was the only thing the reader could not say. The same three bytes
+made `--refresh` rewrite the allowlist without ever reading it, so the mode
+that erased the mark accepted what `--check` rejected.
+
+Both halves are closed by refusing the mark by name, before any parse or
+comparison sees the text: `refuseMark` in
+[`scripts/build-source-import-manifest.js`](../../scripts/build-source-import-manifest.js)
+throws `byte-order-mark-not-allowed`, the code the native readers already
+publish for the same defect class, and `--refresh` reads the existing
+allowlist through it first, so it leaves a marked file untouched instead of
+quietly erasing the defect. Drift keeps `source-import-manifest-drift`, a
+genuinely unparseable file still reports `source-import-failed`, and no bytes
+are ever stripped.
+
+Six tests in
+[`test/source-import-byte-order-mark.test.js`](../../test/source-import-byte-order-mark.test.js)
+run the shipped script against a temporary copy of itself, so the
+repository's own allowlist is never the fixture: a marked allowlist is named
+in `--check` and `--write`, a marked manifest is named rather than reported as
+drift, `--refresh` refuses and leaves the bytes intact, and the two older
+codes still fire. Each guard was falsified by mutation — removing the
+throw turned three tests red, removing the `--refresh` read turned exactly the
+one test named for it red — and the guide sentence in
+[`AGENTS.md`](../../AGENTS.md) fails its own test when narrowed to one mode.
 
 
 ## 8. Evidence rules

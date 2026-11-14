@@ -25,7 +25,10 @@ Revia repository.
    `cargo test --workspace --offline`, `cargo fmt --all -- --check`, and
    `cargo clippy --workspace --offline --all-targets -- -D warnings`.
 6. Run `git diff --check`, `npm run source:manifest`, and the secret/privacy
-   scan before submitting.
+   scan before submitting. The source-import gate refuses an allowlist or
+   manifest that opens with a UTF-8 byte-order mark, reporting
+   `byte-order-mark-not-allowed` in `--check`, `--write` and `--refresh` alike,
+   so restore the file from Git instead of stripping the bytes by hand.
 
 ## Public Claims
 

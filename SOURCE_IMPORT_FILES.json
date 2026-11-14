@@ -695,6 +695,7 @@
     "test/server-profile.test.js",
     "test/server-secret-deployment.test.js",
     "test/server-secret-macos-keychain.test.js",
+    "test/source-import-byte-order-mark.test.js",
     "test/source-import-refresh-selection.test.js",
     "test/source-text.test.js",
     "test/structured-patch.test.js",

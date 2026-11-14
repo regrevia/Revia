@@ -14,6 +14,11 @@ import { compareUtf8, selectFiles } from './source-import-selection.mjs'
 const ROOT = resolve(fileURLToPath(new URL('../', import.meta.url)))
 const ALLOWLIST = join(ROOT, 'SOURCE_IMPORT_FILES.json')
 const MANIFEST = join(ROOT, 'SOURCE_IMPORT_MANIFEST.json')
+// A leading mark is well-formed UTF-8, so nothing below can tell a marked
+// document from a corrupt one once it has been decoded: the bytes are refused
+// here, by name, before any parse or comparison sees the text.
+const BYTE_ORDER_MARK = Buffer.from([0xef, 0xbb, 0xbf])
+const BYTE_ORDER_MARK_CODE = 'byte-order-mark-not-allowed'
 
 const mode = process.argv[2]
 if (!['--refresh', '--write', '--check'].includes(mode)) {
@@ -25,6 +30,9 @@ if (!['--refresh', '--write', '--check'].includes(mode)) {
 
 try {
   if (mode === '--refresh') {
+    // --check refuses a marked allowlist, so --refresh has to refuse it too;
+    // rewriting the file would silently erase the one thing that was wrong.
+    await readMarked(ALLOWLIST)
     const files = await selectFiles(ROOT)
     await writeFile(ALLOWLIST, `${canonicalJson({
       files,
@@ -35,7 +43,7 @@ try {
   const manifest = await buildManifest(allowlist)
   const bytes = Buffer.from(canonicalJson(manifest))
   if (mode === '--check') {
-    const existing = await readFile(MANIFEST)
+    const existing = refuseMark(await readFile(MANIFEST))
     if (!existing.equals(bytes)) throw new Error('source-import-manifest-drift')
   } else {
     await writeFile(MANIFEST, bytes)
@@ -51,7 +59,7 @@ try {
 }
 
 async function readAllowlist() {
-  const value = JSON.parse(await readFile(ALLOWLIST, 'utf8'))
+  const value = JSON.parse(refuseMark(await readFile(ALLOWLIST)).toString('utf8'))
   if (value?.schema !== 'revia.source-import-allowlist@1.0.0'
     || !Array.isArray(value.files)
     || value.files.length === 0
@@ -64,6 +72,22 @@ async function readAllowlist() {
     throw new Error('source-import-allowlist-order-invalid')
   }
   return value
+}
+
+function refuseMark(bytes) {
+  if (bytes.subarray(0, BYTE_ORDER_MARK.length).equals(BYTE_ORDER_MARK)) {
+    throw new Error(BYTE_ORDER_MARK_CODE)
+  }
+  return bytes
+}
+
+async function readMarked(path) {
+  try {
+    return refuseMark(await readFile(path))
+  } catch (error) {
+    if (error?.code === 'ENOENT') return null
+    throw error
+  }
 }
 
 async function buildManifest(allowlist) {
