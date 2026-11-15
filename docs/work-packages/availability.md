@@ -2357,6 +2357,34 @@ folding the unreadable case into the missing one — each restored file
 re-greening at 2/2, 3/3 and 2/2.
 
 
+### WP-208 — Name a source root that is not a directory
+
+WP-207 mapped every refusal the walk meets to a single name, which was right for
+a permission and wrong for the other case that reaches the same call: a tree
+that holds a file where a source root belongs. `readdir()` reports `ENOTDIR`
+there, and the operator was told to look at mode bits when the repair is to
+remove the file and put the directory back.
+
+`walk()` now tells them apart, and `ENOTDIR` reports
+`source-import-source-root-invalid`. The three cases stay distinct: a root that
+is gone keeps `source-import-source-root-missing` (restore it), a root that is a
+file is `source-import-source-root-invalid` (replace it), and a directory the
+process may not enter stays `source-import-directory-unreadable` (fix the
+permission).
+
+[`test/source-import-source-root-invalid.test.js`](../../test/source-import-source-root-invalid.test.js)
+replaces `src` with a regular file and expects the new name, then pins the
+refusal it was split from by locking a root and expecting
+`source-import-directory-unreadable`, so a later change cannot collapse the two
+back into one.
+
+Two mutations made a suite red and each restored file re-greened: deleting the
+`ENOTDIR` branch leaves the new case red and the missing-root case green, while
+deleting the `ENOENT` rethrow leaves the new case green and the missing-root
+case red. Handling `ENOTDIR` without ordering it after `ENOENT` would report
+every absent root as invalid, which is why the order is pinned by the second
+case.
+
 ### WP-207 — Name a directory the walk cannot enter
 
 `--refresh` is the only mode that walks the tree; `--check` and `--write`

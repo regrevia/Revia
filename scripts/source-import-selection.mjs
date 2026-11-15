@@ -131,6 +131,10 @@ async function walk(root, relative) {
   // root's own absence stays the caller's ENOENT: this maps only the refusal.
   const entries = await readdir(absolute, { withFileTypes: true }).catch((error) => {
     if (error?.code === 'ENOENT') throw error
+    // A root the tree has a file at instead of a directory has nothing to
+    // enter, so no permission fixes it: it has to be removed and replaced.
+    // Reporting the refusal for it sent the operator to look at mode bits.
+    if (error?.code === 'ENOTDIR') throw new Error('source-import-source-root-invalid')
     throw new Error('source-import-directory-unreadable')
   })
   const files = []

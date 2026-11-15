@@ -74,6 +74,10 @@ Revia repository.
    `source-import-directory-unreadable`. A root that is gone keeps
    `source-import-source-root-missing`, so a directory to restore and a
    permission to fix stay apart.
+   A root the tree holds a file at instead of a directory has nothing to
+   enter, so no permission fixes it: it is removed and replaced, not chmodded,
+   and it reports `source-import-source-root-invalid` rather than the refusal
+   above.
    A listed path the process is not allowed to look at is neither of those: it
    is there, it is a file, and the directory holding it cannot be entered, so
    every mode reports `source-import-file-unreadable` rather than the unnamed
