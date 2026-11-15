@@ -702,6 +702,7 @@
     "test/source-import-explicit-path-missing.test.js",
     "test/source-import-file-missing.test.js",
     "test/source-import-manifest-missing.test.js",
+    "test/source-import-manifest-unwritable.test.js",
     "test/source-import-refresh-selection.test.js",
     "test/source-import-source-root-missing.test.js",
     "test/source-text.test.js",

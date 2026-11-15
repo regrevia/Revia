@@ -2231,6 +2231,31 @@ mutations turned tests red — rethrowing the raw error restored
 the unreadable case as missing, and removing the catch did the same — and each
 restored file re-greened at 3/3.
 
+198. Naming a manifest the write could not land. The two packages before this
+one named what a read could not find, and the probe that fixed them turned up
+the opposite side: with a directory sitting on `SOURCE_IMPORT_MANIFEST.json`,
+`--refresh` and `--write` both exit 1 with nothing on stdout and
+`source-import-failed` on stderr. The write was a bare `await writeFile`, so
+the `EISDIR` it threw carried an absolute path and `stableCode()` dropped that
+to the same word every unlisted failure reports. Nothing in it says the file
+the gate just computed cannot be put on disk, which is the one thing those
+modes do after the bytes are built. The write now catches and reports
+`source-import-manifest-unwritable`, a seventh name. Unlike the reads, every
+failure here is that same fault: the bytes are in hand before the write
+starts, so a failure means the path will not take them, and there is no third
+case to keep separate. `--check` is deliberately outside the guard — it never
+writes, so a directory at the manifest path there is the unreadable case the
+previous package already names, and reporting it as unwritable would send the
+operator to change permissions on something whose real fault is that it cannot
+be read. The two tests in
+[`test/source-import-manifest-unwritable.test.js`](../../test/source-import-manifest-unwritable.test.js)
+pin the pair: with a directory on the path, both writing modes exit 1 with the
+new code and empty stdout, while `--check` still exits 1 with
+`source-import-failed`. Both mutations turned tests red — removing the catch
+put the writing modes back on the unnamed failure, and widening it to the
+check-branch read relabelled the unreadable case as unwritable — and each
+restored file re-greened at 2/2.
+
 
 ## 8. Evidence rules
 

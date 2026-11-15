@@ -49,7 +49,13 @@ try {
     }))
     if (!existing.equals(bytes)) throw new Error('source-import-manifest-drift')
   } else {
-    await writeFile(MANIFEST, bytes)
+    // The write either lands or it does not, so every failure here is the
+    // same fault: the path cannot take the file. A directory sitting on it
+    // threw EISDIR with an absolute path, which stableCode() dropped to the
+    // unnamed failure.
+    await writeFile(MANIFEST, bytes).catch(() => {
+      throw new Error('source-import-manifest-unwritable')
+    })
   }
   process.stdout.write(`${canonicalJson({
     file_count: manifest.files.length,
