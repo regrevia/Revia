@@ -2357,6 +2357,28 @@ folding the unreadable case into the missing one — each restored file
 re-greening at 2/2, 3/3 and 2/2.
 
 
+### WP-211 — Refuse a source root that is a link
+
+Every link in the tree was already refused — an entry inside a walked root, an
+explicit path, the allowlist, the manifest — but a link standing on a source root
+got through, because `selectFiles` enters the walk before anything looks at the
+root itself. A root pointing at another directory therefore published whatever it
+pointed at, and `--refresh` exited `0` on a tree whose `src` was not the tree's
+own.
+
+`selectFiles` now asks the root with `lstat` before walking it and refuses a link
+with `source-import-symlink`, the name every other link already reports. Only a
+link is refused: an absent root keeps `source-import-source-root-missing` and a
+file keeps `source-import-source-root-invalid`.
+
+[`test/source-import-source-root-symlink.test.js`](../../test/source-import-source-root-symlink.test.js)
+points `src` at a sibling directory holding a stray file and expects the refusal,
+then refreshes a real directory and expects success.
+
+Two mutations made a suite red and each restored file re-greened: dropping the
+`lstat` check leaves the link case red, while refusing every root names the absent
+and file cases wrongly — the second is why the check is `isSymbolicLink()`.
+
 ### WP-210 — Name an unreadable list in `--refresh` as well
 
 `--refresh` reads the allowlist before replacing it, so a marked list is refused

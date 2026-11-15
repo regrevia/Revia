@@ -91,6 +91,16 @@ const EXPLICIT_PATHS = [
 export async function selectFiles(root) {
   const selected = new Set()
   for (const entry of SOURCE_ROOTS) {
+    // Every other link in the tree is refused: a link inside a walked root is
+    // named by the walk, an explicit path is refused by its own check, and the
+    // allowlist and manifest have names of their own. A link standing on a
+    // source root was the one that got through -- the walk is entered before
+    // anything looks at the root itself -- so a root pointing elsewhere
+    // published whatever it pointed at instead of the tree. The root is asked
+    // first, and only a link is refused, so absent and file roots keep the
+    // names below.
+    const rootStat = await lstat(join(root, entry)).catch(() => null)
+    if (rootStat?.isSymbolicLink()) throw new Error('source-import-symlink')
     // A published root is listed nowhere, so a tree that lost one has no stale
     // entry to report: only restoring the directory fixes it. Without this the
     // raw ENOENT from readdir carries a path, and the gate drops it to the

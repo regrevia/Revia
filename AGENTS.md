@@ -86,6 +86,11 @@ Revia repository.
    enter, so no permission fixes it: it is removed and replaced, not chmodded,
    and it reports `source-import-source-root-invalid` rather than the refusal
    above.
+   A root that is itself a symbolic link is neither: the walk is entered before
+   anything looks at the root, so it published whatever the link pointed at
+   instead of the tree. It is `source-import-symlink`, the name every other
+   link in the tree already reports, and the root is asked about before the
+   walk so absent and file roots keep their own names.
    A listed path the process is not allowed to look at is neither of those: it
    is there, it is a file, and the directory holding it cannot be entered, so
    every mode reports `source-import-file-unreadable` rather than the unnamed
