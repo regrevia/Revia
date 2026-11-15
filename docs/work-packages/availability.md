@@ -2357,6 +2357,35 @@ folding the unreadable case into the missing one — each restored file
 re-greening at 2/2, 3/3 and 2/2.
 
 
+### WP-212 — Refuse a published path that changed kind
+
+An explicit path is published whether it is a file or a directory, so the kind a
+path had is what the list means. Nothing checked it. A workflow file replaced by
+a directory refreshed clean and published the directory's contents while the
+workflow itself dropped out of the set; the one declared directory, replaced by a
+file, was published as that file and its contents vanished — both exits `0`.
+
+`selectFiles` now compares the kind it finds with the kind the list declares, and
+refuses a mismatch with `source-import-explicit-path-invalid`. The directory is
+named in `EXPLICIT_DIRECTORIES` so the kind is checked rather than assumed. A
+missing path keeps `source-import-explicit-path-missing` and an unenterable one
+keeps `source-import-explicit-path-unreadable`.
+
+The fixture wrote every published path as a file, including the declared
+directory, so a healthy root looked exactly like a tree whose directory had been
+replaced. It now reproduces the kind each path has in the repository and walks
+the declared directory, and `publishedSelection` reports what a refresh publishes
+for that tree.
+
+[`test/source-import-explicit-path-invalid-kind.test.js`](../../test/source-import-explicit-path-invalid-kind.test.js)
+replaces the workflow with a directory and the directory with a file, expecting
+the refusal both ways, then refreshes a healthy tree and expects the declared
+directory's contents to stay published.
+
+Two mutations made a suite red and each restored file re-greened: dropping the
+comparison leaves both counterexamples red, while refusing every directory names
+a healthy tree wrongly — the second is why the declared kind is consulted.
+
 ### WP-211 — Refuse a source root that is a link
 
 Every link in the tree was already refused — an entry inside a walked root, an

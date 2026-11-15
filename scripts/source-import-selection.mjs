@@ -88,6 +88,14 @@ const EXPLICIT_PATHS = [
   'scripts/validate-release-provenance.mjs',
 ]
 
+// The explicit paths above are published whether they are files or
+// directories, so the kind a path had is what the list means: a path that
+// changed kind is published as the wrong thing and whatever it replaced drops
+// out of the set without a word. The directory is named here so the kind can be
+// checked rather than assumed, and a file that grew into a directory is refused
+// for the same reason a directory that shrank into a file is.
+const EXPLICIT_DIRECTORIES = new Set(['examples/agent-expense-review'])
+
 export async function selectFiles(root) {
   const selected = new Set()
   for (const entry of SOURCE_ROOTS) {
@@ -125,6 +133,12 @@ export async function selectFiles(root) {
       throw new Error('source-import-explicit-path-unreadable')
     })
     if (stat.isSymbolicLink()) throw new Error('source-import-symlink')
+    // The path is there and is neither gone nor unreadable, so no permission
+    // and no refresh fixes it: it was replaced by the other kind, and only
+    // putting that kind back publishes the path the list means.
+    if (stat.isDirectory() !== EXPLICIT_DIRECTORIES.has(entry)) {
+      throw new Error('source-import-explicit-path-invalid')
+    }
     if (stat.isDirectory()) {
       for (const path of await walk(root, entry)) selected.add(path)
     } else if (stat.isFile()) {

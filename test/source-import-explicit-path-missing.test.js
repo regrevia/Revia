@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import test from 'node:test'
 
 import {
-  publishedPaths,
+  publishedSelection,
   run,
   temporaryRoot,
 } from '../test-support/source-import-fixture.js'
@@ -24,7 +24,7 @@ test('the same root without the refusal selects every published path', async () 
   const { files } = JSON.parse(
     await readFile(join(root, 'SOURCE_IMPORT_FILES.json'), 'utf8'),
   )
-  const expected = [...(await publishedPaths())].sort((left, right) =>
+  const expected = [...(await publishedSelection())].sort((left, right) =>
     Buffer.compare(Buffer.from(left), Buffer.from(right)))
   assert.deepEqual(files, expected)
 })
