@@ -2312,6 +2312,28 @@ pin a link with a target across all three modes and a dangling one on
 `--refresh`. Two mutations turned them red — removing the check, and replacing
 it with one that never reports a link — each restored file re-greening at 2/2.
 
+202. The list that could not be read at all. The allowlist names are about
+what is in the list — a bad schema, an unsorted one, a stale entry — and one
+case sits before any of them: a path that holds a directory where the list
+belongs. Nothing can be read from it, so no content name applies, and the raw
+`EISDIR` carried an absolute path that `stableCode()` dropped to the unnamed
+`source-import-failed` in `--check` and `--write`, while `--refresh` already
+called the same obstacle `source-import-allowlist-unwritable`. It is now
+`source-import-allowlist-unreadable` in the reading modes. The absent list is
+untouched: it is still `source-import-allowlist-missing`, because that is the
+state `--refresh` exists to fix, and folding it into a fault would hide the
+repair. The two tests in
+[`test/source-import-allowlist-unreadable.test.js`](../../test/source-import-allowlist-unreadable.test.js)
+pin both, and two older tests that had pinned the unnamed failure for this
+same obstacle were updated to the new name — one in
+[`test/source-import-allowlist-missing.test.js`](../../test/source-import-allowlist-missing.test.js),
+whose point is that the reading modes must not call it missing, and one in
+[`test/source-import-allowlist-unwritable.test.js`](../../test/source-import-allowlist-unwritable.test.js),
+whose point is that they must not call it unwritable; both points stand, only
+the string they compare moved. Two mutations turned all three files red —
+reverting to the bare error, and folding the unreadable case into the missing
+one — each restored file re-greening at 3/3, 3/3 and 2/2.
+
 
 ## 8. Evidence rules
 

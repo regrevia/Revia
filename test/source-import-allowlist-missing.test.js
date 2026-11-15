@@ -27,8 +27,9 @@ test('a missing allowlist is named in --check and --write', async () => {
 
 // The catch is narrowed to ENOENT: a list that is at the path but cannot be
 // read is a different fault, and calling it missing would send the operator to
-// rewrite a file that is already there.
-test('an allowlist that cannot be read keeps the unnamed failure', async () => {
+// rewrite a file that is already there. It is not unnamed either, since this
+// package gave the reading modes a name of their own for it.
+test('an allowlist that cannot be read is not called missing', async () => {
   const root = await temporaryRoot('nothing-is-missing')
   assert.equal((await run(root)).status, 0)
   await rm(join(root, 'SOURCE_IMPORT_FILES.json'))
@@ -37,7 +38,7 @@ test('an allowlist that cannot be read keeps the unnamed failure', async () => {
   const result = await run(root, '--check')
 
   assert.equal(result.status, 1)
-  assert.equal(result.stderr, 'source-import-failed\n')
+  assert.equal(result.stderr, 'source-import-allowlist-unreadable\n')
 })
 
 // --refresh writes the allowlist, so an absent one is the empty case it is

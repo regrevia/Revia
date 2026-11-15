@@ -21,10 +21,10 @@ test('a refresh that cannot write the allowlist is named', async () => {
   assert.equal(result.stdout, '')
 })
 
-// The reading modes never write, so a directory on the path there is still the
-// unreadable case the earlier package left unnamed on purpose: it is not
-// unwritable, and saying so would point the operator at permissions.
-test('the reading modes keep their unreadable case', async () => {
+// The reading modes never write, so a directory on the path there is the
+// unreadable case rather than this one: it is not unwritable, and saying so
+// would point the operator at permissions.
+test('the reading modes report the unreadable case, not this one', async () => {
   for (const mode of ['--check', '--write']) {
     const root = await temporaryRoot('nothing-is-missing')
     assert.equal((await run(root)).status, 0)
@@ -34,7 +34,7 @@ test('the reading modes keep their unreadable case', async () => {
     const result = await run(root, mode)
 
     assert.equal(result.status, 1, mode)
-    assert.equal(result.stderr, 'source-import-failed\n', mode)
+    assert.equal(result.stderr, 'source-import-allowlist-unreadable\n', mode)
   }
 })
 

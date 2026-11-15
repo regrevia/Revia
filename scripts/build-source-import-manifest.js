@@ -98,9 +98,13 @@ async function readAllowlist() {
   // --refresh writes this file; every other mode reads it. Without it there is
   // no list to compare or to write from, and the raw ENOENT it threw carried
   // an absolute path that stableCode() dropped to the unnamed failure.
+  // An absent list and a path that holds something other than a list are
+  // different repairs, and only the first is --refresh's job. The second never
+  // reaches a parse, so no content name below can describe it; the raw EISDIR
+  // carried an absolute path that stableCode() dropped.
   const source = await readFile(ALLOWLIST).catch((error) => {
     if (error?.code === 'ENOENT') throw new Error('source-import-allowlist-missing')
-    throw error
+    throw new Error('source-import-allowlist-unreadable')
   })
   const value = JSON.parse(refuseMark(source).toString('utf8'))
   if (value?.schema !== ALLOWLIST_SCHEMA

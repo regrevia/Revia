@@ -46,7 +46,11 @@ Revia repository.
    allowlist reads the same way: a tree without one is
    `source-import-allowlist-missing` in `--check` and `--write`, while
    `--refresh` writes it, so an absent list is the state that mode exists to
-   fix rather than a fault. The modes that write the manifest say
+   fix rather than a fault; a path that holds a directory where the list
+   belongs is a fault, and since nothing can be read from it there is no
+   content to name, so the reading modes report
+   `source-import-allowlist-unreadable` rather than the unnamed failure. The
+   modes that write the manifest say
    `source-import-manifest-unwritable` when the write cannot land — a
    directory on the path is the case that used to report the unnamed failure
    — while `--check` still reports drift or absence, because it never writes.
