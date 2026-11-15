@@ -127,7 +127,18 @@ async function readAllowlist() {
     if (error?.code === 'ENOENT') throw new Error('source-import-allowlist-missing')
     throw new Error('source-import-allowlist-unreadable')
   })
-  const value = JSON.parse(refuseMark(source).toString('utf8'))
+  // A list that is present but holds nothing JSON.parse() can read is not a
+  // stale entry and not a layout the schema can describe: it is a file that
+  // has to be restored, and the raw SyntaxError carried no name from the
+  // vocabulary, so every mode used to print the unnamed failure.
+  const value = (() => {
+    try {
+      return JSON.parse(refuseMark(source).toString('utf8'))
+    } catch (error) {
+      if (error?.message === BYTE_ORDER_MARK_CODE) throw error
+      throw new Error('source-import-allowlist-unparseable')
+    }
+  })()
   if (value?.schema !== ALLOWLIST_SCHEMA
     || !Array.isArray(value.files)
     || value.files.length === 0

@@ -2357,6 +2357,39 @@ folding the unreadable case into the missing one — each restored file
 re-greening at 2/2, 3/3 and 2/2.
 
 
+### WP-205 — Name an allowlist that cannot be parsed
+
+`readAllowlist()` read the list, refused a byte-order mark, and then handed the
+bytes to `JSON.parse()` with nothing around it. A list that was present but held
+nothing parseable — a truncated write, a merge conflict left in place, a branch
+switched mid-edit — threw a `SyntaxError` whose message carried a byte offset and
+a fragment of the file. `stableCode()` passes only a lowercase-hyphen name
+through, so both the reading modes printed `source-import-failed`, the same
+answer as a genuine internal fault. An absent list and a list that is wrong in
+shape were already named; the one file an operator is most likely to have to
+restore was not.
+
+It is now `source-import-allowlist-unparseable` in `--check` and `--write`.
+Only the parse is mapped, so a marked list still reports
+`byte-order-mark-not-allowed` and a list of the wrong shape still reports
+`source-import-allowlist-invalid`; an early version of this patch guarded the
+byte-order mark on `error.code`, which `refuseMark()` never sets — it carries the
+name in the message — so a marked list was being called unparseable. The suite
+caught it, and the case is now pinned by
+[`test/source-import-allowlist-unparseable.test.js`](../../test/source-import-allowlist-unparseable.test.js)
+alongside the parse and shape cases.
+
+`--refresh` is deliberately not covered: it writes the list from the tree and
+never parses the one it replaces, so it still repairs a corrupt list. That is
+also why the first version of the test failed on `--refresh` reporting success
+rather than on the builder.
+
+Two mutations made the suite red and each restored file re-greened: dropping the
+mapping, and dropping the byte-order-mark guard. A third candidate — mapping
+every parse failure including a marked list — is not usable as proof on its own
+because the mark is caught before the parse; the dedicated case is what makes
+that guard observable.
+
 ### WP-204 — Name the selection module that is gone
 
 The builder imported `scripts/source-import-selection.mjs` statically, so a tree

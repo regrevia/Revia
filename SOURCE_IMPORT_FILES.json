@@ -699,6 +699,7 @@
     "test/source-import-allowlist-layout.test.js",
     "test/source-import-allowlist-missing.test.js",
     "test/source-import-allowlist-symlink.test.js",
+    "test/source-import-allowlist-unparseable.test.js",
     "test/source-import-allowlist-unreadable.test.js",
     "test/source-import-allowlist-unwritable.test.js",
     "test/source-import-byte-order-mark.test.js",

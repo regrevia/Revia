@@ -113,8 +113,9 @@ test('drift and malformed input keep their own names', async () => {
   await writeFile(join(root, 'SOURCE_IMPORT_FILES.json'), '{"files":[\n')
   const malformed = await run(root, '--check')
   assert.equal(malformed.status, 1)
-  // The mark branch must not swallow every syntax error in the file.
-  assert.equal(malformed.stderr, 'source-import-failed\n')
+  // The mark branch must not swallow every syntax error in the file: a list
+  // that cannot be parsed is named, and the mark keeps its own name above.
+  assert.equal(malformed.stderr, 'source-import-allowlist-unparseable\n')
 })
 
 test('the contributor guide names the refusal and all three modes', async () => {

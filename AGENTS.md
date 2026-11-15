@@ -67,6 +67,12 @@ Revia repository.
    manifest — every mode reports `source-import-manifest-symlink`. The
    allowlist is checked the same way and for the same reason, reported as
    `source-import-allowlist-symlink` before any mode reads or rewrites it.
+   A list that is present but cannot be parsed is neither stale nor shaped
+   wrongly: it is a file to restore, and the reader says
+   `source-import-allowlist-unparseable`. Only the parse is mapped, so a marked
+   list keeps `byte-order-mark-not-allowed` and a list of the wrong shape keeps
+   `source-import-allowlist-invalid`. `--refresh` never parses the list it
+   replaces, so it still repairs this one.
    The selection module is not one of those paths: it is the tracked file that
    reads and renders the list, so a tree without it cannot check anything, and
    no refresh brings a module back. Every mode reports
