@@ -2357,6 +2357,31 @@ folding the unreadable case into the missing one — each restored file
 re-greening at 2/2, 3/3 and 2/2.
 
 
+### WP-204 — Name the selection module that is gone
+
+The builder imported `scripts/source-import-selection.mjs` statically, so a tree
+that lost that module raised `ERR_MODULE_NOT_FOUND` while the module graph was
+being linked — before the `try` block that every other source-import fault goes
+through. The result was a raw Node stack carrying an absolute path, in all three
+modes, printed to stderr instead of any name from the gate's vocabulary. Deleting
+the module was the trigger; nothing in the gate noticed it was missing.
+
+It is now `source-import-selection-missing` in `--check`, `--write` and
+`--refresh`. The import became dynamic and moved inside the guarded block, and
+only `ERR_MODULE_NOT_FOUND` is mapped, so a module that is present and broken
+still reports what broke rather than being called missing. The four bindings it
+exports are declared at module scope because `readAllowlist()` and the manifest
+helpers below the block use them; leaving them block-scoped made every one of the
+eight existing source-import suites fail with `source-import-failed`, which is
+how that mistake was caught before it landed.
+
+[`test/source-import-selection-missing.test.js`](../../test/source-import-selection-missing.test.js)
+covers all three modes. Two mutations made it red and each restored file
+re-greened: removing the mapping decides by the suite's own name, and gating the
+mapping on `--check` decides by mode — the earlier attempt at a second mutation
+mapped *every* failure to the new name, which the suite cannot distinguish from
+the correct code and is therefore not proof.
+
 ## 8. Evidence rules
 
 - Every claim on this page names the command, fixture, or source line that

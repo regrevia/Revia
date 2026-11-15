@@ -9,7 +9,12 @@ import {
 } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { ALLOWLIST_SCHEMA, compareUtf8, renderAllowlist, selectFiles } from './source-import-selection.mjs'
+// Filled from the selection module inside the guarded block below, so a tree
+// that lost that module reports a name instead of a Node stack.
+let ALLOWLIST_SCHEMA
+let compareUtf8
+let renderAllowlist
+let selectFiles
 
 const ROOT = resolve(fileURLToPath(new URL('../', import.meta.url)))
 const ALLOWLIST = join(ROOT, 'SOURCE_IMPORT_FILES.json')
@@ -29,6 +34,18 @@ if (!['--refresh', '--write', '--check'].includes(mode)) {
 }
 
 try {
+  // The module that reads and renders the list is a tracked file the build
+  // must publish, so losing it is not a stale entry and no refresh brings it
+  // back. A static import would raise before this block and let a Node stack
+  // reach stderr; loading it here keeps every fault named. Only the module
+  // being gone is mapped, so a broken one still reports what broke.
+  ;({ ALLOWLIST_SCHEMA, compareUtf8, renderAllowlist, selectFiles } =
+    await import('./source-import-selection.mjs').catch((error) => {
+      if (error?.code === 'ERR_MODULE_NOT_FOUND') {
+        throw new Error('source-import-selection-missing')
+      }
+      throw error
+    }))
   // The list is read in every mode and rewritten in one, and a link is
   // neither a list nor an absent one: the write would land on whatever it
   // points at while the tracked file stayed a link, and a dangling link reads

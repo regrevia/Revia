@@ -709,6 +709,7 @@
     "test/source-import-manifest-unreadable.test.js",
     "test/source-import-manifest-unwritable.test.js",
     "test/source-import-refresh-selection.test.js",
+    "test/source-import-selection-missing.test.js",
     "test/source-import-source-root-missing.test.js",
     "test/source-text.test.js",
     "test/structured-patch.test.js",

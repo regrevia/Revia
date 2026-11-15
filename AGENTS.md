@@ -67,6 +67,11 @@ Revia repository.
    manifest — every mode reports `source-import-manifest-symlink`. The
    allowlist is checked the same way and for the same reason, reported as
    `source-import-allowlist-symlink` before any mode reads or rewrites it.
+   The selection module is not one of those paths: it is the tracked file that
+   reads and renders the list, so a tree without it cannot check anything, and
+   no refresh brings a module back. Every mode reports
+   `source-import-selection-missing`; only a missing module is mapped, so a
+   module that is present and broken still reports what broke.
    `--refresh` rewrites the allowlist one path per line, in the same order
    `--check` reads it, so the diff of a refresh shows the files that
    changed and nothing else; do not reformat the list by hand.
