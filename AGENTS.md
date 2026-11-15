@@ -53,7 +53,11 @@ Revia repository.
    The allowlist follows: `--refresh` is the only mode that writes it, so a
    path that will not take it is `source-import-allowlist-unwritable`, and a
    marked list is still refused with `byte-order-mark-not-allowed` before the
-   write rather than repaired by the refresh that would erase it.
+   write rather than repaired by the refresh that would erase it. A symbolic
+   link at the manifest path is neither of those: the write would land on
+   whatever it points at and still report the bytes it computed, and reading
+   follows the link too, so a dangling one would look exactly like an absent
+   manifest — every mode reports `source-import-manifest-symlink`.
    `--refresh` rewrites the allowlist one path per line, in the same order
    `--check` reads it, so the diff of a refresh shows the files that
    changed and nothing else; do not reformat the list by hand.

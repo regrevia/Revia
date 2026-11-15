@@ -49,6 +49,15 @@ try {
   const allowlist = await readAllowlist()
   const manifest = await buildManifest(allowlist)
   const bytes = Buffer.from(canonicalJson(manifest))
+  // Every mode either compares the manifest or replaces it, and a link is
+  // neither: the write would land on whatever it points at, leave the link in
+  // the tree, and still report the bytes it computed. Reading follows the link
+  // too, so a dangling one looks exactly like an absent manifest. Letting
+  // ENOENT through keeps the missing case with the modes that own it.
+  const manifestStat = await lstat(MANIFEST).catch(() => null)
+  if (manifestStat?.isSymbolicLink()) {
+    throw new Error('source-import-manifest-symlink')
+  }
   if (mode === '--check') {
     // The manifest is compared, not parsed, so a missing one is not drift: no
     // bytes to differ from. Reading it threw a raw ENOENT with an absolute

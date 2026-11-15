@@ -2277,6 +2277,24 @@ the write guard, dropping the tolerance, and widening it to swallow every
 error — the last one caught only because the marked-list case was added after
 it survived, and each restored file re-greened at 3/3.
 
+200. Naming a link where the manifest should be. The previous two packages
+named a manifest the gate could not read or write; a symbolic link is a third
+fault, and it is the quietest of the three. With a link on
+`SOURCE_IMPORT_MANIFEST.json`, `--check` reports drift — there are bytes, they
+differ — and `--write` exits 0 printing the digest it computed, while the file
+Git tracks is still the link and the bytes landed on whatever the link pointed
+at, so a broken release is reported as a clean one. A dangling link is worse
+still: reading follows it, so it is indistinguishable from an absent manifest
+and the gate reports `source-import-manifest-missing` for a path that is
+occupied. Every mode now stats the path before it compares or replaces it, so
+a link is `source-import-manifest-symlink` regardless of mode, while `ENOENT`
+still falls through to the missing case each mode already owns. The two tests
+in [`test/source-import-manifest-symlink.test.js`](../../test/source-import-manifest-symlink.test.js)
+pin both: a link with a target is named in all three modes, and a link with
+none is not read as an absent manifest. Two mutations turned tests red —
+removing the check, and replacing it with one that never reports a link —
+each restored file re-greening at 2/2.
+
 
 ## 8. Evidence rules
 
