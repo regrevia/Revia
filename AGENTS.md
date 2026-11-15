@@ -36,7 +36,11 @@ Revia repository.
    itself is a third case: when one is gone the gate reports
    `source-import-explicit-path-missing`, because the tree lost a file the build
    must publish rather than the list going stale, and no refresh can bring it
-   back. A source root the selection walks is not listed anywhere, so a tree
+   back. A published path whose directory cannot be entered is neither: the
+   file is there and no list edit describes it, so every mode reports
+   `source-import-explicit-path-unreadable`, which is a permission to fix
+   rather than a file to restore. A source root the selection walks is not
+   listed anywhere, so a tree
    that lost one has no stale entry to find: the gate reports
    `source-import-source-root-missing`, and only restoring the directory fixes
    it. The manifest is compared rather than parsed, so a missing one is not

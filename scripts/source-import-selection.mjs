@@ -109,7 +109,10 @@ export async function selectFiles(root) {
       // must publish; a path the allowlist forgot is a stale list. Both used
       // to report the unnamed failure, which names neither repair.
       if (error?.code === 'ENOENT') throw new Error('source-import-explicit-path-missing')
-      throw error
+      // The file is not gone: the directory holding it cannot be entered, so
+      // no refresh reaches it and no list edit describes it. Left bare, the
+      // EACCES carried an absolute path that stableCode() dropped.
+      throw new Error('source-import-explicit-path-unreadable')
     })
     if (stat.isSymbolicLink()) throw new Error('source-import-symlink')
     if (stat.isDirectory()) {

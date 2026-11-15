@@ -2357,6 +2357,32 @@ folding the unreadable case into the missing one — each restored file
 re-greening at 2/2, 3/3 and 2/2.
 
 
+### WP-209 — Name a published path no directory lets through
+
+The selection walks a source root and names a directory it cannot enter, but an
+explicit path is not reached that way: it is `lstat`ed from its parent, so a
+parent nobody may enter raises `EACCES` with an absolute path in the message.
+`stableCode()` drops a message like that, and `--refresh` printed the unnamed
+`source-import-failed` for a file that is present and correct.
+
+The `lstat` catch now maps that refusal to
+`source-import-explicit-path-unreadable`. The three cases stay apart: a path the
+tree lost is `source-import-explicit-path-missing` (restore it), a path that is
+there behind a directory nobody may enter is
+`source-import-explicit-path-unreadable` (fix the permission), and a path that
+is present but is a directory or a link keeps its existing name.
+
+[`test/source-import-explicit-path-unreadable.test.js`](../../test/source-import-explicit-path-unreadable.test.js)
+picks the first nested published path, locks its parent, and expects the new
+name, then pins the case it was split from by removing the same path entirely
+and expecting `source-import-explicit-path-missing`.
+
+Two mutations made a suite red and each restored file re-greened: restoring the
+bare `throw error` leaves the new case red and the missing case green, while
+reporting the new refusal under the missing name leaves the new case red and the
+missing case green — the second is distinguishable precisely because the two
+cases assert different names for the same fixture shape.
+
 ### WP-208 — Name a source root that is not a directory
 
 WP-207 mapped every refusal the walk meets to a single name, which was right for
