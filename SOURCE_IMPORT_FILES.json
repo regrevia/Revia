@@ -698,6 +698,7 @@
     "test/server-secret-macos-keychain.test.js",
     "test/source-import-allowlist-layout.test.js",
     "test/source-import-allowlist-missing.test.js",
+    "test/source-import-allowlist-unwritable.test.js",
     "test/source-import-byte-order-mark.test.js",
     "test/source-import-explicit-path-missing.test.js",
     "test/source-import-file-missing.test.js",

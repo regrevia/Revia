@@ -32,9 +32,19 @@ try {
   if (mode === '--refresh') {
     // --check refuses a marked allowlist, so --refresh has to refuse it too;
     // rewriting the file would silently erase the one thing that was wrong.
-    await readMarked(ALLOWLIST)
+    // A path that holds something other than a file cannot carry a mark, so
+    // there is nothing here to refuse and the write below reports the fault.
+    await readMarked(ALLOWLIST).catch((error) => {
+      if (error?.code === 'EISDIR') return null
+      throw error
+    })
     const files = await selectFiles(ROOT)
-    await writeFile(ALLOWLIST, renderAllowlist(files))
+    // --refresh is the only mode that writes the list, so a path that will
+    // not take it stops the repair the operator ran this mode for. Left bare,
+    // the EISDIR carried an absolute path that stableCode() dropped.
+    await writeFile(ALLOWLIST, renderAllowlist(files)).catch(() => {
+      throw new Error('source-import-allowlist-unwritable')
+    })
   }
   const allowlist = await readAllowlist()
   const manifest = await buildManifest(allowlist)

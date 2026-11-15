@@ -50,6 +50,10 @@ Revia repository.
    `source-import-manifest-unwritable` when the write cannot land — a
    directory on the path is the case that used to report the unnamed failure
    — while `--check` still reports drift or absence, because it never writes.
+   The allowlist follows: `--refresh` is the only mode that writes it, so a
+   path that will not take it is `source-import-allowlist-unwritable`, and a
+   marked list is still refused with `byte-order-mark-not-allowed` before the
+   write rather than repaired by the refresh that would erase it.
    `--refresh` rewrites the allowlist one path per line, in the same order
    `--check` reads it, so the diff of a refresh shows the files that
    changed and nothing else; do not reformat the list by hand.

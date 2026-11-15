@@ -2256,6 +2256,27 @@ put the writing modes back on the unnamed failure, and widening it to the
 check-branch read relabelled the unreadable case as unwritable — and each
 restored file re-greened at 2/2.
 
+199. Naming an allowlist the refresh could not write. The manifest got its
+write name in the package before this one; the allowlist did not, and the
+probe showed why it is a different fault rather than the same one repeated.
+With a directory sitting on `SOURCE_IMPORT_FILES.json` all three modes exit 1
+with `source-import-failed`, but only `--refresh` writes the list, so only it
+is being stopped from doing the one thing the operator asked for. Guarding
+just `writeFile` was not enough, and the first green run proved it: the refresh
+refuses a marked list by reading it before it writes, so the read hit `EISDIR`
+first and the write guard never ran. The read now tolerates exactly that case
+— a path holding something other than a file cannot carry a mark, so there is
+nothing to refuse and the write below reports the fault — while every other
+error still propagates, which is what keeps a marked list refused with
+`byte-order-mark-not-allowed` instead of quietly rewritten. The three tests in
+[`test/source-import-allowlist-unwritable.test.js`](../../test/source-import-allowlist-unwritable.test.js)
+pin that spread: `--refresh` on a directory exits 1 with the new code, the
+reading modes keep the unreadable case they already had, and a marked list is
+still refused before any write. Three mutations turned tests red — dropping
+the write guard, dropping the tolerance, and widening it to swallow every
+error — the last one caught only because the marked-list case was added after
+it survived, and each restored file re-greened at 3/3.
+
 
 ## 8. Evidence rules
 
