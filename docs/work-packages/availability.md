@@ -2295,6 +2295,23 @@ none is not read as an absent manifest. Two mutations turned tests red —
 removing the check, and replacing it with one that never reports a link —
 each restored file re-greening at 2/2.
 
+201. The same hole on the allowlist. The manifest was the file the earlier
+packages took apart; the allowlist that seeds it had the same one, and the
+mode that writes it was the one that hid it. With a link on
+`SOURCE_IMPORT_FILES.json`, `--refresh` follows the link, writes the list
+somewhere outside the tree and exits 0 with a digest, while the tracked file
+stays a link; the reading modes collapse the same fault into the unnamed
+`source-import-failed`, because neither the missing case nor the marked-list
+case describes a path that is occupied by a link. Both are now
+`source-import-allowlist-symlink`, decided before any mode reads or rewrites
+the list, so a dangling link is no longer mistaken for the absent list that
+`--refresh` exists to write. `ENOENT` still falls through to the missing case,
+which keeps the repair that mode performs. The two tests in
+[`test/source-import-allowlist-symlink.test.js`](../../test/source-import-allowlist-symlink.test.js)
+pin a link with a target across all three modes and a dangling one on
+`--refresh`. Two mutations turned them red — removing the check, and replacing
+it with one that never reports a link — each restored file re-greening at 2/2.
+
 
 ## 8. Evidence rules
 

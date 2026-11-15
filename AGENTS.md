@@ -57,7 +57,9 @@ Revia repository.
    link at the manifest path is neither of those: the write would land on
    whatever it points at and still report the bytes it computed, and reading
    follows the link too, so a dangling one would look exactly like an absent
-   manifest — every mode reports `source-import-manifest-symlink`.
+   manifest — every mode reports `source-import-manifest-symlink`. The
+   allowlist is checked the same way and for the same reason, reported as
+   `source-import-allowlist-symlink` before any mode reads or rewrites it.
    `--refresh` rewrites the allowlist one path per line, in the same order
    `--check` reads it, so the diff of a refresh shows the files that
    changed and nothing else; do not reformat the list by hand.

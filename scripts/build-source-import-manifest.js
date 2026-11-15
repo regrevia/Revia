@@ -29,6 +29,14 @@ if (!['--refresh', '--write', '--check'].includes(mode)) {
 }
 
 try {
+  // The list is read in every mode and rewritten in one, and a link is
+  // neither a list nor an absent one: the write would land on whatever it
+  // points at while the tracked file stayed a link, and a dangling link reads
+  // exactly like a tree that never had a list.
+  const allowlistStat = await lstat(ALLOWLIST).catch(() => null)
+  if (allowlistStat?.isSymbolicLink()) {
+    throw new Error('source-import-allowlist-symlink')
+  }
   if (mode === '--refresh') {
     // --check refuses a marked allowlist, so --refresh has to refuse it too;
     // rewriting the file would silently erase the one thing that was wrong.
