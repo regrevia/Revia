@@ -82,6 +82,12 @@ Revia repository.
    `source-import-directory-unreadable`. A root that is gone keeps
    `source-import-source-root-missing`, so a directory to restore and a
    permission to fix stay apart.
+   A pipe, a socket or a device is not a list or a manifest at all, and every
+   mode opens both: the gate would stop with no answer rather than a name, so
+   the kind is refused before the open and reports
+   `source-import-allowlist-invalid-kind` or
+   `source-import-manifest-invalid-kind`. A directory keeps its own names there,
+   so this refusal never renames a fault those modes already describe.
    A published path that changed kind is neither missing nor unreadable: it is
    there and it cannot be entered or read wrongly, so no permission and no
    refresh brings back the file or the directory the list means, and the gate

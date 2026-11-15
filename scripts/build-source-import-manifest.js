@@ -54,6 +54,14 @@ try {
   if (allowlistStat?.isSymbolicLink()) {
     throw new Error('source-import-allowlist-symlink')
   }
+  // A pipe, a socket or a device is none of the things the modes below can
+  // use, and every one of them opens and then holds the reader: the gate would
+  // stop with no answer at all instead of naming what to remove. Only those
+  // three are refused here — a directory already has its own names, and asking
+  // this question of it would rename faults the ledger already describes.
+  if (allowlistStat && !allowlistStat.isFile() && !allowlistStat.isDirectory()) {
+    throw new Error('source-import-allowlist-invalid-kind')
+  }
   if (mode === '--refresh') {
     // --check refuses a marked allowlist, so --refresh has to refuse it too;
     // rewriting the file would silently erase the one thing that was wrong.
@@ -89,6 +97,11 @@ try {
   const manifestStat = await lstat(MANIFEST).catch(() => null)
   if (manifestStat?.isSymbolicLink()) {
     throw new Error('source-import-manifest-symlink')
+  }
+  // Same refusal for the same reason: these files are opened in every mode, so
+  // a pipe here would hold whichever mode ran rather than report anything.
+  if (manifestStat && !manifestStat.isFile() && !manifestStat.isDirectory()) {
+    throw new Error('source-import-manifest-invalid-kind')
   }
   if (mode === '--check') {
     // The manifest is compared, not parsed, so a missing one is not drift: no

@@ -2357,6 +2357,38 @@ folding the unreadable case into the missing one — each restored file
 re-greening at 2/2, 3/3 and 2/2.
 
 
+### WP-213 — Refuse a non-regular file at the allowlist and manifest paths
+
+Nothing looked at the kind of the two files every mode opens. A directory on
+either path was already named, a symbolic link was already named, and a pipe,
+socket or device on either path was neither: `open()` on a pipe waits for a
+writer that never comes, so the gate answered nothing at all. `--check` blocked
+on a pipe at the manifest path, and all three modes blocked on a pipe at the
+allowlist path, until the caller was killed. No mode wrote a wrong file, and no
+diagnostic was printed — the fault is the absence of an answer, which a CI lane
+sees only as a timeout.
+
+The two paths are now asked about before anything opens them, next to the link
+check that already sits there, and a path that is neither a file nor a
+`directory` reports `source-import-allowlist-invalid-kind` or
+`source-import-manifest-invalid-kind`. Directories are deliberately left out
+of that question: the reading modes already report `-allowlist-unreadable` and
+`-manifest-unreadable` for them, and `--refresh` already repairs the first, so
+asking again would rename faults the ledger already describes. `ENOENT` keeps
+flowing through, because an absent list or manifest is the state `--refresh`
+exists to fix rather than a fault.
+
+The test builds both files with a `--refresh` first, so the list is by
+construction one the gate accepts and the pipe is the only thing wrong with the
+tree, then replaces one path with a pipe through `mkfifo`. Every call is
+bounded and the child is killed when it does not answer, because an unbounded
+call would hang the suite instead of failing it, and a hang is the fault. Two
+mutations, each removing one guard, redden exactly the opposite case: removing
+the allowlist guard leaves the manifest case green and the allowlist case red,
+and removing the manifest guard does the reverse. Both were restored byte for
+byte, and the four existing tests for the directory cases stayed green
+throughout.
+
 ### WP-212 — Refuse a published path that changed kind
 
 An explicit path is published whether it is a file or a directory, so the kind a
