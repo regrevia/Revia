@@ -56,7 +56,11 @@ Revia repository.
    fix rather than a fault; a path that holds a directory where the list
    belongs is a fault, and since nothing can be read from it there is no
    content to name, so the reading modes report
-   `source-import-allowlist-unreadable` rather than the unnamed failure. The
+   `source-import-allowlist-unreadable` rather than the unnamed failure, and
+   `--refresh` reads the list before replacing it so it reports the same name
+   for the same refusal instead of the unnamed failure; only a file-system
+   error is mapped there, because the marked-list refusal has no code and must
+   still reach the operator as `byte-order-mark-not-allowed`. The
    modes that write the manifest say
    `source-import-manifest-unwritable` when the write cannot land — a
    directory on the path is the case that used to report the unnamed failure

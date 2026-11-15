@@ -61,6 +61,13 @@ try {
     // there is nothing here to refuse and the write below reports the fault.
     await readMarked(ALLOWLIST).catch((error) => {
       if (error?.code === 'EISDIR') return null
+      // A list the process may not read stops this mode as surely as one it
+      // may not write, and the raw refusal carried a path stableCode() drops.
+      // Only a file-system error is mapped: the mark refusal carries no code
+      // and has to reach the operator as itself.
+      if (typeof error?.code === 'string') {
+        throw new Error('source-import-allowlist-unreadable')
+      }
       throw error
     })
     const files = await selectFiles(ROOT)

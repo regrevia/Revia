@@ -2357,6 +2357,27 @@ folding the unreadable case into the missing one — each restored file
 re-greening at 2/2, 3/3 and 2/2.
 
 
+### WP-210 — Name an unreadable list in `--refresh` as well
+
+`--refresh` reads the allowlist before replacing it, so a marked list is refused
+rather than erased. That read can also be refused, and the raw `EACCES` carried
+an absolute path that `stableCode()` drops: the one mode whose job is to rewrite
+the list printed the unnamed `source-import-failed`, while `--check` and
+`--write` already said `source-import-allowlist-unreadable` for the same fixture.
+
+The read's catch now maps a file-system error to that name. Only a file-system
+error is mapped: the marked-list refusal carries no `code`, so a broader mapping
+would swallow it, and `byte-order-mark-not-allowed` still reaches the operator.
+
+[`test/source-import-allowlist-unreadable-refresh.test.js`](../../test/source-import-allowlist-unreadable-refresh.test.js)
+chmods the list to `0o000` under `--refresh` and expects the name, then writes a
+BOM onto the same list and expects the mark refusal to survive.
+
+Two mutations made a suite red and each restored file re-greened: restoring the
+bare `throw error` leaves the unreadable case red and the mark case green, while
+mapping every failure makes the mark case red as well — the second is what the
+`typeof error?.code` guard exists for.
+
 ### WP-209 — Name a published path no directory lets through
 
 The selection walks a source root and names a directory it cannot enter, but an
