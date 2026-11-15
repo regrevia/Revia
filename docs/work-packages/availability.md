@@ -2357,6 +2357,35 @@ folding the unreadable case into the missing one — each restored file
 re-greening at 2/2, 3/3 and 2/2.
 
 
+### WP-207 — Name a directory the walk cannot enter
+
+`--refresh` is the only mode that walks the tree; `--check` and `--write`
+compare the list against the manifest and never enter a directory. The walk
+called `readdir()` on every directory it met, and the root's absence was mapped
+to `source-import-source-root-missing` by the caller while every other refusal
+passed through. A subdirectory the process cannot enter raised `EACCES` whose
+message carries an absolute path, which `stableCode()` drops, so the one mode
+that rewrites the list from the tree printed `source-import-failed`.
+
+It is now `source-import-directory-unreadable`, raised inside `walk()` rather
+than at the call site so a nested directory is told apart from a root that is
+gone: `ENOENT` is rethrown untouched and still becomes
+`source-import-source-root-missing` at the caller. The two repairs stay apart —
+restore the directory, or fix the permission to enter it.
+
+[`test/source-import-directory-unreadable.test.js`](../../test/source-import-directory-unreadable.test.js)
+pins both halves. The first case locks `src/deep` and expects the new name. The
+second pins the boundary: the reading modes never walk, so after the lock is
+lifted a refresh writes the list and `--check` must not report the walk's fault.
+Directories are locked rather than files, and the `chmod` is undone in a
+`finally`, so a failure cannot leave the fixture unusable and the case also
+holds when the suite runs as root.
+
+Two mutations made a suite red and each restored file re-greened: replacing the
+mapping with the raw error, and dropping the `ENOENT` rethrow. The second leaves
+the new case green and turns the missing-root case red, which is what keeps a
+nested refusal from being reported as a root that was never there.
+
 ### WP-206 — Name a listed path the process cannot inspect
 
 `buildManifest()` walked the allowlist and called `lstat()` on each entry,

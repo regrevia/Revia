@@ -67,6 +67,13 @@ Revia repository.
    manifest — every mode reports `source-import-manifest-symlink`. The
    allowlist is checked the same way and for the same reason, reported as
    `source-import-allowlist-symlink` before any mode reads or rewrites it.
+   `--refresh` is the only mode that walks the sources, and a directory inside
+   a walked root that the process is not allowed to enter stopped the walk with
+   an error whose message carried a path, so the mode whose job is to rewrite
+   the list reported the unnamed failure: it is now
+   `source-import-directory-unreadable`. A root that is gone keeps
+   `source-import-source-root-missing`, so a directory to restore and a
+   permission to fix stay apart.
    A listed path the process is not allowed to look at is neither of those: it
    is there, it is a file, and the directory holding it cannot be entered, so
    every mode reports `source-import-file-unreadable` rather than the unnamed

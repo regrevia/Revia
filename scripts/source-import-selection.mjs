@@ -125,7 +125,14 @@ export async function selectFiles(root) {
 
 async function walk(root, relative) {
   const absolute = join(root, relative)
-  const entries = await readdir(absolute, { withFileTypes: true })
+  // A directory the process is not allowed to enter would otherwise stop the
+  // walk with EACCES, whose message carries an absolute path, so the gate
+  // dropped it to the unnamed failure in the one mode that walks at all. The
+  // root's own absence stays the caller's ENOENT: this maps only the refusal.
+  const entries = await readdir(absolute, { withFileTypes: true }).catch((error) => {
+    if (error?.code === 'ENOENT') throw error
+    throw new Error('source-import-directory-unreadable')
+  })
   const files = []
   for (const entry of entries.sort((left, right) => compareUtf8(left.name, right.name))) {
     if (entry.isDirectory() && ['node_modules', 'scratch', 'target'].includes(entry.name)) {

@@ -703,6 +703,7 @@
     "test/source-import-allowlist-unreadable.test.js",
     "test/source-import-allowlist-unwritable.test.js",
     "test/source-import-byte-order-mark.test.js",
+    "test/source-import-directory-unreadable.test.js",
     "test/source-import-explicit-path-missing.test.js",
     "test/source-import-file-missing.test.js",
     "test/source-import-file-unreadable.test.js",
