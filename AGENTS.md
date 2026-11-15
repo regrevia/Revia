@@ -67,6 +67,11 @@ Revia repository.
    manifest — every mode reports `source-import-manifest-symlink`. The
    allowlist is checked the same way and for the same reason, reported as
    `source-import-allowlist-symlink` before any mode reads or rewrites it.
+   A listed path the process is not allowed to look at is neither of those: it
+   is there, it is a file, and the directory holding it cannot be entered, so
+   every mode reports `source-import-file-unreadable` rather than the unnamed
+   failure the raw error became. A path removed between the check and the read
+   is still `source-import-file-missing`, so the two repairs stay apart.
    A list that is present but cannot be parsed is neither stale nor shaped
    wrongly: it is a file to restore, and the reader says
    `source-import-allowlist-unparseable`. Only the parse is mapped, so a marked

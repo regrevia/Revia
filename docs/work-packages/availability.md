@@ -2357,6 +2357,34 @@ folding the unreadable case into the missing one — each restored file
 re-greening at 2/2, 3/3 and 2/2.
 
 
+### WP-206 — Name a listed path the process cannot inspect
+
+`buildManifest()` walked the allowlist and called `lstat()` on each entry,
+mapping `ENOENT` to `source-import-file-missing` and passing every other error
+through. A path that is present but sits under a directory the process cannot
+enter raised `EACCES` with an absolute path, which `stableCode()` drops, so
+`--check` and `--write` printed `source-import-failed` — indistinguishable from
+a bug in the gate. The same holds for any other refusal at that call: a mount
+that went away, a name too long, an `ELOOP` from a link loop.
+
+It is now `source-import-file-unreadable`. `ENOENT` still reports
+`source-import-file-missing`, and a path that is a directory or a link is still
+`source-import-file-invalid`, so the three repairs stay apart: put something
+back, remove what does not belong, or fix the permissions. The read after the
+check is guarded the same way, because the check and the read are two calls and
+a path removed between them is a missing file rather than an unreadable one.
+
+The case is pinned by
+[`test/source-import-file-unreadable.test.js`](../../test/source-import-file-unreadable.test.js),
+which locks a directory with `chmod 0o000` and restores it in a `finally` so a
+failure cannot leave the tree unusable. A directory is used rather than a file
+because a mode bit on a file does not stop a read when the suite runs as root.
+
+Two mutations made a suite red and each restored file re-greened: dropping the
+mapping, and dropping the `ENOENT` branch. The second is the sharper proof of
+the pair — it leaves the new case green and turns the missing-path case red,
+which is what keeps the two names from collapsing into one.
+
 ### WP-205 — Name an allowlist that cannot be parsed
 
 `readAllowlist()` read the list, refused a byte-order mark, and then handed the

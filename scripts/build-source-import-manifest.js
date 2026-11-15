@@ -178,12 +178,20 @@ async function buildManifest(allowlist) {
     // tree holds a directory or a link where a file belongs.
     const stat = await lstat(absolute).catch((error) => {
       if (error?.code === 'ENOENT') throw new Error('source-import-file-missing')
-      throw error
+      // Everything else is a path the process cannot look at: a directory it
+      // may not enter, a mount that went away, a file whose name is too long.
+      // The raw error carried an absolute path that stableCode() drops.
+      throw new Error('source-import-file-unreadable')
     })
     if (!stat.isFile() || stat.isSymbolicLink()) {
       throw new Error('source-import-file-invalid')
     }
-    const bytes = await readFile(absolute)
+    // The stat said it was a file; the read can still be refused, and a race
+    // that removed it between the two calls is the same repair as before.
+    const bytes = await readFile(absolute).catch((error) => {
+      if (error?.code === 'ENOENT') throw new Error('source-import-file-missing')
+      throw new Error('source-import-file-unreadable')
+    })
     files.push({
       bytes: bytes.length,
       path,
