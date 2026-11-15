@@ -50,6 +50,9 @@ try {
   // neither a list nor an absent one: the write would land on whatever it
   // points at while the tracked file stayed a link, and a dangling link reads
   // exactly like a tree that never had a list.
+  // The receipt describes what the mode did to each file, in one vocabulary:
+  // a mode that writes nothing reports `unchanged`, which is what it did.
+  let allowlistTransition = 'unchanged'
   const allowlistStat = await lstat(ALLOWLIST).catch(() => null)
   if (allowlistStat?.isSymbolicLink()) {
     throw new Error('source-import-allowlist-symlink')
@@ -79,10 +82,27 @@ try {
       throw error
     })
     const files = await selectFiles(ROOT)
+    const rendered = renderAllowlist(files)
+    // A caller cannot tell a repair from a no-op by the bytes it gets back,
+    // because both leave the same tree and print the same receipt. Reading
+    // what was there first is the only place the difference exists, and it is
+    // recorded rather than reported: --refresh exists to write a list a tree
+    // does not have, so succeeding at that must stay exit 0.
+    // Only an absent list is a creation. A list that is there but unreadable
+    // already stopped this mode above, so the second arm is ENOENT alone and
+    // never covers a fault that has its own name.
+    // `readMarked` answers null when there is no list at all, and a list that
+    // cannot be read is the case `created` names: nothing was there to keep.
+    allowlistTransition = await readMarked(ALLOWLIST).then(
+      (previous) => (previous === null
+        ? 'created'
+        : (previous.toString('utf8') === rendered ? 'unchanged' : 'replaced')),
+      () => 'created',
+    )
     // --refresh is the only mode that writes the list, so a path that will
     // not take it stops the repair the operator ran this mode for. Left bare,
     // the EISDIR carried an absolute path that stableCode() dropped.
-    await writeFile(ALLOWLIST, renderAllowlist(files)).catch(() => {
+    await writeFile(ALLOWLIST, rendered).catch(() => {
       throw new Error('source-import-allowlist-unwritable')
     })
   }
@@ -103,6 +123,7 @@ try {
   if (manifestStat && !manifestStat.isFile() && !manifestStat.isDirectory()) {
     throw new Error('source-import-manifest-invalid-kind')
   }
+  let manifestTransition = 'unchanged'
   if (mode === '--check') {
     // The manifest is compared, not parsed, so a missing one is not drift: no
     // bytes to differ from. Reading it threw a raw ENOENT with an absolute
@@ -121,15 +142,29 @@ try {
     // same fault: the path cannot take the file. A directory sitting on it
     // threw EISDIR with an absolute path, which stableCode() dropped to the
     // unnamed failure.
-    await writeFile(MANIFEST, bytes).catch(() => {
-      throw new Error('source-import-manifest-unwritable')
-    })
+    const previous = await readFile(MANIFEST).catch(() => null)
+    manifestTransition = previous === null
+      ? 'created'
+      : (previous.equals(bytes) ? 'unchanged' : 'replaced')
+    // A manifest that already holds these bytes has nothing to write, and the
+    // transition is not a description of an attempt: writing anyway would
+    // touch a correct file and make `unchanged` a claim only the bytes keep.
+    // A path that cannot be read above leaves the transition `created`, so the
+    // write still runs and still names the path that will not take it.
+    if (manifestTransition !== 'unchanged') {
+      await writeFile(MANIFEST, bytes).catch(() => {
+        throw new Error('source-import-manifest-unwritable')
+      })
+    }
   }
-  process.stdout.write(`${canonicalJson({
+  const receipt = {
+    allowlist_transition: allowlistTransition,
     file_count: manifest.files.length,
     manifest_digest: digest(bytes),
+    manifest_transition: manifestTransition,
     schema: 'revia.source-import-manifest-result@1.0.0',
-  })}`)
+  }
+  process.stdout.write(`${canonicalJson(receipt)}`)
 } catch (error) {
   process.stderr.write(`${stableCode(error)}\n`)
   process.exitCode = 1

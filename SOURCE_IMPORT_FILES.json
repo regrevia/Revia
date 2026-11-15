@@ -720,6 +720,7 @@
     "test/source-import-source-root-invalid.test.js",
     "test/source-import-source-root-missing.test.js",
     "test/source-import-source-root-symlink.test.js",
+    "test/source-import-transition-receipt.test.js",
     "test/source-text.test.js",
     "test/structured-patch.test.js",
     "test/task-contract.test.js",

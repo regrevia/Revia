@@ -82,6 +82,16 @@ Revia repository.
    `source-import-directory-unreadable`. A root that is gone keeps
    `source-import-source-root-missing`, so a directory to restore and a
    permission to fix stay apart.
+   A writing mode that repaired the tree and one that found nothing to do leave
+   the same bytes and the same exit code, so every mode's receipt carries
+   `allowlist_transition` and `manifest_transition`, each `created`, `replaced`
+   or `unchanged`, in one vocabulary: `--check` writes nothing and reports the
+   state it read as `unchanged`, because that is what it found, and
+   `--refresh` names a list it had to make out of nothing as `created` rather
+   than `replaced`: nothing was there to compare with. A manifest that
+   already holds the bytes `--write` computed is left alone rather than
+   rewritten, so `unchanged` describes the file and not just the bytes it would
+   have held.
    A pipe, a socket or a device is not a list or a manifest at all, and every
    mode opens both: the gate would stop with no answer rather than a name, so
    the kind is refused before the open and reports

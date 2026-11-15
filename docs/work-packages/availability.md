@@ -2357,6 +2357,39 @@ folding the unreadable case into the missing one — each restored file
 re-greening at 2/2, 3/3 and 2/2.
 
 
+### WP-214 — Report the change a writing mode made, not only the tree it left
+
+Issue #36 measured that the two writing modes print the same line and exit 0
+whether they repaired the tree or found nothing to do: deleting
+`SOURCE_IMPORT_MANIFEST.json` and running `--write` gave the same receipt as
+running it on an already-correct tree, and `--refresh` did the same for the
+allowlist. The receipt described the resulting tree, so a caller could not tell
+a repair from a no-op, and both were byte-identical.
+
+The asymmetry that `--write` succeeds where `--check` names
+`source-import-manifest-missing` is deliberate and documented; it is not the
+defect. The defect is that the asymmetry left no observable difference between
+the two outcomes, so the fix keeps exit 0 on both and makes the transition
+explicit instead of turning a successful repair red.
+
+Every mode's receipt now carries `allowlist_transition` and
+`manifest_transition`, each `created`, `replaced` or `unchanged`, in one
+vocabulary rather than a dialect per mode: `--check` writes nothing and reports
+the state it read as `unchanged`, so the same state always has the same name;
+`--refresh` calls a list it has to make out of nothing `created`, not
+`replaced`, because nothing was there to compare with.
+The value comes from comparing the bytes on disk with the bytes the tree
+implies, which is the only place the difference exists. `--write` also skips the
+write when the manifest already holds those bytes, because a transition is not a
+description of an attempt: rewriting a correct file would leave `unchanged`
+claiming something only the bytes keep.
+
+Two mutations were cut from a snapshot and each reddened the tracked test with a
+different signature: reporting the allowlist as always `replaced` left the
+manifest half correct, and reporting the manifest as always `unchanged` left the
+allowlist half correct, so neither mutation can stand in for the other. Both
+were restored byte for byte.
+
 ### WP-213 — Refuse a non-regular file at the allowlist and manifest paths
 
 Nothing looked at the kind of the two files every mode opens. A directory on
