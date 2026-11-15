@@ -39,7 +39,7 @@ test('a stale manifest is still drift, not missing', async () => {
 // The catch is narrowed to ENOENT: a manifest that is there but cannot be read
 // is a different fault, and reporting it as missing would send the operator to
 // restore a file that is already at the path.
-test('a manifest that cannot be read keeps the unnamed failure', async () => {
+test('a manifest that cannot be read is not called missing', async () => {
   const root = await temporaryRoot('nothing-is-missing')
   assert.equal((await run(root)).status, 0)
   await rm(join(root, 'SOURCE_IMPORT_MANIFEST.json'))
@@ -48,5 +48,5 @@ test('a manifest that cannot be read keeps the unnamed failure', async () => {
   const result = await run(root, '--check')
 
   assert.equal(result.status, 1)
-  assert.equal(result.stderr, 'source-import-failed\n')
+  assert.equal(result.stderr, 'source-import-manifest-unreadable\n')
 })

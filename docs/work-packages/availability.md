@@ -2334,6 +2334,28 @@ the string they compare moved. Two mutations turned all three files red —
 reverting to the bare error, and folding the unreadable case into the missing
 one — each restored file re-greening at 3/3, 3/3 and 2/2.
 
+203. The same hole on the manifest in the mode that only compares it. WP-202
+named the allowlist that could not be read; the manifest had the mirror case,
+and `--check` was the mode that kept it unnamed. With a directory sitting on
+`SOURCE_IMPORT_MANIFEST.json` and a populated allowlist behind it, `--write`
+and `--refresh` already said `source-import-manifest-unwritable`, because the
+write cannot land; `--check` never writes, so it reads, and the raw `EISDIR`
+carried an absolute path that `stableCode()` dropped to
+`source-import-failed`. It is now `source-import-manifest-unreadable` there.
+The absent manifest is untouched and still `source-import-manifest-missing`:
+`--refresh` writes it, so folding the two would send an operator to delete a
+path that is already gone. The two tests in
+[`test/source-import-manifest-unreadable.test.js`](../../test/source-import-manifest-unreadable.test.js)
+pin both, and the two older tests that had pinned the unnamed failure for this
+same obstacle now compare the new name — one in
+[`test/source-import-manifest-missing.test.js`](../../test/source-import-manifest-missing.test.js),
+whose point is that the reading mode must not call it missing, and one in
+[`test/source-import-manifest-unwritable.test.js`](../../test/source-import-manifest-unwritable.test.js),
+whose point is that a directory here is not drift; both points stand. Two
+mutations turned all three files red — reverting to the bare error, and
+folding the unreadable case into the missing one — each restored file
+re-greening at 2/2, 3/3 and 2/2.
+
 
 ## 8. Evidence rules
 

@@ -35,5 +35,5 @@ test('a directory at the manifest path is not drift in --check', async () => {
   const result = await run(root, '--check')
 
   assert.equal(result.status, 1)
-  assert.equal(result.stderr, 'source-import-failed\n')
+  assert.equal(result.stderr, 'source-import-manifest-unreadable\n')
 })

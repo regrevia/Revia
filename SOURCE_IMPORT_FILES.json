@@ -706,6 +706,7 @@
     "test/source-import-file-missing.test.js",
     "test/source-import-manifest-missing.test.js",
     "test/source-import-manifest-symlink.test.js",
+    "test/source-import-manifest-unreadable.test.js",
     "test/source-import-manifest-unwritable.test.js",
     "test/source-import-refresh-selection.test.js",
     "test/source-import-source-root-missing.test.js",
