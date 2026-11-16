@@ -71,12 +71,22 @@ fn native_help_legend_explains_every_exit_code_the_cli_returns() {
             "the help legend does not explain exit code {code}: {help_text}"
         );
     }
-    // The panic code cannot be provoked without crashing the suite, so only
-    // its presence is checked: a legend entry means a reader can interpret it.
+    // The panic code is provoked in a child, not in this process, so the suite
+    // survives it. A previous version of this test only looked for `101` in the
+    // legend text and said that provoking it would crash the suite; that was
+    // true of an in-process assertion and not of this file, which already runs
+    // every other case through `run()`. Only checking the legend left the claim
+    // resting on the build profile: `panic = "abort"` makes a panicking process
+    // die by SIGABRT, whose status is 134 in a shell and `None` to
+    // `ExitStatus::code()`, and the legend would have gone on saying 101 with
+    // every test green.
     assert!(
         legend.contains(&101),
         "the help legend does not explain exit code 101: {help_text}"
     );
+    let panic = run(&["internal-panic-probe"]);
+    assert_eq!(panic.status.code(), Some(101));
+    assert!(panic.stdout.is_empty());
 
     fs::remove_dir_all(&root).unwrap();
 }
