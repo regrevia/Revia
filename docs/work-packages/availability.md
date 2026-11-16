@@ -2414,13 +2414,25 @@ and a rename is not a repair. The pass-through for `EISDIR` was tried as a
 mutation and stayed green, which is the correct result: the read path already
 maps it, and the guard is what makes the answer stable rather than the mapping.
 
-Four mutations were cut from snapshots and each was restored byte for byte.
-Renaming the allowlist read refusal turns the reading-mode case red; renaming
-the manifest compare refusal turns the comparing-mode case red; the doc
-mutation — replacing the sentence that distinguishes the two answers with one
-that does not — turns the guide case red while the five behavioural cases stay
-green, which is what a guarded guide should do. Each restored file re-greened
-at 6/6.
+Five mutations were cut from snapshots and each was restored byte for byte,
+verified with `cmp`. Renaming the allowlist read refusal turns the
+reading-mode case red; renaming the manifest compare refusal turns the
+comparing-mode case red; the doc mutation — replacing the sentence that
+distinguishes the two answers with one that does not — turns the guide case red
+while the five behavioural cases stay green, which is what a guarded guide
+should do; each restored file re-greened at 6/6.
+
+The fifth mutation is the one the rewrite exists for: moving the hoisted walk
+back inside the `--refresh` branch, which is the arrangement WP-215 removed.
+All five cases of the rewritten root test go red, and the reason is the fault
+this package is about rather than a syntax slip — with the walk back inside the
+writer, a tree whose `native` root is gone answers `--check` and `--write` with
+`source-import-allowlist-invalid`, because the reading modes no longer walk and
+so compare the stale list against a tree they never looked at, while
+`--refresh` still says `source-import-source-root-missing`. One fault, two
+answers, and the reading modes' answer is about the list instead of the root.
+Restoring the builder from its snapshot re-greens 5/5, so the single hoisted
+call is load-bearing and not an aesthetic change.
 
 
 ### WP-215 — Walk the sources in every mode, and name a repair that only reordered
