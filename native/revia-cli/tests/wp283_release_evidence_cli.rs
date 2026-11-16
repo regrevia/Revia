@@ -114,6 +114,43 @@ fn release_evidence_gate_rejects_copied_debug_binary_before_workloads() {
     assert!(!error.contains(root.to_str().unwrap()));
 }
 
+// The CLI legend promises exit code `101` for an internal panic, and `101` is
+// only what a panicking process returns when the panic strategy is `unwind`.
+// With `panic = "abort"` the process dies with SIGABRT instead, so the shell
+// reports 134 and `ExitStatus::code()` is `None`. The exit-code test in
+// wp486 proves `101` on the debug profile, and every CI workflow builds the
+// release profile and then runs debug tests, so nothing was reading the
+// strategy that the shipped binary is actually built with. This test asks the
+// release binary itself, which is the artefact the legend describes.
+#[test]
+fn release_binary_reports_the_panic_strategy_the_legend_needs() {
+    let repo_root = repo_root();
+    let release_name = if cfg!(windows) { "revia.exe" } else { "revia" };
+    let release_binary = repo_root.join("native/target/release").join(release_name);
+    assert!(
+        release_binary.is_file(),
+        "build the release binary before this test"
+    );
+
+    let output = Command::new(&release_binary)
+        .current_dir(&repo_root)
+        .arg("panic-strategy")
+        .output()
+        .unwrap();
+
+    assert!(
+        output.status.success(),
+        "stderr={}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let strategy = String::from_utf8_lossy(&output.stdout).trim().to_owned();
+    assert_eq!(
+        strategy, "unwind",
+        "the release binary is built with panic = {strategy}, so a panic exits \
+         without code 101 and the CLI legend is false for the shipped binary"
+    );
+}
+
 fn temp_root(label: &str) -> PathBuf {
     let counter = TEMP_COUNTER.fetch_add(1, Ordering::Relaxed);
     std::env::temp_dir().join(format!(

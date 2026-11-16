@@ -877,6 +877,25 @@ fn main() {
         [command] if command == "internal-panic-probe" => {
             panic!("internal panic, provoked on purpose by the exit-code test")
         }
+        // The legend's `101` is a fact about the shipped binary, and the
+        // strategy that produces it is a build configuration rather than
+        // anything this file can read. `cfg!(panic = "unwind")` sees the
+        // effective strategy however it was chosen -- the profile, `RUSTFLAGS`,
+        // or `.cargo/config.toml` -- so this arm reports the fact instead of
+        // letting the prose assert it. It is compiled into release builds on
+        // purpose: the binary under test is the one that ships, and the arm is
+        // read-only, so it cannot change that binary's behaviour.
+        [command] if command == "panic-strategy" => {
+            println!(
+                "{}",
+                if cfg!(panic = "unwind") {
+                    "unwind"
+                } else {
+                    "abort"
+                }
+            );
+            Ok(())
+        }
         _ => {
             eprintln!(
                 "Usage: revia <check|lex|digest|canonical|manifest|translate> <file> | compile [--schema-registry <registry>] <source> <artifact> | execute [--schema-registry <registry>] [--capability-policy <policy>] [--print-values] <source> <input-digest> | runtime-package <source> <bundle> | runtime-verify <bundle> | runtime-authority-pin <bundle> <input-digest> <pin> | runtime-receipt-verify <pin> <receipt> <result> <stdout> | project-run-verify <run> | runtime-run [--print-values] <bundle> <input-digest> <sandbox> | capability-comparison <catalog> <output> | capability-project-comparison <catalog> <project> <cache> <build> <profile-digest> <toolchain-digest> <output> | conformance-run <source> <input-digest> <transcript> | cross-language-matrix <source> <input-digest> <transcript> <node-result> <output> | replay-catalog <catalog> <output> | comparison-catalog <catalog> <project> <output> | experiment-kit <catalog> <project> <output> | replay-fault-catalog <catalog> <output> | replay-fault-corpus <corpus> <output> | replay-fault-corpus-gate <corpus> <evidence> | verify [--schema-registry <registry>] <graph> <artifact> | run [--schema-registry <registry>] [--capability-policy <policy>] [--print-values] <graph> <artifact> <input-digest> | project-init <directory> | project-check <project> | project-test <project> | project-scale <project> | project-execute-plan <project> <plan> <profile-digest> <toolchain-digest> <input-digest> | project-execute-plan-direct <project> <plan> <profile-digest> <toolchain-digest> <input-digest> | project-execute-plan-cached <project> <plan> <execution-cache> <profile-digest> <toolchain-digest> <input-digest> | project-execute <project> <module> <profile-digest> <toolchain-digest> <input-digest> | project-benchmark <project> <module> <profile-digest> <toolchain-digest> <input-digest> <report> | project-translate <project> <cache> <build> <profile-digest> <toolchain-digest> <module> | project-run [--project-receipt <receipt>] [--print-values] <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest> | project-run-sandbox <project> <cache> <build> <profile-digest> <toolchain-digest> <module> <input-digest> <sandbox> | project-build <project> <cache> <build> <profile-digest> <toolchain-digest> | server-smoke | project-server-smoke <project> <module> <profile-digest> <toolchain-digest> <input-digest> | release-package <binary> <candidate> <target> <source-digest> <toolchain-digest> | release-verify <candidate> <target> <source-digest> <toolchain-digest> | release-install <candidate> <target> <source-digest> <toolchain-digest> | release-rollback <install> <target> <source-digest> <toolchain-digest> | release-matrix <target> <output> | node-free-gate <source> <project> <module> <report> | developer-gate <project> <module> <input-digest> <report> | toolchain-gate <source> <project> <module> <input-digest> <report> | release-evidence-gate <source> <project> <module> <fault-corpus> <evidence>"
