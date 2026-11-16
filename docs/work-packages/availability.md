@@ -2671,13 +2671,17 @@ case.
 
 ### WP-207 — Name a directory the walk cannot enter
 
-`--refresh` is the only mode that walks the tree; `--check` and `--write`
-compare the list against the manifest and never enter a directory. The walk
-called `readdir()` on every directory it met, and the root's absence was mapped
-to `source-import-source-root-missing` by the caller while every other refusal
-passed through. A subdirectory the process cannot enter raised `EACCES` whose
-message carries an absolute path, which `stableCode()` drops, so the one mode
-that rewrites the list from the tree printed `source-import-failed`.
+When this package was written the walk lived inside the writer, so only
+`--refresh` entered a directory and `--check` and `--write` compared the list
+against the manifest without looking at the tree. WP-215 has since hoisted the
+walk ahead of the mode branch, and the name this package added is now reported
+by all three modes; the paragraph below describes the walk as it was when the
+fault was first named. The walk called `readdir()` on every directory it met,
+and the root's absence was mapped to `source-import-source-root-missing` by the
+caller while every other refusal passed through. A subdirectory the process
+cannot enter raised `EACCES` whose message carries an absolute path, which
+`stableCode()` drops, so the one mode that rewrites the list from the tree
+printed `source-import-failed`.
 
 It is now `source-import-directory-unreadable`, raised inside `walk()` rather
 than at the call site so a nested directory is told apart from a root that is
@@ -2686,9 +2690,14 @@ gone: `ENOENT` is rethrown untouched and still becomes
 restore the directory, or fix the permission to enter it.
 
 [`test/source-import-directory-unreadable.test.js`](../../test/source-import-directory-unreadable.test.js)
-pins both halves. The first case locks `src/deep` and expects the new name. The
-second pins the boundary: the reading modes never walk, so after the lock is
-lifted a refresh writes the list and `--check` must not report the walk's fault.
+pins both halves. The first case locks `src/deep` and expects the new name in
+all three modes, because every mode now walks and a mode that did not enter the
+directory would answer with a different name for the same fault — with the walk
+back inside the writer, `--check` reports `source-import-file-unreadable`,
+blaming the listed file it cannot reach rather than the directory it cannot
+enter. The second pins the repair: the refusal lands before anything is
+written, so lifting the lock leaves a tree that refreshes and checks clean with
+the list it already had.
 Directories are locked rather than files, and the `chmod` is undone in a
 `finally`, so a failure cannot leave the fixture unusable and the case also
 holds when the suite runs as root.

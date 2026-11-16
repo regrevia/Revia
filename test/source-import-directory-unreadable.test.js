@@ -5,56 +5,67 @@ import test from 'node:test'
 
 import { run, temporaryRoot } from '../test-support/source-import-fixture.js'
 
-// Only --refresh walks the sources. A directory inside a walked root that the
-// process cannot enter stopped the walk with EACCES, which carries an absolute
-// path and so becomes the unnamed failure: the operator saw a fault with no
-// name and no repair, in the one mode whose whole job is to rewrite the list
-// from the tree.
+// Every mode walks the source roots, so a directory inside a walked root that
+// the process cannot enter stops the walk whichever mode asked. The walk used
+// to live inside the writer, so this fault stopped `--refresh` alone: `--check`
+// compared the list against a tree it had never entered and called the tree
+// clean. The walk is now hoisted ahead of the mode branch, and the refusal is
+// raised inside `walk()` rather than at the call site so a nested directory is
+// told apart from a root that is gone: `ENOENT` is rethrown untouched and still
+// becomes `source-import-source-root-missing` at the caller. The two repairs
+// stay apart — restore the directory, or fix the permission to enter it.
 //
 // A directory is used rather than a file so the case also holds when the suite
 // runs as root, where a mode bit on a file would not stop a read.
-test('a directory the walk cannot enter is named in --refresh', async () => {
+test('a directory the walk cannot enter is named in every mode', async () => {
   const root = await temporaryRoot('a directory the walk cannot enter')
   const locked = join(root, 'src/deep')
   await mkdir(locked, { recursive: true })
   await writeFile(join(locked, 'x.mjs'), 'x\n')
-  await chmod(locked, 0o000)
 
-  let result
+  // The list and the manifest are written first, so each mode reaches the walk
+  // rather than one of its own absent-file answers.
+  const settled = await run(root, '--refresh')
+  assert.equal(settled.status, 0, settled.stderr)
+
+  await chmod(locked, 0o000)
   try {
-    result = await run(root, '--refresh')
+    for (const mode of ['--check', '--write', '--refresh']) {
+      const result = await run(root, mode)
+      assert.equal(result.status, 1, `${mode} called a tree it cannot enter clean`)
+      assert.equal(result.stderr, 'source-import-directory-unreadable\n', `${mode} named one fault two ways`)
+      assert.equal(result.stdout, '', `${mode} published a receipt for a tree it could not walk`)
+    }
   } finally {
     await chmod(locked, 0o755)
   }
-
-  assert.equal(result.status, 1)
-  assert.equal(result.stderr, 'source-import-directory-unreadable\n')
-  assert.equal(result.stdout, '')
 })
 
-// The reading modes compare the list against the manifest and never walk, so a
-// directory they cannot enter is not their fault to report: nothing they do
-// touches the tree. Pinning this keeps the new name from spreading to modes
-// that cannot reach it.
-test('the reading modes never walk, so the same tree is not their fault', async () => {
+// The refusal lands before anything is written, so the lock is the whole of the
+// interruption: once it is lifted the tree checks clean with the list it
+// already had. A mode that half-wrote before failing would show up here as a
+// transition where `unchanged` belongs.
+test('a lock that is lifted leaves the tree as it was', async () => {
   const root = await temporaryRoot('a directory the walk cannot enter')
   const locked = join(root, 'src/deep')
   await mkdir(locked, { recursive: true })
   await writeFile(join(locked, 'x.mjs'), 'x\n')
-  await chmod(locked, 0o000)
 
-  let refreshed
+  const settled = await run(root, '--refresh')
+  assert.equal(settled.status, 0, settled.stderr)
+
+  await chmod(locked, 0o000)
   try {
-    refreshed = await run(root, '--refresh')
+    assert.equal((await run(root, '--refresh')).status, 1)
   } finally {
     await chmod(locked, 0o755)
   }
-  assert.equal(refreshed.status, 1)
 
-  // With the directory readable again the list is written, and the manifest it
-  // describes is then checkable: the two modes that read it never entered.
   const repaired = await run(root, '--refresh')
-  assert.equal(repaired.status, 0)
+  assert.equal(repaired.status, 0, repaired.stderr)
+  assert.equal(JSON.parse(repaired.stdout).allowlist_transition, 'unchanged')
+  assert.equal(JSON.parse(repaired.stdout).manifest_transition, 'unchanged')
+
   const checked = await run(root, '--check')
-  assert.notEqual(checked.stderr, 'source-import-directory-unreadable\n')
+  assert.equal(checked.status, 0, checked.stderr)
 })
