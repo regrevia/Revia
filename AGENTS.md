@@ -55,20 +55,25 @@ Revia repository.
    `--refresh` writes it, so an absent list is the state that mode exists to
    fix rather than a fault; a path that holds a directory where the list
    belongs is a fault, and since nothing can be read from it there is no
-   content to name, so the reading modes report
-   `source-import-allowlist-unreadable` rather than the unnamed failure, and
-   `--refresh` reads the list before replacing it so it reports the same name
-   for the same refusal instead of the unnamed failure; only a file-system
-   error is mapped there, because the marked-list refusal has no code and must
-   still reach the operator as `byte-order-mark-not-allowed`. The
+   content to name, so the two modes that only read report
+   `source-import-allowlist-unreadable` rather than the unnamed failure. The
    modes that write the manifest say
    `source-import-manifest-unwritable` when the write cannot land — a
    directory on the path is the case that used to report the unnamed failure
    — while `--check` still reports drift or absence, because it never writes.
-   The allowlist follows: `--refresh` is the only mode that writes it, so a
-   path that will not take it is `source-import-allowlist-unwritable`, and a
-   marked list is still refused with `byte-order-mark-not-allowed` before the
-   write rather than repaired by the refresh that would erase it. A symbolic
+   The allowlist follows: `--refresh` is the only mode that writes it, so the
+   same directory is `source-import-allowlist-unwritable` there, and the two
+   answers are a fact about the mode rather than two names for one fault:
+   `--refresh` replaces what the path holds, so it reaches the write and names
+   the write, while the reading modes never reach one. A list the process may
+   not read is the other cause, and that refusal is the same in every mode,
+   because `--refresh` reads the list before replacing it rather than writing
+   over a file it never looked at: it reports
+   `source-import-allowlist-unreadable` instead of the unnamed failure, and
+   only a file-system error is mapped there, because the marked-list refusal
+   has no code and must still reach the operator as
+   `byte-order-mark-not-allowed`, which a marked list is refused with before
+   the write rather than repaired by the refresh that would erase it. A symbolic
    link at the manifest path is neither of those: the write would land on
    whatever it points at and still report the bytes it computed, and reading
    follows the link too, so a dangling one would look exactly like an absent

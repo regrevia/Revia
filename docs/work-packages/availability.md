@@ -2357,6 +2357,49 @@ folding the unreadable case into the missing one — each restored file
 re-greening at 2/2, 3/3 and 2/2.
 
 
+### WP-216 — Name the directory refusal in every mode, and prove the walk refusals are not refresh-only
+
+WP-215 hoisted the walk ahead of the mode branch and made every mode report
+`source-import-entry-invalid` for a pipe, but it left the *root* refusals
+untested outside `--refresh`. The tracked test that existed covered two
+`--refresh` cases only, so nothing in the suite would have noticed if a later
+change put the walk back inside the writer: a suite can only prove the mode it
+runs. The refusal table for a source root was read off a healthy fixture in
+all three modes — a root that is gone, that is a file, that is a symbolic
+link, that holds a link, and that cannot be entered — and every one of them
+reports the same name in `--check`, `--write` and `--refresh`.
+
+That test now covers all five faults in all three modes, from a fixture that
+is first made healthy by a successful `--refresh` rather than assumed healthy,
+because a tree broken before it was ever refreshed fails on the walk and hides
+the fault under test. The second gap was in the two files the gate both reads
+and writes: a *directory* standing where the allowlist or the manifest belongs
+was refused with a different name depending on the mode — `-unreadable` where
+the mode only reads, `-unwritable` where the mode writes — and neither name
+was pinned by a test. It is now `test/source-import-path-holds-directory.test.js`,
+five cases plus the guide clause, and the split it pins is the split the guide
+documents: the reading modes reach a read and name the read, `--refresh`
+replaces what the path holds and reaches a write and names the write. Those
+are two facts about the mode, not two names for one fault, and the guide says
+so in as many words — which is now read by the test rather than trusted, so
+the sentence cannot drift away from the behaviour it describes.
+
+The kind guards are deliberately left alone. Both carry a comment saying a
+directory keeps the names those modes already describe, so refusing it as
+`-invalid-kind` would have been a rename of a fault the gate already reports,
+and a rename is not a repair. The pass-through for `EISDIR` was tried as a
+mutation and stayed green, which is the correct result: the read path already
+maps it, and the guard is what makes the answer stable rather than the mapping.
+
+Four mutations were cut from snapshots and each was restored byte for byte.
+Renaming the allowlist read refusal turns the reading-mode case red; renaming
+the manifest compare refusal turns the comparing-mode case red; the doc
+mutation — replacing the sentence that distinguishes the two answers with one
+that does not — turns the guide case red while the five behavioural cases stay
+green, which is what a guarded guide should do. Each restored file re-greened
+at 6/6.
+
+
 ### WP-215 — Walk the sources in every mode, and name a repair that only reordered
 
 Issue #37 reported two faces of one asymmetry, and both reproduce on the
