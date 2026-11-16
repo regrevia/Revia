@@ -2357,6 +2357,49 @@ folding the unreadable case into the missing one — each restored file
 re-greening at 2/2, 3/3 and 2/2.
 
 
+### WP-215 — Walk the sources in every mode, and name a repair that only reordered
+
+Issue #37 reported two faces of one asymmetry, and both reproduce on the
+shipped gate. A pipe standing inside a walked root was refused by `--refresh`
+with `source-import-entry-invalid` and exit 1, while `--check` reported the
+same tree clean and `--write` left it as it was: only the writer walked the
+roots, and the walk is the only thing that sees an object that is neither a
+file nor a directory. Separately, an allowlist with its first two entries
+swapped was refused by `--check` and `--write` as
+`source-import-allowlist-order-invalid`, and `--refresh` repaired it
+correctly with exit 0 but called the repair `replaced` — the same word it
+uses for a list that gained or lost a path, so a caller could not tell a
+reordering from a rewrite.
+
+The walk is now hoisted ahead of the mode branch, so every mode walks the same
+roots before it decides anything, and `--check` and `--write` inherit the
+refusals the writer already had: a pipe, a socket or a device reports
+`source-import-entry-invalid` in all three modes. The documented asymmetry
+that `--refresh` succeeds where the reading modes refuse is untouched; the
+defect was that one mode could not see the tree the other two were describing.
+
+`--refresh` renders the list from the files the single hoisted walk named,
+rather than walking a second time. Two walks could disagree about a tree that
+changed between them, and the receipt would then describe a tree neither walk
+saw, so the property is asserted on the source: the gate calls `selectFiles`
+exactly once and `renderAllowlist` is handed `files`.
+
+The transition vocabulary gains `reordered`: a repair that publishes exactly
+the same set of paths in a different order is now named, and `replaced` is
+left to a list that genuinely gained or lost a path. The discriminator is the
+path set and not the bytes, which is why the check parses the previous list
+leniently in its own `try`/`catch` instead of reusing the reader — the reader
+throws `source-import-allowlist-order-invalid`, which is exactly the state
+`--refresh` exists to repair. A previous list that names a duplicate is
+`replaced`, not `reordered`, because it does not name the same set.
+
+Three mutations were cut from a snapshot, each reddening the tracked test with
+its own signature and each restored byte for byte: reverting the hoist so only
+the writer walks turns the pipe case red in all three modes; rendering from a
+second walk turns the single-walk assertion red; and dropping the `reordered`
+branch turns the reordering case red while leaving the `replaced` case green,
+so no one of them stands in for another.
+
 ### WP-214 — Report the change a writing mode made, not only the tree it left
 
 Issue #36 measured that the two writing modes print the same line and exit 0

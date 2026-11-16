@@ -52,15 +52,10 @@ export function stub(path) {
   return path.endsWith('.json') ? '{}\n' : 'published\n'
 }
 
-export async function temporaryRoot(missing) {
-  const root = await mkdtemp(join(tmpdir(), 'revia-explicit-path-missing-'))
-  await mkdir(join(root, 'scripts'), { recursive: true })
-  await copyFile(BUILDER, join(root, 'scripts/build-source-import-manifest.js'))
-  await copyFile(SELECTION, join(root, 'scripts/source-import-selection.mjs'))
-  await writeFile(
-    join(root, 'SOURCE_IMPORT_FILES.json'),
-    `${JSON.stringify({ files: [], schema: 'revia.source-import-allowlist@1.0.0' })}\n`,
-  )
+// Every mode walks the source roots and every mode resolves the selection, so
+// a fixture that wants to exercise any one fault has to hold the rest of the
+// published tree: a root without one reports the missing path instead.
+export async function populatePublished(root, missing) {
   for (const directory of ['doc', 'native', 'src', 'test', 'test-support']) {
     await mkdir(join(root, directory), { recursive: true })
   }
@@ -83,6 +78,18 @@ export async function temporaryRoot(missing) {
     // JSON and keep the module type the shipped script is written in.
     await writeFile(join(root, path), stub(path))
   }
+}
+
+export async function temporaryRoot(missing) {
+  const root = await mkdtemp(join(tmpdir(), 'revia-explicit-path-missing-'))
+  await mkdir(join(root, 'scripts'), { recursive: true })
+  await copyFile(BUILDER, join(root, 'scripts/build-source-import-manifest.js'))
+  await copyFile(SELECTION, join(root, 'scripts/source-import-selection.mjs'))
+  await writeFile(
+    join(root, 'SOURCE_IMPORT_FILES.json'),
+    `${JSON.stringify({ files: [], schema: 'revia.source-import-allowlist@1.0.0' })}\n`,
+  )
+  await populatePublished(root, missing)
   return root
 }
 

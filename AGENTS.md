@@ -91,7 +91,18 @@ Revia repository.
    than `replaced`: nothing was there to compare with. A manifest that
    already holds the bytes `--write` computed is left alone rather than
    rewritten, so `unchanged` describes the file and not just the bytes it would
-   have held.
+   have held. A repair that only reordered the list publishes exactly the same
+   files as before, and `replaced` described it the same way as a list that
+   gained or lost a path, so `--refresh` names it `reordered`: the reading
+   modes refuse that list as `source-import-allowlist-order-invalid`, and the
+   mode that fixes it says what it fixed.
+   Every mode walks the source roots, not only the one that writes the list,
+   because the walk is the only thing that sees an object that is not a file
+   and not a directory: a pipe, a socket or a device standing inside a root
+   was refused by `--refresh` alone, so `--check` called that tree clean and
+   `--write` left it as it was. Every mode now reports
+   `source-import-entry-invalid` for it, and `--refresh` publishes the files
+   the same walk names rather than walking a second time.
    A pipe, a socket or a device is not a list or a manifest at all, and every
    mode opens both: the gate would stop with no answer rather than a name, so
    the kind is refused before the open and reports

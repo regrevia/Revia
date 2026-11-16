@@ -10,6 +10,7 @@ import {
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
+import { populatePublished } from '../test-support/source-import-fixture.js'
 
 const repository = new URL('../', import.meta.url)
 const BUILDER = new URL('scripts/build-source-import-manifest.js', repository)
@@ -28,6 +29,7 @@ async function temporaryRoot(files) {
   await copyFile(BUILDER, join(root, 'scripts/build-source-import-manifest.js'))
   await copyFile(SELECTION, join(root, 'scripts/source-import-selection.mjs'))
   await writeFile(join(root, 'note.txt'), 'hello\n')
+  await populatePublished(root, 'nothing-is-missing')
   await writeFile(join(root, 'SOURCE_IMPORT_FILES.json'), allowlist(files))
   return root
 }

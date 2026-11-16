@@ -65,6 +65,13 @@ try {
   if (allowlistStat && !allowlistStat.isFile() && !allowlistStat.isDirectory()) {
     throw new Error('source-import-allowlist-invalid-kind')
   }
+  // Only --refresh walked the roots, so a pipe, a socket or a device standing
+  // inside one was refused by that mode alone: the tree the writing mode would
+  // not touch was called clean by the two modes that read, and the operator who
+  // ran --check was told nothing was wrong with it. The walk is the only thing
+  // that sees those objects, so every mode walks the same roots before it
+  // decides, and --refresh publishes exactly the files it names here.
+  const files = await selectFiles(ROOT)
   if (mode === '--refresh') {
     // --check refuses a marked allowlist, so --refresh has to refuse it too;
     // rewriting the file would silently erase the one thing that was wrong.
@@ -81,7 +88,6 @@ try {
       }
       throw error
     })
-    const files = await selectFiles(ROOT)
     const rendered = renderAllowlist(files)
     // A caller cannot tell a repair from a no-op by the bytes it gets back,
     // because both leave the same tree and print the same receipt. Reading
@@ -93,10 +99,17 @@ try {
     // never covers a fault that has its own name.
     // `readMarked` answers null when there is no list at all, and a list that
     // cannot be read is the case `created` names: nothing was there to keep.
+    // A list that publishes exactly the same files in another order is the one
+    // difference the reading modes refuse and this mode repairs without
+    // changing what the tree publishes, and `replaced` described it the same
+    // way as a list that gained or lost a path. Naming it is the only way the
+    // operator learns the repair touched the order and nothing else.
     allowlistTransition = await readMarked(ALLOWLIST).then(
-      (previous) => (previous === null
-        ? 'created'
-        : (previous.toString('utf8') === rendered ? 'unchanged' : 'replaced')),
+      (previous) => {
+        if (previous === null) return 'created'
+        if (previous.toString('utf8') === rendered) return 'unchanged'
+        return reordersOnly(previous, files) ? 'reordered' : 'replaced'
+      },
       () => 'created',
     )
     // --refresh is the only mode that writes the list, so a path that will
@@ -222,6 +235,26 @@ async function readMarked(path) {
     if (error?.code === 'ENOENT') return null
     throw error
   }
+}
+
+// Whether the list that is already there publishes the same set of paths as
+// the refresh computed, and differs only in the order it names them. Anything
+// else — a path added, a path dropped, a list that cannot be parsed — is a
+// change to what the tree publishes, which `replaced` describes. A list the
+// reading modes would refuse as unparseable has no order to compare.
+function reordersOnly(previous, files) {
+  let parsed
+  try {
+    parsed = JSON.parse(previous.toString('utf8'))
+  } catch {
+    return false
+  }
+  if (!Array.isArray(parsed?.files) || parsed.files.length !== files.length) {
+    return false
+  }
+  const before = new Set(parsed.files)
+  if (before.size !== files.length) return false
+  return files.every((path) => before.has(path))
 }
 
 async function buildManifest(allowlist) {
