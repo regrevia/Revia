@@ -141,8 +141,14 @@ Revia repository.
    The selection module is not one of those paths: it is the tracked file that
    reads and renders the list, so a tree without it cannot check anything, and
    no refresh brings a module back. Every mode reports
-   `source-import-selection-missing`; only a missing module is mapped, so a
-   module that is present and broken still reports what broke.
+   `source-import-selection-missing`. A module that is there and will not
+   parse is a different repair, because Git has nothing to restore from and
+   the source is what has to change: it reports
+   `source-import-selection-invalid`, and it used to report the unnamed
+   failure because the loader's own `SyntaxError` carries neither the code
+   vocabulary nor the file it came from. A module the process may not open is
+   neither, and a syntax fix does not help it, so it reports
+   `source-import-selection-unreadable`, which is mode bits to change.
    `--refresh` rewrites the allowlist one path per line, in the same order
    `--check` reads it, so the diff of a refresh shows the files that
    changed and nothing else; do not reformat the list by hand.

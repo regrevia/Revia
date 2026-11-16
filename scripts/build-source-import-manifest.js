@@ -37,12 +37,27 @@ try {
   // The module that reads and renders the list is a tracked file the build
   // must publish, so losing it is not a stale entry and no refresh brings it
   // back. A static import would raise before this block and let a Node stack
-  // reach stderr; loading it here keeps every fault named. Only the module
-  // being gone is mapped, so a broken one still reports what broke.
+  // reach stderr; loading it here keeps every fault named. Three faults need
+  // three names because the repair differs: a missing module is restored from
+  // Git, one the process may not open is mode bits, and one that is present
+  // but will not parse is source to fix. The third reached the operator as
+  // `source-import-failed`, the fallback that drops everything it was told —
+  // so the one file that has to change was never named in the one place that
+  // knows it. The loader's own message is not a substitute: it is
+  // `Unexpected end of input` with neither file nor position, and only one
+  // module can be meant, so the code names it instead of carrying a path.
   ;({ ALLOWLIST_SCHEMA, compareUtf8, renderAllowlist, selectFiles } =
     await import('./source-import-selection.mjs').catch((error) => {
       if (error?.code === 'ERR_MODULE_NOT_FOUND') {
         throw new Error('source-import-selection-missing')
+      }
+      // A module the process may not open never parses, so a permission is
+      // not a syntax fault: the file is intact and mode bits are the repair.
+      if (error?.code === 'EACCES' || error?.code === 'EPERM') {
+        throw new Error('source-import-selection-unreadable')
+      }
+      if (error instanceof SyntaxError) {
+        throw new Error('source-import-selection-invalid')
       }
       throw error
     }))

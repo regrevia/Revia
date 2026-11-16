@@ -717,6 +717,7 @@
     "test/source-import-non-regular-path.test.js",
     "test/source-import-path-holds-directory.test.js",
     "test/source-import-refresh-selection.test.js",
+    "test/source-import-selection-invalid.test.js",
     "test/source-import-selection-missing.test.js",
     "test/source-import-source-root-invalid.test.js",
     "test/source-import-source-root-missing.test.js",
