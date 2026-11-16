@@ -2357,6 +2357,29 @@ folding the unreadable case into the missing one — each restored file
 re-greening at 2/2, 3/3 and 2/2.
 
 
+### WP-217 — Make the guide agree with itself about which modes walk
+
+WP-216 left one sentence in AGENTS.md disagreeing with another. The paragraph
+that tells an operator how to repair a directory inside a walked root opened
+with `--refresh` is the only mode that walks the sources, which was true when
+the walk lived inside the writer and stopped being true the moment WP-215
+hoisted it: two paragraphs further down the same section says every mode walks.
+Both sentences were on disk at once, and no test read either, so the guide a
+contributor lands on described a mode set the gate no longer has, and an
+operator who read the first sentence would expect `--check` to call a tree with
+an unreadable directory clean when it exits 1 with
+`source-import-directory-unreadable`.
+
+The sentence now says what the gate does — every mode walks, so the refusal is
+the same name in every mode — and the tracked test for the walk reads it. The
+test keeps the paragraph above it pinned, and adds two assertions on the
+sentence itself: one that the wrong claim is absent, and one that the corrected
+claim is present, because the corrected claim can drift by being softened
+rather than deleted. Two mutations, each restored byte for byte: putting the old
+sentence back reddens the guide case, and replacing the corrected clause with a
+weaker one that names no mode reddens the same case while the five behavioural
+cases stay green. The file re-greens at 6/6.
+
 ### WP-216 — Name the directory refusal in every mode, and prove the walk refusals are not refresh-only
 
 WP-215 hoisted the walk ahead of the mode branch and made every mode report

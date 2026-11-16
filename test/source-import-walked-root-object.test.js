@@ -163,6 +163,21 @@ test('the contributor guide names the walk and the word it now reports', async (
     'the guide must say which modes walk the roots',
   )
   assert.match(guide, /`source-import-entry-invalid`/u)
+  // The guide said the directory refusal was reached by `--refresh` alone,
+  // which was true of the mode that walked and false of the other two, and it
+  // contradicted the paragraph above it. A guide that names one mode while the
+  // sentence two paragraphs down says every mode is a guide an operator cannot
+  // act on, so the claim is pinned by the sentence and not only by the code.
+  assert.doesNotMatch(
+    guide,
+    /`--refresh` is the only mode that walks/u,
+    'the guide must not name one mode as the only one that walks',
+  )
+  assert.match(
+    guide,
+    /`source-import-directory-unreadable`, and it is the same name in every mode/u,
+    'the directory refusal must be documented as one name in every mode',
+  )
   assert.match(guide, /`--refresh` names it `reordered`/u)
   assert.match(guide, /`created`, `replaced`\s+or `unchanged`, in one vocabulary/u)
 })

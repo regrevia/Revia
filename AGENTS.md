@@ -80,11 +80,11 @@ Revia repository.
    manifest — every mode reports `source-import-manifest-symlink`. The
    allowlist is checked the same way and for the same reason, reported as
    `source-import-allowlist-symlink` before any mode reads or rewrites it.
-   `--refresh` is the only mode that walks the sources, and a directory inside
-   a walked root that the process is not allowed to enter stopped the walk with
-   an error whose message carried a path, so the mode whose job is to rewrite
-   the list reported the unnamed failure: it is now
-   `source-import-directory-unreadable`. A root that is gone keeps
+   A directory inside a walked root that the process is not allowed to enter
+   stopped the walk with an error whose message carried a path, so the unnamed
+   failure reached the operator: it is now
+   `source-import-directory-unreadable`, and it is the same name in every mode
+   because every mode walks. A root that is gone keeps
    `source-import-source-root-missing`, so a directory to restore and a
    permission to fix stay apart.
    A writing mode that repaired the tree and one that found nothing to do leave
