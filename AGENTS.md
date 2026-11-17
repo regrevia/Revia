@@ -187,6 +187,11 @@ Revia repository.
    `--refresh` rewrites the allowlist one path per line, in the same order
    `--check` reads it, so the diff of a refresh shows the files that
    changed and nothing else; do not reformat the list by hand.
+   `docs/work-packages/availability.md` is the acceptance record, and it holds
+   one copy of the plan followed by one entry per work package, newest first; a
+   second copy of either is a bad splice rather than a second record, so
+   `test/work-package-log-single-plan.test.js` refuses a repeated plan heading, a
+   repeated number, and a title glued onto the middle of a line.
 
 ## Public Claims
 

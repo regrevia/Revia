@@ -739,7 +739,8 @@
     "test/tracked-test-runner.test.js",
     "test/translation-artifact.test.js",
     "test/type-contract.test.js",
-    "test/type-value-reference-oracle.test.js"
+    "test/type-value-reference-oracle.test.js",
+    "test/work-package-log-single-plan.test.js"
   ],
   "schema": "revia.source-import-allowlist@1.0.0"
 }
