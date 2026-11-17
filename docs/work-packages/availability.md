@@ -2357,7 +2357,39 @@ folding the unreadable case into the missing one — each restored file
 re-greening at 2/2, 3/3 and 2/2.
 
 
-### WP-220 — The gate names exactly one mode
+### WP-221 — `unchanged` is a non-write on both files
+
+**Counterexample.** A tree whose allowlist already matches the tree is correct,
+and `--refresh` says so with `allowlist_transition: unchanged` — but it wrote
+the list anyway. Issue #40 measured it in a worktree at `4a954e5`: the list's
+mtime advanced `1794881098 -> 1794881445` while the manifest's stayed
+`1794881097`, and the allowlist bytes were `sha256 870094fa…` before and after.
+On a read-only tree the same write made the word expensive: `--check` exited 0
+on that correct list and `--refresh` exited 1 with
+`source-import-allowlist-unwritable`, a refusal about a list that needed no
+repair. The manifest side has guarded its write since the transition receipt
+landed, so the two files the gate writes gave `unchanged` two meanings.
+
+**Change.** `scripts/build-source-import-manifest.js` wraps the allowlist write
+in `if (allowlistTransition !== 'unchanged')`, mirroring the manifest branch,
+with a comment naming the reason. `reordered` is untouched and still writes,
+because that name is the news that the order was repaired rather than found
+correct. `AGENTS.md` states the parity and keeps `reordered` on the writing side
+of the line.
+
+**Test.** `test/source-import-unchanged-is-a-non-write.test.js`, five cases:
+a second `--refresh` reports `unchanged` and the list's `mtimeMs` does not move;
+a `chmod 444` correct list refreshes to exit 0 rather than a refusal; a list
+missing a path under `chmod 444` still exits 1 with
+`source-import-allowlist-unwritable` (so the guard did not swallow a real
+failure); a swapped pair still reports `reordered` and the repair lands on disk;
+and the guide sentence is read rather than trusted.
+
+**Mutation proof.** Removing the guard fails 2 cases; inverting it to
+`=== 'unchanged'` fails 4, including the `reordered` repair; narrowing the
+guide clause fails the guide case. Every mutant restored byte-for-byte.
+
+## WP-220 — The gate names exactly one mode
 
 **Counterexample.** `node scripts/build-source-import-manifest.js --refresh
 --check` rewrote `SOURCE_IMPORT_FILES.json` and exited 0. The gate read

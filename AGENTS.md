@@ -96,7 +96,14 @@ Revia repository.
    than `replaced`: nothing was there to compare with. A manifest that
    already holds the bytes `--write` computed is left alone rather than
    rewritten, so `unchanged` describes the file and not just the bytes it would
-   have held. A repair that only reordered the list publishes exactly the same
+   have held. The list is left alone the same way and for the same reason: a
+   `--refresh` that found the order it would have written does not write it,
+   so on both files the word means this mode declined to touch a correct file
+   rather than rewrote it with identical bytes, and a correct list that cannot
+   be written is not turned into a refusal about a list that needed no repair.
+   `reordered` is the other side of that line and still writes, because it is
+   the news that the order was repaired rather than found correct. A repair
+   that only reordered the list publishes exactly the same
    files as before, and `replaced` described it the same way as a list that
    gained or lost a path, so `--refresh` names it `reordered`: the reading
    modes refuse that list as `source-import-allowlist-order-invalid`, and the

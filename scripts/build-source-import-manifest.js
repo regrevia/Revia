@@ -138,9 +138,18 @@ try {
     // --refresh is the only mode that writes the list, so a path that will
     // not take it stops the repair the operator ran this mode for. Left bare,
     // the EISDIR carried an absolute path that stableCode() dropped.
-    await writeFile(ALLOWLIST, rendered).catch(() => {
-      throw new Error('source-import-allowlist-unwritable')
-    })
+    // A list that already holds these bytes has nothing to write, and the
+    // transition is not a description of an attempt: writing anyway made
+    // `unchanged` a claim only the bytes kept, and on a read-only tree it
+    // turned the word into a refusal about a list that needed no repair. The
+    // manifest side has guarded its write this way all along.
+    // `reordered` still writes, because that name is the news that the order
+    // was repaired rather than found correct.
+    if (allowlistTransition !== 'unchanged') {
+      await writeFile(ALLOWLIST, rendered).catch(() => {
+        throw new Error('source-import-allowlist-unwritable')
+      })
+    }
   }
   const allowlist = await readAllowlist()
   const manifest = await buildManifest(allowlist)

@@ -725,6 +725,7 @@
     "test/source-import-source-root-missing.test.js",
     "test/source-import-source-root-symlink.test.js",
     "test/source-import-transition-receipt.test.js",
+    "test/source-import-unchanged-is-a-non-write.test.js",
     "test/source-import-walked-root-object.test.js",
     "test/source-text.test.js",
     "test/structured-patch.test.js",
