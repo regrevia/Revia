@@ -286,7 +286,14 @@ function reordersOnly(previous, files) {
   }
   const before = new Set(parsed.files)
   if (before.size !== files.length) return false
-  return files.every((path) => before.has(path))
+  // The same paths in the same order are not a repair to the order, however
+  // differently the bytes around them are written: a list that lost its final
+  // newline or was re-indented publishes exactly what `--refresh` renders and
+  // no path moved, so `reordered` would be reporting the wrapper. This name is
+  // the news that the order was repaired, and only a path in another place is
+  // that news. `replaced` covers the rest, including this repair.
+  return !files.every((path, index) => parsed.files[index] === path)
+    && files.every((path) => before.has(path))
 }
 
 async function buildManifest(allowlist) {

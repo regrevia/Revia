@@ -2357,6 +2357,34 @@ folding the unreadable case into the missing one — each restored file
 re-greening at 2/2, 3/3 and 2/2.
 
 
+### WP-222 — `reordered` answers for the order, not the wrapper
+
+**Counterexample.** A correct allowlist that had only lost its final newline
+made `--refresh` report `allowlist_transition: reordered`, and one that had only
+been re-indented reported the same. No path moved in either case, and the
+refresh writes back exactly the bytes the renderer produces, so `reordered`
+was reporting the shape a file arrived in rather than a repair to its order.
+The gate compared the two files as sets, so any byte difference around an
+unchanged path order was the same as a swapped pair.
+
+**Change.** `scripts/build-source-import-manifest.js` compares the sequence,
+not the set: a list whose paths are already in the rendered order is not
+`reordered`, whatever the wrapper bytes say, and the refresh names it
+`replaced` while still writing the correct bytes. A real swap keeps
+`reordered`, so the name still means the order was repaired rather than found
+correct. `AGENTS.md` states that only a path in another place is that news.
+
+**Test.** `test/source-import-order-name-is-not-a-wrapper.test.js`, five cases:
+a list that only lost its trailing newline is `replaced` and the repair restores
+the bytes; a re-indented list is `replaced`; a swapped pair is still `reordered`
+and puts the paths back; after that repair a second `--refresh` reports
+`unchanged` and does not write; and the guide sentence is read rather than
+trusted.
+
+**Mutation proof.** Dropping the sequence test fails the two wrapper cases
+2/5; making the function always return false fails the swap case 1/5; narrowing
+the guide clause fails the guide case 1/5. Every mutant restored byte-for-byte.
+
 ### WP-221 — `unchanged` is a non-write on both files
 
 **Counterexample.** A tree whose allowlist already matches the tree is correct,

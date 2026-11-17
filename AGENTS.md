@@ -102,7 +102,10 @@ Revia repository.
    rather than rewrote it with identical bytes, and a correct list that cannot
    be written is not turned into a refusal about a list that needed no repair.
    `reordered` is the other side of that line and still writes, because it is
-   the news that the order was repaired rather than found correct. A repair
+   the news that the order was repaired rather than found correct, and only a
+   path in another place is that news: a list that was reformatted without
+   moving a path publishes exactly what the refresh renders, so it is
+   `replaced` and the name does not describe the wrapper. A repair
    that only reordered the list publishes exactly the same
    files as before, and `replaced` described it the same way as a list that
    gained or lost a path, so `--refresh` names it `reordered`: the reading
