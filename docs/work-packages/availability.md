@@ -2357,6 +2357,38 @@ folding the unreadable case into the missing one — each restored file
 re-greening at 2/2, 3/3 and 2/2.
 
 
+### WP-223 — a repeated path is a shape fault, not an order fault
+
+**Counterexample.** An allowlist naming the same path twice, left in perfectly
+sorted order, was refused by `--check` and `--write` as
+`source-import-allowlist-order-invalid`. Nothing about that file's order was
+wrong: the paths were the rendered sequence, and the one fault was that the list
+holds a path twice, which the schema cannot read. The refusal sent the operator
+to look at an ordering that was already correct, and the name that describes it
+already existed — `source-import-allowlist-invalid` — because a list of the
+wrong shape is exactly this.
+
+**Change.** `scripts/build-source-import-manifest.js` splits the one condition
+into two: a list whose de-duplicated paths are shorter than the list it names is
+`source-import-allowlist-invalid`, and only a list that is genuinely in another
+order keeps `source-import-allowlist-order-invalid`. Both are refusals in
+`--check` and `--write`; `--refresh` still repairs either by rendering the
+correct list, so the duplicate costs no path and no exit code. `AGENTS.md` says
+which of the two names a repeated path is, and why the order name would send the
+operator to a fault that is not there.
+
+**Test.** `test/source-import-allowlist-duplicate-is-shape.test.js`, four cases:
+a sorted list that repeats a path is `source-import-allowlist-invalid` in both
+reading modes with no stdout; a list that is only out of order still reports
+`source-import-allowlist-order-invalid`, so the two names stay apart; the
+refresh repairs the duplicate and publishes the same count it had; and the guide
+sentence is read rather than trusted.
+
+**Mutation proof.** Four mutants, each red and each restored byte for byte:
+folding the duplicate back into the order refusal, renaming the order refusal to
+the shape one, sending the duplicate refusal to the order name, and dropping the
+guide sentence. The guard reported 1 failing case for each.
+
 ### WP-222 — `reordered` answers for the order, not the wrapper
 
 **Counterexample.** A correct allowlist that had only lost its final newline

@@ -146,7 +146,10 @@ Revia repository.
    wrongly: it is a file to restore, and the reader says
    `source-import-allowlist-unparseable`. Only the parse is mapped, so a marked
    list keeps `byte-order-mark-not-allowed` and a list of the wrong shape keeps
-   `source-import-allowlist-invalid`. `--refresh` never parses the list it
+   `source-import-allowlist-invalid`. A list that names the same path twice is that
+   shape fault and not the order fault: the paths it lists can be perfectly
+   sorted, so nothing about the order is wrong and the operator told to look
+   there would fix nothing. `--refresh` never parses the list it
    replaces, so it still repairs this one.
    The selection module is not one of those paths: it is the tracked file that
    reads and renders the list, so a tree without it cannot check anything, and

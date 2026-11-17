@@ -245,9 +245,15 @@ async function readAllowlist() {
     || value.files.some((path) => !safePath(path))) {
     throw new Error('source-import-allowlist-invalid')
   }
+  // A list can name the same path twice in the rendered order. Nothing about
+  // that file's order is wrong, so it is the shape the schema cannot read and
+  // not the fault `order-invalid` names: told it was the order, the operator
+  // would go and look at an ordering that was already correct.
   const sorted = [...new Set(value.files)].sort(compareUtf8)
-  if (sorted.length !== value.files.length
-    || value.files.some((path, index) => path !== sorted[index])) {
+  if (sorted.length !== value.files.length) {
+    throw new Error('source-import-allowlist-invalid')
+  }
+  if (value.files.some((path, index) => path !== sorted[index])) {
     throw new Error('source-import-allowlist-order-invalid')
   }
   return value
