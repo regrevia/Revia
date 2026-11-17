@@ -2357,7 +2357,35 @@ folding the unreadable case into the missing one — each restored file
 re-greening at 2/2, 3/3 and 2/2.
 
 
-### WP-219 — Stop letting a thrown word wear the gate's vocabulary
+### WP-220 — The gate names exactly one mode
+
+**Counterexample.** `node scripts/build-source-import-manifest.js --refresh
+--check` rewrote `SOURCE_IMPORT_FILES.json` and exited 0. The gate read
+`process.argv[2]` and never looked at the positions after it, so a command
+line that named a writing mode anywhere still wrote while the operator read
+the word that says nothing moves. Exit code, receipt and file contents all
+agreed with a clean `--check`, so nothing in the output told them the tree had
+changed.
+
+**Change.** `scripts/build-source-import-manifest.js` now reads the whole
+argument list and accepts a mode only when exactly one was given; anything
+else — two modes, a mode plus a stray word, the same mode twice — prints the
+usage line and exits 64 without touching the tree. The usage line gained a
+second line saying the gate names exactly one mode. `AGENTS.md` records why
+the argument may not be guessed.
+
+**Test.** `test/source-import-modes-are-exclusive.test.js` (3 cases). A stale
+list is the observable: `--check` refuses it as
+`source-import-allowlist-unparseable`, `--refresh` repairs it as `replaced`,
+and whether the bytes moved is checked after every call rather than inferred
+from an exit code. Seven ambiguous command lines are each refused with 64,
+empty stdout, and the list left byte-identical.
+
+**Mutation proof.** `M1` restoring `const mode = process.argv[2]` fails 2
+cases; `M2` narrowing the newly documented clause fails 1; `M3` letting
+`--check` reach the refresh body fails 3. Each restored byte-identically.
+
+## WP-219 — Stop letting a thrown word wear the gate's vocabulary
 
 The fallback existed so that an error the gate had not classified would never
 print a path, and it did that. It also chose its answer by shape:

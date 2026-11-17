@@ -25,10 +25,18 @@ const MANIFEST = join(ROOT, 'SOURCE_IMPORT_MANIFEST.json')
 const BYTE_ORDER_MARK = Buffer.from([0xef, 0xbb, 0xbf])
 const BYTE_ORDER_MARK_CODE = 'byte-order-mark-not-allowed'
 
-const mode = process.argv[2]
+// The mode decides whether the tree is written, so it is the one argument
+// that may not be guessed. Reading the first one and ignoring the rest let a
+// command line that named a writing mode anywhere still write under a name
+// that reads like the checking one — the operator sees `--check` and the tree
+// moves. Two jobs is not a preference to resolve by position; it is a command
+// line that does not say what to do, and the usage line is the answer.
+const modes = process.argv.slice(2)
+const mode = modes.length === 1 ? modes[0] : undefined
 if (!['--refresh', '--write', '--check'].includes(mode)) {
   process.stderr.write(
-    'Usage: node scripts/build-source-import-manifest.js --refresh|--write|--check\n',
+    'Usage: node scripts/build-source-import-manifest.js --refresh|--write|--check\n' +
+      'The gate names exactly one mode.\n',
   )
   process.exit(64)
 }

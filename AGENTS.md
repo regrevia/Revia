@@ -156,6 +156,11 @@ Revia repository.
    a throw that happened to be one — `eperm`, `timeout` — arrived looking
    like a code this guide documents, and it now keeps the fallback unless it
    is in the gate's own vocabulary.
+   The mode decides whether the tree is written, so it is the one argument
+   that may not be guessed: the gate names exactly one, and a command line
+   carrying two is refused with the usage line rather than resolved by
+   position. It read the first and ignored the rest, so `--refresh --check`
+   rewrote the list while the operator read the word that says nothing moves.
    `--refresh` rewrites the allowlist one path per line, in the same order
    `--check` reads it, so the diff of a refresh shows the files that
    changed and nothing else; do not reformat the list by hand.

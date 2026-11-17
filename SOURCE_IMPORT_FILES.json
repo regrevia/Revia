@@ -715,6 +715,7 @@
     "test/source-import-manifest-symlink.test.js",
     "test/source-import-manifest-unreadable.test.js",
     "test/source-import-manifest-unwritable.test.js",
+    "test/source-import-modes-are-exclusive.test.js",
     "test/source-import-non-regular-path.test.js",
     "test/source-import-path-holds-directory.test.js",
     "test/source-import-refresh-selection.test.js",
