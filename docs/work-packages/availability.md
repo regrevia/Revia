@@ -2357,6 +2357,41 @@ folding the unreadable case into the missing one — each restored file
 re-greening at 2/2, 3/3 and 2/2.
 
 
+### WP-224 — a list missing a walked path is stale, and only `--check` says so
+
+**Counterexample.** `--check` builds the manifest from the allowlist and then
+compares those bytes with the manifest on disk, so a source file that landed
+under a walked root without being named in the list was never in the bytes it
+computed: the tree was reported clean and the file went unpublished. The
+manifest and the list agreed with each other precisely because one was derived
+from the other, so the one comparison the gate made could not see the omission.
+`--write` had the same blind spot and left a manifest short of the file a
+refresh would publish.
+
+**Change.** `scripts/build-source-import-manifest.js` compares the set the walk
+published with the set the list names and reports
+`source-import-allowlist-stale` when the tree holds a file the list does not
+name. The walk already ran for the object check, so no second walk is added. The
+refusal is raised in `--check` only, and last: `--write` writes the manifest for
+the list it read rather than reporting on the tree, `--refresh` is the repair and
+must not refuse its own input, and every earlier answer — a marked list, an
+unreadable one, a missing or drifted manifest — is a different repair that keeps
+its own name. Only one direction is stale: a listed path the tree lost keeps
+`source-import-file-missing`, because the file is what has to come back and no
+list edit describes it. `AGENTS.md` states the rule and both repairs.
+
+**Test.** `test/source-import-allowlist-stale.test.js`, four cases: a file left
+unlisted under a walked root makes `--check` refuse with the new name and empty
+stdout while `--write` still succeeds, so the refusal did not spread to the mode
+that does not report on the tree; `--refresh` repairs the list, publishes one
+more file, and the next `--check` is clean; a path the refresh published and the
+tree then lost still reports `source-import-file-missing` in both reading modes,
+so the stale name did not swallow it; and the guide sentence is read rather than
+trusted.
+
+**Mutation proof.** One mutant, red and restored byte for byte: deleting the
+stale comparison from `--check`. The guard reported 1 failing case.
+
 ### WP-223 — a repeated path is a shape fault, not an order fault
 
 **Counterexample.** An allowlist naming the same path twice, left in perfectly

@@ -182,6 +182,21 @@ try {
       throw new Error('source-import-manifest-unreadable')
     }))
     if (!existing.equals(bytes)) throw new Error('source-import-manifest-drift')
+    // The manifest is built from the list, so an unlisted source file that
+    // landed under a walked root was never in the bytes above and this mode
+    // called that tree clean. It is checked last because the refusal it names
+    // only covers a tree every earlier answer called clean: a marked list, an
+    // unreadable one, a missing manifest or a drifted one are separate repairs
+    // and keep their own names. The walk already happened for the object check,
+    // so the published set is here without walking twice. `--write` writes the
+    // manifest for the list it read rather than reporting on the tree and
+    // `--refresh` is the repair, so neither refuses. One direction only: a
+    // listed path the tree lost stays `source-import-file-missing`, because
+    // the file is what has to come back and no list edit describes it.
+    const named = new Set(allowlist.files)
+    if (files.some((path) => !named.has(path))) {
+      throw new Error('source-import-allowlist-stale')
+    }
   } else {
     // The write either lands or it does not, so every failure here is the
     // same fault: the path cannot take the file. A directory sitting on it

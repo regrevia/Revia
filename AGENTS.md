@@ -151,6 +151,16 @@ Revia repository.
    sorted, so nothing about the order is wrong and the operator told to look
    there would fix nothing. `--refresh` never parses the list it
    replaces, so it still repairs this one.
+   A list that omits a path the walk publishes is stale, and `--check` could
+   not see it by comparing the manifest, because the manifest is built from the
+   list: that tree was called clean. The walk is already there for the object
+   check, so `--check` now compares the published set with the named one and
+   reports `source-import-allowlist-stale`; `--refresh` is the repair for it, so
+   that mode is the one that must not refuse its own input, and `--write` writes
+   the manifest for the list it read rather than reporting on the tree. The
+   reverse is not stale: a listed path the tree lost reports
+   `source-import-file-missing`, because the file is what has to come back and
+   no list edit describes it.
    The selection module is not one of those paths: it is the tracked file that
    reads and renders the list, so a tree without it cannot check anything, and
    no refresh brings a module back. Every mode reports
