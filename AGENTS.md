@@ -111,6 +111,17 @@ Revia repository.
    gained or lost a path, so `--refresh` names it `reordered`: the reading
    modes refuse that list as `source-import-allowlist-order-invalid`, and the
    mode that fixes it says what it fixed.
+   A refusal is a claim the mode could not make good, not the absence of a
+   decision: the transition is computed before the write that fails, so a
+   `--refresh` that cannot land the list it had to repair reports the
+   transition it reached on stdout, as
+   `revia.source-import-refusal@1.0.0` carrying `allowlist_transition` and the
+   name it refused with in `reason`, alongside the non-zero exit and the same
+   name on stderr. The document is smaller than a success receipt on purpose:
+   the manifest digest describes bytes a failed write never published, so
+   printing it would claim a tree state that does not exist. A refusal that
+   never reached a decision prints nothing, because a fabricated `unchanged`
+   would be indistinguishable from a mode that looked and agreed.
    Every mode walks the source roots, not only the one that writes the list,
    because the walk is the only thing that sees an object that is not a file
    and not a directory: a pipe, a socket or a device standing inside a root

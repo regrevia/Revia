@@ -147,7 +147,7 @@ try {
     // was repaired rather than found correct.
     if (allowlistTransition !== 'unchanged') {
       await writeFile(ALLOWLIST, rendered).catch(() => {
-        throw new Error('source-import-allowlist-unwritable')
+        throw refusal('source-import-allowlist-unwritable', allowlistTransition)
       })
     }
   }
@@ -213,7 +213,7 @@ try {
     // write still runs and still names the path that will not take it.
     if (manifestTransition !== 'unchanged') {
       await writeFile(MANIFEST, bytes).catch(() => {
-        throw new Error('source-import-manifest-unwritable')
+        throw refusal('source-import-manifest-unwritable', allowlistTransition)
       })
     }
   }
@@ -227,6 +227,16 @@ try {
   process.stdout.write(`${canonicalJson(receipt)}`)
 } catch (error) {
   process.stderr.write(`${stableCode(error)}\n`)
+  // A refusal is a claim the mode could not make good, and it is not the
+  // absence of a decision: the transition is computed before the write that
+  // failed, so dropping it here left every success machine-readable and every
+  // failure a bare exit code. Only a mode that got as far as a decision
+  // carries one; a refusal that never read that far prints nothing, because a
+  // fabricated `unchanged` would look exactly like a mode that looked and
+  // agreed.
+  if (error?.receipt !== undefined) {
+    process.stdout.write(`${canonicalJson(error.receipt)}`)
+  }
   process.exitCode = 1
 }
 
@@ -386,6 +396,21 @@ function digest(bytes) {
 // as a code the guide documents. Everything the gate raises lives in one
 // namespace, plus the marked-list code, and anything else keeps the
 // fallback — which is the only reason the fallback exists.
+// The receipt a refusal carries: what the mode had already decided, plus the
+// name it refused with, so a caller reading only stdout still learns both. It
+// is a smaller document than the success receipt on purpose — the manifest
+// digest describes bytes a failed write never published, and printing it would
+// claim a tree state that does not exist.
+function refusal(reason, allowlistTransition) {
+  return Object.assign(new Error(reason), {
+    receipt: {
+      allowlist_transition: allowlistTransition,
+      reason,
+      schema: 'revia.source-import-refusal@1.0.0',
+    },
+  })
+}
+
 function stableCode(error) {
   const message = error?.message
   if (typeof message !== 'string') return 'source-import-failed'

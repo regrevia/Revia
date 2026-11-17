@@ -20,7 +20,15 @@ test('a manifest path that cannot be written is named', async () => {
 
     assert.equal(result.status, 1, mode)
     assert.equal(result.stderr, 'source-import-manifest-unwritable\n', mode)
-    assert.equal(result.stdout, '', mode)
+    // Both modes wrote the list before they reached the manifest, and both
+    // found it correct, so the transition they carry is the allowlist one:
+    // `unchanged`. The field describes what this mode decided, not what the
+    // other mode would have done with the same tree.
+    assert.deepEqual(JSON.parse(result.stdout), {
+      allowlist_transition: 'unchanged',
+      reason: 'source-import-manifest-unwritable',
+      schema: 'revia.source-import-refusal@1.0.0',
+    }, mode)
   }
 })
 

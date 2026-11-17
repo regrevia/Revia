@@ -30,10 +30,23 @@ async function refuse(mode, path) {
   return result
 }
 
-function assertRefused(result, code) {
+// A refusal that never reached a decision has nothing to report: the mode
+// stopped before it computed a transition, and an invented `unchanged` would
+// look exactly like a mode that looked and agreed. The two write refusals are
+// the other side of that line and carry the transition they interrupted, so
+// each caller says which it is holding rather than the helper guessing.
+function assertRefused(result, code, transition) {
   assert.equal(result.status, 1)
   assert.equal(result.stderr, `${code}\n`)
-  assert.equal(result.stdout, '')
+  if (transition === undefined) {
+    assert.equal(result.stdout, '')
+    return
+  }
+  assert.deepEqual(JSON.parse(result.stdout), {
+    allowlist_transition: transition,
+    reason: code,
+    schema: 'revia.source-import-refusal@1.0.0',
+  })
 }
 
 // Nothing can be read from a directory, so the two modes that only read have
@@ -53,6 +66,7 @@ test('a directory on the allowlist path is unwritable to the repair mode', async
   assertRefused(
     await refuse('--refresh', 'SOURCE_IMPORT_FILES.json'),
     'source-import-allowlist-unwritable',
+    'created',
   )
 })
 
@@ -70,6 +84,7 @@ test('a directory on the manifest path is unwritable to the writing modes', asyn
     assertRefused(
       await refuse(mode, 'SOURCE_IMPORT_MANIFEST.json'),
       'source-import-manifest-unwritable',
+      'unchanged',
     )
   }
 })
@@ -100,7 +115,7 @@ test('the gate never removes a directory it cannot write through', async () => {
   await mkdir(listPath)
   const result = await run(root, '--refresh')
   const after = await import('node:fs/promises').then(({ stat }) => stat(listPath))
-  assertRefused(result, 'source-import-allowlist-unwritable')
+  assertRefused(result, 'source-import-allowlist-unwritable', 'created')
   assert.equal(after.isDirectory(), true)
   assert.notEqual(before.isDirectory(), true)
 })

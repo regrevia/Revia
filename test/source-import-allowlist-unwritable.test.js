@@ -18,7 +18,15 @@ test('a refresh that cannot write the allowlist is named', async () => {
 
   assert.equal(result.status, 1)
   assert.equal(result.stderr, 'source-import-allowlist-unwritable\n')
-  assert.equal(result.stdout, '')
+  // The name is the refusal; the receipt is the decision it interrupted. The
+  // transition is computed before the write, so a caller reading only stdout
+  // still learns what this mode had reached rather than inferring it from a
+  // separate run on a writable tree.
+  assert.deepEqual(JSON.parse(result.stdout), {
+    allowlist_transition: 'created',
+    reason: 'source-import-allowlist-unwritable',
+    schema: 'revia.source-import-refusal@1.0.0',
+  })
 })
 
 // The reading modes never write, so a directory on the path there is the

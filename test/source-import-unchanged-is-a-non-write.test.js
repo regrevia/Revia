@@ -66,13 +66,30 @@ test('a correct but read-only list does not turn a refresh into a refusal', asyn
 
 test('a list that needs repair still names the write it cannot do', async () => {
   const { root, list } = await settledRoot()
+  // Two paths swapped, so the list publishes exactly the same files in another
+  // order: `reordered` is the decision a write would have made good, and it is
+  // the one the read-only bits interrupted. Removing a line would make the
+  // refresh publish a path the list never named, which is `replaced` and a
+  // different repair than the one this case is about.
   const lines = (await readFile(list, 'utf8')).trimEnd().split('\n')
-  await writeFile(list, `${lines.slice(1).join('\n')}\n`)
+  // The two wrapper lines are the schema and the opening bracket, so the swap
+  // has to be between two paths: swapping those would rewrite the wrapper and
+  // land on `replaced`, which is the name for a list that publishes a
+  // different set rather than the same set in another order.
+  const swapped = [lines[0], lines[1], lines[3], lines[2], ...lines.slice(4)]
+  await writeFile(list, `${swapped.join('\n')}\n`)
   await chmod(list, 0o444)
   try {
     const result = await attempted(root, ['--refresh'])
     assert.equal(result.status, 1)
-    assert.equal(result.stdout, '')
+    // This list needs its order repaired, and the repair is what the read-only
+    // bits stopped. The refusal carries that decision rather than leaving the
+    // caller to run the same tree somewhere writable to find out what it was.
+    assert.deepEqual(JSON.parse(result.stdout), {
+      allowlist_transition: 'reordered',
+      reason: 'source-import-allowlist-unwritable',
+      schema: 'revia.source-import-refusal@1.0.0',
+    })
     assert.equal(result.stderr, 'source-import-allowlist-unwritable\n')
   } finally {
     await chmod(list, 0o644)

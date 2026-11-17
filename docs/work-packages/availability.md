@@ -2357,6 +2357,33 @@ folding the unreadable case into the missing one — each restored file
 re-greening at 2/2, 3/3 and 2/2.
 
 
+### WP-227 — Stop dropping the decision a refusal interrupted
+
+Issue #41 reported that `source-import-allowlist-unwritable` arrived as a bare
+exit code. The transition is computed before the write it names, so the mode
+had already decided the list needed `reordered` and threw the value away with
+the write that failed. Every success was machine-readable and every failure was
+not, and the only way to learn what a refusal interrupted was to run the same
+tree somewhere writable.
+
+`test/source-import-refusal-receipt.test.js` asserts the refusal now carries
+`revia.source-import-refusal@1.0.0` on stdout with `allowlist_transition` and
+the name in `reason`, next to the same name on stderr and exit 1, and that a
+refusal which never reached a decision — a marked list, refused before any
+transition exists — still prints nothing. The document is deliberately smaller
+than a success receipt: the manifest digest describes bytes a failed write never
+published. The four existing tests that asserted empty stdout on the two write
+refusals were updated rather than routed around, so the invariant that survives
+is the one that was always true — a refusal with no decision behind it says
+nothing.
+
+Mutants: reverting the gate made the new test red (`Unexpected end of JSON
+input`) and restoring it byte-identically made it green; a second mutant that
+fabricated an `unchanged` receipt for every refusal was caught by the
+never-reached-a-decision case alone.
+
+Measured: `npm test` 164/164, exit 0, `source_revision` equal to the commit.
+
 ### WP-226 — Stop exempting pages nobody can reach
 
 The documentation map's orphan test skipped `docs/work-packages/` with a
