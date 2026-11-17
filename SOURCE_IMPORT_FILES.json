@@ -708,6 +708,7 @@
     "test/source-import-explicit-path-invalid-kind.test.js",
     "test/source-import-explicit-path-missing.test.js",
     "test/source-import-explicit-path-unreadable.test.js",
+    "test/source-import-fallback-carries-no-foreign-word.test.js",
     "test/source-import-file-missing.test.js",
     "test/source-import-file-unreadable.test.js",
     "test/source-import-manifest-missing.test.js",

@@ -335,9 +335,17 @@ function digest(bytes) {
   return createHash('sha256').update(bytes).digest('hex')
 }
 
+// A refusal name is a word this gate published, not a word that happens to
+// look like one. Matching on shape let any lowercase token through, so a
+// thrower reached the operator wearing the gate's own vocabulary and read
+// as a code the guide documents. Everything the gate raises lives in one
+// namespace, plus the marked-list code, and anything else keeps the
+// fallback — which is the only reason the fallback exists.
 function stableCode(error) {
-  return typeof error?.message === 'string'
-    && /^[a-z0-9-]+$/u.test(error.message)
-    ? error.message
+  const message = error?.message
+  if (typeof message !== 'string') return 'source-import-failed'
+  if (message === BYTE_ORDER_MARK_CODE) return message
+  return /^source-import-[a-z0-9-]+$/u.test(message)
+    ? message
     : 'source-import-failed'
 }

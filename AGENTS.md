@@ -149,6 +149,13 @@ Revia repository.
    vocabulary nor the file it came from. A module the process may not open is
    neither, and a syntax fix does not help it, so it reports
    `source-import-selection-unreadable`, which is mode bits to change.
+   Everything above is a name the gate publishes, and it keeps
+   `source-import-failed` for what is not: an error it did not classify
+   reaches the operator as that word and nothing else, which is what keeps a
+   path out of the refusal. The fallback used to take any lowercase word, so
+   a throw that happened to be one — `eperm`, `timeout` — arrived looking
+   like a code this guide documents, and it now keeps the fallback unless it
+   is in the gate's own vocabulary.
    `--refresh` rewrites the allowlist one path per line, in the same order
    `--check` reads it, so the diff of a refresh shows the files that
    changed and nothing else; do not reformat the list by hand.
