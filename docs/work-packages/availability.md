@@ -2357,6 +2357,32 @@ folding the unreadable case into the missing one — each restored file
 re-greening at 2/2, 3/3 and 2/2.
 
 
+### WP-226 — Stop exempting pages nobody can reach
+
+The documentation map's orphan test skipped `docs/work-packages/` with a
+comment saying the records there "are reached from the pages that cite them,
+not from the map." The comment was true of two of the four records and false
+of the other two: `declared-capability-execution.md` and
+`vm-failure-diagnostics.md` were tracked, published, and cited by nobody, so a
+reader could only arrive at them from a search engine or from Git.
+
+An exemption whose premise is a comment has no failing input, which is why
+nothing had noticed. The new case in `test/docs-links.test.js` reads the
+premise instead of restating it: every file under `docs/work-packages/` must
+be named by a link from a page that is itself indexed, and the guard builds
+that set by scanning the root documents and every page under `docs/`, so it
+cannot go stale against the map. Red with exactly the two unreachable records
+named, green after the map gained a `Work Packages / 工作包` group naming all
+four, and red again when one of those four links was removed by hand, which is
+the mutant: the guard's subject is the link, not the file's existence.
+
+The group states the rule the exemption was standing in for — a record under
+`work-packages/` says what was measured and what is still scheduled, and it is
+not a second specification, because the contract is the page it cites. That
+keeps the reserved page honest: `declared-capability-execution.md` is now
+linked as reserved with no claims, rather than published under a name that
+reads like evidence it does not yet hold.
+
 ### WP-225 — Read the acceptance record's shape, not only its words
 
 The log is edited by hand between rounds, and a paste went wrong: one commit

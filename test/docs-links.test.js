@@ -145,6 +145,33 @@ test('the documentation map reaches every page it indexes', () => {
   assert.ok(pages.length > 20, `expected the map to cover the shipped pages, saw ${pages.length}`)
 })
 
+test('the records the map does not index are cited from a page that is', () => {
+  // The map is allowed to pass over `docs/work-packages/` because the records
+  // there are reached from the pages that cite them. That is a fact about
+  // those pages, so it has to be checked: an exemption whose premise is only a
+  // comment lets a record ship that no reader can arrive at.
+  const records = markdownFiles('docs/work-packages')
+  assert.ok(records.length > 3, `expected the work-package records to be scanned, saw ${records.length}`)
+
+  const citing = [...ROOT_DOCUMENTS, ...markdownFiles('docs')].filter(
+    (page) => !page.startsWith('docs/work-packages/'),
+  )
+  const cited = new Set()
+  for (const page of citing) {
+    const source = withoutFencedBlocks(readFileSync(resolve(repositoryRoot, page), 'utf8'))
+    for (const match of source.matchAll(LINK)) {
+      const target = match[1]
+      if (EXTERNAL.test(target)) continue
+      const path = target.split('#')[0]
+      if (path === '') continue
+      cited.add(relative(repositoryRoot, resolve(repositoryRoot, posix.dirname(page), path)))
+    }
+  }
+
+  const unreachable = records.filter((record) => !cited.has(record))
+  assert.deepEqual(unreachable, [])
+})
+
 test('every repository path named in shipped documentation exists', () => {
   const documents = [
     ...ROOT_DOCUMENTS,

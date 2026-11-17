@@ -60,6 +60,23 @@ under [`doc/`](../doc/).
 - [`rc1-trial-kit-contract.md`](rc1-trial-kit-contract.md)
 - [`rc2-target-expansion-contract.md`](rc2-target-expansion-contract.md)
 
+### Work Packages / 工作包
+
+- [`availability.md`](work-packages/availability.md) — the acceptance record and
+  the limits it states
+- [`result-value-interface.md`](work-packages/result-value-interface.md) — the
+  scheduled `ok(%value)` binding
+- [`vm-failure-diagnostics.md`](work-packages/vm-failure-diagnostics.md) — the
+  `native-vm-capability-failed` compatibility decision
+- [`declared-capability-execution.md`](work-packages/declared-capability-execution.md)
+  — reserved evidence product, no claims yet
+
+A record under `work-packages/` states what was measured and what is still
+scheduled. It is not a second specification: the contract is the page it
+cites.
+
+工作包记录只陈述已测量的范围与仍待完成的部分，不是第二份规范；契约以其引用的页面为准。
+
 Historical release documents describe the historical evaluation line. They do
 not promote the current source tree to Stable V1.0 or production status.
 
