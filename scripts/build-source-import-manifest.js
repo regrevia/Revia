@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 
 import { createHash } from 'node:crypto'
+import { constants } from 'node:fs'
 import {
+  access,
   lstat,
   readFile,
   readdir,
   writeFile,
 } from 'node:fs/promises'
-import { join, resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 // Filled from the selection module inside the guarded block below, so a tree
 // that lost that module reports a name instead of a Node stack.
@@ -95,6 +97,11 @@ try {
   // that sees those objects, so every mode walks the same roots before it
   // decides, and --refresh publishes exactly the files it names here.
   const files = await selectFiles(ROOT)
+  // --refresh writes the list, and the two writes this mode may make are
+  // committed together further down: what this block decides is the bytes and
+  // the transition, not whether the write lands. Splitting them was how a
+  // refresh that could not land the manifest had already repaired the list.
+  let rendered = null
   if (mode === '--refresh') {
     // --check refuses a marked allowlist, so --refresh has to refuse it too;
     // rewriting the file would silently erase the one thing that was wrong.
@@ -111,7 +118,7 @@ try {
       }
       throw error
     })
-    const rendered = renderAllowlist(files)
+    rendered = renderAllowlist(files)
     // A caller cannot tell a repair from a no-op by the bytes it gets back,
     // because both leave the same tree and print the same receipt. Reading
     // what was there first is the only place the difference exists, and it is
@@ -135,23 +142,13 @@ try {
       },
       () => 'created',
     )
-    // --refresh is the only mode that writes the list, so a path that will
-    // not take it stops the repair the operator ran this mode for. Left bare,
-    // the EISDIR carried an absolute path that stableCode() dropped.
-    // A list that already holds these bytes has nothing to write, and the
-    // transition is not a description of an attempt: writing anyway made
-    // `unchanged` a claim only the bytes kept, and on a read-only tree it
-    // turned the word into a refusal about a list that needed no repair. The
-    // manifest side has guarded its write this way all along.
-    // `reordered` still writes, because that name is the news that the order
-    // was repaired rather than found correct.
-    if (allowlistTransition !== 'unchanged') {
-      await writeFile(ALLOWLIST, rendered).catch(() => {
-        throw refusal('source-import-allowlist-unwritable', allowlistTransition)
-      })
-    }
   }
-  const allowlist = await readAllowlist()
+  // The manifest describes the list this mode will leave behind, and --refresh
+  // is about to leave a different one: reading the file after that write
+  // described a list the mode had already published, which is why the two
+  // writes could not be ordered safely. The rendered list is exactly the files
+  // the walk named, so the manifest is the same bytes either way.
+  const allowlist = mode === '--refresh' ? { files } : await readAllowlist()
   const manifest = await buildManifest(allowlist)
   const bytes = Buffer.from(canonicalJson(manifest))
   // Every mode either compares the manifest or replaces it, and a link is
@@ -206,16 +203,51 @@ try {
     manifestTransition = previous === null
       ? 'created'
       : (previous.equals(bytes) ? 'unchanged' : 'replaced')
-    // A manifest that already holds these bytes has nothing to write, and the
-    // transition is not a description of an attempt: writing anyway would
-    // touch a correct file and make `unchanged` a claim only the bytes keep.
-    // A path that cannot be read above leaves the transition `created`, so the
-    // write still runs and still names the path that will not take it.
-    if (manifestTransition !== 'unchanged') {
-      await writeFile(MANIFEST, bytes).catch(() => {
-        throw refusal('source-import-manifest-unwritable', allowlistTransition)
-      })
-    }
+  }
+  // Both files this mode writes, asked before either one is. A refusal that
+  // landed half of its work is not a refusal, it is a tree that moved under a
+  // name saying it did not: the list used to be written before the manifest
+  // was even asked about, so a manifest that could not take the bytes exited
+  // non-zero with the repair it refused already on disk. Asking the targets
+  // first is the only point where both answers are still ahead of the bytes.
+  // The probe does not open them, so a target that cannot take the file is
+  // left exactly as it was found rather than truncated by the question.
+  const writeList = mode === '--refresh' && allowlistTransition !== 'unchanged'
+  // A directory on the manifest path is an unreadable manifest to --check and
+  // keeps that name, and no write turns a directory into a file: the writing
+  // modes name the write they cannot do, and they name it here rather than
+  // after the list has been repaired.
+  if (mode !== '--check' && manifestTransition !== 'unchanged' && manifestStat?.isDirectory()) {
+    throw refusal('source-import-manifest-unwritable', allowlistTransition)
+  }
+  if (writeList) {
+    await assertTakes(ALLOWLIST, 'source-import-allowlist-unwritable', allowlistTransition)
+  }
+  const writeManifest = mode !== '--check' && manifestTransition !== 'unchanged'
+  if (writeManifest) {
+    await assertTakes(MANIFEST, 'source-import-manifest-unwritable', allowlistTransition)
+  }
+  // A list that already holds these bytes has nothing to write, and the
+  // transition is not a description of an attempt: writing anyway made
+  // `unchanged` a claim only the bytes kept, and on a read-only tree it
+  // turned the word into a refusal about a list that needed no repair. The
+  // manifest side has guarded its write this way all along.
+  // `reordered` still writes, because that name is the news that the order
+  // was repaired rather than found correct.
+  if (writeList) {
+    await writeFile(ALLOWLIST, rendered).catch(() => {
+      throw refusal('source-import-allowlist-unwritable', allowlistTransition)
+    })
+  }
+  // A manifest that already holds these bytes has nothing to write, and the
+  // transition is not a description of an attempt: writing anyway would
+  // touch a correct file and make `unchanged` a claim only the bytes keep.
+  // A path that cannot be read above leaves the transition `created`, so the
+  // write still runs and still names the path that will not take it.
+  if (writeManifest) {
+    await writeFile(MANIFEST, bytes).catch(() => {
+      throw refusal('source-import-manifest-unwritable', allowlistTransition)
+    })
   }
   const receipt = {
     allowlist_transition: allowlistTransition,
@@ -401,6 +433,32 @@ function digest(bytes) {
 // is a smaller document than the success receipt on purpose — the manifest
 // digest describes bytes a failed write never published, and printing it would
 // claim a tree state that does not exist.
+// Both files a writing mode may replace are asked before either is written, so
+// a refusal still describes a tree it did not touch. The question is whether
+// the target can take the bytes, which is a permission on the file when it is
+// there and on its directory when it is not: a refresh that has to create the
+// list is asking the directory, and a manifest that exists but is read-only is
+// asking the file. `access` answers from the mode bits without opening
+// anything, so a target that cannot take the file is left exactly as it was
+// found rather than truncated by the question.
+async function assertTakes(path, reason, allowlistTransition) {
+  const stat = await lstat(path).catch(() => null)
+  // A target that is there has to be a regular file: a directory or a pipe
+  // standing on the path is not a write that would land, it is a path that
+  // has to be moved out of the way. Both are already named closer to the open
+  // for the manifest, and the list reaches here for the same reason.
+  if (stat !== null) {
+    if (!stat.isFile()) throw refusal(reason, allowlistTransition)
+    await access(path, constants.W_OK).catch(() => {
+      throw refusal(reason, allowlistTransition)
+    })
+    return
+  }
+  await access(dirname(path), constants.W_OK).catch(() => {
+    throw refusal(reason, allowlistTransition)
+  })
+}
+
 function refusal(reason, allowlistTransition) {
   return Object.assign(new Error(reason), {
     receipt: {

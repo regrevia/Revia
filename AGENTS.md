@@ -122,6 +122,16 @@ Revia repository.
    printing it would claim a tree state that does not exist. A refusal that
    never reached a decision prints nothing, because a fabricated `unchanged`
    would be indistinguishable from a mode that looked and agreed.
+   A refresh writes two files, and it writes neither unless both can take the
+   bytes: the list used to be written before the manifest was asked about, so a
+   read-only manifest exited non-zero with the repair it refused already on
+   disk, and the refusal described a tree it had moved. Both targets are now
+   asked before either is written, with the mode bits alone and no open that
+   would truncate, so a refusal still describes the tree it read and the list it
+   would have written is still the list it read. The receipt names the
+   transition the mode reached rather than the write that failed, because that
+   decision does not depend on the answer: a list that needed its order
+   repaired is `reordered` whether or not the bytes were allowed to land.
    Every mode walks the source roots, not only the one that writes the list,
    because the walk is the only thing that sees an object that is not a file
    and not a directory: a pipe, a socket or a device standing inside a root

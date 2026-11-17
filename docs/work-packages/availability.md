@@ -2357,6 +2357,45 @@ folding the unreadable case into the missing one — each restored file
 re-greening at 2/2, 3/3 and 2/2.
 
 
+### WP-228 — Land both writes or neither
+
+Issue #42 reported that a `--refresh` with a readable, writable allowlist and a
+read-only manifest exited 1 with `source-import-manifest-unwritable`, and had
+already rewritten the allowlist. Seven of the eight cells of that 2x2 were
+consistent; the torn one described a tree that moved under a name saying it did
+not. The order was structural rather than incidental: the allowlist write sat
+before `readAllowlist()` and `buildManifest()`, and nothing probed the manifest
+for existence, kind or permission before that write, so a manifest that could
+not take the bytes was discovered only when its own write failed.
+
+The manifest is now built from the files the walk named rather than by reading
+back the list this mode is about to publish, which is the same set of bytes
+either way and removes the only reason the two writes had an order. Both targets
+are then asked before either is written: `assertTakes` reads the mode bits
+through `access` and `lstat` without opening anything, so a target that cannot
+take the file is left exactly as it was found rather than truncated by the
+question, and a refusal still describes a tree it did not touch. A directory
+standing on a writing mode's manifest path keeps `source-import-manifest-unwritable`
+and is now named by that probe instead of after the list was repaired.
+
+`test/source-import-torn-write.test.js` takes the issue's own counterexample —
+the list names the same 72 files in another order while the manifest holds bytes
+that describe something else, so both writes are pending — and makes only the
+manifest read-only. It asserts exit 1, the same stderr name, the receipt naming
+`allowlist_transition: 'reordered'`, and the list still holding the order it was
+read with and an unmoved `mtimeMs`. Two further cases keep the fix from
+overreaching: the same tree with a writable manifest lands both writes
+(`reordered` and `replaced`, 72 paths on each side), and a refresh with nothing
+to repair still exits 0 against a read-only manifest, so ordering the writes did
+not make the list depend on a file the mode will not touch.
+
+Mutants: reverting the gate made the new test red on exactly the torn cell and
+restoring it byte-identically made it green; a second mutant that kept the new
+ordering but dropped the manifest probe alone — the smallest form of the bug —
+was caught by the same case and no other.
+
+Measured: `npm test` 165/165, exit 0, `source_revision` equal to the commit.
+
 ### WP-227 — Stop dropping the decision a refusal interrupted
 
 Issue #41 reported that `source-import-allowlist-unwritable` arrived as a bare
