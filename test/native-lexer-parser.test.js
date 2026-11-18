@@ -356,8 +356,28 @@ test('native dependency scan skips only the Darwin target header', () => {
   )
 })
 
+function newestNativeSourceMtime(directory) {
+  let newest = 0
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    if (entry.name === 'target') continue
+    const path = join(directory, entry.name)
+    if (entry.isDirectory()) {
+      newest = Math.max(newest, newestNativeSourceMtime(path))
+    } else if (/\.(rs|toml)$/u.test(entry.name)) {
+      newest = Math.max(newest, statSync(path).mtimeMs)
+    }
+  }
+  return newest
+}
+
+// A binary that merely exists is not the tree: an older one answers for source
+// it was never built from, and the suite reports the disagreement as a product
+// defect. Compare mtimes before reusing it.
 function ensureNativeBinary() {
-  if (existsSync(NATIVE_BINARY)) return
+  const stale =
+    !existsSync(NATIVE_BINARY) ||
+    newestNativeSourceMtime(NATIVE_ROOT) > statSync(NATIVE_BINARY).mtimeMs
+  if (!stale) return
   execFileSync('cargo', ['build', '--workspace', '--offline'], { cwd: NATIVE_ROOT })
 }
 
@@ -495,16 +515,48 @@ function isDarwinDependencyHeader(line, binaryPath) {
 }
 
 function ensureNativeConformanceBinary() {
-  if (existsSync(NATIVE_CONFORMANCE_BINARY)) return
+  const stale =
+    !existsSync(NATIVE_CONFORMANCE_BINARY) ||
+    newestNativeSourceMtime(NATIVE_ROOT) > statSync(NATIVE_CONFORMANCE_BINARY).mtimeMs
+  if (!stale) return
   execFileSync('cargo', ['build', '--workspace', '--offline'], { cwd: NATIVE_ROOT })
 }
 
+const NATIVE_RUN_TIMEOUT_MS = 120000
+const NATIVE_RUN_ATTEMPTS = 3
+
+function sleepMilliseconds(milliseconds) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds)
+}
+
+// A child that never reports a status is not a failing assertion, and reporting
+// it as `null !== 0` sends the reader after a defect in the tree. The kill is
+// intermittent, so retry it; when it persists, name the cause instead of the
+// symptom.
+function spawnNative(binaryPath, arguments_) {
+  let lastSignal = null
+  for (let attempt = 0; attempt < NATIVE_RUN_ATTEMPTS; attempt += 1) {
+    if (attempt > 0) sleepMilliseconds(250)
+    const result = spawnSync(binaryPath, arguments_, {
+      encoding: 'utf8',
+      timeout: NATIVE_RUN_TIMEOUT_MS,
+    })
+    if (result.status !== null) return result
+    lastSignal = result.signal
+  }
+  throw new Error(
+    `native binary produced no exit status after ${NATIVE_RUN_ATTEMPTS} attempts ` +
+      `(signal ${lastSignal}) for ${binaryPath} ${arguments_.join(' ')}: a SIGKILL ` +
+      'here is the host refusing the ad-hoc code signature, not a defect in the tree',
+  )
+}
+
 function runNative(command, file) {
-  return spawnSync(NATIVE_BINARY, [command, file], { encoding: 'utf8' })
+  return spawnNative(NATIVE_BINARY, [command, file])
 }
 
 function runNativeArgs(arguments_) {
-  return spawnSync(NATIVE_BINARY, arguments_, { encoding: 'utf8' })
+  return spawnNative(NATIVE_BINARY, arguments_)
 }
 
 function byteOffset(source, codeUnitOffset) {
