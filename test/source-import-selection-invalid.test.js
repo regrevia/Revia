@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { appendFile, chmod, readFile } from 'node:fs/promises'
+import { appendFile, chmod, mkdir, readFile, rename, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import test from 'node:test'
 
@@ -54,6 +54,43 @@ test('a module that cannot be opened is not a module that will not parse', async
   }
 })
 
+// A path that holds a directory is not a module that is absent, unreadable or
+// broken: nothing is missing from Git, no mode bits bring it back, and the
+// source is not what has to change. The loader refuses it before it parses
+// anything, with `ERR_UNSUPPORTED_DIR_IMPORT`, which matched none of the three
+// names and fell through to `source-import-failed` — the fallback that keeps a
+// path out of the refusal and tells the operator nothing about which repair
+// applies. The kind is the whole answer here, so it is refused by name.
+async function replaceWithDirectory(root) {
+  const module = join(root, 'scripts/source-import-selection.mjs')
+  const kept = join(root, 'scripts/source-import-selection.mjs.kept')
+  await rename(module, kept)
+  await mkdir(module)
+  return async () => {
+    await rm(module, { recursive: true, force: true })
+    await rename(kept, module)
+  }
+}
+
+test('a directory where the module belongs is not a module that will not parse', async () => {
+  for (const mode of ['--check', '--write', '--refresh']) {
+    const root = await temporaryRoot('nothing-is-missing')
+    assert.equal((await run(root, '--refresh')).status, 0, `${mode} baseline`)
+    const restore = await replaceWithDirectory(root)
+    try {
+      const result = await run(root, mode)
+
+      assert.equal(result.status, 1, mode)
+      assert.equal(result.stdout, '', mode)
+      // The module is loaded before the mode decides anything, so the mode
+      // cannot change the name the operator reads.
+      assert.equal(result.stderr, 'source-import-selection-invalid-kind\n', mode)
+    } finally {
+      await restore()
+    }
+  }
+})
+
 test('the guide names the broken module as its own fault', async () => {
   const guide = await readFile(new URL('../AGENTS.md', import.meta.url), 'utf8')
   // The guide used to promise that a broken module "still reports what broke"
@@ -63,6 +100,7 @@ test('the guide names the broken module as its own fault', async () => {
   assert.match(guide, /`source-import-selection-invalid`/u)
   assert.match(guide, /`source-import-selection-unreadable`/u)
   assert.match(guide, /`source-import-selection-missing`/u)
+  assert.match(guide, /`source-import-selection-invalid-kind`/u)
   assert.doesNotMatch(guide, /a module that is present and broken still reports what broke/u,
     'the guide must not promise a report the gate does not print')
 })

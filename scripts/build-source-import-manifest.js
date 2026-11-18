@@ -69,6 +69,14 @@ try {
       if (error instanceof SyntaxError) {
         throw new Error('source-import-selection-invalid')
       }
+      // A directory is not a module at all, so the loader refuses it before it
+      // parses anything and none of the three repairs above applies: nothing is
+      // missing from Git, no mode bits bring a file back, and there is no source
+      // to fix. The kind is the answer, so it is named instead of falling
+      // through to the fallback that keeps a path out of the refusal.
+      if (error?.code === 'ERR_UNSUPPORTED_DIR_IMPORT') {
+        throw new Error('source-import-selection-invalid-kind')
+      }
       throw error
     }))
   // The list is read in every mode and rewritten in one, and a link is

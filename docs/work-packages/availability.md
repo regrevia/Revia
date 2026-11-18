@@ -2357,6 +2357,47 @@ folding the unreadable case into the missing one — each restored file
 re-greening at 2/2, 3/3 and 2/2.
 
 
+### WP-229 — Name the kind when the module path holds a directory
+
+The three names WP-218 published cover a module that is gone, a module the
+process may not open, and a module that will not parse. A directory standing
+where the module belongs is none of them, and it reached the operator as
+`source-import-failed`: the loader refuses it with `ERR_UNSUPPORTED_DIR_IMPORT`
+before it parses anything, so no `SyntaxError` exists to classify and none of
+the three repairs applies — Git has nothing to restore, no mode bits bring a
+file back, and there is no source to fix.
+
+Reachability was established before the change: replacing
+`scripts/source-import-selection.mjs` with a directory in a temporary root
+makes `--check`, `--write` and `--refresh` exit 1 with exactly
+`source-import-failed` on stderr and nothing on stdout. The kind is the whole
+answer, so it now reports `source-import-selection-invalid-kind` — the word the
+gate already uses for a list or a manifest that is a pipe, a socket or a
+device — because the fault is what the object is, not what its bytes say.
+
+A fourth case joined the tracked guard in
+[`test/source-import-selection-invalid.test.js`](../../test/source-import-selection-invalid.test.js)
+rather than a fourth file: it renames the module aside, makes a directory in
+its place, asserts the new code in all three modes, and restores the tree in a
+`finally` so the fixture cannot leak a directory. The documentary case now
+reads `AGENTS.md` for the fourth name as well. Red first at 2/4, green at 4/4.
+
+Two mutations hold it. Deleting the new branch turns the behavioural case red
+at 3/4. Removing the new guide clause turns the documentary case red. The gate
+file was restored byte-exact and compared with `cmp` before the suite was run
+again. The manifest moved to 743 files with `--refresh` because the guide and
+the test are both imported files whose bytes the manifest pins.
+
+`npm test` was run three times on this revision and reported 165 executed each
+time. The source-import files are green in every run. The full suite exited
+non-zero twice, on a different test each time, both `null !== 0` from a
+`spawnSync` of the native binary — `test/native-lexer-parser.test.js` alone
+reports 12/12 — which is the pre-existing `null !== 0` flake this record
+already describes and not a result of these four files, none of which the
+native path imports. The claim made here is 165 executed with the source-import
+group green, not an exit 0.
+
+
 ### WP-228 — Land both writes or neither
 
 Issue #42 reported that a `--refresh` with a readable, writable allowlist and a

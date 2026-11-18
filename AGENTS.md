@@ -193,6 +193,13 @@ Revia repository.
    vocabulary nor the file it came from. A module the process may not open is
    neither, and a syntax fix does not help it, so it reports
    `source-import-selection-unreadable`, which is mode bits to change.
+   A directory where the module belongs is none of the three, because it is
+   not a module at all: the loader refuses it with
+   `ERR_UNSUPPORTED_DIR_IMPORT` before it parses anything, so no name for a
+   missing, closed or broken file describes it and no one of those repairs
+   applies. It reports `source-import-selection-invalid-kind`, the same word
+   the gate already uses for a list or a manifest that is a pipe, a socket or
+   a device, because the fault is the kind of object rather than its bytes.
    Everything above is a name the gate publishes, and it keeps
    `source-import-failed` for what is not: an error it did not classify
    reaches the operator as that word and nothing else, which is what keeps a
