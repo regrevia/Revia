@@ -44,9 +44,14 @@ Availability labels used below:
 - Rust gates on this tree: `cargo fmt --all -- --check`,
   `cargo check --workspace --offline`, and
   `cargo clippy --workspace --offline --all-targets -- -D warnings` pass.
-- `cargo test --workspace --offline` passes, including the declared capability
-  harnesses named in section 3, the 14-case corpus in section 5, and the
-  22-case host boundary corpus in section 4.
+- `cargo test --workspace --offline` passes on the hosted Linux and Windows
+  lanes, including the declared capability harnesses named in section 3, the
+  14-case corpus in section 5, and the 22-case host boundary corpus in
+  section 4. On a macOS host whose `target/` sits on an external volume the
+  run is not a measurement: the harness process is killed with `signal: 9`
+  and the crash report reads `CODESIGNING` / `Invalid Page`, on a different
+  test each run, while the same tests pass when the compiled binary is
+  invoked directly. Cite a lane, not a laptop.
 - `npm test` passes after the source import manifest is regenerated.
 - No production-readiness, cross-platform, or Stable V1.0 claim is made by this
   page.
