@@ -235,11 +235,7 @@ test('native compile output is reproducible and independent of its paths', async
 
 test('native conformance runner reports deterministic fixture outcomes', () => {
   ensureNativeConformanceBinary()
-  const result = spawnSync(
-    NATIVE_CONFORMANCE_BINARY,
-    EXECUTABLE_FIXTURES,
-    { cwd: ROOT, encoding: 'utf8' },
-  )
+  const result = spawnWithStatus(NATIVE_CONFORMANCE_BINARY, EXECUTABLE_FIXTURES, { cwd: ROOT })
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`)
   const report = JSON.parse(result.stdout)
   assert.deepEqual(report, {
@@ -529,26 +525,31 @@ function sleepMilliseconds(milliseconds) {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds)
 }
 
-// A child that never reports a status is not a failing assertion, and reporting
-// it as `null !== 0` sends the reader after a defect in the tree. The kill is
-// intermittent, so retry it; when it persists, name the cause instead of the
-// symptom.
-function spawnNative(binaryPath, arguments_) {
+// A child the host killed reports no exit status at all rather than a non-zero
+// one, so `assert.equal(result.status, 0)` fails as `null !== 0` on a run that
+// never reached the binary's own logic. The kill is intermittent, so retry it;
+// when it persists, name the cause instead of the symptom.
+function spawnWithStatus(command, arguments_, options = {}) {
   let lastSignal = null
   for (let attempt = 0; attempt < NATIVE_RUN_ATTEMPTS; attempt += 1) {
     if (attempt > 0) sleepMilliseconds(250)
-    const result = spawnSync(binaryPath, arguments_, {
+    const result = spawnSync(command, arguments_, {
       encoding: 'utf8',
       timeout: NATIVE_RUN_TIMEOUT_MS,
+      ...options,
     })
     if (result.status !== null) return result
     lastSignal = result.signal
   }
   throw new Error(
     `native binary produced no exit status after ${NATIVE_RUN_ATTEMPTS} attempts ` +
-      `(signal ${lastSignal}) for ${binaryPath} ${arguments_.join(' ')}: a SIGKILL ` +
+      `(signal ${lastSignal}) for ${command} ${arguments_.join(' ')}: a SIGKILL ` +
       'here is the host refusing the ad-hoc code signature, not a defect in the tree',
   )
+}
+
+function spawnNative(binaryPath, arguments_) {
+  return spawnWithStatus(binaryPath, arguments_)
 }
 
 function runNative(command, file) {

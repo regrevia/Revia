@@ -2397,10 +2397,15 @@ the test are both imported files whose bytes the manifest pins.
 time. The source-import files are green in every run. The full suite exited
 non-zero twice, on a different test each time, both `null !== 0` from a
 `spawnSync` of the native binary — `test/native-lexer-parser.test.js` alone
-reports 12/12 — which is the pre-existing `null !== 0` flake this record
-already describes and not a result of these four files, none of which the
-native path imports. The claim made here is 165 executed with the source-import
-group green, not an exit 0.
+reports 12/12. This record called that a pre-existing flake; it was not one.
+The retry that names a killed child was added to `spawnNative` and the
+conformance-runner test kept its own raw `spawnSync`, so the test that failed
+was the one call site the helper never covered, and `null !== 0` was the harness
+reporting a host kill as a failed assertion. Both paths now go through one
+`spawnWithStatus`, and the retry throws naming the signal. None of these four
+files caused those failures — the native path imports none of them — but calling
+the result a flake was wrong, and the claim this record can make is 165 executed
+with the source-import group green, not an exit 0.
 
 
 ### WP-228 — Land both writes or neither

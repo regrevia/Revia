@@ -14,6 +14,20 @@ use revia_core::project::{
 
 static PROJECT_COUNTER: AtomicU64 = AtomicU64::new(0);
 
+/// A child the host killed reports no exit code, so `!status.success()` is also
+/// true for a kill and every `assert!(!status.success())` here passed on a run
+/// that never reached the tree. A kill is not a regression: name it, so a red
+/// run sends the reader to the signature rather than to `project-check`.
+fn assert_ran(output: &std::process::Output, what: &str) {
+    assert!(
+        output.status.code().is_some(),
+        "{what}: revia produced no exit status ({}); a SIGKILL here is the host \
+         refusing the ad-hoc code signature, not a defect in the tree. stdout: {}",
+        output.status,
+        String::from_utf8_lossy(&output.stdout)
+    );
+}
+
 #[test]
 fn checked_in_project_template_passes_native_project_check() {
     let project = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -24,9 +38,15 @@ fn checked_in_project_template_passes_native_project_check() {
         .args(["project-check", project.to_str().unwrap()])
         .output()
         .unwrap();
+    assert_ran(
+        &output,
+        "checked_in_project_template_passes_native_project_check",
+    );
     assert!(
         output.status.success(),
-        "project-check failed:\nstdout: {}\nstderr: {}",
+        "project-check failed ({}) for {}:\nstdout: {}\nstderr: {}",
+        output.status,
+        project.display(),
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr)
     );
@@ -42,6 +62,10 @@ fn native_project_check_reports_unlisted_file_as_project_relative_path() {
         .args(["project-check", project.to_str().unwrap()])
         .output()
         .unwrap();
+    assert_ran(
+        &output,
+        "native_project_check_reports_unlisted_file_as_project_relative_path",
+    );
 
     assert_eq!(output.status.code(), Some(65));
     assert_eq!(output.stderr, b"");
@@ -61,6 +85,10 @@ fn native_project_check_preserves_literal_backslash_in_unlisted_filename() {
         .args(["project-check", project.to_str().unwrap()])
         .output()
         .unwrap();
+    assert_ran(
+        &output,
+        "native_project_check_preserves_literal_backslash_in_unlisted_filename",
+    );
     fs::remove_dir_all(project).unwrap();
     assert_eq!(output.status.code(), Some(65));
     assert_eq!(
@@ -83,6 +111,10 @@ fn native_project_check_rejects_non_utf8_filename_without_lossy_path() {
         .args(["project-check", project.to_str().unwrap()])
         .output()
         .unwrap();
+    assert_ran(
+        &output,
+        "native_project_check_rejects_non_utf8_filename_without_lossy_path",
+    );
     fs::remove_dir_all(project).unwrap();
     assert_eq!(output.status.code(), Some(65));
     assert_eq!(
@@ -128,6 +160,10 @@ fn native_project_check_matches_shared_unlisted_file_diagnostic_corpus() {
                     .args(["project-check", project.to_str().unwrap()])
                     .output()
                     .unwrap();
+                assert_ran(
+                    &output,
+                    "native_project_check_matches_shared_unlisted_file_diagnostic_corpus",
+                );
                 assert!(
                     output.status.success(),
                     "{}",
@@ -154,6 +190,10 @@ fn native_project_check_matches_shared_unlisted_file_diagnostic_corpus() {
                         .args([command, project.to_str().unwrap()])
                         .output()
                         .unwrap();
+                    assert_ran(
+                        &output,
+                        "native_project_check_matches_shared_unlisted_file_diagnostic_corpus",
+                    );
                     assert_eq!(
                         output.status.code(),
                         Some(65),
@@ -193,6 +233,7 @@ fn checked_in_projection_routes_are_project_metadata() {
         .args(["project-check", project.to_str().unwrap()])
         .output()
         .unwrap();
+    assert_ran(&output, "checked_in_projection_routes_are_project_metadata");
     assert!(
         output.status.success(),
         "project-check rejected projection metadata:\nstdout: {}\nstderr: {}",
@@ -211,6 +252,10 @@ fn native_project_test_reports_module_surface_boundary_explicitly() {
         .args(["project-test", project.to_str().unwrap()])
         .output()
         .unwrap();
+    assert_ran(
+        &output,
+        "native_project_test_reports_module_surface_boundary_explicitly",
+    );
     assert!(!output.status.success());
     assert!(
         String::from_utf8_lossy(&output.stdout)
@@ -232,6 +277,10 @@ fn native_project_surface_check_accepts_public_module_projects() {
             .args(["project-surface-check", project.to_str().unwrap()])
             .output()
             .unwrap();
+        assert_ran(
+            &output,
+            "native_project_surface_check_accepts_public_module_projects",
+        );
         assert!(
             output.status.success(),
             "{relative} failed:\nstdout: {}\nstderr: {}",
@@ -330,6 +379,10 @@ fn native_project_surface_check_rejects_detached_adapter_authority() {
             .args(["project-surface-check", project.to_str().unwrap()])
             .output()
             .unwrap();
+        assert_ran(
+            &output,
+            "native_project_surface_check_rejects_detached_adapter_authority",
+        );
         assert!(
             !output.status.success(),
             "adapter mutation unexpectedly passed: {old_field} -> {new_field}"
@@ -416,6 +469,10 @@ fn native_project_surface_check_rejects_detached_function_capability_calls() {
             .args(["project-surface-check", project.to_str().unwrap()])
             .output()
             .unwrap();
+        assert_ran(
+            &output,
+            "native_project_surface_check_rejects_detached_function_capability_calls",
+        );
         assert!(
             !output.status.success(),
             "function call mutation unexpectedly passed: {old_field} -> {new_field}"
@@ -444,6 +501,10 @@ fn native_project_surface_check_rejects_unsupported_resource_access_modes() {
         .args(["project-surface-check", project.to_str().unwrap()])
         .output()
         .unwrap();
+    assert_ran(
+        &output,
+        "native_project_surface_check_rejects_unsupported_resource_access_modes",
+    );
     assert!(!output.status.success());
     assert!(
         String::from_utf8_lossy(&output.stdout)
@@ -461,6 +522,10 @@ fn native_project_surface_check_rejects_project_agent_authority_drift() {
         .args(["project-surface-check", project.to_str().unwrap()])
         .output()
         .unwrap();
+    assert_ran(
+        &output,
+        "native_project_surface_check_rejects_project_agent_authority_drift",
+    );
     assert!(
         !output.status.success(),
         "project-surface-check accepted an Agent not present in source declarations:\n{}",
@@ -477,6 +542,10 @@ fn native_project_surface_check_rejects_agent_contract_content_drift() {
         .args(["project-surface-check", project.to_str().unwrap()])
         .output()
         .unwrap();
+    assert_ran(
+        &output,
+        "native_project_surface_check_rejects_agent_contract_content_drift",
+    );
     assert!(!output.status.success());
     assert!(String::from_utf8_lossy(&output.stdout).contains("project-agent-authority-mismatch"));
     fs::remove_dir_all(project).unwrap();
@@ -511,6 +580,10 @@ fn native_project_surface_check_rejects_invalid_agent_state_machines() {
             .args(["project-surface-check", project.to_str().unwrap()])
             .output()
             .unwrap();
+        assert_ran(
+            &output,
+            "native_project_surface_check_rejects_invalid_agent_state_machines",
+        );
         assert!(
             !output.status.success(),
             "invalid Agent lifecycle mutation unexpectedly passed"
@@ -537,6 +610,10 @@ fn native_project_surface_check_accepts_agent_lifecycle_array_reordering() {
         .args(["project-surface-check", project.to_str().unwrap()])
         .output()
         .unwrap();
+    assert_ran(
+        &output,
+        "native_project_surface_check_accepts_agent_lifecycle_array_reordering",
+    );
     assert!(
         output.status.success(),
         "reordered equivalent lifecycle contract was rejected:\n{}",
@@ -553,10 +630,12 @@ fn native_project_check_binds_agent_contracts_to_project_identity() {
         .args(["project-check", baseline.to_str().unwrap()])
         .output()
         .unwrap();
+    assert_ran(&baseline_output, "baseline_output");
     let drifted_output = Command::new(env!("CARGO_BIN_EXE_revia"))
         .args(["project-check", drifted.to_str().unwrap()])
         .output()
         .unwrap();
+    assert_ran(&drifted_output, "drifted_output");
     assert!(baseline_output.status.success());
     assert!(drifted_output.status.success());
     let baseline_stdout = String::from_utf8_lossy(&baseline_output.stdout);
@@ -583,10 +662,12 @@ fn native_project_check_binds_source_only_agent_contracts_to_project_identity() 
         .args(["project-check", baseline.to_str().unwrap()])
         .output()
         .unwrap();
+    assert_ran(&baseline_output, "baseline_output");
     let agent_output = Command::new(env!("CARGO_BIN_EXE_revia"))
         .args(["project-check", with_agent.to_str().unwrap()])
         .output()
         .unwrap();
+    assert_ran(&agent_output, "agent_output");
     assert!(baseline_output.status.success());
     assert!(agent_output.status.success());
     let baseline_stdout = String::from_utf8_lossy(&baseline_output.stdout);
@@ -619,6 +700,10 @@ fn native_project_surface_check_accepts_manifest_only_agent_authority() {
         .args(["project-surface-check", root.to_str().unwrap()])
         .output()
         .unwrap();
+    assert_ran(
+        &output,
+        "native_project_surface_check_accepts_manifest_only_agent_authority",
+    );
     assert!(
         output.status.success(),
         "surface check rejected Agent authority declared by project.json:\n{}",
@@ -638,6 +723,10 @@ fn native_project_surface_check_rejects_detached_task_contract_agent() {
         .args(["project-surface-check", project.to_str().unwrap()])
         .output()
         .unwrap();
+    assert_ran(
+        &output,
+        "native_project_surface_check_rejects_detached_task_contract_agent",
+    );
     assert!(!output.status.success());
     assert!(
         String::from_utf8_lossy(&output.stdout)
@@ -654,6 +743,7 @@ fn assert_surface_rejected(source: &str, expected_code: &str) {
         .args(["project-surface-check", root.to_str().unwrap()])
         .output()
         .unwrap();
+    assert_ran(&output, &format!("project-surface-check {expected_code}"));
     assert!(!output.status.success());
     assert!(
         String::from_utf8_lossy(&output.stdout).contains(expected_code),
