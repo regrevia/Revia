@@ -2399,6 +2399,14 @@ with no failing one, on a tree carrying the uncommitted changes this entry and
 WP-230 describe (`working_tree_clean: false`, ten untracked paths that are not
 staged). The receipt is the evidence, not the exit code alone.
 
+A second run, this time on the committed tree `15fc635` with those changes in
+it, exited 1 on exactly one case and the mapped detail names the host, not the
+tree: `native binary produced no exit status after 3 attempts (signal SIGKILL)`
+for `native/target/debug/revia lex …/unicode-path.re`. So the fix removes the
+compiler-cache failure, which was deterministic once the cache was poisoned,
+and leaves the code-signature kill, which is not. Two runs on identical bytes
+differing by one host kill is the honest description of this machine's gate.
+
 ### WP-230 — Ask the commit, not the stat cache, what a file holds
 
 The gate compares the manifest with the bytes on disk. Git compares the bytes
