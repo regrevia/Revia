@@ -2407,6 +2407,16 @@ compiler-cache failure, which was deterministic once the cache was poisoned,
 and leaves the code-signature kill, which is not. Two runs on identical bytes
 differing by one host kill is the honest description of this machine's gate.
 
+**A hosted lane can be cancelled by your next push, and that is not a failure.**
+All three workflows carry `concurrency: cancel-in-progress: true` keyed on the
+ref, so pushing while a lane is running ends it. Measured: `15fc635` reached
+`success` on Linux and on source and release validation, and its Windows lane
+was cancelled at 01:17:51 after 5m25s in `Build and test Windows x64 native
+source` — five seconds after `dfc5ddf` was created. The lane never reported a
+verdict, so a commit can only be called green on all three if it is the tip
+until the slowest lane finishes; verify the last push of a series, not every
+push in it.
+
 ### WP-230 — Ask the commit, not the stat cache, what a file holds
 
 The gate compares the manifest with the bytes on disk. Git compares the bytes
@@ -2458,6 +2468,36 @@ The honest limit: this compares the worktree with the commit, so a commit that
 contains both the corrupted file and the manifest that absorbed it is
 self-consistent and passes. Nothing in the tree can see that except the review
 of `git diff HEAD~1`.
+
+**Seen again, from the other side, minutes after this committed.** While
+checking the gate on the pushed tip, `--check` answered
+`source-import-manifest-drift` with no local edit to explain it. A sweep of all
+743 pinned paths found exactly one disagreement, `doc/09-host-conformance-0.1.md`:
+the manifest and the commit held `9e739bcc…` at 104234 bytes, the disk read
+`542bfa14…` at the same 104234 bytes, and `diff` against
+`git cat-file blob HEAD:` showed line 587 reading `driver faultpath泄漏 raw row`
+where the commit reads `driver fault 不泄漏 raw row`. Four bytes out, four bytes
+in, same length. Its `stat` then was size 104234, mtime 2026-10-31T08:47:11,
+ctime 2026-11-17T15:42:03 — and about three minutes later the same file was
+byte-identical to the commit again (`cmp` clean, `git hash-object` =
+`git rev-parse HEAD:` = `ddf4c49c…`) under the same size, the same mtime and the
+same ctime, with `git status` empty the whole time and `--check` back to
+`unchanged`, `manifest_digest 1169078d…`.
+
+So the tree held bytes the commit does not hold, nothing repaired it, and it
+stopped holding them by itself. `stat` metadata that does not move across both
+readings is the reason both the index and Cargo's fingerprint had nothing to
+notice. I could not reproduce it: three consecutive sweeps of all 743 pinned
+paths and 200 consecutive reads of that one file found no mismatch, which makes
+this a single observation with a window under three minutes and not a
+reproducible fault. It is recorded because it is the case this entry is about,
+met without a deliberate mutation, and because of what it says about the order
+of operations: `--check` still named the drift, since no `--refresh` had run
+inside the window to record the drifted bytes as the truth. Nothing in
+`--refresh` would have refused. A refresh issued during those three minutes
+would have pinned `542bfa14…` and left a tree whose gate, whose digest test and
+whose new commit guard all agree with each other and all disagree with what a
+human wrote.
 
 ### WP-229 — Name the kind when the module path holds a directory
 
