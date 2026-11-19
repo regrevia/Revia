@@ -215,6 +215,23 @@ Revia repository.
    `--refresh` rewrites the allowlist one path per line, in the same order
    `--check` reads it, so the diff of a refresh shows the files that
    changed and nothing else; do not reformat the list by hand.
+   The gate reads bytes, never the commit, so it cannot tell a file it is
+   about to pin apart from what the commit holds there: `--refresh` snapshots
+   the worktree, and a tree whose contents drifted while Git's stat cache still
+   called it clean is written into the manifest as it stands. The comparison
+   against the commit is therefore a test, not a mode:
+   `test/public-source-transition.test.js` asks `git ls-tree -r HEAD` and
+   `git hash-object` for the same paths the manifest names, and skips a path
+   `git status` reports pending, because an uncommitted refresh is ahead of the
+   commit on purpose. That comparison covers the worktree, not history: a commit
+   holding both the drifted file and the manifest that absorbed it is
+   self-consistent, and only the review of the commit catches it.
+   Do not repair a drift with `git checkout -- <path>`: it skips a path its stat
+   cache believes is up to date and leaves the drift in place. Write the blob
+   out — `git cat-file blob HEAD:<path> > <path>` — and then `--refresh`, since
+   the manifest may already pin bytes the commit does not hold. Cargo's
+   fingerprint trusts the same timestamps, so a restored source file can be
+   skipped by the build until something touches it.
    `docs/work-packages/availability.md` is the acceptance record, and it holds
    one copy of the plan followed by one entry per work package, newest first; a
    second copy of either is a bad splice rather than a second record, so

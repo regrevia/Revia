@@ -16,6 +16,27 @@ const NATIVE_ROOT = join(ROOT, 'native')
 const NATIVE_BINARY = join(NATIVE_ROOT, 'target', 'debug', 'revia')
 const NATIVE_CONFORMANCE_BINARY = join(NATIVE_ROOT, 'target', 'debug', 'revia-conformance')
 
+// Incremental compilation is on by default for a debug build, so every one of
+// these builds reads whatever dep-graph the last one left in `target/`. rustc
+// 1.96.0 (ac68faa20, aarch64-apple-darwin) fails to decode that graph when the
+// cache crossed a toolchain or flag change and panics with `Invalid DepKind
+// 396` inside `SerializedDepGraph::decode` — an ICE in the compiler, exit 101,
+// with no diagnostic about this repository's code. It reached the suite as
+// `101 !== 0` on the build assertion, which reads as a product defect and is
+// not one: the same tree builds clean from a cold cache, which is why the
+// hosted lanes never saw it. The build this file needs is a verdict about the
+// source, so it asks for one the compiler cache cannot decide, and
+// `CARGO_INCREMENTAL=0` also keeps the three builds in this file from sharing
+// a cache they would otherwise race on.
+function buildNativeWorkspace(options = {}) {
+  return spawnSync('cargo', ['build', '--workspace', '--offline'], {
+    cwd: NATIVE_ROOT,
+    encoding: 'utf8',
+    env: { ...process.env, CARGO_INCREMENTAL: '0' },
+    ...options,
+  })
+}
+
 const EXECUTABLE_FIXTURES = [
   'examples/hello.re',
   'examples/args-check.re',
@@ -28,10 +49,7 @@ const EXECUTABLE_FIXTURES = [
 ]
 
 test('native workspace builds offline with no third-party dependency graph', () => {
-  const result = spawnSync('cargo', ['build', '--workspace', '--offline'], {
-    cwd: NATIVE_ROOT,
-    encoding: 'utf8',
-  })
+  const result = buildNativeWorkspace()
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`)
   assert.equal(existsSync(NATIVE_BINARY), true)
 })
@@ -374,7 +392,10 @@ function ensureNativeBinary() {
     !existsSync(NATIVE_BINARY) ||
     newestNativeSourceMtime(NATIVE_ROOT) > statSync(NATIVE_BINARY).mtimeMs
   if (!stale) return
-  execFileSync('cargo', ['build', '--workspace', '--offline'], { cwd: NATIVE_ROOT })
+  execFileSync('cargo', ['build', '--workspace', '--offline'], {
+    cwd: NATIVE_ROOT,
+    env: { ...process.env, CARGO_INCREMENTAL: '0' },
+  })
 }
 
 function dependencyLinesForScan(output, platform, binaryPath) {
@@ -515,7 +536,10 @@ function ensureNativeConformanceBinary() {
     !existsSync(NATIVE_CONFORMANCE_BINARY) ||
     newestNativeSourceMtime(NATIVE_ROOT) > statSync(NATIVE_CONFORMANCE_BINARY).mtimeMs
   if (!stale) return
-  execFileSync('cargo', ['build', '--workspace', '--offline'], { cwd: NATIVE_ROOT })
+  execFileSync('cargo', ['build', '--workspace', '--offline'], {
+    cwd: NATIVE_ROOT,
+    env: { ...process.env, CARGO_INCREMENTAL: '0' },
+  })
 }
 
 const NATIVE_RUN_TIMEOUT_MS = 120000

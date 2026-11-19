@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import {
+  existsSync,
   readFileSync,
   readdirSync,
   lstatSync,
@@ -147,6 +148,72 @@ test('source import inventory is explicit, path-safe, and digest-bound', () => {
     assert.equal(bytes.length, entry.bytes)
     assert.equal(digest(bytes), entry.sha256)
   }
+})
+
+// The test above compares the manifest with the bytes on disk, and the index
+// compares the bytes on disk with a cached (size, mtime) pair. Neither reads the
+// commit, so a rewrite that keeps both is invisible to each of them: `git
+// status` reports the tree clean while the manifest and the commit are the two
+// that disagree. That happened for real — a 358610-byte
+// `native/revia-cli/src/main.rs` had one line spliced into a non-compiling
+// `fn same_file(...) -> bool {, So false` and still reported clean, with the
+// length and the modification time the index had cached still describing the
+// committed file. How it got there is not known and not claimed here; what is
+// measured is that nothing in the gate could have said so. `git checkout -- <path>` does not
+// repair it either: it skips a file it believes is already up to date, so the
+// file came back byte-identical to the corruption. The repair is
+// `git cat-file blob HEAD:<path> > <path>`.
+//
+// This asks the one pair that trusts no cache: what Git would store for the file
+// now, against what the commit holds. A path Git reports as pending is skipped,
+// because a `--refresh` that has not been committed yet is ahead of HEAD on
+// purpose rather than drifted from it.
+test('the import manifest describes the commit, not the stat cache', () => {
+  const inventory = JSON.parse(readFileSync(
+    join(ROOT, 'SOURCE_IMPORT_MANIFEST.json'),
+    'utf8',
+  ))
+  const tree = spawnSync('git', ['ls-tree', '-r', 'HEAD'], { cwd: ROOT, encoding: 'utf8' })
+  assert.equal(tree.status, 0, tree.stderr)
+  const committed = new Map()
+  for (const line of tree.stdout.split('\n')) {
+    if (line === '') continue
+    const [metadata, path] = line.split('\t')
+    committed.set(path, metadata.split(' ')[2])
+  }
+  const status = spawnSync(
+    'git',
+    ['status', '--porcelain', '--untracked-files=no'],
+    { cwd: ROOT, encoding: 'utf8' },
+  )
+  assert.equal(status.status, 0, status.stderr)
+  // A rename is one porcelain line naming both sides, so both are pending.
+  const pending = new Set()
+  for (const line of status.stdout.split('\n')) {
+    if (line === '') continue
+    for (const path of line.slice(3).split(' -> ')) pending.add(path)
+  }
+  // A manifest path that is missing from the tree is the digest test's finding,
+  // not this one's: it reads the file and fails there rather than here.
+  const asked = inventory.files
+    .map(({ path }) => path)
+    .filter((path) => !pending.has(path) && existsSync(join(ROOT, path)))
+  assert.ok(asked.length >= 700, `expected the import set, found ${asked.length}`)
+  const hashed = spawnSync('git', ['hash-object', '--stdin-paths'], {
+    cwd: ROOT,
+    encoding: 'utf8',
+    input: `${asked.join('\n')}\n`,
+  })
+  assert.equal(hashed.status, 0, hashed.stderr)
+  const onDisk = hashed.stdout.split('\n')
+  const drifted = asked.filter((path, index) => committed.get(path) !== onDisk[index])
+  assert.deepEqual(
+    drifted,
+    [],
+    'files Git calls unchanged disagree with the commit; restore each with '
+      + '`git cat-file blob HEAD:<path> > <path>`, because `git checkout -- <path>` '
+      + 'skips a file its stat cache believes is up to date',
+  )
 })
 
 test('no personal email or private checkout path occurs in imported source', () => {

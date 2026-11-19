@@ -2362,6 +2362,95 @@ folding the unreadable case into the missing one — each restored file
 re-greening at 2/2, 3/3 and 2/2.
 
 
+### WP-231 — Build the native workspace without asking the compiler cache
+
+`test/native-lexer-parser.test.js` builds the workspace three times, and every
+one of those builds inherited `CARGO_INCREMENTAL` from the debug profile's
+default. rustc 1.96.0 (ac68faa20, aarch64-apple-darwin) cannot decode a dep
+graph whose flags or toolchain changed underneath it and panics with `Invalid
+DepKind 396` inside `rustc_middle::dep_graph::serialized::SerializedDepGraph::decode`,
+exiting 101 with no diagnostic that mentions this repository. It reached the
+suite as `101 !== 0` on
+`native workspace builds offline with no third-party dependency graph`, which
+reads as a product defect. It is not one: the same tree builds clean from a
+cold cache, which is why the hosted lanes never saw it and only a local tree
+that had been compiled by an earlier toolchain did. Measured here on
+2026-11-19: the panic carried
+`-C incremental=/Volumes/…/native/target/debug/incremental` in the rustc
+arguments it printed, and no run has carried the panic since the flag was set.
+
+All three builds now pass `CARGO_INCREMENTAL: '0'`. That is not a way of
+hiding a failure: the cache is what produced the failure, the assertion is a
+verdict about the source, and the environment now asks for the verdict rather
+than for the cache's opinion of it. It also removes a real race, since three
+processes sharing one incremental cache are the reason a build could read a
+graph another one was still writing.
+
+The remaining local failure in this file is unrelated and unchanged: a child
+started from `native/target/debug` on the `/Volumes` mount is occasionally
+killed by the host's code-signature check, `spawnWithStatus` reports
+`native binary produced no exit status after 3 attempts (signal SIGKILL)` and
+names it as the host rather than the tree. Three consecutive runs on this
+revision reported 12/12, 12/12 and 11/12, the third failing only that way.
+
+With this in place `npm test` exited 0 on this revision for the first time:
+`status: 0`, `signal: None`, `intended 165 / executed 165`, 1263 test cases
+with no failing one, on a tree carrying the uncommitted changes this entry and
+WP-230 describe (`working_tree_clean: false`, ten untracked paths that are not
+staged). The receipt is the evidence, not the exit code alone.
+
+### WP-230 — Ask the commit, not the stat cache, what a file holds
+
+The gate compares the manifest with the bytes on disk. Git compares the bytes
+on disk with a cached `(size, mtime, ctime)` tuple. Nothing in either reads the
+commit, so a rewrite that keeps the first and slips past the second is invisible
+to both. That is not hypothetical: `native/revia-cli/src/main.rs` was found on
+disk holding a single spliced line — `fn same_file(_left: &fs::Metadata,
+_right: &fs::Metadata) -> bool {, So false` — which cannot compile, at
+358610 bytes, the exact length of the committed blob, and
+`git status --porcelain` reported the tree clean. Measured before any repair:
+`git hash-object native/revia-cli/src/main.rs` = `299a3dc4…`,
+`git rev-parse HEAD:native/revia-cli/src/main.rs` = `c96c351d…`, both 358610
+bytes, `git status --porcelain -- native/revia-cli/src/main.rs` empty.
+
+`git checkout HEAD -- <path>` does not repair it, and that is the trap worth
+recording: the command is a no-op on a path its stat cache believes is already
+up to date, so the file came back byte-identical to the corruption and the blob
+hash stayed `299a3dc4…`. Writing the blob out explicitly is what repairs it —
+`git cat-file blob HEAD:<path> > <path>` produced `c96c351d…`, and
+`cmp` against `git show HEAD:<path>` was clean. The same trust hid the
+corruption from the compiler: `cargo build --offline -p revia-cli` answered
+`Finished dev profile … in 0.00s` on the restored source, and only touching
+the test target forced the library to rebuild, after which
+`cargo test --offline -p revia-cli --test project_template` reported 22 passed.
+
+**Change.** `test/public-source-transition.test.js` asks the one pair that
+trusts no cache: `git ls-tree -r HEAD` gives the blob each committed path
+holds, `git hash-object --stdin-paths` gives the blob the worktree would store
+now, and the manifest's own path list is the set compared, so a file the
+manifest covers cannot be skipped by forgetting it. Paths
+`git status --porcelain --untracked-files=no` reports pending are left out,
+because a `--refresh` that is not committed yet is deliberately ahead of HEAD
+rather than drifted from it; a rename contributes both of its sides.
+
+**Why it is a test and not a gate branch.** The generator never calls Git — it
+hashes bytes and nothing else — and `--refresh` therefore snapshots whatever is
+on disk. That is how a drift gets absorbed: refreshing over a corrupt tree
+writes a manifest that pins the corrupt bytes, after which the digest test is
+green and the tree is self-consistent and wrong. Measured, by corrupting
+`SECURITY.md` in place with `git update-index --assume-unchanged` so the size,
+the mtime and `git status` all still said clean, then refreshing: the receipt
+reported `manifest_transition: replaced`, the `digest-bound` test passed, and
+the new test was the only thing that failed, naming `SECURITY.md` and the
+repair. The flag and the tree were put back to `H` and re-refreshed; the
+manifest then differed from the commit in exactly one entry, the test file this
+entry adds, verified entry by entry rather than by line count.
+
+The honest limit: this compares the worktree with the commit, so a commit that
+contains both the corrupted file and the manifest that absorbed it is
+self-consistent and passes. Nothing in the tree can see that except the review
+of `git diff HEAD~1`.
+
 ### WP-229 — Name the kind when the module path holds a directory
 
 The three names WP-218 published cover a module that is gone, a module the
