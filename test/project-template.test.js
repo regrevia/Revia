@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
 import test from 'node:test'
+
+import { releaseBinarySkipReason, releaseBinaryState } from './release-binary-state.js'
 
 const projectRoot = new URL('../projects/_template/', import.meta.url)
 
@@ -52,7 +54,7 @@ test('public project template passes the source CLI project workflow', () => {
   }
 })
 
-test('native project-init output is documented and checkable by native check', () => {
+test('native project-init output is documented and checkable by native check', (t) => {
   // `projects/README.md` promises a deterministic starter and names the command
   // that checks it. Re-run the measured boundary: the starter seals a
   // `re 0.1 compact` module, which the source CLI cannot check.
@@ -70,8 +72,15 @@ test('native project-init output is documented and checkable by native check', (
   assert.ok(template.includes('native/target/release/revia project-surface-check'))
 
   const root = new URL('../', import.meta.url).pathname
-  const binary = resolve(root, 'native/target/release/revia')
-  if (!existsSync(binary)) return
+  const nativeState = releaseBinaryState(root)
+  // A binary that is there but older than the newest watched source measures
+  // source it was not built from, which is the same as not measuring at all and
+  // is reported as one.
+  if (nativeState.state !== 'fresh') {
+    t.skip(releaseBinarySkipReason(nativeState))
+    return
+  }
+  const { binary } = nativeState
 
   const target = join(mkdtempSync(join(tmpdir(), 'revia-project-init-')), 'starter')
   const init = spawnSync(binary, ['project-init', target], { encoding: 'utf8' })

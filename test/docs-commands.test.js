@@ -7,6 +7,8 @@ import { join, posix, resolve } from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
+import { releaseBinarySkipReason, releaseBinaryState } from './release-binary-state.js'
+
 const repositoryRoot = fileURLToPath(new URL('../', import.meta.url))
 const ROOT_DOCUMENTS = ['README.md', 'README.zh-CN.md', 'CONTRIBUTING.md', 'AGENTS.md', 'RELEASE_NOTES.md']
 
@@ -415,7 +417,7 @@ test('the expense-review example runs its checked fixture', () => {
   }), [{ code: 'project-run-case-not-found' }])
 })
 
-test('the project example documents its module-digest repair path', () => {
+test('the project example documents its module-digest repair path', (t) => {
   // The README's modification steps send a reader to a scratch copy, then to
   // the native surface check. Re-run the stale-digest failure and, when the
   // release binary exists, the surface envelope the page promises.
@@ -514,8 +516,17 @@ test('the project example documents its module-digest repair path', () => {
     'project-run-graph-revision-mismatch'
   )
 
-  const binary = resolve(repositoryRoot, 'native/target/release/revia')
-  if (!existsSync(binary)) return
+  const nativeState = releaseBinaryState(repositoryRoot)
+  // `existsSync` answered this before, and a file that is there but older than
+  // the source it claims to describe answers for source it was not built from:
+  // measured at `6109b10`, a one-line edit to `read_byte_input` left this test
+  // green until the release rebuild. Both states are a skip now, with the file
+  // named, so the report states what it did not measure.
+  if (nativeState.state !== 'fresh') {
+    t.skip(releaseBinarySkipReason(nativeState))
+    return
+  }
+  const { binary } = nativeState
   const native = spawnSync(binary, ['project-surface-check', example], { encoding: 'utf8' })
   assert.equal(native.status, 0, native.stderr)
   const surface = JSON.parse(native.stdout)

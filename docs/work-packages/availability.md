@@ -2361,6 +2361,96 @@ mutations turned all three files red — reverting to the bare error, and
 folding the unreadable case into the missing one — each restored file
 re-greening at 2/2, 3/3 and 2/2.
 
+204. Seven cases measured a binary they never ran. The four files that read
+`native/target/release/revia` asked `existsSync` and returned early, and Node
+counts a case that returned as a pass, so the receipt claimed seven documented
+claims on checkouts that built nothing — the hosted Node lane among them, since
+its job runs no cargo step. `test/release-binary-state.js` answers absent, stale
+or fresh over the `.rs` and `.toml` files under `native/` minus `target/`, and
+the seven sites skip with a reason that names the file, which keeps each case
+inside `<!-- tests N -->` while saying it was not measured. The mutation that
+proves the measurement landed: 66 to 65 in `read_byte_input` turned
+`docs-diagnostics` red at 8 pass, 1 fail, and the restored source re-greened it
+at 9/9. See WP-232.
+
+
+### WP-232 — Ask the release binary's age before measuring it
+
+Seven cases in four files measure `native/target/release/revia`, and each one
+decided whether to measure it by asking whether the file exists:
+[`test/docs-diagnostics.test.js`](../../test/docs-diagnostics.test.js) twice
+(`result.error?.code === 'ENOENT'` once, `spawnSync(...).error?.code === 'ENOENT'`
+once), [`test/docs-commands.test.js`](../../test/docs-commands.test.js) and
+[`test/project-template.test.js`](../../test/project-template.test.js) with
+`existsSync`, and [`test/release-compatibility-table.test.js`](../../test/release-compatibility-table.test.js)
+three times through the `--help` probe. They are issue #43, and the fault is not
+that the guard is wrong about an absent file: it is that Node reports a case
+which returned early exactly as it reports one which measured and agreed, so the
+receipt counted seven documented claims as measured on every checkout that had
+never built the workspace — including the hosted Node lanes, whose job runs no
+cargo step at all.
+
+A file can also be there and useless. `native/target/release/revia` older than
+the newest source it claims to describe answers for source it was not built
+from, and the guard accepted it: measured at `6109b10`, a one-line edit to
+`read_byte_input` that moved its unreadable-input exit from 66 to 65 left the
+four files at 9 pass, 0 fail until the release was rebuilt, and only then did
+`the diagnostics page documents the object an unreadable native input prints`
+turn red.
+
+[`test/release-binary-state.js`](../../test/release-binary-state.js) answers
+`absent`, `stale` or `fresh`, and `releaseBinarySkipReason` names the file in a
+sentence the report carries. The watched set is every `.rs` and `.toml` under
+`native/` except the build's own `target/`, because the build writes `.toml`
+files under `native/target/release/build/` with the artifact's own timestamp and
+would otherwise make a fresh binary look stale — a synthetic-tree case pins that
+in [`test/release-binary-state.test.js`](../../test/release-binary-state.test.js),
+which covers the three answers, the directory-where-a-binary-belongs case, and
+the mechanism: a probe that skips reaches the JUnit report as `<skipped>` and
+stays inside `<!-- tests N -->`, so a skip is a case the population still counts
+rather than a case that disappears.
+
+The seven sites now call `t.skip(releaseBinarySkipReason(state))` and return. A
+skip is the honest answer for a checkout without a build, which is a legitimate
+tree and not a defect; returning quietly was the defect. It is also why this
+package does not fail closed: a tree that has never run cargo must not report
+seven failures that name the source, because nothing about the source is known
+there.
+
+Measured on 2026-11-19, in this checkout, after restoring the source and
+rebuilding: reverting `read_byte_input`'s unreadable-input exit from 66 to 65
+turned `test/docs-diagnostics.test.js` from 9/9 to 8 pass, 1 fail, and restoring
+it and rebuilding re-greened 9/9. The first attempt mutated `read_json_text`
+instead, whose 65 is already correct for a non-decodable registry, and stayed
+9/9 green: a mutation that does not sit on the path the case measures is not
+proof of anything, and that is the second half of what this file now records.
+
+Two properties of the artifact itself were measured while doing this, and both
+are facts about this machine rather than about the tree. First,
+`codesign --verify --strict native/target/release/revia` reports
+`invalid signature (code or signature have been modified)` on the file
+`cargo build --workspace --release --offline` has just produced
+(`flags=0x20002(adhoc,linker-signed)`), and executing it is sometimes refused
+with `SIGKILL (Code Signature Invalid)` / `Invalid Page` and sometimes accepted:
+ten consecutive `--help` runs were refused at 09:36 and six consecutive runs of
+`--help` and `project-init` were accepted minutes later from the same bytes.
+`codesign --force --sign -` makes `--verify --strict` pass and the five affected
+files pass 77/77, twice, so a local red on these cases is a signature question
+before it is a verdict about the source, and no guard in this repository can
+say which. Second, one `cp` of the artifact landed bytes whose sha256 was
+`c5b4ab6f…` where the source file's was `54bc93a2…`, and every execution of that
+copy was refused until it was re-signed: a copy that does not hold the bytes it
+was copied from is a second way a "fresh" binary fails, and the reason the guard
+compares timestamps rather than trusting that a file named like a binary is the
+binary.
+
+The declared limit is the mtime comparison and nothing more: the guard reads
+when files were written, not what they hold, so a source stamped older than the
+binary is fresh by this rule, and the receipt cannot tell a tree that skipped
+seven cases from one that measured them unless the skip reason is read. The
+hosted Node lanes still skip all seven; what changed is that the report says so
+by name, so a reviewer of a green run can see that the claim was measured where
+the workspace is built and not in that lane.
 
 ### WP-231 — Build the native workspace without asking the compiler cache
 

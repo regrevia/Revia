@@ -17,6 +17,8 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
 
+import { releaseBinarySkipReason, releaseBinaryState } from './release-binary-state.js'
+
 // `docs/compatibility.md` is what a reader uses to decide whether their target
 // is supported, but nothing else in the suite binds that table to the release
 // records. The release tests prove the evidence files agree with the candidate
@@ -1483,7 +1485,7 @@ test('the RC1 server and multi-module records publish one digest', async () => {
   assert.equal(server.module_count, multi.module_count, 'the two gate records measured different modules')
 })
 
-test('the wildcard binding rejection the reference records is reproducible', async () => {
+test('the wildcard binding rejection the reference records is reproducible', async (t) => {
   const reference = await read('docs/language-reference.md')
   const start = reference.indexOf('Measured: `revia check` on `ok(%data) =>')
   assert.ok(start >= 0, 'the reference records the wildcard measurement')
@@ -1499,9 +1501,16 @@ test('the wildcard binding rejection the reference records is reproducible', asy
   assert.equal(source.split(accepted).length - 1, 1, 'the fixture holds one wildcard branch')
   const root = await mkdtemp(join(tmpdir(), 're-wildcard-binding-'))
   try {
-    const binary = join(fileURLToPath(repository), 'native', 'target', 'release', 'revia')
-    // A checkout that has not built the release binary has nothing to measure.
-    if (spawnSync(binary, ['--help'], { cwd: root }).error?.code === 'ENOENT') return
+    const nativeState = releaseBinaryState(fileURLToPath(repository))
+    // A checkout that has not built the release binary has nothing to measure,
+    // and a binary older than the newest watched source answers for source it
+    // was not built from. Both are a skip that names the file: returning
+    // quietly left the population counting this claim as measured.
+    if (nativeState.state !== 'fresh') {
+      t.skip(releaseBinarySkipReason(nativeState))
+      return
+    }
+    const { binary } = nativeState
     await writeFile(
       join(root, 'branch.re'),
       source.replace(accepted, 'ok(%data) => process.exit(0)'),
@@ -1521,7 +1530,7 @@ test('the wildcard binding rejection the reference records is reproducible', asy
   }
 })
 
-test('the preview flags the language page rejects are rejected', async () => {
+test('the preview flags the language page rejects are rejected', async (t) => {
   const language = await read('docs/language.md')
   const claim = /`revia check (--format json) <file\.re>` and `revia check (--write) <file\.re>`[\s\S]{0,40}?exit\s+`(\d+)` with `Usage: revia` on stderr/u.exec(
     language,
@@ -1530,11 +1539,12 @@ test('the preview flags the language page rejects are rejected', async () => {
   const [, formatFlag, writeFlag, code] = claim
   assert.equal(Number(code), 64, 'the sentence names another exit code')
 
-  const binary = join(fileURLToPath(repository), 'native', 'target', 'release', 'revia')
-  // A checkout that has not built the release binary has nothing to measure.
-  if (spawnSync(binary, ['--help'], { cwd: fileURLToPath(repository) }).error?.code === 'ENOENT') {
+  const nativeState = releaseBinaryState(fileURLToPath(repository))
+  if (nativeState.state !== 'fresh') {
+    t.skip(releaseBinarySkipReason(nativeState))
     return
   }
+  const { binary } = nativeState
   for (const flag of [formatFlag, writeFlag]) {
     const args = flag === '--format json' ? ['--format', 'json'] : [flag]
     const result = spawnSync(
@@ -1548,16 +1558,19 @@ test('the preview flags the language page rejects are rejected', async () => {
   }
 })
 
-test('the native source digest is the sha256 of the file bytes', async () => {
+test('the native source digest is the sha256 of the file bytes', async (t) => {
   // `revia digest` is the command behind the `source-digest` argument of the
   // release and runtime contracts, yet only its refusal for an absent file was
   // ever executed. Hash the same bytes in Node, so a digest that stamped a path
   // or a parsed graph cannot pass as the source digest of the bytes on disk.
-  const binary = join(fileURLToPath(repository), 'native', 'target', 'release', 'revia')
-  // A checkout that has not built the release binary has nothing to measure.
-  if (spawnSync(binary, ['--help'], { cwd: fileURLToPath(repository) }).error?.code === 'ENOENT') {
+  const nativeState = releaseBinaryState(fileURLToPath(repository))
+  // Same rule as the two cases above: the digest of the bytes is only measured
+  // against a binary built from these bytes.
+  if (nativeState.state !== 'fresh') {
+    t.skip(releaseBinarySkipReason(nativeState))
     return
   }
+  const { binary } = nativeState
   const root = await mkdtemp(join(tmpdir(), 'revia-source-digest-'))
   try {
     const source = Buffer.from('re 0.1 compact\nunit @digest_probe\n', 'utf8')

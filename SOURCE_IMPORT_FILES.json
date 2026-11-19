@@ -666,6 +666,8 @@
     "test/public-ai-native-demo.test.js",
     "test/public-source-transition.test.js",
     "test/quickstart-first-program.test.js",
+    "test/release-binary-state.js",
+    "test/release-binary-state.test.js",
     "test/release-compatibility-table.test.js",
     "test/release-contract-gate.test.js",
     "test/release-evidence-witness.test.js",

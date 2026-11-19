@@ -6,6 +6,8 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
 
+import { releaseBinarySkipReason, releaseBinaryState } from './release-binary-state.js'
+
 // docs/diagnostics.md tells a reader what a rejection looks like and which
 // code it exits with. The page is only useful if every claim in it is the
 // measured behaviour of the CLI, so this test reads the constants out of the
@@ -488,7 +490,7 @@ test('the declared-capability acceptance page cannot claim a state its records d
 // them: the object an unreadable input prints could gain or lose a field while
 // the page kept quoting the old one. Read the documented object out of the page
 // and compare it with the bytes the release binary prints.
-test('the diagnostics page documents the object an unreadable native input prints', async () => {
+test('the diagnostics page documents the object an unreadable native input prints', async (t) => {
   const start = diagnostics.indexOf('## Native CLI exit codes')
   const end = diagnostics.indexOf('## Launcher exit codes')
   assert.ok(start >= 0 && end > start, 'the page has a native exit-code section')
@@ -498,13 +500,21 @@ test('the diagnostics page documents the object an unreadable native input print
   const expected = JSON.parse(documented[1])
   const root = await mkdtemp(join(tmpdir(), 're-native-unreadable-'))
   try {
-    const binary = join(repositoryRoot, 'native', 'target', 'release', 'revia')
+    const nativeState = releaseBinaryState(repositoryRoot)
+    // A checkout that has not built the release binary has nothing to measure,
+    // and a binary older than the source it claims to describe answers for
+    // source it was not built from. Both are reported as a skip naming the
+    // file, because Node counts a test that returned early as a pass and the
+    // population would say this claim was measured.
+    if (nativeState.state !== 'fresh') {
+      t.skip(releaseBinarySkipReason(nativeState))
+      return
+    }
+    const { binary } = nativeState
     const result = spawnSync(binary, ['digest', 'missing.re'], {
       cwd: root,
       encoding: 'utf8',
     })
-    // A checkout that has not built the release binary has nothing to measure.
-    if (result.error?.code === 'ENOENT') return
     assert.equal(result.status, 66, result.stderr)
     assert.equal(result.stderr, '', 'the diagnostic goes to stdout only')
     assert.deepEqual(JSON.parse(result.stdout), expected)
@@ -513,7 +523,7 @@ test('the diagnostics page documents the object an unreadable native input print
   }
 })
 
-test('the native CLI separates its usage banner from its parser envelope', async () => {
+test('the native CLI separates its usage banner from its parser envelope', async (t) => {
   const start = diagnostics.indexOf('## Native CLI exit codes')
   const end = diagnostics.indexOf('## Launcher exit codes')
   assert.ok(start >= 0 && end > start, 'the page has a native exit-code section')
@@ -523,9 +533,14 @@ test('the native CLI separates its usage banner from its parser envelope', async
   const expected = JSON.parse(documented[1])
   const root = await mkdtemp(join(tmpdir(), 're-native-envelope-'))
   try {
-    const binary = join(repositoryRoot, 'native', 'target', 'release', 'revia')
-    // A checkout that has not built the release binary has nothing to measure.
-    if (spawnSync(binary, ['--help'], { cwd: root }).error?.code === 'ENOENT') return
+    const nativeState = releaseBinaryState(repositoryRoot)
+    // The same rule as the case above: absent and stale both mean do not
+    // measure, and both are said out loud rather than counted as a pass.
+    if (nativeState.state !== 'fresh') {
+      t.skip(releaseBinarySkipReason(nativeState))
+      return
+    }
+    const { binary } = nativeState
     const usage = spawnSync(binary, [], { cwd: root, encoding: 'utf8' })
     assert.equal(usage.status, 64, usage.stderr)
     assert.equal(usage.stdout, '', 'the banner does not go to stdout')
