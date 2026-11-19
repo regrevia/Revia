@@ -2391,6 +2391,77 @@ with 6 skips, and all seven documented-claim cases carry a duration instead of
 `<skipped/>`. See WP-233.
 
 
+206. The guard that compares a pinned file with what the commit holds sees
+one commit. WP-230 asked `git ls-tree -r HEAD` and `git hash-object` for the
+manifest's own paths, so a commit that shipped a drifted file together with the
+manifest that absorbed it is self-consistent and the case stayed green. Walking
+`git log --raw --no-abbrev` over all 454 commits, reading each commit's own
+`SOURCE_IMPORT_MANIFEST.json` with `git cat-file --batch`, and comparing the
+post-image blob of every published path against the pin that commit carried
+found **13 path/commit pairs across 7 commits**; the tip is clean. The walk is
+now a case over 1,432 checks with those 13 rows pinned in both directions, and
+the `node` job checks out `fetch-depth: 0` because a depth-1 checkout makes it
+skip. See WP-234.
+
+
+### WP-234 — Ask every commit, not only the tip
+
+[`test/public-source-transition.test.js`](../../test/public-source-transition.test.js)
+compares the manifest with the tree the commit holds, and a commit is free to
+disagree with itself in a way no single-commit check can see: ship the edited
+file and the manifest that absorbed it in one commit, and the pin matches the
+blob. WP-230's case reads `HEAD`, so it answered a question about one commit and
+was read as an answer about the file.
+
+The case now walks the history. It runs `git log --raw --no-renames --no-abbrev
+--format=C %H HEAD`, and for each `C ` header reads that commit's own manifest
+out of the object database with one `git cat-file --batch` over
+`<commit>:SOURCE_IMPORT_MANIFEST.json`. Every raw record's post-image blob —
+field four of `--raw`, which is the after-image and not the before-image — is
+compared with the digest that commit's manifest pins for the same path. The two
+errors that direction cost: reading field two compares the *previous* blob and
+turns 13 disagreements into 697 of 708 checks, and abbreviated blob ids make
+`cat-file` miss, which is why `--no-abbrev` is not optional.
+
+What it found is real history rather than a hypothetical. Over 1,432 checks, 13
+path/commit pairs across 7 commits publish bytes their own manifest pins to a
+different digest; the tip is clean. They are pinned in the test oldest-first,
+with the commit, the path, the pinned digest and the observed digest, and
+asserted in **both** directions: a repaired row fails the case as a stale
+expectation, and an unnoticed new one fails it as an unknown pair. The failure
+message says to rebuild the manifest in the violating commit
+(`npm run source:manifest:write`) rather than to add a row, because a row is a
+record and not a repair.
+
+The walk needs history, and the hosted checkout is depth 1, so the `node` job in
+[`../../.github/workflows/validate.yml`](../../.github/workflows/validate.yml)
+now asks for `fetch-depth: 0`. That flag and the case are one claim in two
+places, so
+[`test/tracked-test-runner.test.js`](../../test/tracked-test-runner.test.js)
+asserts the pair: the flag is present inside the `node` job between its checkout
+and its suite step, and the history case really does read
+`--is-shallow-repository`. A workflow that buys history nothing reads, and a case
+that skips in the only lane that runs it, are both green for no reason.
+
+Both halves are proven rather than argued. In a fresh HTTPS clone of
+`origin`, a synthetic commit carrying one stale manifest pin turned the case red
+at 17 pass, 1 fail, naming the commit, the path, the pinned digest and the
+observed one; the clean tree is 18/18 in 2.87 s. Deleting `fetch-depth: 0` from
+the workflow turned
+`the Node job checks out the history the suite walks` red with `the Node job
+checks out one commit, so the history case skips there instead of walking` at 25
+pass, 1 fail, and restoring the line re-greened it at 26/26. A shallow clone
+skips the history case with a reason naming the shallow clone, so the case
+reports that it did not measure instead of a green it never earned.
+
+The parenthetical that this closes: `SOURCE_IMPORT_MANIFEST.json` exists in only
+357 of the 454 commits, so the walk skips commits that carry no manifest at all.
+That is the manifest being younger than the repository, not a commit disagreeing
+with itself, and the pinned set is exactly the commits that had one to disagree
+with. Full local suite with this in the tree: 166 files, 1,272 cases, 1 skip (the
+Linux-only non-UTF-8 filename case), 0 failures.
+
+
 ### WP-233 — Build the release binary before the Node suite measures it
 
 The `node` job of `Source and release validation` runs the Node conformance

@@ -22,9 +22,14 @@ jobs:
       matrix:
         node-version: ['22.16.0', '22']
     steps:
+      # Full history, because `test/public-source-transition.test.js` walks every
+      # commit to compare what each one stored against the manifest it carried. The
+      # default depth-1 clone would make that test a skip, and a skip on every push
+      # is a claim nobody measures.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ matrix.node-version }}

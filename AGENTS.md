@@ -223,9 +223,19 @@ Revia repository.
    `test/public-source-transition.test.js` asks `git ls-tree -r HEAD` and
    `git hash-object` for the same paths the manifest names, and skips a path
    `git status` reports pending, because an uncommitted refresh is ahead of the
-   commit on purpose. That comparison covers the worktree, not history: a commit
-   holding both the drifted file and the manifest that absorbed it is
-   self-consistent, and only the review of the commit catches it.
+   commit on purpose. That comparison covers the worktree; the same test also
+   walks the history, because a commit holding both the drifted file and the
+   manifest that absorbed it is self-consistent and only a read of the commit
+   diff catches it. It reads every commit's own manifest with
+   `git cat-file --batch` and compares the post-image blob of each published
+   path with the pin that commit carried, over the whole history rather than a
+   window. The walk needs history, so the Node job checks the repository out
+   with `fetch-depth: 0`, and a shallow clone skips the case with that reason
+   instead of reporting a green it never measured; the flag and the test that
+   reads it are asserted as a pair, since history nobody reads and a test that
+   skips in the lane that runs it are both green for no reason. The thirteen
+   disagreements the walk found are pinned in the test oldest-first and
+   asserted in both directions, so repairing one and adding one each fail it.
    Do not repair a drift with `git checkout -- <path>`: it skips a path its stat
    cache believes is up to date and leaves the drift in place. Write the blob
    out — `git cat-file blob HEAD:<path> > <path>` — and then `--refresh`, since

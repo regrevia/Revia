@@ -139,6 +139,36 @@ test('the Node job builds the release binary before the documented claims measur
   )
 })
 
+// A depth-1 checkout cannot answer a question about history: the walk sees one
+// commit, so the case that compares each commit with its own manifest skips and
+// the cell is green without ever looking. That pairing is one claim in two
+// places, and a workflow asking for history no case reads guards nothing, so
+// the assertion runs both ways.
+test('the Node job checks out the history the suite walks', () => {
+  const workflow = readFileSync(join(ROOT, '.github/workflows/validate.yml'), 'utf8')
+  const job = /^ {2}node:\n([\s\S]*?)(?=^ {2}[a-z-]+:\n|(?![\s\S]))/mu.exec(workflow)
+  assert.ok(job, 'the workflow has no node job')
+  const steps = job[1]
+  const checkout = steps.indexOf('actions/checkout@')
+  assert.ok(checkout >= 0, 'the node job never checks the repository out')
+  const suite = steps.indexOf('node scripts/run-tracked-tests.js')
+  assert.ok(suite >= 0, 'the node job does not run the suite')
+  assert.ok(
+    checkout < suite,
+    'the node job runs the suite before it checks the tree out',
+  )
+  assert.match(
+    steps.slice(checkout, suite),
+    /^ {10}fetch-depth: 0$/mu,
+    'the Node job checks out one commit, so the history case skips there instead of walking',
+  )
+  const history = readFileSync(join(ROOT, 'test/public-source-transition.test.js'), 'utf8')
+  assert.ok(
+    history.includes('--is-shallow-repository'),
+    'the workflow buys full history no case reads, so the flag guards nothing',
+  )
+})
+
 test('population evidence corpus fixes clean, truncated, missing-report, and subset controls', () => {
   assert.equal(
     POPULATION_CORPUS.schema,
