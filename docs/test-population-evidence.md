@@ -91,6 +91,40 @@ produce `complete=true`.
 控制中出现额外 discovered 文件、缺失执行报告、子进程缺少退出状态、非零退出
 或 signal，则不得产生 `complete=true`。
 
+## What the population does not say / 人口不说明什么
+
+`intended` and `executed` count test *files*, and a file that ran is a file
+that ran — not every case inside it measured something. A case that calls
+`t.skip()` stays inside the file's `<!-- tests N -->` count and adds
+`<skipped/>`, so skipping does not move either number. Read the skip count in
+the execution log to know what actually measured.
+
+Seven documented-claim cases compare a page with the bytes the release binary
+prints (`docs-commands`, `docs-diagnostics` twice, `project-template`,
+`release-compatibility-table` ×3). They skip with a reason naming the binary
+when it is absent or older than the sources it claims to describe. The Node job
+builds `cargo build --workspace --release --offline` before running the suite
+so those seven measure on the runner instead of skipping there; the native job
+runs the same build, and the duplication is deliberate, because an artifact
+built by another job could be older than the tree this job checked out.
+`test/release-binary-state.test.js` pins the guard, and
+`test/tracked-test-runner.test.js` pins that the Node job builds before it
+measures.
+
+`intended` 与 `executed` 统计的是测试**文件**，文件跑过不等于文件里每个 case
+都测到了东西。调用 `t.skip()` 的 case 仍计入该文件的 `<!-- tests N -->`，只多出
+一个 `<skipped/>`，所以跳过不会改变这两个数字；真实测了什么要看执行日志里的
+skip 计数。
+
+七个「文档断言」case 会把文档页面与 release 二进制实际打印的字节对比
+（`docs-commands`、`docs-diagnostics` 两处、`project-template`、
+`release-compatibility-table` 三处）。二进制缺失或比它声称描述的源码旧时，它们
+带原因 skip 并点名该文件。Node job 现在先跑
+`cargo build --workspace --release --offline` 再跑测试，让这七个 case 在 runner
+上真正测量而不是跳过；native job 有同样的构建，重复是刻意的，因为别的 job 构建
+的产物可能比本 job 检出的树更旧。`test/release-binary-state.test.js` 钉住这个
+guard，`test/tracked-test-runner.test.js` 钉住 Node job 先构建后测量。
+
 `validateTrackedTestPopulationReport` checks the schema, population relations,
 terminal states, fixture/command/report digests, Node floor, and the supplied
 execution log digest. `working_tree_clean=false` means the report describes a

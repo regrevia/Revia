@@ -37,6 +37,20 @@ jobs:
           npm run source:manifest
           sh scripts/validate-public-tree.sh
           gitleaks dir --redact .
+      # Seven cases in test/docs-commands.test.js, test/docs-diagnostics.test.js,
+      # test/project-template.test.js and test/release-compatibility-table.test.js
+      # compare a page with the bytes the release binary prints. They skip when
+      # that binary is absent or older than the sources it claims to describe,
+      # which is the honest answer and also meant that a job that never built
+      # one reported "not measured" for a claim it appeared to cover. Build it
+      # here, from this checkout, before the suite runs, so that population is
+      # the one that measured them. The native job runs the same build; the
+      # duplication buys the Node lane its ability to check its own claims,
+      # because an artifact built by another job could be older than the tree
+      # this job checked out.
+      - name: Build the release binary the documented claims measure
+        run: cargo build --workspace --release --offline
+        working-directory: native
       - name: Run Node conformance suite
         shell: bash
         run: |

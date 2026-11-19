@@ -105,6 +105,40 @@ test('population evidence page names the schema and artifact the repository emit
   )
 })
 
+// Seven documented-claim cases compare a page with the bytes the release
+// binary prints, so they measure only when the binary is there and newer than
+// the sources it claims to describe. The Node job used to run the suite in a
+// checkout where nothing built one, which made seven claims report "not
+// measured" while the population looked complete. The build has to happen in
+// this job, before the suite, or the skip reasons come back.
+test('the Node job builds the release binary before the documented claims measure it', () => {
+  const workflow = readFileSync(join(ROOT, '.github/workflows/validate.yml'), 'utf8')
+  const job = /^ {2}node:\n([\s\S]*?)(?=^ {2}[a-z-]+:\n|(?![\s\S]))/mu.exec(workflow)
+  assert.ok(job, 'the workflow has no node job')
+  const steps = job[1]
+  const build = steps.indexOf('cargo build --workspace --release')
+  assert.ok(
+    build >= 0,
+    'the node job never builds native/target/release/revia, so the documented claims skip there',
+  )
+  const suite = steps.indexOf('node scripts/run-tracked-tests.js')
+  assert.ok(suite >= 0, 'the node job does not run the suite')
+  assert.ok(
+    build < suite,
+    'the node job runs the suite before building the binary those claims read',
+  )
+  assert.match(
+    steps,
+    /cargo build --workspace --release --offline\n {8}working-directory: native/u,
+    'the build runs outside native/, where the workspace manifest is not',
+  )
+  const page = readFileSync(join(ROOT, 'docs/test-population-evidence.md'), 'utf8')
+  assert.ok(
+    page.includes('cargo build --workspace --release --offline'),
+    'the evidence page does not tell an evaluator that the population measured the binary claims',
+  )
+})
+
 test('population evidence corpus fixes clean, truncated, missing-report, and subset controls', () => {
   assert.equal(
     POPULATION_CORPUS.schema,
