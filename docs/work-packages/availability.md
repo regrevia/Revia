@@ -2373,6 +2373,79 @@ proves the measurement landed: 66 to 65 in `read_byte_input` turned
 `docs-diagnostics` red at 8 pass, 1 fail, and the restored source re-greened it
 at 9/9. See WP-232.
 
+205. The gate that says "not measured" still never measured. WP-232 made the
+seven skip instead of pass, and the hosted artifact proved it: 13 skips on
+`812f1b8`, seven of them naming
+`native/target/release/revia is not built in this checkout`, because the `node`
+job of `Source and release validation` runs no cargo step. The job now builds
+`cargo build --workspace --release --offline` in `native/` after the
+source-import gate and before the suite, so the seven run on the runner. The
+build is duplicated across jobs on purpose: an artifact built by the native job
+can be older than the tree this job checked out, and the guard compares mtimes
+against the sources rather than asking a job which built what. Two mutations
+pin the step and its order inside the job — deleting it and moving the suite
+above it each turned
+[`test/tracked-test-runner.test.js`](../../test/tracked-test-runner.test.js)
+red at 24 pass, 1 fail. On `cb7b461` both matrix artifacts carry 1,270 cases
+with 6 skips, and all seven documented-claim cases carry a duration instead of
+`<skipped/>`. See WP-233.
+
+
+### WP-233 — Build the release binary before the Node suite measures it
+
+The `node` job of `Source and release validation` runs the Node conformance
+suite, and seven of the cases in that suite measure a documented page against
+what `native/target/release/revia` prints. After WP-232 those seven skip with a
+reason naming the binary when it is absent or older than the sources it claims
+to describe — which is honest, and on the runner it was the whole story: the job
+never built a binary, so the seven skipped on every hosted run and a green Node
+lane said nothing about whether the CLI still prints what the docs claim. Issue
+#43 was closed on the strength of the receipt saying "not measured"; nothing yet
+made the answer be "measured".
+
+The job now runs
+
+    cargo build --workspace --release --offline
+
+in `native/`, between the source-import gate and
+`node ./scripts/run-tracked-tests.js`. The order matters twice: after the gate,
+because the gate compares a tree and `native/target/` is already ignored so the
+build cannot make the tree dirty; before the suite, because the suite is what
+reads the result.
+
+The native job builds the same workspace, and this job builds it again rather
+than downloading that artifact. That is deliberate and it costs a second release
+build per push. An artifact produced by another job is bound to a different
+checkout, and the guard's question is whether the binary is newer than the
+sources in *this* tree — a job that asks a workflow artifact "did you build
+this commit" is asking a question the guard cannot hear. Duplicating the build
+keeps the guard's question answerable with a stat, which is the only thing it
+knows how to read.
+
+What the step cannot fix is what it reads. The guard compares mtimes against the
+newest `.rs` and `.toml` under `native/`, so a file whose bytes changed while its
+timestamp was set backwards still counts as fresh, and the seven then measure a
+binary built from other source. Nothing in the tree can make an mtime tell the
+truth; a binary that carried a digest of the sources it was built from would
+answer that, and no such digest is published today.
+
+[`test/tracked-test-runner.test.js`](../../test/tracked-test-runner.test.js)
+pins the step by name, pins `working-directory: native`, and asserts the build
+precedes the suite inside the `node` job rather than anywhere in the file. The
+failure mode is proven rather than argued: deleting the step turned
+`the Node job builds the release binary before the documented claims measure it`
+red with `the node job never builds native/target/release/revia`, and moving the
+suite above the build turned the same case red with `the node job runs the suite
+before building the binary those claims read`; both times 24 pass, 1 fail, and
+restoring the file re-greened it at 25/25.
+
+[`docs/test-population-evidence.md`](../../docs/test-population-evidence.md)
+gained the paragraph that was missing from it: `intended` and `executed` count
+test **files**, not cases, so `t.skip()` leaves both numbers where they were and
+the skip count is the only column that says what measured. On `cb7b461` the two
+matrix artifacts agree — 166 files, 1,270 `<testcase>` elements, 6 skipped, 0
+failures — against 13 skipped on `812f1b8`.
+
 
 ### WP-232 — Ask the release binary's age before measuring it
 
