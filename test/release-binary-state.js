@@ -17,10 +17,13 @@ import { join } from 'node:path'
 // `native-lexer-parser.test.js` already refuses for the debug binary: measured
 // at `6109b10`, editing `read_byte_input` from 66 to 65 left the release
 // consumers green until the rebuild, and only the rebuild turned them red.
-// `.github/workflows/validate.yml` makes the first case the normal one rather
-// than an accident: the Node job never runs a `cargo` step and `native/target`
+// `.github/workflows/validate.yml` used to make the first case the normal one
+// rather than an accident: the Node job ran no `cargo` step and `native/target`
 // is ignored, so on every hosted run all seven sites returned early and the
-// green Node lane said nothing about any of them in either direction.
+// green Node lane said nothing about any of them in either direction. The job
+// now builds `--workspace --release --offline` before the suite, which
+// `test/tracked-test-runner.test.js` pins, so `absent` is a local checkout that
+// has not built rather than the shape of every hosted run.
 //
 // So the question is asked the way the debug guard asks it, and the answer is
 // published where the population can see it. `absent` and `stale` both mean do
