@@ -70,7 +70,7 @@ The following checks ran at public main commit
 
 - [Source and release validation](https://github.com/regrevia/Revia/actions/runs/45217840474) — passed
 - [Linux x64 native conformance](https://github.com/regrevia/Revia/actions/runs/45217840285) — passed
-- [Windows x64 native conformance](https://github.com/regrevia/Revia/actions/runs/45217840753) — the hosted `windows-2025` job passed, building the executable and running it there. Its bound-node job is `fault-observed`: it has not started because the runner `regrevia-revia` is offline. The hosted result stands on its own; the outstanding piece is the independent digest re-check on that second machine.
+- [Windows x64 native conformance](https://github.com/regrevia/Revia/actions/runs/45217840753) — the hosted `windows-2025` job passed, building the executable and running it there. Its bound-node job is `fault-observed`: it never started because the runner `regrevia-revia` is offline, and the run was then closed as `cancelled` when the next push superseded it, so the link shows `cancelled` rather than a verdict on the Windows row. The hosted result stands on its own; the outstanding piece is the independent digest re-check on that second machine.
 
 These runs exercise current source, including the checked-in runnable project
 template. They do not replace a versioned candidate or prove the older
@@ -82,7 +82,7 @@ template. They do not replace a versioned candidate or prove the older
 
 - [Source and release validation](https://github.com/regrevia/Revia/actions/runs/45217840474) — 通过
 - [Linux x64 native conformance](https://github.com/regrevia/Revia/actions/runs/45217840285) — 通过
-- [Windows x64 native conformance](https://github.com/regrevia/Revia/actions/runs/45217840753) — 托管的 `windows-2025` 作业通过，在该镜像上构建并实际运行可执行文件。其绑定节点作业为 `fault-observed`：因 runner `regrevia-revia` 离线，该作业尚未启动。托管结果独立成立；尚未完成的是那台第二机器上对下载产物的独立摘要复核。
+- [Windows x64 native conformance](https://github.com/regrevia/Revia/actions/runs/45217840753) — 托管的 `windows-2025` 作业通过，在该镜像上构建并实际运行可执行文件。其绑定节点作业为 `fault-observed`：因 runner `regrevia-revia` 离线，该作业从未启动，随后该次运行被下一次 push 取代而置为 `cancelled`，因此该链接显示的是 `cancelled`，并非对 Windows 行的判定。托管结果独立成立；尚未完成的是那台第二机器上对下载产物的独立摘要复核。
 
 这些工作流测试当前源码，包括仓库内可运行的项目模板；它们不等同于新的版本化候选，
 也不能证明较早的 `v1.0.0-rc.2.2.1` 二进制包含之后的源码变更。
