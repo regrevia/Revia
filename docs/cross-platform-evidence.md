@@ -60,10 +60,14 @@ readiness, or complete protocol interoperability.
 `v1.0.0-rc.2.2.1` covers two native targets. Both were built and executed on
 their exact native runner, and each is bound to the archive and executable
 digest that `runtime/checksums.txt` records. Linux builds and runs on the
-GitHub-hosted `ubuntu-24.04` image; Windows builds on the GitHub-hosted
-`windows-2025` image and is executed on the self-hosted bound node
-`regrevia-revia` (`[self-hosted, Windows, X64, regrevia-win]`), which is the
-node the label names.
+GitHub-hosted `ubuntu-24.04` image. Windows builds and runs on the
+GitHub-hosted `windows-2025` image in one job: it builds the executable, runs
+it for a loopback `server-smoke`, runs the workspace tests, then runs
+`--version`, `--help`, `check` and `manifest` against it. A second job
+re-downloads that artifact on the self-hosted bound node `regrevia-revia`
+(`[self-hosted, Windows, X64, regrevia-win]`) and refuses to launch if the
+digest disagrees, which is an independent second-machine check rather than the
+basis of the row. That node is offline, so the second check is outstanding.
 
 | Target / 目标 | Runner | State / 状态 | Native workflow | Archive SHA-256 |
 | --- | --- | --- | --- | --- |
@@ -76,9 +80,11 @@ node the label names.
 
 `v1.0.0-rc.2.2.1` 覆盖两个原生目标。两者都在各自的原生 runner 上构建并执行，并各自绑定到
 `runtime/checksums.txt` 记录的归档与可执行文件 SHA-256：Linux 在 GitHub 托管的 `ubuntu-24.04` 镜像上
-构建并运行；Windows 在 GitHub 托管的 `windows-2025` 镜像上构建，在执行侧使用自托管的绑定节点
-`regrevia-revia`（`[self-hosted, Windows, X64, regrevia-win]`），即该标签所指的节点。上表其余四个
-目标保持 `pending`。
+构建并运行；Windows 在同一个作业里于 GitHub 托管的 `windows-2025` 镜像上构建并运行——构建出可执行
+文件，用它跑回环 `server-smoke`、跑工作区测试，再对同一个文件跑 `--version`、`--help`、`check` 与
+`manifest`。另有一个作业在自托管绑定节点 `regrevia-revia`（`[self-hosted, Windows, X64,
+regrevia-win]`）上重新下载该产物，摘要不符即拒绝启动；这是第二台机器上的独立复核，而不是该行的依据。
+该节点当前离线，因此这项复核尚未完成。上表其余四个目标保持 `pending`。
 
 ### Export note / 导出说明
 
