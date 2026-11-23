@@ -55,16 +55,55 @@ readiness, or complete protocol interoperability.
 
 该证据不会升级其他目标，也不代表 Stable V1.0、生产就绪或完整协议互操作。
 
-The next public-native acceptance order is Linux x64 on `ubuntu-24.04`, Windows
-x64 on `windows-2025`, then Linux arm64 on `ubuntu-24.04-arm`. Each remains
+## RC2.2.1 Matrix / RC2.2.1 矩阵
+
+`v1.0.0-rc.2.2.1` covers two native targets. Both were built and executed on
+their exact native GitHub-hosted runner, and each is bound to the archive and
+executable digest that `runtime/checksums.txt` records.
+
+| Target / 目标 | Runner | State / 状态 | Native workflow | Archive SHA-256 |
+| --- | --- | --- | --- | --- |
+| Linux x64 | `ubuntu-24.04` | `measured-native` | `40881177716` | `cee357cf80fe48068fa8c16dc59590ac1299fb0f992eb38f22e0be769c0631b9` |
+| Windows x64 | `windows-2025` | `measured-native` | `40881177895` | `d36fc1c473cd9de6f5a7b231b1747b6158dcd9b15462d52c22c63064ba294175` |
+| macOS arm64 | — | `pending` | — | — |
+| macOS x64 | — | `pending` | — | — |
+| Linux arm64 | — | `pending` | — | — |
+| Windows arm64 | — | `pending` | — | — |
+
+`v1.0.0-rc.2.2.1` 覆盖两个原生目标。两者都在精确的原生 GitHub 托管 runner 上构建并执行，并各自绑定
+到 `runtime/checksums.txt` 记录的归档与可执行文件 SHA-256。上表其余四个目标保持 `pending`。
+
+### Export note / 导出说明
+
+The `v1.0.0-rc.2.2.1` assets are immutable and two of them disagree with the
+artifacts beside them. Both disagreements are recorded here rather than
+repaired in place.
+
+- The exported `target-matrix.json` is 539 bytes and reports
+  `"version": "1.0.0-rc.2.2.1.1"`. The tag was cut before that string was
+  corrected; the repository holds the corrected 537-byte record, and its pin in
+  `runtime/rc2.2.1/export-manifest.json` now matches those bytes.
+- The exported `linux-native-evidence.json` and `windows-native-evidence.json`
+  describe source commit `5f4f2d86`, whose archives and executables differ from
+  the ones `checksums.txt` records for `b76dbfc2`. The repository records and
+  `checksums.txt` agree with each other and with the shipped archives, so those
+  are the authoritative digests for this candidate.
+
+`v1.0.0-rc.2.2.1` 的资产不可修改，其中两份与同批工件不一致，故在此记录而不就地修复：导出的
+`target-matrix.json` 为 539 字节且版本串为 `1.0.0-rc.2.2.1.1`（tag 在纠正该串之前就已切出，仓库中
+为纠正后的 537 字节记录，其在 `export-manifest.json` 中的 pin 现与字节一致）；导出的两个
+`*-native-evidence.json` 描述源码提交 `5f4f2d86`，其归档与可执行文件不同于 `checksums.txt` 为
+`b76dbfc2` 记录的那一组。仓库记录与 `checksums.txt` 互相一致且与随附归档一致，本候选的权威摘要以
+它们为准。
+
+The remaining acceptance order is Linux arm64 on `ubuntu-24.04-arm`. It stays
 pending until it satisfies the separate [RC2 target expansion contract](rc2-target-expansion-contract.md).
 Android arm64 / Termux is a separate experimental track under the
 [Android experimental contract](android-termux-experimental-contract.md); it
 does not alter this six-target matrix.
 
-下一次公开原生接收顺序为 `ubuntu-24.04` 上的 Linux x64、`windows-2025` 上的 Windows x64，
-再到 `ubuntu-24.04-arm` 上的 Linux arm64。每个目标在满足独立的
-[RC2 目标扩展合同](rc2-target-expansion-contract.md)前都保持 pending。Android arm64 / Termux
+剩余接收顺序为 `ubuntu-24.04-arm` 上的 Linux arm64。该目标在满足独立的
+[RC2 目标扩展合同](rc2-target-expansion-contract.md)前保持 pending。Android arm64 / Termux
 在[Android 实验合同](android-termux-experimental-contract.md)中作为独立实验轨道，不改变此六目标矩阵。
 
 ## Next Expansion / 下一次扩展
