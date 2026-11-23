@@ -674,6 +674,7 @@
     "test/release-gate-evidence.test.js",
     "test/release-platform-baseline.test.js",
     "test/release-provenance.test.js",
+    "test/release-record-integrity.test.js",
     "test/release-records.test.js",
     "test/review-manifest.test.js",
     "test/runtime-effect-receipt.test.js",
