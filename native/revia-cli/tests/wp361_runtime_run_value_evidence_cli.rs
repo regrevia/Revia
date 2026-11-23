@@ -84,6 +84,13 @@ fn runtime_run_without_the_flag_is_unchanged_and_prints_no_values() {
     assert!(staged.status.success(), "{}", text(&staged.stderr));
     assert_eq!(default_source, text(&staged.stdout));
 
+    // The default names the schema this shape has always had, and carries no
+    // values member.
+    assert!(
+        default_source.contains("\"schema\":\"re.native-host-execution-result@0.1.0\""),
+        "the default replay must keep the pinned @0.1.0 envelope: {default_source}"
+    );
+
     let with_values = run(&[
         "runtime-run",
         "--print-values",
@@ -96,12 +103,25 @@ fn runtime_run_without_the_flag_is_unchanged_and_prints_no_values() {
         "{}",
         text(&with_values.stderr)
     );
-    // The only difference is the additive member: removing it restores the
-    // default bytes exactly.
+    // Two differences, not one: the additive member, and the schema revision
+    // that declares it. A reader of `@0.1.0` is entitled to the shape `@0.1.0`
+    // pins, so printing an undeclared member under that name would be a false
+    // claim; the newer schema is the older one plus exactly that member, the
+    // route `re.native-project-run@0.2.0` already took. Removing the member and
+    // putting the schema name back must restore the default bytes exactly,
+    // which is what makes "additive" a measured claim rather than an intent.
     let values_source = text(&with_values.stdout);
+    assert!(
+        values_source.contains("\"schema\":\"re.native-host-execution-result@0.2.0\""),
+        "the value-bearing replay must name the schema that declares the member: {values_source}"
+    );
     let member = "\"invocation_values\":[{\"type\":\"unit\",\"value\":null}],";
     assert!(values_source.contains(member));
-    assert_eq!(values_source.replace(member, ""), default_source);
+    let restored = values_source.replace(member, "").replace(
+        "\"schema\":\"re.native-host-execution-result@0.2.0\"",
+        "\"schema\":\"re.native-host-execution-result@0.1.0\"",
+    );
+    assert_eq!(restored, default_source);
 
     fs::remove_dir_all(root).unwrap();
 }

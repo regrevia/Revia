@@ -2403,8 +2403,165 @@ now a case over 1,432 checks with those 13 rows pinned in both directions, and
 the `node` job checks out `fetch-depth: 0` because a depth-1 checkout makes it
 skip. See WP-234.
 
+207. A fixture asked the developer's Git configuration to approve its commit.
+[`test/tracked-test-runner.test.js`](../../test/tracked-test-runner.test.js)
+builds a temporary repository to prove the runner refuses a green child run
+whose population differs from the intent, and the commit that seeds it carried
+`-c user.name` and `-c user.email` and nothing else. Everything else in the
+developer's configuration still applied, so a global `commit-msg` hook that
+refuses reserved domains — this machine's does, under
+`core.hooksPath=~/.dsh/git-hooks` — rejected the fixture's own placeholder
+address and the case went red on a clean tree:
 
-### WP-234 — Ask every commit, not only the tip
+    commit-msg: 拒绝 作者 邮箱 <revia-test@example.invalid>
+
+The file reported **26 tests, 25 passing, 1 failing**, and the red case was the
+fixture rather than the behaviour it measures. The same file with
+`core.hooksPath=/dev/null` in the environment gave **26 of 26**, which is what
+separated the hook from the tree: a suite that is red only because of how the
+machine that ran it is configured says nothing about the code. The fixture now
+pins its own answer: an empty `no-hooks` directory is built inside its temporary
+root and passed as `-c core.hooksPath=…`, so no hook can fire and no policy is
+relaxed anywhere else — the global hook stays in force for every real commit,
+which is the point of not fixing this in the environment. `-c
+commit.gpgsign=false` sits beside it and is **defensive rather than measured**:
+`commit.gpgsign` is unset on this machine, so nothing here proves that line
+necessary, and it is pinned because a fixture that a key prompt can stall fails
+for the same reason as one a hook can refuse. With the host's configuration
+untouched the file is back to **26 of 26**. Editing a published file also moved
+its manifest pin, and the red
+[`test/public-source-transition.test.js`](../../test/public-source-transition.test.js)
+— 31,933 bytes against a pinned 31,345 — is that guard working, with
+`npm run source:manifest:write` as the repair rather than a hand edit. See
+WP-235.
+
+208. A result document added a member and kept claiming the schema that does not
+have it. `re.native-host-execution-result@0.1.0` pins a flat shape, and
+`--print-values` printed `invocation_values` inside that same envelope, so the
+opt-in output asserted a version whose reader is entitled to the other shape —
+the defect `re.native-project-run@0.2.0` had already repaired on the project
+path. Measured on the rebuilt binary, all three emitters now split: `execute`,
+`run` and `runtime-run` print `@0.1.0` without the flag and `@0.2.0` with it,
+and the flag-off bytes are unchanged. Removing the member and putting the name
+back restores the default document byte-for-byte, which is what makes
+"additive" a measurement rather than an intention. See WP-236.
+
+
+### WP-236 — Name the schema that declares the member
+
+`result-value-interface.md` §4 item 1 asked for a one-shot envelope, and the
+answer already existed under a different name: the host result document carried
+the member and not the version. This is the smaller repair, and it is the one
+[`re.native-project-run@0.2.0`](../../native/revia-core/src/project_runtime.rs)
+established — the newer schema is the older one plus exactly one declared
+member, and the member and the version are one invariant rather than two
+independent decisions.
+
+**Counterexample.** `revia execute --print-values program.re sha256:0…0` printed
+`"schema":"re.native-host-execution-result@0.1.0"` beside
+`"invocation_values":[{"type":"text.utf8","value":"hello-value\n"}]`. A reader
+that validates against `@0.1.0` — including this repository's own strict
+verifiers — is entitled to a document without that member, so the opt-in path
+was emitting a false claim about itself.
+
+**Change.** `native/revia-cli/src/main.rs` carries
+`HOST_RESULT_SCHEMA: &str = "re.native-host-execution-result@0.1.0"` and
+`HOST_RESULT_SCHEMA_VALUED: &str = "re.native-host-execution-result@0.2.0"` side
+by side, and `host_vm_result_bytes` returns the schema name together with the
+member bytes: `Some(values)` yields the valued name and the member, `None` yields
+the flat name and nothing. The hardcoded `quote("…@0.1.0")` is now `quote(schema)`,
+so the two cannot drift apart again.
+
+**Blast radius, enumerated before the edit.** Exactly two callers — the
+runtime-bundle path at `:1703`, whose output feeds `build_runtime_load_receipt`,
+and `print_host_vm_result` at `:8663` — and no one-shot `execute-verify` /
+`run-verify` / `runtime-run-verify` subcommand exists to depend on the old name.
+Two strict verifiers parse a fixed field whitelist and require `@0.1.0`
+(`native-capability-comparison-runtime-result-invalid`,
+`native-runtime-bundle-comparison-runtime-result-invalid`), and both gate child
+processes that never receive `--print-values`, so neither can see the new name.
+`extract_vm_result_facts` in
+[`runtime_receipt.rs`](../../native/revia-core/src/runtime_receipt.rs) reads
+`receipt_digest`, `graph_revision`, `artifact_digest` and `input_digest` and
+never checks the schema string, so the authority receipt is unaffected: only
+`result_digest` moves, and verification rebuilds it from the same bytes.
+`print_host_executor_error` still prints `@0.1.0`, correctly, because a stderr
+error envelope carries no values.
+
+**Test.** [`wp4_result_value_cli.rs`](../../native/revia-cli/tests/wp4_result_value_cli.rs)
+pins both names; [`wp359_run_value_evidence_cli.rs`](../../native/revia-cli/tests/wp359_run_value_evidence_cli.rs)
+pins the valued one on the `run` path;
+[`wp361_runtime_run_value_evidence_cli.rs`](../../native/revia-cli/tests/wp361_runtime_run_value_evidence_cli.rs)
+pins it on the replayed bundle and states the two-part restore that keeps
+`execute --print-values` and `runtime-run --print-values` byte-equal. The whole
+`revia-cli` package is **97 suites, 0 failures**.
+
+**Measured, on the rebuilt binary.** `execute` and `run` and `runtime-run` each
+print `@0.1.0` without the flag and `@0.2.0` with it; `compile` still emits
+`re.native-compile-result@0.1.0`. A `@0.1.0` document and its `@0.2.0`
+counterpart differ by the member and the name and by nothing else.
+
+**Not claimed.** This closes the version-consistency half of the interface
+question only. §4 items 2 and 3 remain open — a non-`result` return and a
+`number.i64` from `clock.monotonic_nanos` still silently take the `ok` branch,
+and the `native-vm-capability-failed` collapse still makes `invocation_values`
+unreachable inside the VM — because both are design decisions rather than
+ready-made patches, and item 4 is a scope limit rather than work.
+
+
+### WP-235 — Keep a developer's Git policy out of a fixture
+
+[`test/tracked-test-runner.test.js`](../../test/tracked-test-runner.test.js)
+seeds a temporary repository so it can run the real runner against a real
+population. `git init` and `git add` carry no identity, so the commit that
+follows has to supply one, and it supplied exactly two values:
+
+    execFileSync('git', [
+      '-c', 'user.name=Revia Test',
+      '-c', 'user.email=revia-test@example.invalid',
+      'commit', '--quiet', '-m', 'population fixture',
+    ], { cwd: root })
+
+Two `-c` flags with the right names read like a complete answer to "make this
+commit reproducible", and they are not: they set the two keys the commit cannot
+be made without, and every other key still comes from the machine. A
+`commit-msg` hook is the one that bit here. `revia-test@example.invalid` is a
+reserved domain chosen precisely because it can never receive mail, and a hook
+that refuses such addresses — a reasonable local policy for a public repository
+— rejects it. The failure the runner then prints names the hook and the address,
+so the case is legible from the log; what is not legible is that it is about the
+machine, and a contributor whose configuration differs from CI's sees a red
+suite on a tree they never touched.
+
+The repair keeps the hook: the fixture makes an empty `no-hooks` directory under
+its own `mkdtempSync` root and passes it as `-c core.hooksPath=<dir>`. Git finds
+no executable in an empty directory and runs the commit, and because this is
+argv on the one invocation rather than a configuration or an environment
+variable, the developer's hook still runs for every commit they make by hand.
+`-c commit.gpgsign=false` is set beside it against the same class of fault —
+`commit.gpgsign=true` without an agent that can answer would leave the fixture
+waiting on a prompt it can never satisfy — and unlike the hook it is not
+measured here, because `commit.gpgsign` is unset on the machine that found this.
+
+The measurement is a before-and-after on one file with one environment. Before,
+with the host's `core.hooksPath` in force: **26 tests, 25 passing, 1 failing**,
+the red being "CLI refuses a green child run when discovered population differs
+from intent". With `core.hooksPath=/dev/null` exported for the run: **26 of 26**,
+which isolates the cause. After, with the host's configuration untouched and the
+neutralisation carried in the fixture's argv: **26 of 26**. The change is one
+call site and three argv elements, and the other 25 cases in the file never
+reached the commit that failed.
+
+Nothing else moved. This file is published, so its bytes are pinned by
+[`SOURCE_IMPORT_MANIFEST.json`](../../SOURCE_IMPORT_MANIFEST.json), and the
+pin is compared rather than trusted:
+[`test/public-source-transition.test.js`](../../test/public-source-transition.test.js)
+went red at **31,933 bytes against 31,345** and
+`npm run source:manifest:write` rewrote the one entry, after which `--check`
+reports `manifest_transition: unchanged` over 745 files. That red is the guard
+behaving, not a second defect: a tracked edit without a manifest refresh is
+exactly what it exists to catch.
+
 
 [`test/public-source-transition.test.js`](../../test/public-source-transition.test.js)
 compares the manifest with the tree the commit holds, and a commit is free to

@@ -37,6 +37,10 @@ use revia_core::project::parse_json;
 const INPUT_DIGEST: &str =
     "sha256:0000000000000000000000000000000000000000000000000000000000000000";
 const HOST_RESULT_SCHEMA: &str = "re.native-host-execution-result@0.1.0";
+/// The envelope that declares `invocation_values`. The default shape is pinned
+/// flat, so a value-bearing document cannot keep claiming `@0.1.0`; the newer
+/// schema is the older one plus exactly one declared member.
+const HOST_RESULT_SCHEMA_VALUED: &str = "re.native-host-execution-result@0.2.0";
 
 static TEMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 
@@ -208,6 +212,14 @@ fn print_values_reports_the_typed_value_of_the_capability_call() {
         values.len(),
         entries(field(&result, "invocations")).len(),
         "one value per invocation, in the invocation order"
+    );
+    // The member is declared, so the document names the schema that declares it
+    // and the default shape keeps the one that does not.
+    assert_eq!(string(field(&result, "schema")), HOST_RESULT_SCHEMA_VALUED);
+    assert_eq!(
+        string(field(&default_result, "schema")),
+        HOST_RESULT_SCHEMA,
+        "the default result keeps the flat envelope"
     );
     let expected = parse_json(r#"{"type":"text.utf8","value":"hello-value\n"}"#).unwrap();
     assert_eq!(
