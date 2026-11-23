@@ -58,8 +58,12 @@ readiness, or complete protocol interoperability.
 ## RC2.2.1 Matrix / RC2.2.1 矩阵
 
 `v1.0.0-rc.2.2.1` covers two native targets. Both were built and executed on
-their exact native GitHub-hosted runner, and each is bound to the archive and
-executable digest that `runtime/checksums.txt` records.
+their exact native runner, and each is bound to the archive and executable
+digest that `runtime/checksums.txt` records. Linux builds and runs on the
+GitHub-hosted `ubuntu-24.04` image; Windows builds on the GitHub-hosted
+`windows-2025` image and is executed on the self-hosted bound node
+`regrevia-revia` (`[self-hosted, Windows, X64, regrevia-win]`), which is the
+node the label names.
 
 | Target / 目标 | Runner | State / 状态 | Native workflow | Archive SHA-256 |
 | --- | --- | --- | --- | --- |
@@ -70,8 +74,11 @@ executable digest that `runtime/checksums.txt` records.
 | Linux arm64 | — | `pending` | — | — |
 | Windows arm64 | — | `pending` | — | — |
 
-`v1.0.0-rc.2.2.1` 覆盖两个原生目标。两者都在精确的原生 GitHub 托管 runner 上构建并执行，并各自绑定
-到 `runtime/checksums.txt` 记录的归档与可执行文件 SHA-256。上表其余四个目标保持 `pending`。
+`v1.0.0-rc.2.2.1` 覆盖两个原生目标。两者都在各自的原生 runner 上构建并执行，并各自绑定到
+`runtime/checksums.txt` 记录的归档与可执行文件 SHA-256：Linux 在 GitHub 托管的 `ubuntu-24.04` 镜像上
+构建并运行；Windows 在 GitHub 托管的 `windows-2025` 镜像上构建，在执行侧使用自托管的绑定节点
+`regrevia-revia`（`[self-hosted, Windows, X64, regrevia-win]`），即该标签所指的节点。上表其余四个
+目标保持 `pending`。
 
 ### Export note / 导出说明
 
