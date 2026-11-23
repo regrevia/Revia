@@ -2403,8 +2403,92 @@ now a case over 1,432 checks with those 13 rows pinned in both directions, and
 the `node` job checks out `fetch-depth: 0` because a depth-1 checkout makes it
 skip. See WP-234.
 
+207. A fixture asked the developer's Git configuration to approve its commit.
+[`test/tracked-test-runner.test.js`](../../test/tracked-test-runner.test.js)
+builds a temporary repository to prove the runner refuses a green child run
+whose population differs from the intent, and the commit that seeds it carried
+`-c user.name` and `-c user.email` and nothing else. Everything else in the
+developer's configuration still applied, so a global `commit-msg` hook that
+refuses reserved domains — this machine's does, under
+`core.hooksPath=~/.dsh/git-hooks` — rejected the fixture's own placeholder
+address and the case went red on a clean tree:
 
-### WP-234 — Ask every commit, not only the tip
+    commit-msg: 拒绝 作者 邮箱 <revia-test@example.invalid>
+
+The file reported **26 tests, 25 passing, 1 failing**, and the red case was the
+fixture rather than the behaviour it measures. The same file with
+`core.hooksPath=/dev/null` in the environment gave **26 of 26**, which is what
+separated the hook from the tree: a suite that is red only because of how the
+machine that ran it is configured says nothing about the code. The fixture now
+pins its own answer: an empty `no-hooks` directory is built inside its temporary
+root and passed as `-c core.hooksPath=…`, so no hook can fire and no policy is
+relaxed anywhere else — the global hook stays in force for every real commit,
+which is the point of not fixing this in the environment. `-c
+commit.gpgsign=false` sits beside it and is **defensive rather than measured**:
+`commit.gpgsign` is unset on this machine, so nothing here proves that line
+necessary, and it is pinned because a fixture that a key prompt can stall fails
+for the same reason as one a hook can refuse. With the host's configuration
+untouched the file is back to **26 of 26**. Editing a published file also moved
+its manifest pin, and the red
+[`test/public-source-transition.test.js`](../../test/public-source-transition.test.js)
+— 31,933 bytes against a pinned 31,345 — is that guard working, with
+`npm run source:manifest:write` as the repair rather than a hand edit. See
+WP-235.
+
+
+### WP-235 — Keep a developer's Git policy out of a fixture
+
+[`test/tracked-test-runner.test.js`](../../test/tracked-test-runner.test.js)
+seeds a temporary repository so it can run the real runner against a real
+population. `git init` and `git add` carry no identity, so the commit that
+follows has to supply one, and it supplied exactly two values:
+
+    execFileSync('git', [
+      '-c', 'user.name=Revia Test',
+      '-c', 'user.email=revia-test@example.invalid',
+      'commit', '--quiet', '-m', 'population fixture',
+    ], { cwd: root })
+
+Two `-c` flags with the right names read like a complete answer to "make this
+commit reproducible", and they are not: they set the two keys the commit cannot
+be made without, and every other key still comes from the machine. A
+`commit-msg` hook is the one that bit here. `revia-test@example.invalid` is a
+reserved domain chosen precisely because it can never receive mail, and a hook
+that refuses such addresses — a reasonable local policy for a public repository
+— rejects it. The failure the runner then prints names the hook and the address,
+so the case is legible from the log; what is not legible is that it is about the
+machine, and a contributor whose configuration differs from CI's sees a red
+suite on a tree they never touched.
+
+The repair keeps the hook: the fixture makes an empty `no-hooks` directory under
+its own `mkdtempSync` root and passes it as `-c core.hooksPath=<dir>`. Git finds
+no executable in an empty directory and runs the commit, and because this is
+argv on the one invocation rather than a configuration or an environment
+variable, the developer's hook still runs for every commit they make by hand.
+`-c commit.gpgsign=false` is set beside it against the same class of fault —
+`commit.gpgsign=true` without an agent that can answer would leave the fixture
+waiting on a prompt it can never satisfy — and unlike the hook it is not
+measured here, because `commit.gpgsign` is unset on the machine that found this.
+
+The measurement is a before-and-after on one file with one environment. Before,
+with the host's `core.hooksPath` in force: **26 tests, 25 passing, 1 failing**,
+the red being "CLI refuses a green child run when discovered population differs
+from intent". With `core.hooksPath=/dev/null` exported for the run: **26 of 26**,
+which isolates the cause. After, with the host's configuration untouched and the
+neutralisation carried in the fixture's argv: **26 of 26**. The change is one
+call site and three argv elements, and the other 25 cases in the file never
+reached the commit that failed.
+
+Nothing else moved. This file is published, so its bytes are pinned by
+[`SOURCE_IMPORT_MANIFEST.json`](../../SOURCE_IMPORT_MANIFEST.json), and the
+pin is compared rather than trusted:
+[`test/public-source-transition.test.js`](../../test/public-source-transition.test.js)
+went red at **31,933 bytes against 31,345** and
+`npm run source:manifest:write` rewrote the one entry, after which `--check`
+reports `manifest_transition: unchanged` over 745 files. That red is the guard
+behaving, not a second defect: a tracked edit without a manifest refresh is
+exactly what it exists to catch.
+
 
 [`test/public-source-transition.test.js`](../../test/public-source-transition.test.js)
 compares the manifest with the tree the commit holds, and a commit is free to

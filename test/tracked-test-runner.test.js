@@ -687,11 +687,21 @@ test('CLI refuses a green child run when discovered population differs from inte
     const testRoot = join(root, 'test')
     mkdirSync(testRoot)
     writeFileSync(join(testRoot, 'a.test.js'), "import test from 'node:test'; test('passes', () => {})\n")
+    // A fixture commit has to mean the same thing on every machine, and the
+    // developer's own Git configuration reaches it: a global `commit-msg` hook
+    // that refuses the placeholder address below (`revia-test@example.invalid`)
+    // turns this case red on a tree that is clean, and a global `commit.gpgsign`
+    // would stall it on a key. Both are pinned off for this invocation only, so
+    // the policy stays in force everywhere else.
+    const hooks = join(root, 'no-hooks')
+    mkdirSync(hooks)
     execFileSync('git', ['init', '--quiet'], { cwd: root })
     execFileSync('git', ['add', 'test/a.test.js'], { cwd: root })
     execFileSync('git', [
       '-c', 'user.name=Revia Test',
       '-c', 'user.email=revia-test@example.invalid',
+      '-c', `core.hooksPath=${hooks}`,
+      '-c', 'commit.gpgsign=false',
       'commit', '--quiet', '-m', 'population fixture',
     ], { cwd: root })
     writeFileSync(join(testRoot, 'probe.test.js'), "import test from 'node:test'; test('probe', () => {})\n")
