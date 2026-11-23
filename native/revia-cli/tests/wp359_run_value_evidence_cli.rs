@@ -38,6 +38,9 @@ use revia_core::project::parse_json;
 const INPUT_DIGEST: &str =
     "sha256:0000000000000000000000000000000000000000000000000000000000000000";
 const HOST_RESULT_SCHEMA: &str = "re.native-host-execution-result@0.1.0";
+/// The envelope that declares `invocation_values`: the `@0.1.0` shape plus
+/// exactly one declared member, the route `re.native-project-run@0.2.0` took.
+const HOST_RESULT_SCHEMA_VALUED: &str = "re.native-host-execution-result@0.2.0";
 
 static TEMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 
@@ -231,6 +234,9 @@ fn the_staged_path_reports_the_same_values_as_the_one_shot_path() {
         entries(field(&result, "invocations")).len(),
         "one value per invocation, in the invocation order"
     );
+    // The member is declared: the value-bearing document names the schema that
+    // declares it, and `run` agrees with `execute` about that name.
+    assert_eq!(string(field(&result, "schema")), HOST_RESULT_SCHEMA_VALUED);
     let expected = parse_json(r#"{"type":"text.utf8","value":"hello-value\n"}"#).unwrap();
     assert_eq!(
         canonicalize(&values[0]),

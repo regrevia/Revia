@@ -190,6 +190,8 @@ const RUNTIME_RECEIPT_INPUT_DIGEST: &str =
     "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
 const DEVELOPER_GATE_SCHEMA: &str = "re.native-developer-gate@0.1.0";
 const TOOLCHAIN_GATE_SCHEMA: &str = "re.native-toolchain-gate@0.1.0";
+const HOST_RESULT_SCHEMA: &str = "re.native-host-execution-result@0.1.0";
+const HOST_RESULT_SCHEMA_VALUED: &str = "re.native-host-execution-result@0.2.0";
 static TEMP_WORKSPACE_COUNTER: AtomicU64 = AtomicU64::new(0);
 const CLI_HELP: &str = r#"revia native 1.0.0-rc.2.2.1
 
@@ -8679,21 +8681,28 @@ fn host_vm_result_bytes(
     // Opt-in only: the default evidence stays byte-identical to the pinned
     // `re.native-host-execution-result@0.1.0` shape. When asked, the typed
     // payload of every invocation is printed next to the invocation it came
-    // from, in the same order, with `null` for a response that carries none.
-    let invocation_values = if let Some(values) = invocation_values {
-        format!(
-            ",\"invocation_values\":[{}]",
-            values
-                .iter()
-                .map(|value| match value {
-                    Some(value) => revia_core::vm::serialize_vm_value(value),
-                    None => "null".to_owned(),
-                })
-                .collect::<Vec<_>>()
-                .join(",")
+    // from, in the same order, with `null` for a response that carries none,
+    // and the envelope names itself `@0.2.0`, because a reader of `@0.1.0` is
+    // entitled to the shape `@0.1.0` pins and an unexplained member is not that
+    // shape. This is the route `re.native-project-run@0.2.0` already took: the
+    // newer schema is the older one plus exactly one declared member.
+    let (schema, invocation_values) = if let Some(values) = invocation_values {
+        (
+            HOST_RESULT_SCHEMA_VALUED,
+            format!(
+                ",\"invocation_values\":[{}]",
+                values
+                    .iter()
+                    .map(|value| match value {
+                        Some(value) => revia_core::vm::serialize_vm_value(value),
+                        None => "null".to_owned(),
+                    })
+                    .collect::<Vec<_>>()
+                    .join(",")
+            ),
         )
     } else {
-        String::new()
+        (HOST_RESULT_SCHEMA, String::new())
     };
     let result = format!(
         "{{\"artifact_digest\":{},\"executor\":{},\"graph_revision\":{},\"host_profile\":{},\"input_digest\":{}{},\"invocations\":[{}],\"ok\":true,\"outcome\":{{\"code\":{},\"type\":{}}},\"profile\":{},\"program_stdout\":{},\"receipt_digest\":{},\"schema\":{},\"trace\":[{}]}}",
@@ -8722,7 +8731,7 @@ fn host_vm_result_bytes(
         quote(&result.profile),
         quote(&text),
         quote(&result.receipt.receipt_digest),
-        quote("re.native-host-execution-result@0.1.0"),
+        quote(schema),
         result
             .trace
             .iter()

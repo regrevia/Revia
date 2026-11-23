@@ -169,20 +169,27 @@ prints a capability value) without pre-empting the version decision.
 
 ## 4. Deferred items / 遗留项
 
-1. **Schema revision** for `invocation_values` on the one-shot paths: `execute`,
-   `run`, and `runtime-run` still print it as an opt-in additive member under
-   `re.native-host-execution-result@0.1.0`. A follow-up either versions that
-   envelope or drops the member; until then it must not be cited as a stable
-   contract there. The project path could not join them additively —
+1. **Schema revision** for `invocation_values` on the one-shot paths — **closed
+   by WP-236.** `execute`, `run`, and `runtime-run` used to print it as an
+   opt-in additive member under `re.native-host-execution-result@0.1.0`, which
+   describes a flat shape; the split now takes the versioned route the project
+   path already took (WP-363): `HOST_RESULT_SCHEMA` (`@0.1.0`) and
+   `HOST_RESULT_SCHEMA_VALUED` (`@0.2.0`) are chosen together with the member,
+   `@0.2.0` is `@0.1.0` plus exactly that member, and removing the member and
+   putting the name back restores the default document byte-for-byte. Measured
+   on the rebuilt binary for all three emitters; `compile` still emits
+   `re.native-compile-result@0.1.0`, the two strict comparison verifiers still
+   read `@0.1.0` from children that never receive `--print-values`, and the
+   authority receipt does not move because `extract_vm_result_facts` never
+   checks the schema. The project path could not have joined additively —
    `re.native-project-run@0.1.0` is flat with no per-invocation data, its
    `run_digest` is computed over the whole envelope body, and
    `project-run-verify` rejects an unknown member
    (`unexpected-project-field`) as well as any edited field
-   (`native-project-run-digest-mismatch`) — so it took the versioned route
-   (WP-363): `project-run --print-values` emits `re.native-project-run@0.2.0`,
-   which is `@0.1.0` plus one declared member, and both schemas verify
-   (`wp362_project_value_evidence_boundary_cli`). The last open question is
-   whether the one-shot envelope follows the same route or drops the member.
+   (`native-project-run-digest-mismatch`) — which is why both envelopes are
+   versioned rather than extended in place. Note that the member is still
+   opt-in: a `@0.1.0` document never carries it, and a `@0.2.0` document always
+   does.
 2. **Non-`result` returns and binding type**: a `number.i64` from
    `clock.monotonic_nanos` comes back as a plain `ok` response, so `match` on
    it silently takes the `ok` branch and discards the value (§1 probe). Route A

@@ -2435,6 +2435,79 @@ its manifest pin, and the red
 `npm run source:manifest:write` as the repair rather than a hand edit. See
 WP-235.
 
+208. A result document added a member and kept claiming the schema that does not
+have it. `re.native-host-execution-result@0.1.0` pins a flat shape, and
+`--print-values` printed `invocation_values` inside that same envelope, so the
+opt-in output asserted a version whose reader is entitled to the other shape —
+the defect `re.native-project-run@0.2.0` had already repaired on the project
+path. Measured on the rebuilt binary, all three emitters now split: `execute`,
+`run` and `runtime-run` print `@0.1.0` without the flag and `@0.2.0` with it,
+and the flag-off bytes are unchanged. Removing the member and putting the name
+back restores the default document byte-for-byte, which is what makes
+"additive" a measurement rather than an intention. See WP-236.
+
+
+### WP-236 — Name the schema that declares the member
+
+`result-value-interface.md` §4 item 1 asked for a one-shot envelope, and the
+answer already existed under a different name: the host result document carried
+the member and not the version. This is the smaller repair, and it is the one
+[`re.native-project-run@0.2.0`](../../native/revia-core/src/project_runtime.rs)
+established — the newer schema is the older one plus exactly one declared
+member, and the member and the version are one invariant rather than two
+independent decisions.
+
+**Counterexample.** `revia execute --print-values program.re sha256:0…0` printed
+`"schema":"re.native-host-execution-result@0.1.0"` beside
+`"invocation_values":[{"type":"text.utf8","value":"hello-value\n"}]`. A reader
+that validates against `@0.1.0` — including this repository's own strict
+verifiers — is entitled to a document without that member, so the opt-in path
+was emitting a false claim about itself.
+
+**Change.** `native/revia-cli/src/main.rs` carries
+`HOST_RESULT_SCHEMA: &str = "re.native-host-execution-result@0.1.0"` and
+`HOST_RESULT_SCHEMA_VALUED: &str = "re.native-host-execution-result@0.2.0"` side
+by side, and `host_vm_result_bytes` returns the schema name together with the
+member bytes: `Some(values)` yields the valued name and the member, `None` yields
+the flat name and nothing. The hardcoded `quote("…@0.1.0")` is now `quote(schema)`,
+so the two cannot drift apart again.
+
+**Blast radius, enumerated before the edit.** Exactly two callers — the
+runtime-bundle path at `:1703`, whose output feeds `build_runtime_load_receipt`,
+and `print_host_vm_result` at `:8663` — and no one-shot `execute-verify` /
+`run-verify` / `runtime-run-verify` subcommand exists to depend on the old name.
+Two strict verifiers parse a fixed field whitelist and require `@0.1.0`
+(`native-capability-comparison-runtime-result-invalid`,
+`native-runtime-bundle-comparison-runtime-result-invalid`), and both gate child
+processes that never receive `--print-values`, so neither can see the new name.
+`extract_vm_result_facts` in
+[`runtime_receipt.rs`](../../native/revia-core/src/runtime_receipt.rs) reads
+`receipt_digest`, `graph_revision`, `artifact_digest` and `input_digest` and
+never checks the schema string, so the authority receipt is unaffected: only
+`result_digest` moves, and verification rebuilds it from the same bytes.
+`print_host_executor_error` still prints `@0.1.0`, correctly, because a stderr
+error envelope carries no values.
+
+**Test.** [`wp4_result_value_cli.rs`](../../native/revia-cli/tests/wp4_result_value_cli.rs)
+pins both names; [`wp359_run_value_evidence_cli.rs`](../../native/revia-cli/tests/wp359_run_value_evidence_cli.rs)
+pins the valued one on the `run` path;
+[`wp361_runtime_run_value_evidence_cli.rs`](../../native/revia-cli/tests/wp361_runtime_run_value_evidence_cli.rs)
+pins it on the replayed bundle and states the two-part restore that keeps
+`execute --print-values` and `runtime-run --print-values` byte-equal. The whole
+`revia-cli` package is **97 suites, 0 failures**.
+
+**Measured, on the rebuilt binary.** `execute` and `run` and `runtime-run` each
+print `@0.1.0` without the flag and `@0.2.0` with it; `compile` still emits
+`re.native-compile-result@0.1.0`. A `@0.1.0` document and its `@0.2.0`
+counterpart differ by the member and the name and by nothing else.
+
+**Not claimed.** This closes the version-consistency half of the interface
+question only. §4 items 2 and 3 remain open — a non-`result` return and a
+`number.i64` from `clock.monotonic_nanos` still silently take the `ok` branch,
+and the `native-vm-capability-failed` collapse still makes `invocation_values`
+unreachable inside the VM — because both are design decisions rather than
+ready-made patches, and item 4 is a scope limit rather than work.
+
 
 ### WP-235 — Keep a developer's Git policy out of a fixture
 
