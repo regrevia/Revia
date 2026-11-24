@@ -3757,3 +3757,23 @@ No finding required a code change; none contradicted the closure claim.
 - Issue 4: impact analysis accepted; language change either scheduled or
   explicitly rejected. This page: scheduled (route A), route B delivered —
   section 6 and `result-value-interface.md`.
+
+52. The debug-binary staleness guard decided "rebuild" with `newest > binary`
+    written twice, once per binary, and never exercised. Equality fell on the
+    reuse side, so a tree restored from an archive — `cp -p`, `rsync -t`, a
+    `tar` extraction, a container layer — that landed the newest `.rs` on the
+    binary's own mtime reused a binary compiled from other source and reported
+    the disagreement as a product defect (issue #46). The decision is now one
+    named predicate, `isNativeBinaryStale(binaryPath, sourceRoot, options)` in
+    `test/native-binary-staleness.js`, called by both
+    `ensureNativeBinary()` and `ensureNativeConformanceBinary()` in
+    `test/native-lexer-parser.test.js`; equality means rebuild, because a
+    binary carrying the newest source's own timestamp cannot be shown to have
+    been built from it and the wrong rebuild costs a compile while the wrong
+    reuse costs the measurement. `test/native-binary-staleness.test.js` builds
+    temporary trees whose watched extensions, skipped `target/` directory and
+    three mtime relations are asserted without spawning `cargo`, so the guard
+    is reachable from a test, which is what it was not. The narrower claim this
+    keeps: the decision is named, shared and asserted at its boundary. Bytes
+    would settle freshness outright, and binding the binary to a digest of its
+    source set remains a larger change than this guard makes.

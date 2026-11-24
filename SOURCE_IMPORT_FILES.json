@@ -645,6 +645,8 @@
     "test/module-run-contracts.test.js",
     "test/module-source-surface-corpus.test.js",
     "test/module-surface-corpus.test.js",
+    "test/native-binary-staleness.js",
+    "test/native-binary-staleness.test.js",
     "test/native-lexer-parser.test.js",
     "test/portable-bytecode-process.test.js",
     "test/portable-bytecode.test.js",
