@@ -7,6 +7,9 @@
 >
 > 本仓库源码（含原生运行时）按 [MPL-2.0](LICENSE) 发布。下方把某次发行称为
 > 「闭源」或「专有」的条目，记录的是当时所发二进制的条款，不描述当前仓库。
+>
+> **Release line / 发行线：** every entry below is a pre-release candidate.
+> None is Stable V1.0. / 下方每个条目都是预发行候选，均不是 Stable V1.0。
 
 <a id="v1-0-0-rc-2-2-1"></a>
 ## v1.0.0-rc.2.2.1 — Linux and Windows x64 Native Candidate / Linux 与 Windows x64 原生候选
@@ -43,14 +46,13 @@ RC2.2.1 二进制按 MPL-2.0 分发，与其构建所用源码同一许可。导
 ## v1.0.0-rc.2.2 — Linux and Windows x64 Native Candidate / Linux 与 Windows x64 原生候选
 
 `v1.0.0-rc.2.2` adds measured-native Linux x64 evidence alongside the
-previously verified Windows x64 target. Both assets are non-production
-developer-evaluation artifacts. The candidate requires native build/test,
-fresh-process artifact checks, archive and executable checksums, and public
-download smoke before publication.
+previously verified Windows x64 target. The candidate requires native
+build/test, fresh-process artifact checks, archive and executable checksums,
+and public download smoke before publication.
 
-`v1.0.0-rc.2.2` 在已验证的 Windows x64 目标之外新增 Linux x64 原生证据。两个目标
-均为非生产开发评估资产；候选必须通过原生构建/测试、全新进程产物检查、归档与可执行文件
-摘要校验及公开下载 smoke 后才能发布。
+`v1.0.0-rc.2.2` 在已验证的 Windows x64 目标之外新增 Linux x64 原生证据。候选必须
+通过原生构建/测试、全新进程产物检查、归档与可执行文件摘要校验及公开下载 smoke
+后才能发布。
 
 - Linux x64 archive: `revia-1.0.0-rc.2.2-linux-x64.tar.gz`
 - Windows x64 archive: `revia-1.0.0-rc.2.2-windows-x64.zip`
@@ -58,8 +60,7 @@ download smoke before publication.
 
 ## v1.0.0-rc.2.1 — Windows x64 Native Candidate / Windows x64 原生候选
 
-`v1.0.0-rc.2.1` is a source-available, non-production developer-evaluation
-candidate for the measured `windows-x64` target. Its Windows asset is accepted
+`v1.0.0-rc.2.1` is a candidate for the measured `windows-x64` target. Its Windows asset is accepted
 only after the hosted Windows build, native conformance suite, bound
 `regrevia-win` execution, checksum verification, and public-download smoke all
 pass.
