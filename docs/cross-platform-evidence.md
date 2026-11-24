@@ -67,7 +67,9 @@ it for a loopback `server-smoke`, runs the workspace tests, then runs
 re-downloads that artifact on the self-hosted bound node `regrevia-revia`
 (`[self-hosted, Windows, X64, regrevia-win]`) and refuses to launch if the
 digest disagrees, which is an independent second-machine check rather than the
-basis of the row. That node is offline, so the second check is outstanding.
+basis of the row. That node is online again and the check passed: run
+`45231662003` re-hashed the downloaded executable to `42a1c68f…`, the digest
+the hosted job recorded for the same build.
 
 | Target / 目标 | Runner | State / 状态 | Native workflow | Archive SHA-256 |
 | --- | --- | --- | --- | --- |
@@ -84,7 +86,8 @@ basis of the row. That node is offline, so the second check is outstanding.
 文件，用它跑回环 `server-smoke`、跑工作区测试，再对同一个文件跑 `--version`、`--help`、`check` 与
 `manifest`。另有一个作业在自托管绑定节点 `regrevia-revia`（`[self-hosted, Windows, X64,
 regrevia-win]`）上重新下载该产物，摘要不符即拒绝启动；这是第二台机器上的独立复核，而不是该行的依据。
-该节点当前离线，因此这项复核尚未完成。上表其余四个目标保持 `pending`。
+该节点已恢复在线，这项复核已通过：运行 `45231662003` 把下载到的可执行文件重新算得 `42a1c68f…`，
+与托管作业为同一次构建记录的摘要一致。上表其余四个目标保持 `pending`。
 
 ### Export note / 导出说明
 

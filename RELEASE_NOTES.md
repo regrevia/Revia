@@ -1,5 +1,13 @@
 # Release Notes / 发行说明
 
+> **Current source / 当前源码：** the source of this repository, the native
+> runtime included, is published under [MPL-2.0](LICENSE). Entries below that
+> call a release `source-closed` or `proprietary` record the terms of the
+> binaries shipped at that time; they do not describe the current repository.
+>
+> 本仓库源码（含原生运行时）按 [MPL-2.0](LICENSE) 发布。下方把某次发行称为
+> 「闭源」或「专有」的条目，记录的是当时所发二进制的条款，不描述当前仓库。
+
 <a id="v1-0-0-rc-2-2-1"></a>
 ## v1.0.0-rc.2.2.1 — Linux and Windows x64 Native Candidate / Linux 与 Windows x64 原生候选
 
