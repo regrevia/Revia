@@ -30,6 +30,13 @@ the other targets are still `pending`. Measured scope:
 | [11-node-free-milestone-0.1.md](11-node-free-milestone-0.1.md) | Native translator and runtime milestones / 原生翻译器与运行时里程碑 |
 | [12-library-strategy.md](12-library-strategy.md) | External library admission routes and evidence gates / 外部库准入路线与证据门禁 |
 
+`07` through `12` are the 0.1 development-baseline records. Their “current
+implementation” statements describe that baseline; later capability lives in
+[development status](../docs/development-status.md).
+
+`07`–`12` 为 0.1 开发基线记录，文中“当前实现”指该基线当时的状态；其后交付的能力见
+[开发状态](../docs/development-status.md)。
+
 ## Related Guides / 相关入口
 
 - [Examples](../examples/README.md) / [样例索引](../examples/README.md)

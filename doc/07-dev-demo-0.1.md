@@ -1,6 +1,10 @@
 # RE Dev Demo 0.1 冻结基线
 
-本文档冻结的是**可供 Agent 开始开发的内部 Demo 版本**，不是完整的 RE V1 语言规范。Demo 的目标是验证：
+> 状态：0.1 开发基线记录。文中“当前实现”指 0.1 Demo 当时的状态，不代表今天的
+> 能力范围；原生运行时已在其后交付，现行能力见
+> [../docs/development-status.md](../docs/development-status.md)。
+
+本文档冻结的是可供 Agent 开始开发的 0.1 开发基线，不是完整的 RE V1 语言规范。Demo 的目标是验证：
 
 - Agent 能否用 RE 写出简单的单文件程序；
 - `re check` 能否快速发现类型、参数、能力和错误消费问题；
