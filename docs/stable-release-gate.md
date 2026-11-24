@@ -38,10 +38,9 @@ remains pending until a versioned candidate rebuilds the template natively, runs
 `revia project-check` and `revia project-surface-check` against that build, and binds the
 evidence to its own tag.
 
-The current RC2.2.1 export includes `LICENSE-RC.md`, whose text states it
-applies only to RC1. RC2.2.1 binary license applicability must be clarified
-before another binary candidate is presented as having settled evaluation or
-redistribution terms.
+The current RC2.2.1 export includes `LICENSE-RC.md`, whose text scopes itself to
+RC1; the RC2.2.1 binaries themselves are distributed under MPL-2.0, so that
+notice does not leave their evaluation or redistribution terms open.
 
 项目模板源码/native 检查与 Windows 绑定 runner 的产物完整性校验，已在
 `docs/release-policy.md` 记录的代码验证快照上运行：源码验证、Linux x64 原生任务与
@@ -50,5 +49,5 @@ Windows x64 原生任务都执行 `cargo test --workspace`，Windows 任务在�
 门禁仍需等版本化候选原生重建模板、对该构建执行 `revia project-check` 与
 `revia project-surface-check`，并将证据绑定到自己的 tag 后才能关闭。
 
-当前 RC2.2.1 导出包包含声明只适用于 RC1 的 `LICENSE-RC.md`。在将后续二进制候选描述为
-具有明确评估或再分发条款前，必须先澄清 RC2.2.1 二进制许可适用范围。
+当前 RC2.2.1 导出包包含自述仅适用于 RC1 的 `LICENSE-RC.md`；RC2.2.1 二进制本身按
+MPL-2.0 分发，因此该声明不使其评估或再分发条款处于待定状态。

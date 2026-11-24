@@ -51,10 +51,10 @@ interoperability, or Stable V1.0. See
 [docs/development-status.md](docs/development-status.md) and
 [docs/stable-release-gate.md](docs/stable-release-gate.md).
 
-> **Release-license note:** The `v1.0.0-rc.2.2.1` export includes
-> `LICENSE-RC.md`, whose text says it applies only to `v1.0.0-rc.1`.
-> Version-specific terms for the RC2.2.1 binaries are unresolved; do not infer
-> their license from either the source MPL-2.0 or the RC1 license.
+> **Release-license note:** The `v1.0.0-rc.2.2.1` binaries are distributed under
+> MPL-2.0, the same license as the source they are built from. The export also
+> carries `LICENSE-RC.md`, which scopes itself to `v1.0.0-rc.1` only and does not
+> govern the RC2.2.1 binaries.
 
 ## Start Here
 

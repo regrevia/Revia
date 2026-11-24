@@ -54,10 +54,10 @@ complete production feature is implemented.
   commit.
 - Historical preview and RC1 binary assets retain their original license
   files and published checksums.
-- The `v1.0.0-rc.2.2.1` export includes `LICENSE-RC.md`, whose text scopes that
-  license to `v1.0.0-rc.1` only. RC2.2.1 binary terms therefore require
-  version-specific clarification; neither the source MPL-2.0 nor the RC1 text
-  should be treated as silently resolving that scope.
+- The `v1.0.0-rc.2.2.1` binaries are distributed under MPL-2.0, the same license
+  as the source they are built from. The export includes `LICENSE-RC.md`, whose
+  text scopes itself to `v1.0.0-rc.1` only; it ships as a historical notice
+  rather than as the terms of the RC2.2.1 binaries.
 - Future releases must be built from a public source commit and publish target,
   license, artifact, and test evidence together.
 - A green source CI run is not cross-platform runtime evidence unless the

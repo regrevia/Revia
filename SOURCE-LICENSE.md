@@ -11,8 +11,8 @@ replace the official license text.
 
 ## Historical Assets
 
-Existing preview and release-candidate binaries, archives, manifests, and
-notices retain the terms under which those exact assets were published:
+Existing preview and RC1 binaries, archives, manifests, and notices retain the
+terms under which those exact assets were published:
 
 - `LICENSE-PREVIEW-0.1.md` applies to the historical `0.1-preview` line.
 - `LICENSE-RC.md` applies to the historical `v1.0.0-rc.1` candidate.
@@ -23,19 +23,26 @@ Publishing source does not retroactively relicense historical assets, and
 historical asset terms do not restrict newly published source that is covered
 by MPL-2.0.
 
-## RC2.2.1 Binary Scope Requires Clarification
+## RC2.2.1 Binary Scope
 
-The published `v1.0.0-rc.2.2.1` export manifest includes `LICENSE-RC.md`, but
-the text of that file expressly applies only to `v1.0.0-rc.1`. This document
-does not extend the RC1 license to RC2.2.1 or create replacement terms.
-Version-specific usage and redistribution terms for the RC2.2.1 binaries need
-explicit clarification before they can be described as settled.
+The published `v1.0.0-rc.2.2.1` binaries are distributed under MPL-2.0, the same
+license as the source they are built from. Section 3.2(b) of that license
+permits an executable form to be distributed under its own terms, and section
+3.2(a) requires the corresponding source to be available: the export manifest
+records `source_commit`, and that commit is public.
 
-## RC2.2.1 二进制许可范围待澄清
+The export manifest also carries `LICENSE-RC.md`. That file states its own scope
+as `v1.0.0-rc.1` only and ships unchanged as a historical notice; it does not
+govern, extend, or restrict the RC2.2.1 binaries.
 
-已发布的 `v1.0.0-rc.2.2.1` 导出 manifest 包含 `LICENSE-RC.md`，但该文件文本明确只适用于
-`v1.0.0-rc.1`。本文件不会将 RC1 许可扩展到 RC2.2.1，也不会创建替代条款。
-在将 RC2.2.1 二进制使用和再分发条款描述为已明确之前，仍需取得按版本适用的正式澄清。
+## RC2.2.1 二进制许可范围
+
+已发布的 `v1.0.0-rc.2.2.1` 二进制按 MPL-2.0 分发，与其构建所用源码同一许可。
+该许可第 3.2(b) 条允许可执行形式按本许可分发，第 3.2(a) 条要求提供对应源码：
+导出 manifest 记录了 `source_commit`，该提交是公开的。
+
+导出 manifest 同时包含 `LICENSE-RC.md`。该文件自述适用范围仅限 `v1.0.0-rc.1`，
+作为历史声明原样随包分发；它不构成、不扩展、也不限制 RC2.2.1 二进制的条款。
 
 ## Contributions
 

@@ -23,10 +23,10 @@ and Windows x64 CI; `docs/release-policy.md` records that snapshot. The native
 executable it built before launching it. Those checks are not part of the
 existing published RC2.2.1 assets and do not extend to later commits.
 
-The RC2.2.1 export includes `LICENSE-RC.md`, whose text applies only to RC1.
-Do not infer RC2.2.1 binary usage or redistribution terms from that RC1 license
-or from the source's MPL-2.0 license; version-specific binary terms need
-clarification.
+The RC2.2.1 binaries are distributed under MPL-2.0, the same license as the
+source they are built from. The export also includes `LICENSE-RC.md`, whose text
+scopes itself to RC1; it ships as a historical notice and does not govern these
+binaries.
 
 已发布的 `v1.0.0-rc.2.2.1` 预发行包包含 Linux x64 与 Windows x64 原生资产，按目标划分的证据见
 [`runtime/rc2.2.1/`](runtime/rc2.2.1/)。该 tag 指向 `35ae4ed`；它是候选版本，不是 Stable V1.0，
@@ -37,8 +37,8 @@ clarification.
 测试在该 CI 的 `cargo test --workspace` 中运行，Windows 任务在启动前核对自己构建的
 可执行文件摘要。这些检查不属于现有已发布的 RC2.2.1 资产，也不延伸到之后的提交。
 
-RC2.2.1 导出包包含一份文本适用范围仅为 RC1 的 `LICENSE-RC.md`。不得从 RC1 许可或源码
-MPL-2.0 推断 RC2.2.1 二进制的使用/再分发条款；二进制的版本专属条款仍需澄清。
+RC2.2.1 二进制按 MPL-2.0 分发，与其构建所用源码同一许可。导出包同时包含
+`LICENSE-RC.md`，其文本自述仅适用于 RC1，作为历史声明随包分发，不构成这些二进制的条款。
 
 ## v1.0.0-rc.2.2 — Linux and Windows x64 Native Candidate / Linux 与 Windows x64 原生候选
 

@@ -72,10 +72,10 @@ commits. These source checks do not change the published RC2.2.1 binaries. A
 new versioned candidate must carry the project template, rerun the release
 gate, and publish evidence bound to its own tag.
 
-The RC2.2.1 export manifest includes `LICENSE-RC.md`, but that document says it
-applies only to `v1.0.0-rc.1`. Do not infer RC2.2.1 binary terms from this RC1
-license or from the source MPL-2.0 license. The RC2.2.1 binary license scope
-needs version-specific clarification. Signed tags/checksums, immutable
+The RC2.2.1 binaries are distributed under MPL-2.0, the same license as the
+source they are built from. The export manifest also includes `LICENSE-RC.md`,
+which scopes itself to `v1.0.0-rc.1` and ships as a historical notice rather
+than as the terms of these binaries. Signed tags/checksums, immutable
 releases, SBOM, and artifact attestation also remain pending for Stable V1.0.
 
 The release-candidate workflow verifies provenance before target smoke or
@@ -94,7 +94,8 @@ validation 与 Linux/Windows native CI 通过，其中包含该 commit 的
 新版本候选必须带上项目模板、重新运行发行门禁，并将证据绑定到新 tag。
 
 RC2.2.1 导出 manifest 包含 `LICENSE-RC.md`，但该文件声明只适用于 `v1.0.0-rc.1`。
-不得从 RC1 许可或源码 MPL-2.0 推断 RC2.2.1 二进制条款；该二进制许可范围需按版本澄清。
+RC2.2.1 二进制按 MPL-2.0 分发，与其构建所用源码同一许可；导出 manifest 同时包含
+`LICENSE-RC.md`，其自述仅适用于 `v1.0.0-rc.1`，属历史声明，不构成这些二进制的条款。
 Stable V1.0 的签名 tag/checksum、immutable release、SBOM 和 artifact attestation 也仍为 pending。
 
 ## V1 RC1 Gate / V1 RC1 门禁
