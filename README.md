@@ -3,7 +3,8 @@
 > An open-source, graph-first language implementation for Agent-authored work
 > and human semantic governance.
 >
-> Source: MPL-2.0 · Research/preview maturity · Not Stable V1.0 or production-ready
+> Source and native runtime: MPL-2.0 · candidate `v1.0.0-rc.2.2.1` · Linux x64 and
+> Windows x64 built and executed natively; macOS and arm64 targets are still `pending`
 
 Revia turns checked program structure into deterministic machine contracts and
 human-readable projections. The repository contains the reference toolchain,
