@@ -38,6 +38,8 @@ under [`doc/`](../doc/).
   [Chinese mirror](architecture.zh-CN.md)
 - [`diagnostics.md`](diagnostics.md)
 - [`translation-rendering.md`](translation-rendering.md)
+- [`cli-surface-boundary-design.md`](cli-surface-boundary-design.md) — why the
+  native launcher and the Node reference CLI stay two surfaces
 - [`evolution.md`](evolution.md)
 
 ### Integration And Hosts / 集成与宿主
@@ -59,6 +61,8 @@ under [`doc/`](../doc/).
 - [`rc1-sealed-export-contract.md`](rc1-sealed-export-contract.md)
 - [`rc1-trial-kit-contract.md`](rc1-trial-kit-contract.md)
 - [`rc2-target-expansion-contract.md`](rc2-target-expansion-contract.md)
+- [`promotion/2026-09-08-rc1.md`](promotion/2026-09-08-rc1.md) — the RC1
+  promotion record, annotated where its wording no longer holds
 
 ### Work Packages / 工作包
 
