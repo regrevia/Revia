@@ -19,8 +19,8 @@ retroactively by publishing the source.
 
 ## Current Status
 
-The open development line is a research and preview implementation. Current
-source includes a bounded native translator/VM, a runnable project template,
+The open development line is a pre-release candidate. Current source includes
+a bounded native translator/VM, a runnable project template,
 project and module checks, deterministic semantic artifacts, a bounded Server
 profile, interface projection, and conformance/experiment infrastructure.
 

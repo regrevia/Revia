@@ -93,7 +93,6 @@ validation 与 Linux/Windows native CI 通过，其中包含该 commit 的
 测试；该证据不延伸到之后的提交。这些源码检查不会改变已发布的 RC2.2.1 二进制。
 新版本候选必须带上项目模板、重新运行发行门禁，并将证据绑定到新 tag。
 
-RC2.2.1 导出 manifest 包含 `LICENSE-RC.md`，但该文件声明只适用于 `v1.0.0-rc.1`。
 RC2.2.1 二进制按 MPL-2.0 分发，与其构建所用源码同一许可；导出 manifest 同时包含
 `LICENSE-RC.md`，其自述仅适用于 `v1.0.0-rc.1`，属历史声明，不构成这些二进制的条款。
 Stable V1.0 的签名 tag/checksum、immutable release、SBOM 和 artifact attestation 也仍为 pending。

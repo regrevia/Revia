@@ -1,10 +1,15 @@
 # Revia Language Specifications
 
-This directory contains the language and semantic specifications. Revia is
-currently a research and preview implementation; see
-[development status](../docs/development-status.md) for the verified scope.
+This directory contains the language and semantic specifications of Revia,
+whose source and native runtime are published under
+[MPL-2.0](../LICENSE). The most recent release is candidate
+`v1.0.0-rc.2.2.1`, built and executed natively on Linux x64 and Windows x64;
+the other targets are still `pending`. Measured scope:
+[development status](../docs/development-status.md).
 
-本目录包含语言和语义规范。Revia 当前仍是研究与预览实现；已验证的能力边界见
+本目录包含 Revia 的语言与语义规范。Revia 源码与原生运行时按
+[MPL-2.0](../LICENSE) 发布，最新发行是候选版 `v1.0.0-rc.2.2.1`，已在 Linux x64
+与 Windows x64 原生构建并执行，其余目标仍为 `pending`。已测量范围见
 [开发状态](../docs/development-status.md)。
 
 ## Specification Map / 规范索引
