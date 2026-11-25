@@ -10,6 +10,7 @@ import test from 'node:test'
 import { parseExecutableGrammar } from '../src/toolchain/executable-grammar.js'
 import { tokenizeCompactSource } from '../src/toolchain/compact-lexer.js'
 import { parseProgram } from '../src/toolchain/parser.js'
+import { isNativeBinaryStale } from './native-binary-staleness.js'
 
 const ROOT = resolve(new URL('..', import.meta.url).pathname)
 const NATIVE_ROOT = join(ROOT, 'native')
@@ -370,27 +371,14 @@ test('native dependency scan skips only the Darwin target header', () => {
   )
 })
 
-function newestNativeSourceMtime(directory) {
-  let newest = 0
-  for (const entry of readdirSync(directory, { withFileTypes: true })) {
-    if (entry.name === 'target') continue
-    const path = join(directory, entry.name)
-    if (entry.isDirectory()) {
-      newest = Math.max(newest, newestNativeSourceMtime(path))
-    } else if (/\.(rs|toml)$/u.test(entry.name)) {
-      newest = Math.max(newest, statSync(path).mtimeMs)
-    }
-  }
-  return newest
-}
-
 // A binary that merely exists is not the tree: an older one answers for source
 // it was never built from, and the suite reports the disagreement as a product
-// defect. Compare mtimes before reusing it.
+// defect. The decision is `isNativeBinaryStale`, shared with the release guard
+// and asserted at its boundary in `native-binary-staleness.test.js`, because a
+// tree restored from an archive can land the newest source on the binary's own
+// mtime and an inline `>` read that as fresh.
 function ensureNativeBinary() {
-  const stale =
-    !existsSync(NATIVE_BINARY) ||
-    newestNativeSourceMtime(NATIVE_ROOT) > statSync(NATIVE_BINARY).mtimeMs
+  const stale = isNativeBinaryStale(NATIVE_BINARY, NATIVE_ROOT)
   if (!stale) return
   execFileSync('cargo', ['build', '--workspace', '--offline'], {
     cwd: NATIVE_ROOT,
@@ -532,9 +520,7 @@ function isDarwinDependencyHeader(line, binaryPath) {
 }
 
 function ensureNativeConformanceBinary() {
-  const stale =
-    !existsSync(NATIVE_CONFORMANCE_BINARY) ||
-    newestNativeSourceMtime(NATIVE_ROOT) > statSync(NATIVE_CONFORMANCE_BINARY).mtimeMs
+  const stale = isNativeBinaryStale(NATIVE_CONFORMANCE_BINARY, NATIVE_ROOT)
   if (!stale) return
   execFileSync('cargo', ['build', '--workspace', '--offline'], {
     cwd: NATIVE_ROOT,
