@@ -3777,3 +3777,43 @@ No finding required a code change; none contradicted the closure claim.
     keeps: the decision is named, shared and asserted at its boundary. Bytes
     would settle freshness outright, and binding the binary to a digest of its
     source set remains a larger change than this guard makes.
+
+53. Deferred item 2 of `result-value-interface.md` §4 was left as the sentence
+    that a `number.i64` from `clock.monotonic_nanos` "comes back as a plain `ok`
+    response, so `match` on it silently takes the `ok` branch and discards the
+    value", and it now says what the tree does rather than what it was expected
+    to do. Re-measured against a rebuilt `native/target/release/revia`: the
+    program `%n = @clock.monotonic_nanos()` / `return match %n { ok(_) =>
+    process.exit(0) err(_) => process.exit(2) }`, declared `revia.clock@0.1.0`
+    with `monotonic_nanos -> number.i64` and granted by policy, exits 0 with
+    `schema re.native-host-execution-result@0.2.0`, `outcome.code:0`,
+    `invocation_values [{"type":"int","value":42}]` and no diagnostic. The
+    reason is not a check that failed to fire but a check that does not exist:
+    `parser.rs:179-182` accepts `(` `_` `)` and nothing else, `graph.rs:126-132`
+    gives `BranchNode` no binding field, the `check_graph` walk
+    (`graph.rs:248-302`) never inspects a match subject, and the only
+    result-shaped typing, `graph.rs:771-796`, is entered from
+    `graph.rs:946` after the declared type already starts with `result<`, so an
+    `i64` return falls through to `is_declared_type_name` and passes. A search
+    of `native/` for `result-binding`, `binding-type`, `match-subject` and
+    `expected-result` finds nothing, so the `project_runtime.rs:622` pointer the
+    work package carried for the binding path is stale and the record now says
+    so; the nearest live exercised face of the shape is the WP-358 corpus
+    program at `wp358_policy_rejection_corpus.rs:54`, which pairs the same
+    `monotonic_nanos` return with the same two `_` branches. The published
+    statements already match this and are not amended here:
+    `docs/language-reference.md:40-42` publishes the branch grammar as
+    `_`-only, and `:61-66` with its Chinese half at `:68-72` publishes the
+    non-`result` match as a fault of the language rather than of the run. Two
+    consequences bound the fix. The narrower one is that any repair teaches the
+    checker to compare a match subject against the registered return type, which
+    needs the registry at check time in the paths that currently take it only
+    for `compile`/`execute`/`verify`/`run`. The wider one is that a binding is
+    carried in the artifact, not only in the graph: `BranchResult` holds two
+    program counters (`bytecode.rs:28-44`) and `validate_artifact_shape`
+    compares schema, profile, release and translator for equality
+    (`bytecode.rs:401-415`), so landing a binding forces
+    `re.native-bytecode-artifact@0.2.0` and the route-A plan in §3 of
+    `result-value-interface.md` stands unchanged. This record closes the pointer
+    and the measurement, not the item: route A remains scheduled, and the
+    single-file path still enforces no branch-subject type.

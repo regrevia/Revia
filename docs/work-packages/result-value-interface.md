@@ -194,7 +194,13 @@ prints a capability value) without pre-empting the version decision.
    `clock.monotonic_nanos` comes back as a plain `ok` response, so `match` on
    it silently takes the `ok` branch and discards the value (§1 probe). Route A
    must decide whether to bind such a return or reject the match; today the
-   single-file path enforces no branch-subject type.
+   single-file path enforces no branch-subject type. Re-measured and located in
+   record 53 of
+   [availability.md](availability.md): the checker does not reject the shape,
+   because no path inspects a match subject, `BranchNode` has no binding field
+   and the branch parser accepts `(` `_` `)` alone. The earlier pointer to
+   `project_runtime.rs` for a binding check was stale — no such check exists
+   there.
 3. **Collapsed bridge failures**: `native-vm-capability-failed` (`vm.rs:425-429`)
    is still the single collapse point for `CheckFailure|HostFault`. Measured:
    such a response terminates the execution in the `BranchResult` arm, so the
