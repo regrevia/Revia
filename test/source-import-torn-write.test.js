@@ -11,7 +11,7 @@ import { chmod, readFile, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import test from 'node:test'
 
-import { temporaryRoot } from '../test-support/source-import-fixture.js'
+import { publishedSelection, temporaryRoot } from '../test-support/source-import-fixture.js'
 
 function attempted(root, args) {
   return new Promise((resolve, reject) => {
@@ -122,9 +122,13 @@ test('the same refresh lands both writes when the manifest is writable', async (
   assert.equal(JSON.parse(result.stdout).manifest_transition, 'replaced')
   // The receipt describes a tree that moved, so this is the case that has to
   // show both repairs landing rather than one of them.
-  assert.equal(JSON.parse(await readFile(list, 'utf8')).files.length, 72)
+  // The count is the tree's, not the fixture's: the two repairs have to
+  // publish every path the selection names, and a number written here would
+  // call the publication short the day a path was added to it.
+  const expected = (await publishedSelection()).length
+  assert.equal(JSON.parse(await readFile(list, 'utf8')).files.length, expected)
   const published = JSON.parse(await readFile(manifest, 'utf8'))
-  assert.equal(published.files.length, 72)
+  assert.equal(published.files.length, expected)
 })
 
 // A refresh with nothing to repair leaves the list alone, so ordering the two

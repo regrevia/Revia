@@ -3847,3 +3847,38 @@ No finding required a code change; none contradicted the closure claim.
     flip point — the two refusal cases are what `ok(%value)` / `err(%error)`
     must turn green, and the bytecode schema bump they force is the reason the
     guard belongs before that work rather than with it.
+55. The doc-claim probe that measured the state sentence of this page was a
+    working script that no published list named and no test read, so its two
+    halves — the sentence it edits and the gate it expects to notice — could
+    each drift while every check stayed green. `scripts/doc-claim-probe.sh` is
+    now a published path: the selection names it in `EXPLICIT_PATHS`, because
+    the walk covers only the five source roots and `scripts/` is reached by
+    explicit path or not at all, and both `SOURCE_IMPORT_FILES.json` and
+    `SOURCE_IMPORT_MANIFEST.json` carry it — 749 paths became 751 with the
+    guard's own test. `test/doc-claim-probe.test.js` is the other half, and it
+    asserts the four pieces the probe's answer depends on rather than the
+    sentence it prints: the default `FROM` is still on the page the default
+    `FILE` names, so a reworded anchor is a red test instead of an exit 2 a
+    reader has to interpret; the control edits a row `docs/compatibility.md`
+    carries and that row still ends in a glibc number, because a control moved
+    onto prose would report a sleeping gate as a working one; the default gate
+    names `test/docs-diagnostics.test.js` and every path in it exists, which is
+    the bug this file was written after — the gate list omitted the test that
+    reads the default sentence, so the probe reported a bound sentence as read
+    by nothing; and `bash -n` parses the script, since nothing else in the tree
+    parses shell. The anchor assertion was checked from both sides: rewriting
+    `FROM` to a sentence the page does not carry fails it alone while the other
+    three stay green, and restoring the file returns 4/4. Both probe modes were
+    run against the committed tree afterwards — the default reports
+    `the sentence IS bound to the gate` with `tests 88 / pass 81 / fail 1`, and
+    `--control` reports the gate rejecting a pinned glibc row moved off its
+    recorded number, which is what makes the first answer mean anything. This
+    publishes a probe and pins its anchors; it does not widen the gate, does not
+    change the language, and does not turn a probe result into a claim about
+    pages the probe never edited.
+    The publication also moved a count that had been written down: the torn
+    write's success case asserted the refresh publishes 72 paths, which is one
+    fewer than the selection names now that the probe is among them. The number
+    was the fixture's rather than the tree's, so it now comes from
+    `publishedSelection()` — the helper that reads `EXPLICIT_PATHS` — and the
+    case fails on a short publication instead of on an edited list.

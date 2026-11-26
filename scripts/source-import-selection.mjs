@@ -48,6 +48,7 @@ const EXPLICIT_PATHS = [
   'examples/schema-ops.re',
   'examples/write-check.re',
   'scripts/build-source-import-manifest.js',
+  'scripts/doc-claim-probe.sh',
   'scripts/run-agent-authoring-loop-conformance.js',
   'scripts/run-agent-project-benchmark.js',
   'scripts/run-agent-writing-evaluation.js',
