@@ -3882,3 +3882,34 @@ No finding required a code change; none contradicted the closure claim.
     was the fixture's rather than the tree's, so it now comes from
     `publishedSelection()` — the helper that reads `EXPLICIT_PATHS` — and the
     case fails on a short publication instead of on an edited list.
+56. `docs/diagnostics.md` publishes a rule in two halves — a positional
+    argument that begins with `-` is a usage error rather than a name, and
+    `./-name` is how a reader asks for a directory that really starts with a
+    dash — and no test read either half: `grep -- '--dry-run' test/*.test.js`
+    returned nothing, so the page could have described a CLI that no longer
+    refuses the flag, or one whose escape hatch normalises the name instead of
+    keeping the dash, with every check still green. `test/docs-diagnostics.test.js`
+    now measures both against `native/target/release/revia` and reads the
+    claim's own numbers out of the page rather than restating them:
+    `project-init --dry-run` exits `64` with empty stdout and
+    `Usage: revia project-init <directory>` on stderr, and the temporary
+    directory it ran in is still empty afterwards, which is the half a reader
+    depends on — `creates nothing` means the refusal did not invent a
+    dash-named directory on its way to failing. `project-init ./-name` exits
+    `0`, prints `re.native-project-init@0.1.0`, and the entry it created is
+    `-name` with `modules/main.re` and `project.json` under it, so the escape
+    hatch reaches the name it spells instead of a normalised one. Both halves
+    are read from the page with one `exec` each, so rewording the sentence is a
+    failure here rather than a silent loss of coverage. The control was run the
+    way the other page guards in this file were: rewriting the escape hatch in
+    the page to `-name` fails this case alone (`pass 9 / fail 1`) and restoring
+    the file returns `10/10`, which is what shows the assertion is bound to the
+    sentence and not to the CLI's own behaviour. The measurement has to be made
+    against a binary built from this checkout, so the case skips with the reason
+    `release-binary-state.js` gives when the binary is absent or older than its
+    sources — it reported `stale` here until a rebuild, and a skipped case says
+    so rather than claiming a green it did not measure. This pins one command's
+    documented refusal and its one published escape hatch on the documented
+    target; it does not claim that every file-creating command classifies a
+    dash-leading positional the same way, that the dash is refused anywhere
+    else, or that the page's other exit-code claims are covered by this case.

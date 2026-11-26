@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -550,6 +550,51 @@ test('the native CLI separates its usage banner from its parser envelope', async
     assert.equal(parsed.status, 65, parsed.stderr)
     assert.equal(parsed.stderr, '', 'the envelope goes to stdout only')
     assert.deepEqual(JSON.parse(parsed.stdout), expected)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('a positional argument starting with a dash is refused rather than named', async (t) => {
+  // The page publishes two halves of one rule: a dash-leading positional is a
+  // usage error, and `./-name` is how a reader asks for that name anyway. A
+  // test that only refused the flag would stay green if the escape hatch were
+  // refused too, so both halves are measured here.
+  const refused = /`revia project-init (--dry-run)`\s+exits `(\d+)`, writes the usage banner to stderr, and creates nothing,/u.exec(
+    diagnostics,
+  )
+  assert.ok(refused !== null, 'the page states the dash-flags-are-refused rule')
+  const escape = /Write `(\.\/-name)` when the\s+directory really starts with a dash\./u.exec(
+    diagnostics,
+  )
+  assert.ok(escape !== null, 'the page names the escape hatch')
+  const root = await mkdtemp(join(tmpdir(), 're-dash-name-'))
+  try {
+    const nativeState = releaseBinaryState(repositoryRoot)
+    if (nativeState.state !== 'fresh') {
+      t.skip(releaseBinarySkipReason(nativeState))
+      return
+    }
+    const { binary } = nativeState
+    const flag = spawnSync(binary, ['project-init', refused[1]], {
+      cwd: root,
+      encoding: 'utf8',
+    })
+    assert.equal(flag.status, Number(refused[2]), `the page says ${refused[2]}`)
+    assert.equal(flag.stdout, '', 'a refusal prints no document')
+    assert.match(flag.stderr, /^Usage: revia project-init /u)
+    // `creates nothing` is the half a reader depends on: the flag must not
+    // have invented a directory under its own name.
+    assert.deepEqual(await readdir(root), [], 'the refusal created nothing')
+    const named = spawnSync(binary, ['project-init', escape[1]], {
+      cwd: root,
+      encoding: 'utf8',
+    })
+    assert.equal(named.status, 0, named.stderr)
+    assert.equal(JSON.parse(named.stdout).schema, 're.native-project-init@0.1.0')
+    // The escape hatch has to reach the name it spells, not a normalised one.
+    assert.deepEqual(await readdir(root), ['-name'], 'the directory kept its dash')
+    assert.deepEqual(await readdir(join(root, '-name')), ['modules', 'project.json'])
   } finally {
     await rm(root, { recursive: true, force: true })
   }
