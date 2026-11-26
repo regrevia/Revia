@@ -3817,3 +3817,33 @@ No finding required a code change; none contradicted the closure claim.
     `result-value-interface.md` stands unchanged. This record closes the pointer
     and the measurement, not the item: route A remains scheduled, and the
     single-file path still enforces no branch-subject type.
+
+54. The `_`-only branch pattern that record 53 located was never pinned by a
+    test: searching `native/` for `ok(%` and `err(%` returned nothing but the
+    file added here, so the refusal was a measurement taken by hand against a
+    release binary and no suite would have noticed it disappearing. The shape it
+    protects is not the grammar alone. A parser that accepted `%data` would hand
+    the checker a `MatchNode` whose `BranchNode` has nowhere to put a binding
+    (`graph.rs:126-132`), and the VM's `BranchResult` moves two program counters
+    and no payload (`vm.rs:411-441`), so the program would reach a graph the
+    checker cannot type and an artifact the VM cannot populate without a
+    diagnostic in between. `native/revia-core/tests/wp532_match_binding_refusal.rs`
+    now asserts the refusal as callers see it: `ok(%data)` and `err(%error)`
+    each give `code:unexpected-token`, `phase:parse`, `rule:compact.token-role`,
+    the binding as `lexeme`, `expected:"_"` and `actual` equal to the binding —
+    the fields `re.native-parser-result@0.1.0` publishes, which is why the
+    published example in `docs/language-reference.md:44-48` names the same
+    `expected:"_"`. Two controls keep the guard honest from both sides:
+    `ok(_)` / `err(_)` still parses, so the test does not forbid the shipped
+    shape, and one case asserts the refusal is a parse answer rather than a
+    binding diagnostic, since `result-binding`, `binding-type`, `match-subject`,
+    `match-input`, `not-a-result` and `expected-result` name nothing in the tree
+    yet and a refusal must not start resembling one of them before the rule
+    exists. The fifth case reaches the identical refusal from
+    `SourceText::from_bytes`, so the answer is not an artefact of how the source
+    string was built. This adds a guard and nothing else: the grammar published
+    in `docs/language-reference.md` is unchanged, route A remains scheduled in
+    `result-value-interface.md`, and the scheduled change has an observable
+    flip point — the two refusal cases are what `ok(%value)` / `err(%error)`
+    must turn green, and the bytecode schema bump they force is the reason the
+    guard belongs before that work rather than with it.
