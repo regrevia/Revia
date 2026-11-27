@@ -1,6 +1,17 @@
 import assert from 'node:assert/strict'
+import { Buffer } from 'node:buffer'
 import { spawnSync } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import test from 'node:test'
@@ -211,5 +222,255 @@ test('the React manifest pins its own digest', () => {
   const drifted = validateReactClientProjectionManifest(foreign)
   assert.equal(drifted.ok, false)
   assert.equal(drifted.diagnostics[0].code, 'react-projection-digest-mismatch')
+  rmSync(workspace, { force: true, recursive: true })
+})
+const BUILTIN_TYPE_NAMES = new Set([
+  'Array', 'Boolean', 'Error', 'HTMLFormElement', 'Map', 'Number', 'Object', 'Promise',
+  'ReadonlyArray', 'Record', 'Set', 'String',
+])
+
+/**
+ * Every capitalized name a generated file uses as a type annotation or a JSX
+ * element has to be declared by that same file or imported into it. This is the
+ * only check that sees an identifier the manifest cannot describe: the digest
+ * pins bytes, so a file that references a name it never imported verifies.
+ */
+function unboundTypeNames(source) {
+  const bound = new Set()
+  for (const match of source.matchAll(/import\s+(?:type\s+)?\{([^}]*)\}\s*from/gu)) {
+    for (const part of match[1].split(',')) {
+      const name = part.trim().replace(/^type\s+/u, '').split(/\s+as\s+/u).pop()
+      if (name.length > 0) bound.add(name)
+    }
+  }
+  const declarations = /^(?:export\s+)?(?:type|interface|function|const|class)\s+([A-Za-z_$][\w$]*)/gmu
+  for (const match of source.matchAll(declarations)) bound.add(match[1])
+  const unbound = new Set()
+  for (const match of source.matchAll(/(?::\s*|<\s*)([A-Z][A-Za-z0-9]*)/gu)) {
+    if (!bound.has(match[1]) && !BUILTIN_TYPE_NAMES.has(match[1])) unbound.add(match[1])
+  }
+  return [...unbound].sort()
+}
+
+function canonicalValue(value) {
+  if (Array.isArray(value)) return value.map(canonicalValue)
+  if (value === null || typeof value !== 'object') return value
+  const keys = Object.keys(value).sort((left, right) =>
+    Buffer.from(left, 'utf8').compare(Buffer.from(right, 'utf8')))
+  return Object.fromEntries(keys.map((key) => [key, canonicalValue(value[key])]))
+}
+
+function digestOf(value) {
+  const text = `${JSON.stringify(canonicalValue(value))}\n`
+  return `sha256:${createHash('sha256').update(text, 'utf8').digest('hex')}`
+}
+
+/** Re-pin the projection digest so a mutated contract reaches the check it targets. */
+function repinned(manifest, contract) {
+  const next = { ...manifest, contract }
+  return {
+    ...next,
+    projection_digest: digestOf({ contract: next.contract, files: next.files, schema: next.schema }),
+  }
+}
+
+function resigned(manifest) {
+  const { authority, files, operations, schema } = manifest
+  return { ...manifest, react_digest: digestOf({ authority, files, operations, schema }) }
+}
+
+function buildRefusal(manifest, options) {
+  const built = buildReactClientProjection(manifest, options)
+  assert.equal(built.ok, false)
+  return built.diagnostics[0].code
+}
+
+function parseRefusal(manifest) {
+  const parsed = validateReactClientProjectionManifest(manifest)
+  assert.equal(parsed.ok, false)
+  return parsed.diagnostics[0].code
+}
+
+test('generated client files name only identifiers they import or declare', async () => {
+  const { manifest, workspace } = contract()
+  const out = join(workspace, 'client')
+  const written = await writeReactClientProjection(manifest, { output: out })
+  assert.equal(written.ok, true)
+
+  const panels = readFileSync(join(out, 'panels.tsx'), 'utf8')
+  assert.deepEqual(unboundTypeNames(readFileSync(join(out, 'operations.ts'), 'utf8')), [])
+  assert.deepEqual(unboundTypeNames(panels), [])
+
+  // The reverse control: the shape this test exists for, where the panel
+  // annotates its outcome with a state type its import line left out.
+  const stripped = panels.replace(', type ReviewState', '')
+  assert.notEqual(stripped, panels)
+  assert.deepEqual(unboundTypeNames(stripped), ['ReviewState'])
+  rmSync(workspace, { force: true, recursive: true })
+})
+
+test('a contract that cannot describe a client is refused by name', () => {
+  const { manifest, workspace } = contract()
+  const contractValue = manifest.contract
+  const sums = contractValue.types.filter((entry) => entry.declaration.body.kind !== 'record')
+  const records = contractValue.types.filter((entry) => entry.declaration.body.kind === 'record')
+  const absent = `sha256:${'a'.repeat(64)}`
+
+  assert.equal(buildRefusal({ ...manifest, schema: 're.other@0.1.0' }), 'react-projection-contract-invalid')
+  assert.equal(buildRefusal({ ...manifest, contract: { ...contractValue, operations: [] } }), 'react-projection-route-set-empty')
+  assert.equal(buildRefusal({ ...manifest, contract: { ...contractValue, types: [] } }), 'react-projection-type-set-empty')
+  assert.equal(buildRefusal({ ...manifest, projection_digest: 'sha256:short' }), 'react-projection-contract-digest-invalid')
+  assert.equal(buildRefusal({ ...manifest, files: [] }), 'react-projection-contract-digest-mismatch')
+  assert.equal(
+    buildRefusal(repinned(manifest, {
+      ...contractValue,
+      authority: { ...contractValue.authority, graph_revision: 'not-a-digest' },
+    })),
+    'react-projection-graph-revision-invalid',
+  )
+  assert.equal(
+    buildRefusal(manifest, { graph_revision: `sha256:${'b'.repeat(64)}` }),
+    'react-projection-graph-revision-mismatch',
+  )
+
+  const [first] = contractValue.operations
+  const renamed = { ...first, operation: { ...first.operation, name: 'other.review' } }
+  assert.equal(
+    buildRefusal(repinned(manifest, { ...contractValue, operations: [first, renamed] })),
+    'react-projection-operation-name-collision',
+  )
+
+  assert.equal(sums.length, 1)
+  assert.equal(records.length, 3)
+  const asSum = { ...first, input_type: { ...first.input_type, declaration_digest: sums[0].declaration_digest } }
+  assert.equal(
+    buildRefusal(repinned(manifest, { ...contractValue, operations: [asSum] })),
+    'react-projection-unsupported-input',
+  )
+
+  const asAbsent = { ...first, input_type: { ...first.input_type, declaration_digest: absent } }
+  assert.equal(
+    buildRefusal(repinned(manifest, { ...contractValue, operations: [asAbsent] })),
+    'react-projection-type-declaration-not-found',
+  )
+
+  const input = records.find((entry) => entry.declaration_digest === first.input_type.declaration_digest)
+  const widened = {
+    ...input,
+    declaration: {
+      ...input.declaration,
+      body: {
+        ...input.declaration.body,
+        fields: [...input.declaration.body.fields, { name: 'stamp', type: { kind: 'instant' } }],
+      },
+    },
+  }
+  const widenedTypes = contractValue.types.map((entry) =>
+    entry.declaration_digest === input.declaration_digest ? widened : entry)
+  assert.equal(
+    buildRefusal(repinned(manifest, { ...contractValue, types: widenedTypes })),
+    'react-projection-unsupported-field-type',
+  )
+  rmSync(workspace, { force: true, recursive: true })
+})
+
+test('a React manifest that does not describe its own client is refused by name', () => {
+  const { manifest, workspace } = contract()
+  const built = buildReactClientProjection(manifest)
+  assert.equal(built.ok, true)
+  const parsed = JSON.parse(built.value.files['react-client.json'])
+
+  assert.equal(parseRefusal({ ...parsed, schema: 're.other@0.1.0' }), 'react-projection-manifest-invalid')
+  assert.equal(
+    parseRefusal({ ...parsed, authority: { ...parsed.authority, graph_revision: 'nope' } }),
+    'react-projection-graph-revision-invalid',
+  )
+  assert.equal(
+    parseRefusal({ ...parsed, authority: { ...parsed.authority, projection_digest: 'nope' } }),
+    'react-projection-contract-digest-invalid',
+  )
+  assert.equal(parseRefusal({ ...parsed, react_digest: 'nope' }), 'react-projection-digest-invalid')
+  assert.equal(validateReactClientProjectionManifest(parsed).ok, true)
+  assert.equal(
+    parseRefusal(resigned({ ...parsed, files: [{ path: 'operations.ts', sha256: 'nope' }] })),
+    'react-projection-file-digest-invalid',
+  )
+  assert.equal(
+    parseRefusal(resigned({ ...parsed, files: [{ path: 'client.ts', sha256: `sha256:${'c'.repeat(64)}` }] })),
+    'react-projection-file-set-invalid',
+  )
+  assert.equal(parseRefusal(resigned({ ...parsed, operations: [] })), 'react-projection-route-set-empty')
+  rmSync(workspace, { force: true, recursive: true })
+})
+
+test('a projection that cannot be written or read back is refused by name', async () => {
+  const { manifest, workspace } = contract()
+  const built = buildReactClientProjection(manifest)
+  assert.equal(built.ok, true)
+
+  assert.equal((await writeReactClientProjection(manifest)).diagnostics[0].code, 'projection-output-required')
+
+  const real = join(workspace, 'real')
+  await writeReactClientProjection(manifest, { output: real })
+  const link = join(workspace, 'link')
+  symlinkSync(real, link)
+  assert.equal((await writeReactClientProjection(manifest, { output: link })).diagnostics[0].code, 'projection-output-symlink')
+
+  const file = join(workspace, 'file')
+  writeFileSync(file, 'not a directory\n')
+  const refusedFile = await writeReactClientProjection(manifest, { output: file })
+  assert.equal(refusedFile.diagnostics[0].code, 'projection-output-not-directory')
+  assert.equal(refusedFile.written, false)
+  assert.equal(
+    (await verifyReactClientProjection(manifest, { output: file })).diagnostics[0].code,
+    'projection-output-not-directory',
+  )
+
+  const swapped = join(workspace, 'swapped')
+  await writeReactClientProjection(manifest, { output: swapped })
+  const panels = join(swapped, 'panels.tsx')
+  const kept = readFileSync(panels, 'utf8')
+  const elsewhere = join(workspace, 'elsewhere.tsx')
+  writeFileSync(elsewhere, kept)
+  rmSync(panels)
+  symlinkSync(elsewhere, panels)
+  const linked = await verifyReactClientProjection(manifest, { output: swapped })
+  assert.equal(linked.diagnostics[0].code, 'projection-artifact-not-regular-file')
+  assert.equal(linked.diagnostics[0].path, 'panels.tsx')
+
+  if (process.getuid?.() !== 0) {
+    rmSync(panels)
+    writeFileSync(panels, kept)
+    chmodSync(panels, 0o000)
+    const closed = await verifyReactClientProjection(manifest, { output: swapped })
+    assert.equal(closed.diagnostics[0].code, 'projection-artifact-unreadable')
+    chmodSync(panels, 0o644)
+  }
+  rmSync(workspace, { force: true, recursive: true })
+})
+
+test('project-react names a contract it could not read', () => {
+  const workspace = mkdtempSync(join(tmpdir(), 'revia-react-absent-'))
+  const missing = run([
+    'project-react',
+    '--contract', join(workspace, 'projection.json'),
+    '--out', join(workspace, 'client'),
+  ])
+  assert.equal(missing.status, 65)
+  const absent = JSON.parse(missing.stdout)
+  assert.equal(absent.schema, 're.react-client-projection-result@0.1.0')
+  assert.equal(absent.ok, false)
+  assert.equal(absent.written, false)
+  assert.deepEqual(absent.diagnostics.map((entry) => entry.code), ['react-projection-contract-missing'])
+  assert.equal(existsSync(join(workspace, 'client')), false)
+
+  const garbage = join(workspace, 'garbage.json')
+  writeFileSync(garbage, 'not json\n')
+  const broken = run(['project-react', '--contract', garbage, '--out', join(workspace, 'client')])
+  assert.equal(broken.status, 65)
+  assert.deepEqual(
+    JSON.parse(broken.stdout).diagnostics.map((entry) => entry.code),
+    ['react-projection-contract-unreadable'],
+  )
   rmSync(workspace, { force: true, recursive: true })
 })

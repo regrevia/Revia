@@ -3951,3 +3951,52 @@ No finding required a code change; none contradicted the closure claim.
     React implemented in Revia, a component library, a production frontend, a
     typecheck of the emitted sources by this repository's gates, or that the
     projection covers interface facts the contract does not carry.
+58. `verifyReactClientProjection` compares bytes and digests, so the emitted
+    client verifies as soon as the generator and its manifest agree — including
+    when `panels.tsx` annotated an outcome with `ReviewState` and never imported
+    it. `54cb21a` repaired the import in the panel source; nothing in the tree
+    would have caught the same fault returning, because the digest is computed
+    over whatever the generator wrote. `test/react-client-projection.test.js`
+    now reads the two emitted files back as text and collects every name they
+    bind — through `import { … } from`, `import type { … } from`, and a
+    top-level `type`, `interface`, `function`, `const` or `class` — then flags
+    every capitalized identifier used after a `:` or a `<` that is neither bound
+    nor one of the twelve ambient names the emit relies on (`Array` through
+    `String`). The set must be empty for both files, and the case carries its
+    own control: removing `, type ReviewState` from the emitted panel reproduces
+    the fault and reports exactly `ReviewState`, so a run that stopped reading
+    the import line would say the empty set about a file it never inspected.
+    The same file now pins the refusals one at a time rather than trusting that
+    a rejected contract is rejected for the documented reason. Each fixture
+    starts from the real `projection.json` the projection command writes, mutates
+    one fact, re-pins `projection_digest` (or the React manifest's own
+    `react_digest`) with the same canonical-JSON order the toolchain uses, and
+    asserts the first diagnostic's `code`: `react-projection-contract-invalid`,
+    `-route-set-empty`, `-type-set-empty`, `-contract-digest-invalid`,
+    `-contract-digest-mismatch`, `-graph-revision-invalid`,
+    `-graph-revision-mismatch`, `-operation-name-collision` (two operations
+    whose last segment is `review`), `-unsupported-input` (a `sum` offered as an
+    operation's input type), `-type-declaration-not-found` (an input type naming
+    a digest the contract does not carry), `-unsupported-field-type` (an
+    `instant` field added to a record the generator must render a control for),
+    and on the manifest side `-manifest-invalid`, `-digest-invalid`,
+    `-file-digest-invalid`, `-file-set-invalid` and `-route-set-empty`. The
+    write and verify refusals are exercised through the file system rather than
+    argued from the source: `projection-output-required` without an output,
+    `projection-output-symlink` through a link to a directory that would
+    otherwise be written, `projection-output-not-directory` on a regular file
+    in both paths, `projection-artifact-not-regular-file` on a `panels.tsx`
+    replaced by a link to a copy of its own bytes (which drift alone would not
+    catch, since the bytes still match), and `projection-artifact-unreadable`
+    on a mode-`000` file, skipped under `uid 0` because a root process reads it
+    anyway. `project-react` itself is asked for the two contract-read refusals
+    end to end: a missing path exits `65` with `react-projection-contract-missing`
+    and creates no output directory, and a file that is not JSON exits `65` with
+    `react-projection-contract-unreadable`, both as
+    `re.react-client-projection-result@0.1.0` with `written: false`. The file
+    went from 7 cases to 12 and `npm test` reports 1296 tests with 1295 passing
+    and one platform-conditional skip. This records coverage of the generator's
+    refusals and one identifier guarantee over the emitted text; it does not
+    claim a typecheck of the generated sources — no TypeScript compiler runs in
+    this repository's gates — a check that the ambient names are the right ones,
+    or that every diagnostic the module can return is now covered.
