@@ -51,6 +51,7 @@ const REQUIRED_ARGUMENTS = new Map([
   ['patch', ['--patch']],
   ['project-check', ['--format json']],
   ['project-projection', ['--routes', '--out']],
+  ['project-react', ['--contract', '--out']],
   ['project-run', ['--fixture']],
   ['translate', ['--format json']]
 ])

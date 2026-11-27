@@ -75,7 +75,7 @@ The Node reference CLI has a separate source-oriented surface:
   Exactly one program argument collides with native run arity; use the explicit npm command.
   npm run re -- view [--locale zh-CN|en-US] [--format html|svg] <file.re>
   view, audit, profile, patch, review-index, build, project-projection,
-  module-surface, project-translate
+  project-react, module-surface, project-translate
 
 Use "revia help <command>" for both signatures where they overlap.
 EOF
@@ -122,6 +122,7 @@ Reference: npm run re -- project-translate [--locale zh-CN|en-US] [--format json
 EOF
       ;;
     project-projection) printf '%s\n' 'Node reference only: npm run re -- project-projection --routes <routes.json> --out <dir> <project-dir>' ;;
+    project-react) printf '%s\n' 'Node reference only: npm run re -- project-react --contract <projection.json> --out <dir>' ;;
     module-surface) printf '%s\n' 'Node reference only: npm run re -- module-surface --manifest <manifest.json> <file.re>' ;;
     *)
       printf '%s\n' "Unknown Revia command: $1" >&2
@@ -132,7 +133,7 @@ EOF
 
 has_launcher_command_usage() {
   case "$1" in
-    check|run|manifest|translate|view|audit|profile|patch|review-index|build|project-check|project-run|project-translate|project-projection|module-surface)
+    check|run|manifest|translate|view|audit|profile|patch|review-index|build|project-check|project-run|project-translate|project-projection|project-react|module-surface)
       return 0
       ;;
     *)
@@ -182,7 +183,7 @@ source_form_diagnostic() {
   printf 'Revia native release CLI %s does not accept this source-form invocation.\n' "$VERSION" >&2
   case "$command" in
     run) printf '%s\n' 'Use the Node reference CLI: npm run re -- run <file.re> [-- <program-args>...]' >&2 ;;
-    view|audit|profile|patch|review-index|build|project-projection|module-surface)
+    view|audit|profile|patch|review-index|build|project-projection|project-react|module-surface)
       command_usage "$command" >&2
       ;;
     project-check|project-run|project-translate|check|translate)
@@ -199,7 +200,7 @@ check_source_form_invocation() {
   [ "$#" -gt 0 ] && shift
 
   case "$command" in
-    view|audit|profile|patch|review-index|build|project-projection|module-surface)
+    view|audit|profile|patch|review-index|build|project-projection|project-react|module-surface)
       source_form_diagnostic "$command"
       ;;
     run)

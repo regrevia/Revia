@@ -96,6 +96,58 @@ Hand-written DTOs, guessed dynamic JSON fields and UI framework conventions do
 not define Revia semantics. A client must treat revision mismatch, unknown
 error kinds and absent evidence as explicit states.
 
+### React client projection / React 客户端投影
+
+`project-react` turns that checked contract into two React sources and a
+manifest:
+
+```bash
+node src/cli/re.js project-react \
+  --contract /tmp/revia-expense-client/projection.json \
+  --out /tmp/revia-expense-react
+```
+
+It reads only `projection.json`; the checked project is not consulted, so the
+command cannot invent a field the interface does not declare. Measured on that
+contract, the exit status is `0`, stdout is one
+`re.react-client-projection-result@0.1.0` envelope, and the directory holds
+exactly `operations.ts`, `panels.tsx`, and `react-client.json`.
+`react-client.json` is `re.react-client-projection-manifest@0.1.0`; its
+`authority.projection_digest` is the `projection_digest` of the contract it read,
+and `authority.graph_revision` is the checked project's pinned revision.
+
+```bash
+node -e 'const m = require("/tmp/revia-expense-react/react-client.json");
+const p = require("/tmp/revia-expense-client/projection.json");
+console.log(m.schema);
+console.log(m.files.map((f) => f.path).join(","));
+console.log(m.authority.projection_digest === p.projection_digest)'
+```
+
+```text
+re.react-client-projection-manifest@0.1.0
+operations.ts,panels.tsx
+true
+```
+
+`operations.ts` holds one hook per routed operation and `panels.tsx` one form
+per operation, both typed by the projection's own `types.ts` and `client.ts`.
+A contract whose `projection_digest` no longer matches its bytes, an operation
+name that cannot be a component, and an input field outside the projected
+scalar and union vocabulary are refused with a versioned diagnostic and exit
+`65`; the output directory is not created.
+
+This is a bounded client projection over the same checked interface, not a
+Revia-implemented React, a component library, or a production frontend. The
+generated sources are not compiled by this repository's gates.
+
+中文摘要：`project-react` 只读 `projection.json`，退出码 `0`，stdout 是一个
+`re.react-client-projection-result@0.1.0` 信封，目录里恰好是 `operations.ts`、
+`panels.tsx`、`react-client.json`。`react-client.json` 是
+`re.react-client-projection-manifest@0.1.0`，其 `authority.projection_digest`
+等于所读契约的 `projection_digest`。摘要不符、命名冲突、输入字段超出投影词汇时
+退出 `65` 且不创建输出目录。它不是用 Revia 实现的 React，也不是组件库或生产前端。
+
 公开源码包含一个有界的 interface projection 命令，生成 `types.ts`、`client.ts` 和
 `projection.json`。契约由 checked manifest 与 route 输入派生，并绑定 fact ID、adapter
 authority、profile 和幂等策略；不代表完整前端生成器或生产 SDK。手写 DTO、猜测式动态

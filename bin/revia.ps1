@@ -48,7 +48,7 @@ The Node reference CLI has a separate source-oriented surface:
   Exactly one program argument collides with native run arity; use the explicit npm command.
   npm run re -- view [--locale zh-CN|en-US] [--format html|svg] <file.re>
   view, audit, profile, patch, review-index, build, project-projection,
-  module-surface, project-translate
+  project-react, module-surface, project-translate
 
 Use "revia help <command>" for both signatures where they overlap.
 '@
@@ -107,6 +107,7 @@ Reference: npm run re -- project-translate [--locale zh-CN|en-US] [--format json
       break
     }
     'project-projection' { 'Node reference only: npm run re -- project-projection --routes <routes.json> --out <dir> <project-dir>'; break }
+    'project-react' { 'Node reference only: npm run re -- project-react --contract <projection.json> --out <dir>'; break }
     'module-surface' { 'Node reference only: npm run re -- module-surface --manifest <manifest.json> <file.re>'; break }
     default {
       [Console]::Error.WriteLine("Unknown Revia command: $Command")
@@ -120,11 +121,11 @@ function Test-SourceFile([string]$Path) {
 }
 
 function Test-ReferenceOnlyCommand([string]$Command) {
-  return @('view', 'audit', 'profile', 'patch', 'review-index', 'build', 'project-projection', 'module-surface') -ccontains $Command
+  return @('view', 'audit', 'profile', 'patch', 'review-index', 'build', 'project-projection', 'project-react', 'module-surface') -ccontains $Command
 }
 
 function Test-LauncherHelpCommand([string]$Command) {
-  return @('check', 'run', 'manifest', 'translate', 'view', 'audit', 'profile', 'patch', 'review-index', 'build', 'project-check', 'project-run', 'project-translate', 'project-projection', 'module-surface') -ccontains $Command
+  return @('check', 'run', 'manifest', 'translate', 'view', 'audit', 'profile', 'patch', 'review-index', 'build', 'project-check', 'project-run', 'project-translate', 'project-projection', 'project-react', 'module-surface') -ccontains $Command
 }
 
 function Test-ReferenceLocale([string]$Value) {

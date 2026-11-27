@@ -3913,3 +3913,41 @@ No finding required a code change; none contradicted the closure claim.
     target; it does not claim that every file-creating command classifies a
     dash-leading positional the same way, that the dash is refused anywhere
     else, or that the page's other exit-code claims are covered by this case.
+57. `docs/integration.md` described the generated frontend as one command —
+    `project-projection` writes `types.ts`, `client.ts` and `projection.json` —
+    and stopped there, so the page a reader consults to build a client named
+    the half of the contract that binds nothing: the projection is a TypeScript
+    surface with no call site, and the repository shipped no command that
+    emitted one. `project-react` now reads only `projection.json` and writes
+    `operations.ts`, `panels.tsx` and `react-client.json`, where the manifest is
+    `re.react-client-projection-manifest@0.1.0`, its `authority.projection_digest`
+    is the contract's own `projection_digest`, and its `authority.graph_revision`
+    is the revision the checked project pinned. The command is `reference_only`
+    in the same sense the projection it consumes is: it is absent from the
+    native release CLI, so `test/fixtures/cli-command-surface.json` lists it
+    among the shapes the launcher must answer with `64` and an empty stdout
+    before any release download is attempted, and `bin/revia` and
+    `bin/revia.ps1` carry the name in the three dispatch lists and the
+    known-command array that decide which answer a source-form invocation gets.
+    That placement is what the new gate measures: with the name in the fixture
+    but not in the launcher's lists, the shape fell through to the download
+    branch and the case reported `70 !== 64` — the fault the test exists to
+    catch, since a `70` asks the reader for a network that was never the
+    subject. `test/react-client-projection.test.js` runs the emitted pair
+    through the verifier the generator shares with its own write path, so a
+    generator that stops agreeing with its manifest is red rather than merely
+    different, and it pins the refusals that keep the output directory from
+    being created: a contract whose `projection_digest` no longer matches its
+    bytes exits `65` with `react-projection-contract-digest-mismatch`, an
+    argument shape the command cannot honour exits `64` with the Node
+    reference banner (`Usage: re …`, not the launcher's `Usage: revia …`), and
+    a missing contract is named rather than surfacing as an unhandled error.
+    The page's own sample output is checked by running it: the printed
+    `operations.ts,panels.tsx` and the `true` that compares
+    `authority.projection_digest` against the contract's are what the shell
+    prints on this checkout, so a reworded example that drifts from the
+    command is a claim the reader can catch. This records a bounded client
+    projection over the shipped projection manifest; it does not claim a
+    React implemented in Revia, a component library, a production frontend, a
+    typecheck of the emitted sources by this repository's gates, or that the
+    projection covers interface facts the contract does not carry.

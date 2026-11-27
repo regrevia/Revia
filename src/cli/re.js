@@ -15,6 +15,7 @@ import {
   serializeInterfaceProjectionResult,
   serializeProjectRunResult,
   serializeProjectTranslationResult,
+  serializeReactClientProjectionResult,
   serializeReviewFactResult,
   serializeReviewIndexResult,
   serializeRunResult,
@@ -45,6 +46,10 @@ import {
   validateInterfaceProjectionRoutes,
   writeInterfaceProjection,
 } from '../toolchain/interface-projection.js'
+import {
+  readReactClientContract,
+  writeReactClientProjection,
+} from '../toolchain/react-client-projection.js'
 import { decodeUtf8Source } from '../toolchain/source-text.js'
 
 const EXIT_USAGE = 64
@@ -60,6 +65,7 @@ const CLI_USAGE = [
   '       re project-check --format json <project-dir>',
   '       re project-run --fixture <fixture.json> <project-dir>',
   '       re project-projection --routes <routes.json> --out <dir> <project-dir>',
+  '       re project-react --contract <projection.json> --out <dir>',
   '       re project-translate [--locale zh-CN|en-US] [--format json|text|html|svg] <project-dir>',
   '       re module-surface --manifest <manifest.json> <file.re>',
   '       re review-index [--changed-since <revision>] [--cursor <cursor>] [--limit <n>] [--fact-id <id> --index-revision <revision>] <file.re>',
@@ -97,6 +103,7 @@ async function main(arguments_) {
     outDir,
     patchFile,
     programArguments,
+    contractFile,
     routesFile,
     runtimeReceipt,
     authorityPinFile,
@@ -129,6 +136,16 @@ async function main(arguments_) {
       fixture: fixtureFile,
       result,
     }))
+    process.exitCode = result.ok ? 0 : EXIT_CHECK_FAILURE
+    return
+  }
+
+  if (command === 'project-react') {
+    const loaded = await readReactClientContract(contractFile)
+    const result = loaded.ok
+      ? await writeReactClientProjection(loaded.value, { output: outDir })
+      : loaded
+    process.stdout.write(serializeReactClientProjectionResult({ result }))
     process.exitCode = result.ok ? 0 : EXIT_CHECK_FAILURE
     return
   }
@@ -672,7 +689,7 @@ async function main(arguments_) {
 
 function parseArguments(arguments_) {
   const [command, ...rest] = arguments_
-  if (!['audit', 'build', 'check', 'manifest', 'module-surface', 'patch', 'profile', 'project-check', 'project-projection', 'project-run', 'project-translate', 'review-index', 'run', 'translate', 'view'].includes(command)) return { ok: false }
+  if (!['audit', 'build', 'check', 'manifest', 'module-surface', 'patch', 'profile', 'project-check', 'project-projection', 'project-react', 'project-run', 'project-translate', 'review-index', 'run', 'translate', 'view'].includes(command)) return { ok: false }
 
   if (command === 'project-check') {
     if (rest.shift() !== '--format' || rest.shift() !== 'json') {
@@ -725,6 +742,26 @@ function parseArguments(arguments_) {
       fixtureFile,
       format: 'json',
       ok: true,
+      programArguments: [],
+      write: false,
+    }
+  }
+
+  if (command === 'project-react') {
+    if (rest.shift() !== '--contract') return { ok: false }
+    const contractFile = rest.shift()
+    if (rest.shift() !== '--out') return { ok: false }
+    const outDir = rest.shift()
+    if (contractFile === undefined || outDir === undefined || rest.length > 0) {
+      return { ok: false }
+    }
+    return {
+      command,
+      contractFile,
+      file: contractFile,
+      format: 'json',
+      ok: true,
+      outDir,
       programArguments: [],
       write: false,
     }

@@ -244,6 +244,24 @@ export function serializeInterfaceProjectionResult({ result }) {
   )
 }
 
+export function serializeReactClientProjectionResult({ result }) {
+  return canonicalJson(
+    result.ok
+      ? {
+          manifest: result.value.manifest,
+          ok: true,
+          schema: 're.react-client-projection-result@0.1.0',
+          written: result.written === true,
+        }
+      : {
+          diagnostics: [...result.diagnostics].sort(compareDiagnostics),
+          ok: false,
+          schema: 're.react-client-projection-result@0.1.0',
+          written: false,
+        },
+  )
+}
+
 export function serializeAuditResult({
   capabilities,
   effects,

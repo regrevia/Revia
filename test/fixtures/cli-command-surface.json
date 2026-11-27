@@ -22,6 +22,7 @@
     "review-index",
     "build",
     "project-projection",
+    "project-react",
     "module-surface"
   ],
   "source_run_options": [
@@ -52,6 +53,7 @@
     { "args": ["project-translate", "--locale", "en-US", "--format", "html", "examples/agent-review"], "id": "project-translate-source-option" },
     { "args": ["project-translate", "--format", "html", "--locale", "en-US", "examples/agent-review"], "id": "project-translate-reversed-options" },
     { "args": ["project-projection", "--routes", "routes.json", "--out", "out", "examples/agent-review"], "id": "project-projection" },
+    { "args": ["project-react", "--contract", "projection.json", "--out", "out"], "id": "project-react" },
     { "args": ["module-surface", "--manifest", "manifest.json", "examples/hello.re"], "id": "module-surface" }
   ],
   "native_controls": [
