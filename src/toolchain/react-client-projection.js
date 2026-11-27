@@ -345,7 +345,10 @@ function renderPanels(entries) {
     "import { useState, type FormEvent } from 'react'",
     '',
     "import type { ProjectionClient } from './client.js'",
-    `import { ${entries.map((entry) => `use${capitalize(entry.methodName)}`).join(', ')} } from './operations.js'`,
+    `import { ${entries.flatMap((entry) => [
+      `use${capitalize(entry.methodName)}`,
+      `type ${capitalize(entry.methodName)}State`,
+    ]).join(', ')} } from './operations.js'`,
     '',
   ]
   for (const entry of entries) {

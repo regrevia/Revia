@@ -65,6 +65,12 @@ test('project-react turns a checked projection contract into client artifacts', 
   assert.match(panels, /export function ReviewPanel\(/)
   assert.match(panels, /<button type="submit" disabled=\{state\.status === 'pending'\}>/)
   assert.match(panels, /return <p role="alert">\{state\.error\.variant\}<\/p>/)
+  // Every name panels.tsx uses from operations.ts is imported, the state type
+  // included: the panel annotates its outcome component with it.
+  assert.match(
+    panels,
+    /import \{ useReview, type ReviewState \} from '\.\/operations\.js'/,
+  )
 
   // The generator reads the contract and writes nothing back into it.
   assert.deepEqual(
